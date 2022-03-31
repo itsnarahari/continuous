@@ -1,8 +1,11 @@
 package com.test.practice;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -14,7 +17,7 @@ import java.util.stream.Stream;
 
 public class Java11FeaturesExample {
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, URISyntaxException, InterruptedException {
 
         // Single line command execute.
         System.out.println("Single line command execute java fileName.java");
@@ -66,6 +69,26 @@ public class Java11FeaturesExample {
 
         // Optional
         System.out.println("Optional --------------------> ");
-        Optional<String> optional=Optional.ofNullable(null);
+        Optional<String> optional=Optional.ofNullable("");
+        System.out.println(optional.isEmpty());
+
+        // http request
+
+        System.out.println("http request ----------->");
+
+        HttpRequest httpRequest= HttpRequest.newBuilder()
+                .uri(new URI("https://jsonplaceholder.typicode.com/todos/1"))
+                .GET()
+                .version(HttpClient.Version.HTTP_2)
+                .build();
+
+        HttpClient httpClient=HttpClient.newBuilder()
+                .build();
+
+        HttpResponse httpResponse=httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+        System.out.println(httpResponse.body());
+        System.out.println(httpResponse.headers());
+        System.out.println(httpResponse.statusCode());
+
     }
 }
