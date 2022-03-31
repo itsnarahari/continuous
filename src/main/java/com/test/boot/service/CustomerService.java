@@ -6,10 +6,11 @@ import com.test.boot.models.Customer;
 import com.test.boot.models.Products;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-@Service
+@Service@Transactional
 public class CustomerService {
 
     @Autowired
@@ -17,6 +18,7 @@ public class CustomerService {
 
     @Autowired
     ProductRepository productRepository;
+
 
     public Customer create(Customer customer){
         customerRepository.save(customer);

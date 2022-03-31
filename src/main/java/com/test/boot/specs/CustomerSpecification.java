@@ -10,6 +10,5 @@ public class CustomerSpecification {
         String str="ghghgf";
         IntStream intStream = str.chars();
         intStream.forEach(i -> System.out.println(i));
-        System.out.println(intStream);
     }
 }

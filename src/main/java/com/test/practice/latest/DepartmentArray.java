@@ -1,6 +1,7 @@
 package com.test.practice.latest;
 
 
+import com.test.practice.Employee;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

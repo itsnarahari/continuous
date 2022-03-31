@@ -11,6 +11,6 @@ public class ValidateSubsequences {
     }
 
     public static void main(String[] args) {
-        System.out.println(isValidSubsequence(Arrays.asList(5,1,22,25,6,-1,8,10),Arrays.asList(1,6,-1,7)));
+        System.out.println(isValidSubsequence(Arrays.asList(5,1,22,25,6,-1,8,10),Arrays.asList(-1,1,6,22,100)));
     }
 }

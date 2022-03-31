@@ -1,5 +1,7 @@
 package com.test.practice.java8test;
 
+import com.test.practice.Employee;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -34,6 +36,9 @@ public class StreamsApi {
                 .collect(Collectors.toList());
         System.out.println(String.join(",",list));
 
+        String collect = employeeList.stream().map(employee -> employee.getName()).collect(Collectors.joining(","));
+
+        System.out.println("After joining "+ collect);
         // Given the list of employee, group them by employee name?
         Map<String, List<Employee>> map  = employeeList.stream().collect(Collectors.groupingBy(Employee::getName));
         System.out.println(map);

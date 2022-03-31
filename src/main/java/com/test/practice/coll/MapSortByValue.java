@@ -19,7 +19,5 @@ public class MapSortByValue {
                         (oldValue, newValue) -> oldValue, LinkedHashMap::new));
 
         System.out.println(result);
-
-
     }
 }

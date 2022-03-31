@@ -5,5 +5,9 @@ public class Test {
         int x = 4;
         System.out.println(++x);
         System.out.println(++x);
+        System.out.println(x++);
+        System.out.println(x++);
+
+
     }
 }

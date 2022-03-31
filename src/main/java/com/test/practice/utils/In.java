@@ -1,7 +1,9 @@
 package com.test.practice.utils;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class In {
 
@@ -18,13 +20,19 @@ public class In {
         unsortMap.put("g", 50);
         unsortMap.put("m", 2);
         unsortMap.put("f", 9);
-        Map<String, Integer> sorted = new HashMap<>();
-        unsortMap.entrySet().stream().sorted(Map.Entry.comparingByKey())
-                .forEach(stringIntegerEntry -> sorted.put(stringIntegerEntry.getKey(),stringIntegerEntry.getValue()));
+//        Map<String, Integer> sorted = new HashMap<>();
+//        unsortMap.entrySet().stream().sorted(Map.Entry.comparingByKey())
+//                .forEach(stringIntegerEntry -> sorted.put(stringIntegerEntry.getKey(),stringIntegerEntry.getValue()));
 
-//                Map<String, Integer> sorted = unsortMap.entrySet().stream().sorted(Map.Entry.comparingByKey())
-//                .collect(Collectors.toMap(Map.Entry::getKey,Map.Entry::getValue,
-//                        (oldValue,newValue)->oldValue, HashMap::new));
-        System.out.println(sorted);
+                Map<String, Integer> sorted = unsortMap.entrySet().stream().sorted(Map.Entry.comparingByKey())
+                .collect(Collectors.toMap(Map.Entry::getKey,Map.Entry::getValue,
+                        (oldValue,newValue)->oldValue, HashMap::new));
+
+        Iterator iterator = sorted.entrySet().iterator();
+
+        while (iterator.hasNext()){
+            System.out.println(iterator.next());
+        }
+//        System.out.println(sorted);
     }
 }

@@ -1,10 +1,13 @@
 package com.test.boot.service;
 
+import com.mysql.cj.util.Util;
 import com.test.boot.dao.UserRepository;
 import com.test.boot.models.Users;
+import com.test.boot.utils.UserUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -66,5 +69,11 @@ public class UserService {
             throw new Exception("Failed to parse CSV file {}", e);
         }
     }
+    public UtilsResponse staticMockTest(Users users){
 
+        String response = UserUtils.isSuccess(users.getEmail());
+        System.out.println("response"+ response);
+
+        return new UtilsResponse(response,200);
+    }
 }

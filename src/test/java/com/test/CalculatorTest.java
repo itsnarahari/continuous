@@ -27,6 +27,6 @@ public class CalculatorTest {
 
     @Test
     public void shouldCalculateInAStrangeWay() {
-        Assert.assertEquals(0, calc.add(1, 1) );
+        Assert.assertEquals(2, calc.add(1, 1) );
     }
 }

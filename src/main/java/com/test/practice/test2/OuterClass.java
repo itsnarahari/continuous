@@ -10,14 +10,12 @@ public class OuterClass {
 
     class InnerClass{
         public void display(){
+            int id=10;
             System.out.println(name);
-
         }
     }
-
     public static void main(String[] args) {
         InnerClass ic = new OuterClass().new InnerClass();
-
         ic.display();
     }
 }

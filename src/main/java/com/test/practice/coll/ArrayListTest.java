@@ -20,6 +20,7 @@ public class ArrayListTest {
         for (int i = 0; i < sList.size(); i++) {
             System.out.println(i);
             sList.remove(i);
+            sList.add(i);
         }
         System.out.println(sList);
     }

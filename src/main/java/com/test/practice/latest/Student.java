@@ -2,14 +2,17 @@ package com.test.practice.latest;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
+
+import java.util.List;
 
 @Setter@Getter
-@AllArgsConstructor@NoArgsConstructor
-public class Employee {
+@AllArgsConstructor
+@ToString
+public class Student {
 
     private int id;
     private String name;
-    private Long salary;
+    private List<Marks> marks;
 }
