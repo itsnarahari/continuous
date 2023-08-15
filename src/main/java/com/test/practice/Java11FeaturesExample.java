@@ -31,7 +31,7 @@ public class Java11FeaturesExample {
         Object[] objects = list.toArray();
         System.out.println(Arrays.toString(objects));
 
-        String[] strings=new String[list.size()];
+        String[] strings = new String[list.size()];
         String[] strings1 = list.toArray(strings);
         System.out.println(Arrays.toString(strings1));
 
@@ -44,21 +44,24 @@ public class Java11FeaturesExample {
         String[] strings3 = list.stream().toArray(String[]::new);
         System.out.println(Arrays.toString(strings3));
 
+        List<Integer> list2 = List.of(4, 6, 8);
+        Integer[] integers = list2.stream().toArray(Integer[]::new);
+
         // File Reader and Writer.
-        var uri="src/main/java/com/test/practice/fileReader.txt";
+        var uri = "src/main/java/com/test/practice/fileReader.txt";
         String s = Files.readString(Path.of(uri));
         System.out.println(s);
-        Files.writeString(Path.of(uri),"\nok", StandardOpenOption.APPEND);
+        Files.writeString(Path.of(uri), "\nok", StandardOpenOption.APPEND);
 
         // String utility methods.
         System.out.println("String utility methods -------------> ");
-        String str=" Narahari  ";
+        String str = " Narahari  ";
         System.out.println(str.isBlank());
         System.out.println(str.strip());
         System.out.println(str.stripLeading());
         System.out.println(str.stripTrailing());
 
-        str="dfdsf \n" +
+        str = "dfdsf \n" +
                 "dfsdfsd \n" +
                 "dsfsdf \n" +
                 "jghj\n";
@@ -69,23 +72,23 @@ public class Java11FeaturesExample {
 
         // Optional
         System.out.println("Optional --------------------> ");
-        Optional<String> optional=Optional.ofNullable("");
+        Optional<String> optional = Optional.ofNullable("");
         System.out.println(optional.isEmpty());
 
         // http request
 
         System.out.println("http request ----------->");
 
-        HttpRequest httpRequest= HttpRequest.newBuilder()
+        HttpRequest httpRequest = HttpRequest.newBuilder()
                 .uri(new URI("https://jsonplaceholder.typicode.com/todos/1"))
                 .GET()
                 .version(HttpClient.Version.HTTP_2)
                 .build();
 
-        HttpClient httpClient=HttpClient.newBuilder()
+        HttpClient httpClient = HttpClient.newBuilder()
                 .build();
 
-        HttpResponse httpResponse=httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+        HttpResponse httpResponse = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
         System.out.println(httpResponse.body());
         System.out.println(httpResponse.headers());
         System.out.println(httpResponse.statusCode());

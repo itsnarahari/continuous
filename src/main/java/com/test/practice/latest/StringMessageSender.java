@@ -2,18 +2,17 @@ package com.test.practice.latest;
 
 public class StringMessageSender {
 
-    public static void sendMessage(String str){
+    public static void sendMessage(String str) {
 
         String[] strArray = str.split(" ");
         StringBuilder stringBuilder = new StringBuilder();
         int msgPartSize = 10;
         for (int i = 0; i < strArray.length; i++) {
-            int count = strArray[i].length()+stringBuilder.length();
-            if(count<msgPartSize){
-                stringBuilder.append(" "+strArray[i]);
+            int count = strArray[i].length() + stringBuilder.length();
+            if (count < msgPartSize) {
+                stringBuilder.append(" " + strArray[i]);
 
-            }
-            else{
+            } else {
                 System.out.print(stringBuilder);
                 stringBuilder.setLength(0);
                 i--;

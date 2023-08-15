@@ -7,7 +7,7 @@ import java.util.stream.Collectors;
 
 public class StringImmutableExample {
 
-    final public int m1(){
+    final public int m1() {
         return 0;
     }
 
@@ -15,9 +15,9 @@ public class StringImmutableExample {
 
         String s1 = "Hari";
         String obj = new String("Hari");
-        String obj2=new String("Hari");
-        System.out.println(obj==obj2);
-        System.out.println(obj==obj);
+        String obj2 = new String("Hari");
+        System.out.println(obj == obj2);
+        System.out.println(obj == obj);
         System.out.println(obj.equals(obj2));
 
         System.out.println();

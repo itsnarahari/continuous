@@ -9,8 +9,9 @@ import org.junit.Test;
 public class StaticTests {
 
     private StaticClass staticClass;
+
     @Test
-    public void testStatic(){
+    public void testStatic() {
         System.out.println("sda");
         Assert.assertEquals("hari", StaticClass.staticMethod("hari"));
     }

@@ -4,12 +4,13 @@ public class LongestSubString {
     public static void main(String[] args) {
         System.out.println(lengthOfLongestSubstring("GEEKSFORGEEKS"));
     }
+
     public static int lengthOfLongestSubstring(String str) {
         int n = str.length();
         int res = 0;
-        for(int i = 0; i < n; i++) {
+        for (int i = 0; i < n; i++) {
             boolean[] visited = new boolean[256];
-            for(int j = i; j < n; j++) {
+            for (int j = i; j < n; j++) {
                 if (visited[str.charAt(j)] == true)
                     break;
                 else {

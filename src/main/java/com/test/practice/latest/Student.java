@@ -7,7 +7,8 @@ import lombok.ToString;
 
 import java.util.List;
 
-@Setter@Getter
+@Setter
+@Getter
 @AllArgsConstructor
 @ToString
 public class Student {

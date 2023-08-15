@@ -5,14 +5,14 @@ import org.springframework.stereotype.Component;
 
 @Primary
 @Component
-class MobileNotification implements OTPSender{
+class MobileNotification implements OTPSender {
     @Override
     public void sender() {
         System.out.println("MobileNotification");
     }
 }
 
-class EmailNotification implements OTPSender{
+class EmailNotification implements OTPSender {
     @Override
     public void sender() {
         System.out.println("EmailNotification");

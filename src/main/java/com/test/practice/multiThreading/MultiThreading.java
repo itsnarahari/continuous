@@ -9,7 +9,7 @@ public class MultiThreading {
         t1.start();
         System.out.println(t1.getId());
         Thread t2 = new Thread();
-        t1=t2;
+        t1 = t2;
         t1.start();
         System.out.println(t1.getId());
     }

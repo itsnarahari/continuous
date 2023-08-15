@@ -1,9 +1,9 @@
 package com.test.practice.multiThreading;
 
- class A implements Runnable{
+class A implements Runnable {
     @Override
     public void run() {
-        System.out.println("Inside of RUN"+Thread.currentThread());
+        System.out.println("Inside of RUN" + Thread.currentThread());
     }
 }
 

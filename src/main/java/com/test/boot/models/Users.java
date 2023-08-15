@@ -1,4 +1,5 @@
 package com.test.boot.models;
+
 import lombok.*;
 
 import javax.persistence.Entity;
@@ -10,7 +11,8 @@ import javax.persistence.Table;
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
-@Setter@Getter
+@Setter
+@Getter
 public class Users {
     @Id
     @GeneratedValue

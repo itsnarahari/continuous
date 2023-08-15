@@ -6,7 +6,7 @@ public class SortChars {
 
     public static String[] mergeAndSortArray(String firstArray[], String secondArray[]) {
 
-        String[] finalArray={};
+        String[] finalArray = {};
         if (firstArray.length > 0 && secondArray.length > 0) {
 
             // Get length.
@@ -46,7 +46,7 @@ public class SortChars {
     }
 
     public static void main(String[] args) {
-        String[] sortedArray= mergeAndSortArray(new String[]{"a","c","d","f","g"}, new String[]{"e","b","h"});
+        String[] sortedArray = mergeAndSortArray(new String[]{"a", "c", "d", "f", "g"}, new String[]{"e", "b", "h"});
         System.out.println(Arrays.toString(sortedArray));
     }
 }

@@ -38,15 +38,17 @@ public class DepartmentActionsTest {
             "}";
     ObjectMapper objectMapper = null;
     String searchKey = "";
-    Departments departments=null;
-    Departments departmentInput=null;
+    Departments departments = null;
+    Departments departmentInput = null;
 
 
     @Before
     public void setUp() throws JsonProcessingException {
         objectMapper = new ObjectMapper();
-        departments = objectMapper.readValue(jsonObject, new TypeReference<Departments>() {});
-        departmentInput = objectMapper.readValue(jsonObject, new TypeReference<Departments>() {});
+        departments = objectMapper.readValue(jsonObject, new TypeReference<Departments>() {
+        });
+        departmentInput = objectMapper.readValue(jsonObject, new TypeReference<Departments>() {
+        });
     }
 
     @Test
@@ -66,11 +68,12 @@ public class DepartmentActionsTest {
 
         }
     }
+
     @Test
     public void searchKeyNotFound() throws JsonProcessingException {
         searchKey = "abcd";
         departments = departMentActions.searchByDeptName(departments, searchKey);
         System.out.println(objectMapper.writeValueAsString(departments));
-        Assert.assertEquals(departments.getDepartments(),departmentInput.getDepartments());
+        Assert.assertEquals(departments.getDepartments(), departmentInput.getDepartments());
     }
 }

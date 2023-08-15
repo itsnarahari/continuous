@@ -7,7 +7,7 @@ public class HashTableExample {
     static public void main(String[] args) {
 
         Hashtable hashtable = new Hashtable();
-        hashtable.put("dsad","fgf");
+        hashtable.put("dsad", "fgf");
         System.out.println(hashtable);
     }
 

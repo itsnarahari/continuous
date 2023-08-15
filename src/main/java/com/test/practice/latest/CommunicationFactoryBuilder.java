@@ -4,15 +4,13 @@ import com.test.practice.Employee;
 
 public class CommunicationFactoryBuilder {
 
-    public static Communication getInstance(Employee employee){
+    public static Communication getInstance(Employee employee) {
 
-        if(employee.getModeOfContact().equalsIgnoreCase("mobile")){
+        if (employee.getModeOfContact().equalsIgnoreCase("mobile")) {
             return new MobileCommunications();
-        }
-        else if(employee.getModeOfContact().equalsIgnoreCase("email")){
+        } else if (employee.getModeOfContact().equalsIgnoreCase("email")) {
             return new EmailCommunication();
-        }
-        else {
+        } else {
             return null;
         }
 

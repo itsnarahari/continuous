@@ -5,7 +5,7 @@ import java.util.List;
 
 public class MergeTwoArrayOfStrings<T> {
 
-    public List<T>  merge(T a,T b){
+    public List<T> merge(T a, T b) {
         List<T> mainList = new ArrayList<>();
         mainList.add(a);
         mainList.add(b);

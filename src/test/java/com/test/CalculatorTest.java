@@ -11,10 +11,12 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest( MathUtil.class )
+@PrepareForTest(MathUtil.class)
 public class CalculatorTest {
 
-    /** Unit under test. */
+    /**
+     * Unit under test.
+     */
     private Calculator calc;
 
     @Before
@@ -27,6 +29,6 @@ public class CalculatorTest {
 
     @Test
     public void shouldCalculateInAStrangeWay() {
-        Assert.assertEquals(2, calc.add(1, 1) );
+        Assert.assertEquals(2, calc.add(1, 1));
     }
 }

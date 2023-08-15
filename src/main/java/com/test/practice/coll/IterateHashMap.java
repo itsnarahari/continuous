@@ -11,9 +11,9 @@ public class IterateHashMap {
 
         Map<String, Object> map = new HashMap<>();
         Hashtable hashtable = new Hashtable();
-        hashtable.put(null,"sdsad");
-        map.put(null,"dsadas");
-        map.put(null,"abcd");
+        hashtable.put(null, "sdsad");
+        map.put(null, "dsadas");
+        map.put(null, "abcd");
         System.out.println(map.get(null));
 
 //        map.put("one",1);

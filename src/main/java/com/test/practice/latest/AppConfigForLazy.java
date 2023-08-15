@@ -12,16 +12,17 @@ import org.springframework.context.annotation.Lazy;
 @Configuration
 public class AppConfigForLazy {
     @Bean
-    public Company companyBean(){
+    public Company companyBean() {
         return new Company();
     }
+
     @Bean
-    public Employee employeeBean(){
+    public Employee employeeBean() {
         return new Employee();
     }
 
     @Bean
-    public Customer customerBean(){
+    public Customer customerBean() {
         return new Customer();
     }
 

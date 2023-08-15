@@ -8,9 +8,9 @@ public class SortListByCharacter {
 
     public static void main(String[] args) {
 
-        List<String> list = List.of("narahari","bichani","papaiah","naveen","babu");
+        List<String> list = List.of("narahari", "bichani", "papaiah", "naveen", "babu");
 
-        list.stream().map(s->{
+        list.stream().map(s -> {
             s.getBytes();
             return s.trim();
         });

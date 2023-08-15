@@ -5,18 +5,19 @@ import java.util.List;
 
 public class InstanceAndStaticBlocks {
 
-     final List<String> list;
+    final List<String> list;
 
     {
         System.out.println("Instance");
     }
+
     static {
         System.out.println("Static");
     }
-    public InstanceAndStaticBlocks(){
+
+    public InstanceAndStaticBlocks() {
         System.out.println("Constructor");
         list = new ArrayList<>();
-
     }
 
     public static void main(String[] args) {

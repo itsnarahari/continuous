@@ -6,7 +6,8 @@ import java.util.List;
 
 @AllArgsConstructor
 @NoArgsConstructor
-@Setter@Getter
+@Setter
+@Getter
 @ToString
 public class Student {
 

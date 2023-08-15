@@ -21,6 +21,6 @@ public class ArraysLeftRotation {
     }
 
     public static void main(String[] args) {
-        rotLeft(Arrays.asList(1,2,3,4,5),4);
+        rotLeft(Arrays.asList(1, 2, 3, 4, 5), 4);
     }
 }

@@ -9,10 +9,12 @@ public class PostAndPreDestory {
     public void customInit() {
         System.out.println("Method customInit() invoked...");
     }
+
     @PreDestroy
     public void customDestroy() {
         System.out.println("Method customDestroy() invoked...");
     }
+
     public static void main(String[] args) {
         PostAndPreDestory postAndPreDestory = new PostAndPreDestory();
         postAndPreDestory.customInit();

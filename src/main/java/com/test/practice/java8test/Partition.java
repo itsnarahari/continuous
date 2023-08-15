@@ -53,8 +53,9 @@ public final class Partition<T> extends AbstractList<List<T>> {
         return IntStream.range(0, fullChunks + 1).mapToObj(
                 n -> source.subList(n * length, n == fullChunks ? size : (n + 1) * length));
     }
+
     public static void main(String[] args) {
-        final List<Integer> numbers = Arrays.asList(1,2,3,4,5,6,7);
+        final List<Integer> numbers = Arrays.asList(1, 2, 3, 4, 5, 6, 7);
         System.out.println(Partition.ofSize(new ArrayList<>(), 3));
         System.out.println(LocalTime.now().toString());
 

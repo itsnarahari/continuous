@@ -40,10 +40,8 @@ public class PracticeTestApplication {
     @Autowired
     SingletonBean singletonBean;
 
-
-
     @Bean
-    RestTemplate restTemplate(){
+    RestTemplate restTemplate() {
         singletonBean.getPrototypeBean();
         return new RestTemplate();
     }

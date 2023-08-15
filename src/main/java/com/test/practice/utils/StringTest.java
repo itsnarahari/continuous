@@ -8,7 +8,7 @@ public class StringTest {
         String str2 = "Hai";
         String obj = new String("hai");
         System.out.println(str1.equals(obj));
-        System.out.println(str1==obj);
+        System.out.println(str1 == obj);
 
     }
 }

@@ -26,8 +26,9 @@ public class Thread2 {
             System.out.println(Thread.currentThread().getName());
         }
     }
+
     public static void set() {
-        flag=false;
+        flag = false;
     }
 }
 

@@ -1,5 +1,7 @@
 package com.test.boot.config;
 
+import com.test.boot.models.Address;
+import com.test.boot.models.Employee;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,10 +15,22 @@ import java.util.concurrent.Executor;
 @EnableAsync
 public class AsyncConfig {
 
-    @Bean(name ="taskExecutor")
+    @Bean("employee")
+    @Scope(scopeName = "singleton")
+    public Employee employee() {
+        return new Employee();
+    }
+
+    @Bean("prototype")
+    @Scope(scopeName = "singleton")
+    public Address address() {
+        return new Address();
+    }
+
+    @Bean(name = "taskExecutor")
     @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
-    public Executor taskExecutor(){
-        ThreadPoolTaskExecutor executor=new ThreadPoolTaskExecutor();
+    public Executor taskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(4);
         executor.setMaxPoolSize(4);
         executor.setQueueCapacity(1000);

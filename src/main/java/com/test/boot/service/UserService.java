@@ -32,7 +32,7 @@ public class UserService {
         long start = System.currentTimeMillis();
         List<Users> users = parseCSVFile(file);
         logger.info("saving list of users of size {}", users.size(), "" + Thread.currentThread().getName());
-        System.out.println("threadName "+ Thread.currentThread().getName());
+        System.out.println("threadName " + Thread.currentThread().getName());
         users = repository.saveAll(users);
         long end = System.currentTimeMillis();
         logger.info("Total time {}", (end - start));
@@ -40,9 +40,9 @@ public class UserService {
     }
 
     @Async
-    public CompletableFuture<List<Users>> findAllUsers(){
-        logger.info("get list of user by "+Thread.currentThread().getName());
-        List<Users> users=repository.findAll();
+    public CompletableFuture<List<Users>> findAllUsers() {
+        logger.info("get list of user by " + Thread.currentThread().getName());
+        List<Users> users = repository.findAll();
         return CompletableFuture.completedFuture(users);
     }
 
@@ -54,7 +54,7 @@ public class UserService {
                 String line;
                 while ((line = br.readLine()) != null) {
                     final String[] data = line.split(",");
-                    if(line.contains("email") || line.contains("name")){
+                    if (line.contains("email") || line.contains("name")) {
                         continue;
                     }
                     final Users user = new Users();
@@ -69,11 +69,12 @@ public class UserService {
             throw new Exception("Failed to parse CSV file {}", e);
         }
     }
-    public UtilsResponse staticMockTest(Users users){
+
+    public UtilsResponse staticMockTest(Users users) {
 
         String response = UserUtils.isSuccess(users.getEmail());
-        System.out.println("response"+ response);
+        System.out.println("response" + response);
 
-        return new UtilsResponse(response,200);
+        return new UtilsResponse(response, 200);
     }
 }

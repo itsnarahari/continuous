@@ -16,19 +16,20 @@ public class CommonConfiguration {
     String babu;
 
     @PostConstruct
-    public void init(){
+    public void init() {
         System.out.println("ffs");
         System.out.println(babu);
     }
 
     @Bean
     @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
-    public void m1(){
+    public void m1() {
         System.out.println("Singleton scope");
     }
+
     @Bean
     @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-    public void m2(){
+    public void m2() {
         System.out.println("proto type");
     }
 }

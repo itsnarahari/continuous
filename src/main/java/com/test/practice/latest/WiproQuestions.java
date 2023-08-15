@@ -26,7 +26,7 @@ public class WiproQuestions {
         System.out.println("Max Salary from each department");
         Map<String, Optional<Employee>> maxSalaryFromEachDept =
                 employeeList.stream()
-                .collect(Collectors.groupingBy(Employee::getDepartment, Collectors.maxBy(Comparator.comparing(Employee::getSalary))));
+                        .collect(Collectors.groupingBy(Employee::getDepartment, Collectors.maxBy(Comparator.comparing(Employee::getSalary))));
 
         System.out.println(maxSalaryFromEachDept);
 
@@ -37,18 +37,18 @@ public class WiproQuestions {
 
         // Print Count Of Each Department.
         System.out.println("Print Count Of Each Department. ");
-        employeeList.stream().collect(Collectors.groupingBy(Employee::getDepartment,Collectors.counting()))
+        employeeList.stream().collect(Collectors.groupingBy(Employee::getDepartment, Collectors.counting()))
                 .entrySet().forEach(stringLongEntry -> System.out.println(stringLongEntry));
 
         // Max Salary
         System.out.println("Max salary Of the Employee");
         Double maxSalary = employeeList.stream().map(Employee::getSalary).max(Double::compare).get();
-        System.out.println("Maximum Salary is "+ maxSalary);
+        System.out.println("Maximum Salary is " + maxSalary);
 
         // Min Salary
         System.out.println("Min salary Of the Employee");
         Double minSalary = employeeList.stream().map(Employee::getSalary).min(Double::compare).get();
-        System.out.println("Minimum Salary is "+ minSalary);
+        System.out.println("Minimum Salary is " + minSalary);
 
     }
 }

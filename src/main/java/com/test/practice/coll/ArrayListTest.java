@@ -4,10 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ArrayListTest {
-    static int a=10;
+    static int a = 10;
     final static int b = 0;
+
     public static void main(String[] args) {
-        a=30;
+        a = 30;
         System.out.println(a);
         List<Integer> sList = new ArrayList<>();
         sList.add(1);

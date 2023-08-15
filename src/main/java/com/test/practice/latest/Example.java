@@ -3,8 +3,8 @@ package com.test.practice.latest;
 public class Example {
 
 
-    public static String checkIsNull(String value){
-        if(value.startsWith("null") && value.contains("null")){
+    public static String checkIsNull(String value) {
+        if (value.startsWith("null") && value.contains("null")) {
             return "NA";
         }
         return value;

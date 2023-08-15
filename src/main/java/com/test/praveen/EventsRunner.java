@@ -16,15 +16,14 @@ public class EventsRunner {
     @Autowired
     JdbcTemplate jdbcTemplate;
 
-    public static final String getEventsQuery="select * from emp where deptId=?";
+    public static final String getEventsQuery = "select * from emp where deptId=?";
 
-    public List findEvents(String inputParam, String inputType){
-        try{
-            if(inputType.equalsIgnoreCase(ConstantsFile.VIN_STRING)){
+    public List findEvents(String inputParam, String inputType) {
+        try {
+            if (inputType.equalsIgnoreCase(ConstantsFile.VIN_STRING)) {
                 List<List> list = jdbcTemplate.query(getEventsQuery, new EventsMapper(), new Object[]{inputParam});
                 return list.get(0);
-            }
-            else{
+            } else {
                 new ArrayList<>();
             }
         } catch (Exception e) {

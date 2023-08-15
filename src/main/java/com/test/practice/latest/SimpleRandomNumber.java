@@ -5,15 +5,15 @@ public class SimpleRandomNumber {
     private int last;
     private int max;
 
-    public SimpleRandomNumber(int max){
-        this.max=max;
-        last= (int) (System.currentTimeMillis()%max);
+    public SimpleRandomNumber(int max) {
+        this.max = max;
+        last = (int) (System.currentTimeMillis() % max);
     }
 
-    public int nextInt(){
+    public int nextInt() {
         System.out.println(last);
-        last = (last *32719+3) % 32749;
-        return last%max;
+        last = (last * 32719 + 3) % 32749;
+        return last % max;
     }
 
     public static void main(String[] args) {

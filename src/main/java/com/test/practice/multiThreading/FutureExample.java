@@ -8,8 +8,8 @@ public class FutureExample {
 
     public static void main(String[] args) throws InterruptedException, ExecutionException {
 
-        System.out.println("process "+Runtime.getRuntime().availableProcessors());
-        ExecutorService executorService= Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        System.out.println("process " + Runtime.getRuntime().availableProcessors());
+        ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         List<Callable<Integer>> callables = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
             int finalI = i;

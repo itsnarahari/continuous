@@ -9,9 +9,9 @@ public class FactoryDesignPatternRunner {
 
     public static void main(String[] args) {
         List<Employee> employeeList = EmployeeDatasource.getEmployees();
-        String str="dfs";
+        String str = "dfs";
         str.charAt(4);
-        for (Employee emp:employeeList) {
+        for (Employee emp : employeeList) {
             Communication instance = CommunicationFactoryBuilder.getInstance(emp);
             instance.notify(emp);
         }

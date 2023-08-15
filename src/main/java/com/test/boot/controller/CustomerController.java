@@ -35,12 +35,13 @@ public class CustomerController {
     ProductRepository productRepository;
 
     @GetMapping("/products")
-    public ResponseEntity<?> findAllProducts(){
+    public ResponseEntity<?> findAllProducts() {
         return new ResponseEntity(productRepository.findAll(Sort.by("productName").descending()), HttpStatus.OK);
     }
+
     @RequestMapping(path = "/download", method = RequestMethod.GET)
     public ResponseEntity<InputStreamResource> download() throws IOException {
-        String fileName="first.txt";
+        String fileName = "first.txt";
         PrintWriter writer = new PrintWriter(fileName, "UTF-8");
         writer.println("The first line");
         writer.println("The second line");
@@ -62,34 +63,38 @@ public class CustomerController {
     }
 
     @PostMapping("/customer")
-    public ResponseEntity<?> create(@RequestBody Customer customer){
+    public ResponseEntity<?> create(@RequestBody Customer customer) {
         List<Products> productsList = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
-            Products products=new Products();
-            products.setProductName("product"+i);
+            Products products = new Products();
+            products.setProductName("product" + i);
             productsList.add(products);
         }
         customer.setProducts(productsList);
         return new ResponseEntity(customerService.create(customer), HttpStatus.OK);
     }
+
     @GetMapping("/customer/custom")
-    public ResponseEntity<?> findAllCustom(){
+    public ResponseEntity<?> findAllCustom() {
         return new ResponseEntity(customerService.findAll(), HttpStatus.OK);
     }
+
     @GetMapping("/customer")
-    public ResponseEntity<?> findAll(){
+    public ResponseEntity<?> findAll() {
         return new ResponseEntity(customerService.findAll(), HttpStatus.OK);
     }
+
     @GetMapping("/customer/{id}")
-    public ResponseEntity<?> findAll(@PathVariable Long id){
+    public ResponseEntity<?> findAll(@PathVariable Long id) {
         return new ResponseEntity(customerService.findAll(id), HttpStatus.OK);
     }
-//    @GetMapping("/products")
+
+    //    @GetMapping("/products")
 //    public ResponseEntity<?> findAllProd(){
 //        return new ResponseEntity(customerService.findAllProducts(), HttpStatus.OK);
 //    }
     @GetMapping("/products/{id}")
-    public ResponseEntity<?> findProductsById(@PathVariable Long id){
+    public ResponseEntity<?> findProductsById(@PathVariable Long id) {
         return new ResponseEntity(customerService.findAllProducts(id), HttpStatus.OK);
     }
 }

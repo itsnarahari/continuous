@@ -3,7 +3,7 @@ package com.test.practice.oops;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
-class Interest{
+class Interest {
     public float interest;
 
     @Override
@@ -13,10 +13,12 @@ class Interest{
                 '}';
     }
 }
+
 class Bank {
     {
         System.out.println("Bank");
     }
+
     public Interest getInterest() {
         return new Interest(4.5f);
     }
@@ -26,30 +28,34 @@ class SbiInterest extends Bank {
     {
         System.out.println("SbiInterest");
     }
+
     public Interest getInterest() {
         return new Interest(6f);
     }
 }
+
 class IciciInterest extends Bank {
     {
         System.out.println("IciciInterest");
     }
+
     public Interest getInterest() {
         return new Interest(7f);
     }
 }
-class X
-{
+
+class X {
     public X() {
         System.out.println(1);
     }
 }
-class Y extends X
-{
+
+class Y extends X {
     public Y() {
         System.out.println(2);
     }
 }
+
 public class InheritanceBankExample {
     public static void main(String[] args) {
         Bank b = new SbiInterest();

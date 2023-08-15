@@ -8,10 +8,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
-import org.mockito.MockitoAnnotations;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
@@ -25,14 +25,15 @@ public class StaticMethodMockTest {
 
 
     @Before
-    public void setUp(){
+    public void setUp() {
         openMocks(UserUtils.class);
     }
+
     @Test
-    public void test(){
+    public void test() {
         // Given
-        String email="abc@gmail.com";
-        Users users= new Users(34,"test","test@gmail.com");
+        String email = "abc@gmail.com";
+        Users users = new Users(34, "test", "test@gmail.com");
         PowerMockito.mockStatic(UserUtils.class);
 
         // When
@@ -40,6 +41,6 @@ public class StaticMethodMockTest {
 
         // Then
         UtilsResponse response = userService.staticMockTest(users);
-        assertEquals("success","success");
+        assertEquals("success", "success");
     }
 }

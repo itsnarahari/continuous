@@ -1,7 +1,9 @@
 package com.test.boot.config;
 
 public class PrototypeBean {
+
+
     public PrototypeBean() {
-        System.out.println("PrototypeBean");
+        System.out.println("PrototypeBean Singleton instance created");
     }
 }

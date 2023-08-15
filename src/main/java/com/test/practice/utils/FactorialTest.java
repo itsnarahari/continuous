@@ -6,10 +6,10 @@ import java.util.stream.Stream;
 public class FactorialTest {
 
 
-    public static int fact(int n){
+    public static int fact(int n) {
 
-        if(n>0){
-            return n * fact(n-1);
+        if (n > 0) {
+            return n * fact(n - 1);
         }
         return 0;
     }

@@ -9,7 +9,11 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Setter@Getter@ToString@AllArgsConstructor@NoArgsConstructor
+@Setter
+@Getter
+@ToString
+@AllArgsConstructor
+@NoArgsConstructor
 class Student {
 
     private int id;
@@ -20,12 +24,12 @@ class Student {
 public class JavaComparator {
     public static void main(String[] args) {
 
-        List<Student> studentList = Arrays.asList(new Student(1,"hari",86),
-                new Student(3,"sai",46),
-                new Student(2,"babu",99),
-                new Student(4,"telugu",75),
-                new Student(2,"xyz",99)
-                );
+        List<Student> studentList = Arrays.asList(new Student(1, "hari", 86),
+                new Student(3, "sai", 46),
+                new Student(2, "babu", 99),
+                new Student(4, "telugu", 75),
+                new Student(2, "xyz", 99)
+        );
 
         List<Student> list = studentList.stream().sorted(Comparator.comparing(Student::getName).thenComparingInt(Student::getMarks))
                 .collect(Collectors.toList());

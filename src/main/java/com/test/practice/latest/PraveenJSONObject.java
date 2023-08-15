@@ -13,14 +13,14 @@ public class PraveenJSONObject {
     public static void main(String[] args) throws IOException {
 
         String content = new String(Files.readAllBytes(Paths.get("/Applications/codebase/spring-boot-projects/continous-preparation/src/main/java/com/test/practice/latest/Out.json")));
-        JSONObject res=new JSONObject(content);
-        JSONArray finalArray=new JSONArray();
-        if(res.has("Items")){
-            JSONArray items=res.getJSONArray("Items");
-            if(items.length()>0){
-                items.forEach(item->{
-                    JSONObject obj= (JSONObject) item;
-                    obj.getJSONObject("data").put("Lat_Coord","*****").put("Long_Coord","*****");
+        JSONObject res = new JSONObject(content);
+        JSONArray finalArray = new JSONArray();
+        if (res.has("Items")) {
+            JSONArray items = res.getJSONArray("Items");
+            if (items.length() > 0) {
+                items.forEach(item -> {
+                    JSONObject obj = (JSONObject) item;
+                    obj.getJSONObject("data").put("Lat_Coord", "*****").put("Long_Coord", "*****");
                     finalArray.put(obj);
                 });
             }

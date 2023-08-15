@@ -14,9 +14,7 @@ public class Test {
                 if (mid > 0 && target > arr[mid - 1])
                     return getClosest(mid - 1, mid, target, arr);
                 j = mid;
-            }
-
-            else {
+            } else {
                 if (mid < n - 1 && target < arr[mid + 1])
                     return getClosest(mid, mid + 1, target, arr);
                 i = mid + 1;
@@ -35,8 +33,8 @@ public class Test {
 
     // Driver code
     public static void main(String[] args) {
-        int arr[] = { 10, 20, 40, 50, 100 };
-        int target[] = { 5, 25, 50, 120 };
+        int arr[] = {10, 20, 40, 50, 100};
+        int target[] = {5, 25, 50, 120};
         for (Integer i : target) {
 
             if (i <= arr[0])

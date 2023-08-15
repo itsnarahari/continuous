@@ -43,7 +43,7 @@ public class DepartMentActions {
     public Departments searchByDeptName(Departments departments, String key) throws JsonProcessingException {
 
         for (int i = 0; i < departments.getDepartments().size(); i++) {
-            if(!departments.getDepartments().get(i).containsKey(key)){
+            if (!departments.getDepartments().get(i).containsKey(key)) {
                 return departments;
             }
             for (int j = 0; j < departments.getDepartments().get(i).size(); j++) {

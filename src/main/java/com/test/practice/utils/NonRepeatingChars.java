@@ -11,7 +11,7 @@ public class NonRepeatingChars {
             for (int i = 0; i < charArray.length; i++) {
                 if (c == charArray[i]) {
                     flag = true;
-                    System.out.println("duplicates found "+ c);
+                    System.out.println("duplicates found " + c);
                     break;
                 }
             }
@@ -23,6 +23,7 @@ public class NonRepeatingChars {
             return "Not found";
         }
     }
+
     public static void main(String[] args) {
         System.out.println(firstNonRepeatingCharacters("abahj"));
     }

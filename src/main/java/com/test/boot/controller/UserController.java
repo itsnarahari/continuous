@@ -33,15 +33,16 @@ public class UserController {
     }
 
     @GetMapping(value = "/getUsersByThread", produces = "application/json")
-    public  ResponseEntity getUsers(){
-        CompletableFuture<List<Users>> users1= userService.findAllUsers();
-        CompletableFuture<List<Users>> users2= userService.findAllUsers();
-        CompletableFuture<List<Users>> users3= userService.findAllUsers();
-        CompletableFuture.allOf(users1,users2,users3).join();
-        return  ResponseEntity.status(HttpStatus.OK).build();
+    public ResponseEntity getUsers() {
+        CompletableFuture<List<Users>> users1 = userService.findAllUsers();
+        CompletableFuture<List<Users>> users2 = userService.findAllUsers();
+        CompletableFuture<List<Users>> users3 = userService.findAllUsers();
+        CompletableFuture.allOf(users1, users2, users3).join();
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
+
     @PostMapping(value = "/powerMock", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE}, produces = "application/json")
-    public ResponseEntity utilsResponse(@RequestBody Users users){
-        return new ResponseEntity(userService.staticMockTest(users),HttpStatus.OK);
+    public ResponseEntity utilsResponse(@RequestBody Users users) {
+        return new ResponseEntity(userService.staticMockTest(users), HttpStatus.OK);
     }
 }

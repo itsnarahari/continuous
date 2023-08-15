@@ -1,18 +1,18 @@
 package com.test.practice.utils;
 
 interface AI {
-    default void display(){
+    default void display() {
         System.out.println("AI");
     }
 }
 
-interface BI{
-    default void display(){
+interface BI {
+    default void display() {
         System.out.println("BI");
     }
 }
 
-class MainClass implements AI,BI{
+class MainClass implements AI, BI {
 
     @Override
     public void display() {

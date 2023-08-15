@@ -6,5 +6,6 @@ public abstract class MathUtil {
         return a + b;
     }
 
-    private MathUtil() {}
+    private MathUtil() {
+    }
 }

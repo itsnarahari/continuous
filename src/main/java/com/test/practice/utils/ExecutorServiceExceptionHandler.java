@@ -9,9 +9,9 @@ public class ExecutorServiceExceptionHandler {
         // Create a fixed thread pool executor
         ExecutorService threadPool = new MyThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), 10, 0L, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<>());
-        Object obj=null;
+        Object obj = null;
         for (int i = 1; i <= 100; i++) {
-            obj=i;
+            obj = i;
 //            if(i==5){
 //                obj="MyString";
 //            }
@@ -62,10 +62,11 @@ final class MyTask implements Runnable {
     private Object o;
 
     public MyTask(Object obj) {
-        this.o=obj;
+        this.o = obj;
     }
 
-    @Override public void run() {
+    @Override
+    public void run() {
 //        try {
 //            Thread.sleep(2000);
 //        } catch (InterruptedException e) {

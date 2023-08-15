@@ -9,7 +9,7 @@ public class SockMerchantSolution {
         System.out.println(sockMerchant(ar.length, Arrays.asList(ar)));
     }
 
-    public static int sockMerchant(int n, List<Integer> ar){
+    public static int sockMerchant(int n, List<Integer> ar) {
         HashSet<Integer> set = new HashSet<Integer>();
         int count = 0;
         for (int i = 0; i < n; i++) {

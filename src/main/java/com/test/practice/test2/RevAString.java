@@ -2,7 +2,7 @@ package com.test.practice.test2;
 
 public class RevAString {
 
-    public static String reverseAString(String blogName){
+    public static String reverseAString(String blogName) {
 
 
         String reverse = "";

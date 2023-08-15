@@ -35,6 +35,7 @@ class MyService {
 
         return 45.25;
     }
+
     public static void save(String customerId, double newPoints) {
         // Service to save the data.
     }

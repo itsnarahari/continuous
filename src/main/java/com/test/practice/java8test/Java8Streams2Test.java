@@ -32,9 +32,9 @@ public class Java8Streams2Test {
 //        Map<String, Long> avgAge = employeeList.stream().collect(Collectors.groupingBy(Employee::getDepartment,Collectors.counting()));
 //        System.out.println(avgAge);
         System.out.println("Query 7 : What is the average salary of each department?");
-        Map<String, Double> avgAge = employeeList.stream().collect(Collectors.groupingBy(Employee::getDepartment,Collectors.averagingDouble(Employee::getSalary)));
+        Map<String, Double> avgAge = employeeList.stream().collect(Collectors.groupingBy(Employee::getDepartment, Collectors.averagingDouble(Employee::getSalary)));
         System.out.println(avgAge);
-        DoubleSummaryStatistics employeeSalaryStatistics=
+        DoubleSummaryStatistics employeeSalaryStatistics =
                 employeeList.stream().collect(Collectors.summarizingDouble(Employee::getSalary));
         employeeSalaryStatistics.getAverage();
     }

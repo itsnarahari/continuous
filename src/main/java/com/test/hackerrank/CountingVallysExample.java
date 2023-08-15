@@ -3,7 +3,7 @@ package com.test.hackerrank;
 public class CountingVallysExample {
 
     public static void main(String[] args) {
-        System.out.println(countingValleys(8,"DDUUDDUDUUUD"));
+        System.out.println(countingValleys(8, "DDUUDDUDUUUD"));
     }
 
     public static int countingValleys(int steps, String path) {

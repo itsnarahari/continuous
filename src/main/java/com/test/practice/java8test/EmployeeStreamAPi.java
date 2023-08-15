@@ -13,7 +13,7 @@ public class EmployeeStreamAPi {
 
         List<Employee> employeeList = EmployeeDatasource.getEmployees();
         employeeList.stream().sorted(Comparator.comparing(Employee::getName).thenComparing(Employee::getAge));
-        employeeList.stream().sorted((o1, o2) -> o2.getAge()-o1.getAge())
+        employeeList.stream().sorted((o1, o2) -> o2.getAge() - o1.getAge())
                 .forEach(employee -> System.out.println(employee));
 
     }

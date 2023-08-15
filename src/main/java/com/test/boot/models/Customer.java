@@ -16,8 +16,7 @@ public class Customer implements Serializable {
     private String name;
     private String email;
 
-    @OneToMany(targetEntity = Products.class, mappedBy = "customer", cascade = CascadeType.ALL,fetch = FetchType.LAZY)
+    @OneToMany(targetEntity = Products.class, mappedBy = "customer", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonManagedReference
     private List<Products> products;
-
 }

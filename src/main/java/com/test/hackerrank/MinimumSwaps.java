@@ -20,12 +20,12 @@ public class MinimumSwaps {
                 }
             }
         }
-            System.out.println(Arrays.toString(arr));
-            return count;
+        System.out.println(Arrays.toString(arr));
+        return count;
 
     }
 
     public static void main(String[] args) {
-        System.out.println(minimumSwaps(new int[]{4,3,1,2}));
+        System.out.println(minimumSwaps(new int[]{4, 3, 1, 2}));
     }
 }

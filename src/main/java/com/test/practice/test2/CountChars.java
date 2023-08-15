@@ -2,28 +2,26 @@ package com.test.practice.test2;
 
 public class CountChars {
 
-    public static String countChars(String str){
+    public static String countChars(String str) {
 
 
         char c[] = str.toCharArray();
         char temp = 0;
         StringBuffer sb = new StringBuffer();
-        int counter=1;
-        for(char eachChar:c){
-            if(temp==eachChar){
+        int counter = 1;
+        for (char eachChar : c) {
+            if (temp == eachChar) {
                 counter++;
-            }
-            else {
-                if(counter>1){
+            } else {
+                if (counter > 1) {
                     sb.append(temp).append(counter).toString();
-                    counter=1;
-                }
-                else{
+                    counter = 1;
+                } else {
                     System.out.println("in else");
                     sb.append(temp).append(counter).toString();
-                    counter=1;
+                    counter = 1;
                 }
-                temp=eachChar;
+                temp = eachChar;
             }
         }
         return sb.toString();

@@ -2,9 +2,9 @@ package com.test.practice.test2;
 
 public class MultiThreadingPrintEvenAndOddNumbers {
 
-    int size=10;
-    int counter=0;
-    boolean isOdd=false;
+    int size = 10;
+    int counter = 0;
+    boolean isOdd = false;
 
     public void printEven() throws InterruptedException {
         synchronized (this) {
@@ -19,14 +19,15 @@ public class MultiThreadingPrintEvenAndOddNumbers {
             }
         }
     }
+
     public void printOdd() throws InterruptedException {
-        synchronized (this){
-            while (isOdd==true){
+        synchronized (this) {
+            while (isOdd == true) {
                 wait();
             }
-            System.out.println("Odd number "+ counter);
+            System.out.println("Odd number " + counter);
             counter++;
-            isOdd=false;
+            isOdd = false;
             notify();
         }
     }

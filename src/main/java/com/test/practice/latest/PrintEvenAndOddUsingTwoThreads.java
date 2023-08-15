@@ -2,20 +2,21 @@ package com.test.practice.latest;
 
 public class PrintEvenAndOddUsingTwoThreads {
 
-    public static volatile int counter=1;
+    public static volatile int counter = 1;
 
-    public static synchronized void printOdd(){
+    public static synchronized void printOdd() {
 
-        if(counter%2!=0){
-            System.out.print(counter+" ");
+        if (counter % 2 != 0) {
+            System.out.print(counter + " ");
         }
         counter++;
 
     }
-    public static synchronized void printEven(){
 
-        if(counter%2==0){
-            System.out.print(counter+" ");
+    public static synchronized void printEven() {
+
+        if (counter % 2 == 0) {
+            System.out.print(counter + " ");
         }
         counter++;
 
@@ -24,14 +25,14 @@ public class PrintEvenAndOddUsingTwoThreads {
     public static void main(String[] args) {
 
         for (int i = 1; i < 10; i++) {
-            new Thread(()->{
+            new Thread(() -> {
                 printOdd();
             }).start();
-            new Thread(()->{
+            new Thread(() -> {
                 printEven();
             }).start();
         }
 
-        }
     }
+}
 

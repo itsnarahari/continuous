@@ -34,12 +34,13 @@ public class PostConstructExample {
     @PostConstruct
     public void post() throws SQLException {
 
-        otpSender.sender();;
+        otpSender.sender();
+        ;
 
         jdbcTemplate.query("select * from users", new RowMapper<Object>() {
             @Override
             public Object mapRow(ResultSet rs, int rowNum) throws SQLException {
-                System.out.println("--- "+rs.getString("name"));
+                System.out.println("--- " + rs.getString("name"));
                 return new Object();
             }
         });

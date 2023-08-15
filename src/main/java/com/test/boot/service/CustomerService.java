@@ -10,7 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-@Service@Transactional
+@Service
+@Transactional
 public class CustomerService {
 
     @Autowired
@@ -20,24 +21,28 @@ public class CustomerService {
     ProductRepository productRepository;
 
 
-    public Customer create(Customer customer){
+    public Customer create(Customer customer) {
         customerRepository.save(customer);
         return customer;
     }
-    public List<Customer> findAll(){
+
+    public List<Customer> findAll() {
         return customerRepository.findAll();
     }
-    public Customer findAll(Long id){
+
+    public Customer findAll(Long id) {
         return customerRepository.findById(id).get();
     }
-    public List<Products> findAllProducts(){
+
+    public List<Products> findAllProducts() {
         return productRepository.findAll();
     }
-    public Products findAllProducts(Long id){
+
+    public Products findAllProducts(Long id) {
         return productRepository.findProductsByCustomer(id);
     }
 
-    public List<Customer> findAllCustom(){
+    public List<Customer> findAllCustom() {
         return customerRepository.findAllCustom();
     }
 }

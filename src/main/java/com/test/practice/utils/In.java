@@ -24,13 +24,13 @@ public class In {
 //        unsortMap.entrySet().stream().sorted(Map.Entry.comparingByKey())
 //                .forEach(stringIntegerEntry -> sorted.put(stringIntegerEntry.getKey(),stringIntegerEntry.getValue()));
 
-                Map<String, Integer> sorted = unsortMap.entrySet().stream().sorted(Map.Entry.comparingByKey())
-                .collect(Collectors.toMap(Map.Entry::getKey,Map.Entry::getValue,
-                        (oldValue,newValue)->oldValue, HashMap::new));
+        Map<String, Integer> sorted = unsortMap.entrySet().stream().sorted(Map.Entry.comparingByKey())
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
+                        (oldValue, newValue) -> oldValue, HashMap::new));
 
         Iterator iterator = sorted.entrySet().iterator();
 
-        while (iterator.hasNext()){
+        while (iterator.hasNext()) {
             System.out.println(iterator.next());
         }
 //        System.out.println(sorted);

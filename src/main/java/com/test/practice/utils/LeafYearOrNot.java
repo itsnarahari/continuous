@@ -2,12 +2,11 @@ package com.test.practice.utils;
 
 public class LeafYearOrNot {
 
-    public static boolean leafOrNot(int year){
+    public static boolean leafOrNot(int year) {
 
-        if(((year % 4 == 0) && (year % 100!= 0)) || (year%400 == 0)){
+        if (((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0)) {
             return true;
-        }
-        else {
+        } else {
             return false;
         }
     }

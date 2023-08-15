@@ -15,7 +15,7 @@ public class WordCounter {
             if (i == prevChar) {
                 counter++;
             } else {
-                if(counter>0){
+                if (counter > 0) {
                     stringBuilder.append(prevChar).append(counter);
                     counter = 0;
                 }

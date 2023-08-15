@@ -10,20 +10,20 @@ public class RemoteOps {
     public static void main(String[] args) throws JsonProcessingException {
 
         List<RemoteOperation> remoteOps1 = Arrays.asList(
-                new RemoteOperation("2020-06-29T11:32:53","v1"),
-                new RemoteOperation("2020-06-30T11:32:54","v2"),
-                new RemoteOperation("2020-06-05T11:32:53","v3"),
-                new RemoteOperation("2020-05-09T11:32:53","v4"),
-                new RemoteOperation("2020-06-30T11:32:53","v5")
-                );
+                new RemoteOperation("2020-06-29T11:32:53", "v1"),
+                new RemoteOperation("2020-06-30T11:32:54", "v2"),
+                new RemoteOperation("2020-06-05T11:32:53", "v3"),
+                new RemoteOperation("2020-05-09T11:32:53", "v4"),
+                new RemoteOperation("2020-06-30T11:32:53", "v5")
+        );
 
         List<RemoteOperation> remoteOps2 = Arrays.asList(
-                new RemoteOperation("2020-04-29T11:32:53","v1"),
-                new RemoteOperation("2020-06-30T11:32:54","v2"),
-                new RemoteOperation("2020-03-05T11:32:53","v3"),
-                new RemoteOperation("2020-05-09T11:32:53","v4"),
-                new RemoteOperation("2020-01-30T11:32:53","v5"),
-                new RemoteOperation("2021-01-30T11:32:53","v8")
+                new RemoteOperation("2020-04-29T11:32:53", "v1"),
+                new RemoteOperation("2020-06-30T11:32:54", "v2"),
+                new RemoteOperation("2020-03-05T11:32:53", "v3"),
+                new RemoteOperation("2020-05-09T11:32:53", "v4"),
+                new RemoteOperation("2020-01-30T11:32:53", "v5"),
+                new RemoteOperation("2021-01-30T11:32:53", "v8")
 
         );
         List<RemoteOperation> list = new ArrayList<>();
@@ -41,7 +41,7 @@ public class RemoteOps {
             else
                 return 1;
         });
-        List<RemoteOperation> finalResponse= list.subList(0,1);
+        List<RemoteOperation> finalResponse = list.subList(0, 1);
 
     }
 }

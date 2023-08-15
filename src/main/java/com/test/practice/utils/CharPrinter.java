@@ -20,6 +20,7 @@ public class CharPrinter {
         }
         return stringBuilder.toString();
     }
+
     public static void main(String[] args) {
         System.out.println(charPrinter("3a2a13bxy"));
     }

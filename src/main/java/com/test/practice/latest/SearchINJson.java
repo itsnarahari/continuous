@@ -10,7 +10,7 @@ public class SearchINJson {
 
     static List<JSONObject> list = new ArrayList();
 
-    public static JSONObject restrictSalaryByDepartName(JSONObject jsonObject, String department){
+    public static JSONObject restrictSalaryByDepartName(JSONObject jsonObject, String department) {
         JSONArray departments = jsonObject.getJSONArray("departments");
         JSONArray innerArray = new JSONArray();
         JSONObject rootObject = new JSONObject();
@@ -23,7 +23,7 @@ public class SearchINJson {
                 object1.remove("salary");
                 jsonArray.put(object1);
             }
-            object.put(department,jsonArray);
+            object.put(department, jsonArray);
             innerArray.put(object);
         }
         rootObject.put("departments", innerArray);

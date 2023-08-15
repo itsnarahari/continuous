@@ -27,8 +27,8 @@ public class EventsMapper implements RowMapper<List> {
         delivery.setItemName(String.valueOf(rs.getInt("id")));
         delivery.setEventName("delivery");
 
-        String temp = "assigned: "+new ObjectMapper().writeValueAsString(assigned);
-        String temp2 = "delivery: "+new ObjectMapper().writeValueAsString(delivery);
+        String temp = "assigned: " + new ObjectMapper().writeValueAsString(assigned);
+        String temp2 = "delivery: " + new ObjectMapper().writeValueAsString(delivery);
 
         list.add(temp);
         list.add(temp2);

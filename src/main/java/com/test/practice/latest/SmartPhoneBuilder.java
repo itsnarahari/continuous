@@ -39,7 +39,7 @@ public class SmartPhoneBuilder {
         return this;
     }
 
-    public SmartPhone getSmartPhone(){
-        return new SmartPhone(name,brand,os,processor,color,camera);
+    public SmartPhone getSmartPhone() {
+        return new SmartPhone(name, brand, os, processor, color, camera);
     }
 }

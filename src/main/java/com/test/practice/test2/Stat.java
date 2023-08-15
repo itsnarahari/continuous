@@ -7,10 +7,16 @@ public class Stat {
         A a = new B();
         a.printMe();
     }
+
     static class A {
-        static void printMe() { System.out.println("Hi from A"); }
+        static void printMe() {
+            System.out.println("Hi from A");
+        }
     }
+
     static class B extends A {
-        static void printMe() { System.out.println("Hi from B"); }
+        static void printMe() {
+            System.out.println("Hi from B");
+        }
     }
 }
