@@ -12,19 +12,10 @@ public class ArrayRotationBothExample {
         int v2 = 1;
         ++v2;
         System.out.println(v2);
-        int arr[] = {1, 2, 3, 4, 5};
-
-        for (int i = 0; i < 3; i++) {
-            int temp = arr[0];
-            for (int j = 0; j < arr.length - 1; j++) {
-                arr[j] = arr[j + 1];
-            }
-            arr[arr.length - 1] = temp;
-        }
-        System.out.println("ds" + Arrays.toString(arr));
+        int arr[] = {1, 2, 3, 4, 5,6,7};
 
         System.out.println(Arrays.toString(arr));
-        System.out.println(Arrays.toString(leftToRight(arr, 3)));
+//        System.out.println(Arrays.toString(leftToRight(arr, 3)));
         System.out.println(Arrays.toString(rightToLeft(arr, 3)));
     }
 
@@ -41,6 +32,8 @@ public class ArrayRotationBothExample {
     }
 
     public static int[] rightToLeft(int arr[], int k) {
+
+        //Input: nums = [1,2,3,4,5,6,7], k = 3
         System.out.println("rightToLeft");
         for (int i = 0; i < k; i++) {
             int temp = arr[arr.length - 1];
