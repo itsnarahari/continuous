@@ -1,10 +1,12 @@
 package com.test.practice.oops;
 
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.List;
 
 class Parent {
 
-    public void m1() {
+    public void m1() throws NullPointerException {
         System.out.println("m1");
     }
 
@@ -33,15 +35,15 @@ class Parent {
 }
 
 class Child extends Parent {
+
+    public void m1()throws RuntimeException {
+        System.out.println("m1");
+    }
+
     @Override
     public double pro() {
         System.out.println("m2");
         return 0;
-    }
-
-    @Override
-    public void m1() {
-        System.out.println("From Child m1");
     }
 
     @Override
@@ -59,5 +61,11 @@ public class Inheritance {
     public static void main(String[] args) {
         Parent parent = new Child();
         parent.pro();
+
+        List<String> list= new ArrayList<>();
+        System.out.println(list!=null);
+
     }
+
+
 }

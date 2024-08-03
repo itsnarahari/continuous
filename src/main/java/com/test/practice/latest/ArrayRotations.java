@@ -28,7 +28,7 @@ public class ArrayRotations {
     public static void main(String[] args) {
         int[] inputs = {1, 2, 3, 4, 5, 6};
         int k = 2;
-        System.out.println("rightToLeft");
+        System.out.println("leftToRight");
         System.out.println("Input");
         System.out.println(Arrays.toString(inputs));
         int[] ints = leftToRight(inputs, k);

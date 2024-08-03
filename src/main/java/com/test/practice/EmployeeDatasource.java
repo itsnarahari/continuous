@@ -25,7 +25,6 @@ public class EmployeeDatasource {
         employeeList.add(new Employee(255, "Ali Baig", 23, "Male", "Infrastructure", 2018, 12700.0, "9879879787", "ali@gmail.com", "email"));
         employeeList.add(new Employee(266, "Sanvi Pandey", 26, "Female", "Product Development", 2015, 28900.0, "55564646", "sanvi@gmail.com", "email"));
         employeeList.add(new Employee(277, "Anuj Chettiar", 31, "Male", "Product Development", 2012, 35700.0, "98789789778", "anuj@gmail.com", "mobile"));
-
         return employeeList;
     }
 }

@@ -4,16 +4,19 @@ package com.test.boot.controller;
 import com.test.boot.models.Users;
 import com.test.boot.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-@RestController
+@Component
 public class UserController {
 
     @Autowired
@@ -44,5 +47,10 @@ public class UserController {
     @PostMapping(value = "/powerMock", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE}, produces = "application/json")
     public ResponseEntity utilsResponse(@RequestBody Users users) {
         return new ResponseEntity(userService.staticMockTest(users), HttpStatus.OK);
+    }
+
+    @GetMapping
+    public ResponseEntity<?> test() {
+        return new ResponseEntity("done", HttpStatus.OK);
     }
 }

@@ -2,6 +2,7 @@ package com.test.practice.java8test;
 
 import com.test.practice.Employee;
 import com.test.practice.EmployeeDatasource;
+import org.springframework.context.annotation.Configuration;
 
 import java.util.*;
 import java.util.function.Function;
@@ -60,7 +61,7 @@ public class Java8StreamTest2 {
         String s = Arrays.stream(input.split(""))
                 .collect(Collectors.groupingBy(Function.identity(), LinkedHashMap::new, Collectors.counting()))
                 .entrySet().stream().filter(stringLongEntry -> stringLongEntry.getValue() > 1L)
-                .map(stringLongEntry -> stringLongEntry.getKey()).findFirst().get();
+                .map(Map.Entry::getKey).findFirst().get();
         System.out.println(s);
 
         //Q9 Given a list of integers, sort all the values present in it using Stream functions?
@@ -150,7 +151,6 @@ public class Java8StreamTest2 {
         System.out.println(avgAgeOfMaleAndFemale);
 
         System.out.println("Query 4 : Get the details of highest paid employee in the organization?");
-
         Employee employee = employeeList.stream().max(Comparator.comparing(Employee::getSalary)).get();
         System.out.println(employee);
 
@@ -188,7 +188,7 @@ public class Java8StreamTest2 {
 
         System.out.println("Collectors partitioningBy() method in Java");
         Stream<Integer> stream = Stream.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
-        Map<Boolean, List<Integer>> collect8 = stream.collect(Collectors.partitioningBy(integer3 -> integer3 > 5));
+        Map<Boolean, List<Integer>> collect8 = stream.collect(Collectors.partitioningBy(integer3 -> integer3 > 3));
         System.out.println(collect8);
 
         // Given a list of numbers, square them and filter the numbers

@@ -1,17 +1,17 @@
 package com.test.practice.latest;
 
-public class ExceptionPropagation {
+import java.io.IOException;
 
-    public static void main(String[] args) {
-        ExceptionPropagation exceptionPropagation = new ExceptionPropagation();
-        exceptionPropagation.m2();
-    }
-
-    public void m1() {
-        System.out.println("m1");
-    }
-
-    public void m2() throws NullPointerException {
-        m1();
+class P{
+    public void m1() throws Exception{
     }
 }
+class C extends P{
+    public void m1() throws Exception {
+
+    }
+}
+public class ExceptionPropagation {
+
+}
+

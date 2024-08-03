@@ -5,8 +5,9 @@ import java.util.Map;
 
 class Parent {
 
-    public static void m2() throws Exception {
+    public String m2() throws Exception {
         System.out.println("parent m2");
+        return null;
     }
 
     private static void m3() {
@@ -23,16 +24,23 @@ class Parent {
 }
 
 class Child extends Parent {
+
+    public String m2() throws RuntimeException{
+        System.out.println("child m2");
+        return null;
+    }
     @Override
-    public void m1() throws NullPointerException {
+    public void m1() {
         System.out.println("sds ");
     }
 }
 
 public class InheritanceException {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
 
+        Parent p = new Child();
+        System.out.println(p.m2());
         Map<Integer, String> map = new HashMap<>();
         map.put(12, "abcd");
         String f = map.put(12, "f");

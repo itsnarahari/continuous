@@ -1,9 +1,6 @@
 package com.test.practice;
 
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Test {
@@ -48,5 +45,12 @@ public class Test {
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (s, s2) -> s, LinkedHashMap::new));
 
         System.out.println(collect);
+
+        System.out.println(123/10);
+        System.out.println(123%10);
+
+        SetterAndGetterTest setterAndGetterTest = new SetterAndGetterTest();
+        setterAndGetterTest.setName("babu");
+        System.out.println(setterAndGetterTest.getName());
     }
 }

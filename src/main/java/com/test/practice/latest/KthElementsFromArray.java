@@ -6,6 +6,12 @@ import java.util.PriorityQueue;
 
 public class KthElementsFromArray {
 
+    public static int findKthLargestValueByStreamAPI(List list, int k){
+        if(list.size()!=k){
+            return -1;
+        }
+        return (int) list.stream().sorted().skip(k-1).findFirst().get();
+    }
     public static int findKthLargest(List<Integer> ints, int k) {
         // base case
         if (ints == null || ints.size() < k) {
@@ -32,7 +38,11 @@ public class KthElementsFromArray {
 
     public static void main(String[] args) {
         List<Integer> ints = Arrays.asList(7, 4, 6, 3, 9, 1);
-        int k = 4;
+        int k = 7;
+        System.out.println(findKthLargestValueByStreamAPI(ints, k));
+//        // 1,3,4,6,7,9
+//        Integer i = ints.stream().sorted().skip(k-1).findFirst().get();
+//        System.out.println(i);
 
         System.out.println("k'th largest array element is " + findKthLargest(ints, k));
     }

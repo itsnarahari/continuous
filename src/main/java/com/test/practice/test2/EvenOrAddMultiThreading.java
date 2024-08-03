@@ -2,16 +2,16 @@ package com.test.practice.test2;
 
 public class EvenOrAddMultiThreading {
 
-    int val = 1;
+    int val = 0;
 
     public synchronized void printEvenNumber() {
         val++;
-        System.out.print(val);
+        System.out.print(val+", ");
     }
 
     public synchronized void oddEvenNumber() {
         val++;
-        System.out.print(val);
+        System.out.print(val+", ");
     }
 
     public static void main(String[] args) {

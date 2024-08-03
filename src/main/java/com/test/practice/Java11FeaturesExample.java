@@ -17,6 +17,14 @@ import java.util.stream.Stream;
 
 public class Java11FeaturesExample {
 
+    public static void m1(Integer i1, Integer i2){
+
+    }
+
+    public static void m1(int i1, int i2){
+
+    }
+
     public static void main(String[] args) throws IOException, URISyntaxException, InterruptedException {
 
         // Single line command execute.
@@ -57,6 +65,7 @@ public class Java11FeaturesExample {
         System.out.println("String utility methods -------------> ");
         String str = " Narahari  ";
         System.out.println(str.isBlank());
+        System.out.println(str.isEmpty());
         System.out.println(str.strip());
         System.out.println(str.stripLeading());
         System.out.println(str.stripTrailing());
