@@ -63,6 +63,9 @@ public class NaveenTest {
 //            System.out.println(stringOptionalEntry.getValue().get().getSalary());
         });
 
+        List<Employee> collect1 = employees.stream().filter(employee -> employee.getSalary() <= 15000).peek(employee -> employee.setSalary(employee.getSalary() + 5000)).collect(Collectors.toList());
+        System.out.println("Transform");
+        System.out.println(collect1);
     }
     public static void m1(String str){
         try{
