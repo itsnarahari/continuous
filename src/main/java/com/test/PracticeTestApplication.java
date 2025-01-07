@@ -22,7 +22,6 @@ public class PracticeTestApplication {
         singletonBean.getPrototypeBean();
         return new RestTemplate();
     }
-
     public static void main(String[] args) {
         SpringApplication.run(PracticeTestApplication.class, args);
     }
