@@ -2,6 +2,9 @@ package com.test.boot.config;
 
 import com.test.boot.dao.UserRepository;
 import com.test.boot.service.OTPSender;
+import jakarta.annotation.PostConstruct;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.hibernate.metamodel.spi.MetamodelImplementor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -9,9 +12,6 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.orm.jpa.EntityManagerFactoryInfo;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;

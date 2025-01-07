@@ -1,11 +1,7 @@
 package com.test;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import java.text.DecimalFormat;
-import java.util.Arrays;
-import java.util.Calendar;
+import jakarta.persistence.Column;
+import jakarta.persistence.Id;
 import java.util.Date;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;

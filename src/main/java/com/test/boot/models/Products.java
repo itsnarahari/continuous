@@ -1,12 +1,12 @@
 package com.test.boot.models;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import jakarta.persistence.*;
 import lombok.Data;
 
-import javax.persistence.*;
 import java.io.Serializable;
 
-
+import jakarta.persistence.Entity;
 @Entity
 @Data
 public class Products implements Serializable {

@@ -1,6 +1,5 @@
 package com.test.practice.func;
 
-import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 
 interface FuncInterface {
@@ -31,9 +30,6 @@ interface FuncInterface {
 }
 
 public class FunctionalInterfaceExample {
-    @PostConstruct
-    public void fooInit() {
-    }
 
     public static void main(String[] args) {
         FuncInterface funcInterface = (a, b) -> a + b;

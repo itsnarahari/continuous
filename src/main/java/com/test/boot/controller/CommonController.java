@@ -1,11 +1,13 @@
 package com.test.boot.controller;
 
-import com.test.boot.config.CommonConfiguration;
 import com.test.boot.config.SingletonBean;
 import com.test.boot.models.*;
 import com.test.boot.service.CommonServices;
 import com.test.boot.service.PlanetService;
+import com.test.practice.Employee;
 import com.test.praveen.EventsRunner;
+import jakarta.validation.Valid;
+import org.hibernate.dialect.MySQLDialect;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -19,7 +21,6 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
-import javax.validation.Valid;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -27,10 +28,6 @@ import java.util.stream.Collectors;
 @RequestMapping("/common")
 @RestController
 public class CommonController {
-
-
-    @Autowired
-    CommonConfiguration commonConfiguration;
 
     @Autowired
     EventsRunner eventsRunner;
@@ -60,10 +57,9 @@ public class CommonController {
     @GetMapping("/check")
     public ResponseEntity singleton() {
 
-        employee.setId(1L);
+        employee.setId(1);
         employee.setName("Narahari");
         address.setCity("Hyderabad");
-        employee.setAddress(address);
 
         return ResponseEntity.status(HttpStatus.OK).body(employee);
     }

@@ -39,7 +39,7 @@ public class CustomerService {
     }
 
     public Products findAllProducts(Long id) {
-        return productRepository.findProductsByCustomer(id);
+        return null;
     }
 
     public List<Customer> findAllCustom() {
