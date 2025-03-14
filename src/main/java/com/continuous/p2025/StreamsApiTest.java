@@ -127,5 +127,77 @@ public class StreamsApiTest {
         String str="Java is good and Java is powerful";
         List<String> uniqueWords = Arrays.stream(str.split(" ")).distinct().collect(Collectors.toList());
         System.out.println(uniqueWords);
+
+
+        // Measure execution time for Streams
+        long start1 = System.nanoTime();
+        List<String> streamNames = employees.stream()
+                .map(Employee::getName)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+        long end1 = System.nanoTime();
+        System.out.println("Streams Execution Time: " + (end1 - start1) / 1_000_000 + " ms");
+
+        // Measure execution time for For-Loop
+        long start2 = System.nanoTime();
+        List<String> loopNames = new ArrayList<>();
+        for (Employee employee : employees) {
+            String name = employee.getName();
+            if (name != null) {
+                loopNames.add(name);
+            }
+        }
+        long end2 = System.nanoTime();
+        System.out.println("For-Loop Execution Time: " + (end2 - start2) / 1_000_000 + " ms");
+
+        employees.stream().map(Employee::getName).filter(Objects::nonNull);
+
+        System.out.println("Q #19) Write a program to print 5 random numbers in sorted order using forEach in Java 8?\n");
+        new Random().ints().limit(5).sorted().forEach(System.out::println);
+
+        System.out.println("Q #21) Write a Java 8 program to get the sum of all numbers present in a list?\n" +
+                "\n");
+        List<Integer> list2=new ArrayList<>();
+        list2.add(10);
+        list2.add(20);
+        list2.add(300);
+        list2.add(40);
+        list2.add(50);
+        int sum = list2.stream().mapToInt(Integer::intValue).sum();
+        System.out.println(sum);
+
+        //Write a Java 8 program to square the list of numbers and then filter out the numbers greater than 100 and then find the average of the remaining numbers?
+        System.out.println("Write a Java 8 program to square the list of numbers and then filter out the numbers greater than 100 and then find the average of the remaining numbers?");
+        OptionalDouble average = list2.stream().mapToInt(value -> value * 2).filter(value -> value > 100).average();
+        System.out.println(average.orElse(-1));
+
+        //Write a Java 8 program to find the number of Strings in a list whose length is greater than 5?
+        List<String> strings=List.of("manam","babu mahi","ujhy");
+        long count = strings.stream().filter(s -> s.length() > 5).count();
+        System.out.println(count);
+
+        //Write a Java 8 program to remove the duplicate elements from the list?
+        Integer[] arr1 = new Integer[] { 1, 9, 8, 7, 7, 8, 9 };
+        List<Integer> collect5 = List.of(arr1).stream().filter(integer -> Collections.frequency(List.of(arr1), integer)<1).collect(Collectors.toList());
+        System.out.println(collect5);
+
+        // Group employees by hobby
+        // Grouping employees by each hobby
+        Map<String, List<String>> groupedByHobby = employees.stream()
+                .flatMap(emp -> emp.getHobbies().stream().map(hobby -> Map.entry(hobby, emp.getName())))
+                .collect(Collectors.groupingBy(Map.Entry::getKey,
+                        Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
+        System.out.println(groupedByHobby);
+
+        Map<String, List<String>> collect6 = employees.stream()
+                .flatMap(emp -> emp.getHobbies().stream().map(hobby -> Map.entry(hobby, emp.getName())))
+                .collect(Collectors.groupingBy(Map.Entry::getKey,
+                        Collectors.mapping(Map.Entry::getValue, Collectors.toList())))
+                .entrySet()
+                .stream()
+                .sorted(Map.Entry.comparingByKey())
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (oldValue, newValue) -> oldValue, LinkedHashMap::new));
+        System.out.println(collect6);
     }
+
 }

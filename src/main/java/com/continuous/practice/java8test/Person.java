@@ -15,15 +15,16 @@ public class Person {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Person person = (Person) o;
-        return id == person.id;
+        return true;
+//        if (o == null || getClass() != o.getClass()) return false;
+//        Person person = (Person) o;
+//        return id == person.id && Objects.equals(name, person.name);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(id, name);
+
     }
 }
 
@@ -33,7 +34,6 @@ class PersonHandler{
         personSet.add(new Person(1,"babu"));
         personSet.add(new Person(2,"babu"));
         personSet.add(new Person(2,"babu"));
-
         System.out.println(personSet.size());
     }
 }
