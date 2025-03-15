@@ -47,3 +47,21 @@ public class FuncInterface {
         System.out.println(add);
     }
 }
+
+interface A {
+    default void doSomething() {
+        System.out.println("A's implementation");
+    }
+}
+interface B {
+    default void doSomething() {
+        System.out.println("B's implementation");
+    }
+}
+class C implements A, B {
+    @Override
+    public void doSomething() {
+        A.super.doSomething();
+// How will you resolve the conflict here?
+    }
+}
