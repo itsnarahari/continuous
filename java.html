@@ -21438,6 +21438,295 @@ mvn test
     </div>
 </div>
 
+### Java 8 Features and Examples
+
+<div class="accordion-item bg-secondary">
+    <h2 class="accordion-header">
+        <button class="accordion-button bg-dark text-light" type="button" data-bs-toggle="collapse" data-bs-target="#q1">
+            ⚡ Lambda Expressions
+        </button>
+    </h2>
+    <div id="q1" class="accordion-collapse collapse" data-bs-parent="#qaAccordion">
+        <div class="accordion-body">
+            <b class="text-warning">Description:</b>
+            <p>Lambda expressions provide a clear and concise way to represent a method interface using an expression. They eliminate the need for anonymous class implementations.</p>
+            <pre class="bg-dark text-light p-2 rounded overflow-auto"><code>// Example of Lambda Expression
+List<String> names = Arrays.asList("John", "Jane", "Jack", "Jill");
+names.forEach(name -> System.out.println(name));
+</code></pre>
+        </div>
+    </div>
+</div>
+
+<div class="accordion-item bg-secondary">
+    <h2 class="accordion-header">
+        <button class="accordion-button bg-dark text-light" type="button" data-bs-toggle="collapse" data-bs-target="#q2">
+            ⚡ Functional Interfaces
+        </button>
+    </h2>
+    <div id="q2" class="accordion-collapse collapse" data-bs-parent="#qaAccordion">
+        <div class="accordion-body">
+            <b class="text-warning">Description:</b>
+            <p>Functional interfaces are new additions in Java 8 that have only one abstract method. They can be represented using lambda expressions.</p>
+            <pre class="bg-dark text-light p-2 rounded overflow-auto"><code>// Example of Functional Interface
+@FunctionalInterface
+interface MyFunctionalInterface {
+    void display(String message);
+}
+public class FunctionalInterfaceExample {
+    public static void main(String[] args) {
+        MyFunctionalInterface message = msg -> System.out.println(msg);
+        message.display("Hello, Functional Interface!");
+    }
+}
+</code></pre>
+        </div>
+    </div>
+</div>
+
+<div class="accordion-item bg-secondary">
+    <h2 class="accordion-header">
+        <button class="accordion-button bg-dark text-light" type="button" data-bs-toggle="collapse" data-bs-target="#q3">
+            ⚡ Method References
+        </button>
+    </h2>
+    <div id="q3" class="accordion-collapse collapse" data-bs-parent="#qaAccordion">
+        <div class="accordion-body">
+            <b class="text-warning">Description:</b>
+            <p>Method references provide a way to refer to methods without invoking them. They are used to replace lambda expressions with method calls.</p>
+            <pre class="bg-dark text-light p-2 rounded overflow-auto"><code>// Example of Method Reference
+List<String> names = Arrays.asList("John", "Jane", "Jack", "Jill");
+names.forEach(System.out::println);
+</code></pre>
+        </div>
+    </div>
+</div>
+
+<div class="accordion-item bg-secondary">
+    <h2 class="accordion-header">
+        <button class="accordion-button bg-dark text-light" type="button" data-bs-toggle="collapse" data-bs-target="#q4">
+            ⚡ Streams API
+        </button>
+    </h2>
+    <div id="q4" class="accordion-collapse collapse" data-bs-parent="#qaAccordion">
+        <div class="accordion-body">
+            <b class="text-warning">Description:</b>
+            <p>The Streams API allows processing sequences of elements in a functional style. Streams can be used to perform operations like map, filter, collect, etc.</p>
+            <pre class="bg-dark text-light p-2 rounded overflow-auto"><code>// Example of Streams API
+List<String> names = Arrays.asList("John", "Jane", "Jack", "Jill");
+List<String> filteredNames = names.stream()
+    .filter(name -> name.startsWith("J"))
+    .collect(Collectors.toList());
+System.out.println(filteredNames); // Output: [John, Jane, Jack, Jill]
+</code></pre>
+        </div>
+    </div>
+</div>
+
+<div class="accordion-item bg-secondary">
+    <h2 class="accordion-header">
+        <button class="accordion-button bg-dark text-light" type="button" data-bs-toggle="collapse" data-bs-target="#q5">
+            ⚡ Default Methods
+        </button>
+    </h2>
+    <div id="q5" class="accordion-collapse collapse" data-bs-parent="#qaAccordion">
+        <div class="accordion-body">
+            <b class="text-warning">Description:</b>
+            <p>Default methods allow interfaces to have methods with implementation. This helps in adding new methods to interfaces without breaking existing implementations.</p>
+            <pre class="bg-dark text-light p-2 rounded overflow-auto"><code>// Example of Default Method
+interface MyInterface {
+    void existingMethod();
+    default void newMethod() {
+        System.out.println("New default method");
+    }
+}
+class MyClass implements MyInterface {
+    public void existingMethod() {
+        System.out.println("Existing method implementation");
+    }
+}
+public class DefaultMethodExample {
+    public static void main(String[] args) {
+        MyClass obj = new MyClass();
+        obj.existingMethod();
+        obj.newMethod();
+    }
+}
+</code></pre>
+        </div>
+    </div>
+</div>
+
+<div class="accordion-item bg-secondary">
+    <h2 class="accordion-header">
+        <button class="accordion-button bg-dark text-light" type="button" data-bs-toggle="collapse" data-bs-target="#q6">
+            ⚡ Optional Class
+        </button>
+    </h2>
+    <div id="q6" class="accordion-collapse collapse" data-bs-parent="#qaAccordion">
+        <div class="accordion-body">
+            <b class="text-warning">Description:</b>
+            <p>The <code>Optional</code> class is a container object which may or may not contain a non-null value. It helps to avoid null checks and NullPointerExceptions.</p>
+            <pre class="bg-dark text-light p-2 rounded overflow-auto"><code>// Example of Optional Class
+Optional<String> optional = Optional.ofNullable("example");
+optional.ifPresent(System.out::println); // prints "example"
+Optional<String> emptyOptional = Optional.ofNullable(null);
+System.out.println(emptyOptional.isPresent()); // prints "false"
+</code></pre>
+        </div>
+    </div>
+</div>
+
+<div class="accordion-item bg-secondary">
+    <h2 class="accordion-header">
+        <button class="accordion-button bg-dark text-light" type="button" data-bs-toggle="collapse" data-bs-target="#q7">
+            ⚡ Nashorn JavaScript Engine
+        </button>
+    </h2>
+    <div id="q7" class="accordion-collapse collapse" data-bs-parent="#qaAccordion">
+        <div class="accordion-body">
+            <b class="text-warning">Description:</b>
+            <p>Nashorn is a new JavaScript engine introduced in Java 8. It allows embedding JavaScript code within Java applications and interacting with it.</p>
+            <pre class="bg-dark text-light p-2 rounded overflow-auto"><code>// Example of Nashorn JavaScript Engine
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
+
+public class NashornExample {
+    public static void main(String[] args) throws ScriptException {
+        ScriptEngine engine = new ScriptEngineManager().getEngineByName("nashorn");
+        engine.eval("print('Hello, Nashorn');");
+    }
+}
+</code></pre>
+        </div>
+    </div>
+</div>
+
+<div class="accordion-item bg-secondary">
+    <h2 class="accordion-header">
+        <button class="accordion-button bg-dark text-light" type="button" data-bs-toggle="collapse" data-bs-target="#q8">
+            ⚡ Date and Time API
+        </button>
+    </h2>
+    <div id="q8" class="accordion-collapse collapse" data-bs-parent="#qaAccordion">
+        <div class="accordion-body">
+            <b class="text-warning">Description:</b>
+            <p>The new Date and Time API in Java 8 provides a comprehensive and flexible way to handle dates and times. It includes classes like <code>LocalDate</code>, <code>LocalTime</code>, and <code>LocalDateTime</code>.</p>
+            <pre class="bg-dark text-light p-2 rounded overflow-auto"><code>// Example of Date and Time API
+LocalDate date = LocalDate.now();
+LocalTime time = LocalTime.now();
+LocalDateTime dateTime = LocalDateTime.now();
+
+System.out.println("Date: " + date);
+System.out.println("Time: " + time);
+System.out.println("DateTime: " + dateTime);
+</code></pre>
+        </div>
+    </div>
+</div>
+
+<div class="accordion-item bg-secondary">
+    <h2 class="accordion-header">
+        <button class="accordion-button bg-dark text-light" type="button" data-bs-toggle="collapse" data-bs-target="#q9">
+            ⚡ Stream API: Intermediate Operations
+        </button>
+    </h2>
+    <div id="q9" class="accordion-collapse collapse" data-bs-parent="#qaAccordion">
+        <div class="accordion-body">
+            <b class="text-warning">Description:</b>
+            <p>Intermediate operations are those operations that return another stream which means you can chain multiple intermediate operations without closing the stream.</p>
+            <p>Some common intermediate operations:</p>
+            <ul>
+                <li><b>filter:</b> Filters elements based on a predicate.
+                    <pre class="bg-dark text-light p-2 rounded overflow-auto"><code>// Example of filter operation
+List<String> names = Arrays.asList("John", "Jane", "Jack", "Jill");
+List<String> filteredNames = names.stream()
+    .filter(name -> name.startsWith("J"))
+    .collect(Collectors.toList());
+System.out.println(filteredNames); // Output: [John, Jane, Jack, Jill]
+</code></pre>
+                </li>
+                <li><b>map:</b> Transforms elements using a function.
+                    <pre class="bg-dark text-light p-2 rounded overflow-auto"><code>// Example of map operation
+List<String> names = Arrays.asList("John", "Jane", "Jack", "Jill");
+List<Integer> nameLengths = names.stream()
+    .map(String::length)
+    .collect(Collectors.toList());
+System.out.println(nameLengths); // Output: [4, 4, 4, 4]
+</code></pre>
+                </li>
+                <li><b>flatMap:</b> Transforms each element into a stream and flattens the streams into a single stream.
+                    <pre class="bg-dark text-light p-2 rounded overflow-auto"><code>// Example of flatMap operation
+List<List<String>> listOfLists = Arrays.asList(
+    Arrays.asList("a", "b", "c"),
+    Arrays.asList("d", "e", "f"),
+    Arrays.asList("g", "h", "i")
+);
+List<String> flatList = listOfLists.stream()
+    .flatMap(List::stream)
+    .collect(Collectors.toList());
+System.out.println(flatList); // Output: [a, b, c, d, e, f, g, h, i]
+</code></pre>
+                </li>
+                <li><b>sorted:</b> Sorts the elements.
+                    <pre class="bg-dark text-light p-2 rounded overflow-auto"><code>// Example of sorted operation
+List<String> names = Arrays.asList("John", "Jane", "Jack", "Jill");
+List<String> sortedNames = names.stream()
+    .sorted()
+    .collect(Collectors.toList());
+System.out.println(sortedNames); // Output: [Jack, Jane, Jill, John]
+</code></pre>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div class="accordion-item bg-secondary">
+    <h2 class="accordion-header">
+        <button class="accordion-button bg-dark text-light" type="button" data-bs-toggle="collapse" data-bs-target="#q10">
+            ⚡ Stream API: Terminal Operations
+        </button>
+    </h2>
+    <div id="q10" class="accordion-collapse collapse" data-bs-parent="#qaAccordion">
+        <div class="accordion-body">
+            <b class="text-warning">Description:</b>
+            <p>Terminal operations are those operations that close the stream and produce a result.</p>
+            <p>Some common terminal operations:</p>
+            <ul>
+                <li><b>forEach:</b> Performs an action for each element.
+                    <pre class="bg-dark text-light p-2 rounded overflow-auto"><code>// Example of forEach operation
+List<String> names = Arrays.asList("John", "Jane", "Jack", "Jill");
+names.stream().forEach(System.out::println);
+</code></pre>
+                </li>
+                <li><b>collect:</b> Collects the elements into a collection.
+                    <pre class="bg-dark text-light p-2 rounded overflow-auto"><code>// Example of collect operation
+List<String> names = Arrays.asList("John", "Jane", "Jack", "Jill");
+List<String> collectedNames = names.stream().collect(Collectors.toList());
+System.out.println(collectedNames); // Output: [John, Jane, Jack, Jill]
+</code></pre>
+                </li>
+                <li><b>reduce:</b> Performs a reduction on the elements of the stream.
+                    <pre class="bg-dark text-light p-2 rounded overflow-auto"><code>// Example of reduce operation
+List<Integer> numbers = Arrays.asList(1, 2, 3, 4, 5);
+Optional<Integer> sum = numbers.stream().reduce(Integer::sum);
+sum.ifPresent(System.out::println); // Output: 15
+</code></pre>
+                </li>
+                <li><b>count:</b> Returns the count of elements.
+                    <pre class="bg-dark text-light p-2 rounded overflow-auto"><code>// Example of count operation
+List<String> names = Arrays.asList("John", "Jane", "Jack", "Jill");
+long count = names.stream().count();
+System.out.println(count); // Output: 4
+</code></pre>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
 
 
             <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
