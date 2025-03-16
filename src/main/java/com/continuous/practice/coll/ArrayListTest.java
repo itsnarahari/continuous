@@ -1,6 +1,7 @@
 package com.continuous.practice.coll;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public class ArrayListTest {
@@ -23,6 +24,17 @@ public class ArrayListTest {
             sList.remove(i);
             sList.add(i);
         }
-        System.out.println(sList);
+
+//        Iterator<Integer> iterator = sList.iterator();
+//        while (iterator.hasNext()){
+//            sList.remove(iterator.next());
+//            sList.add(34);
+//        }
+
+        for(Integer i:sList){
+            sList.remove(i);
+            sList.add(34);
+        }
+
     }
 }

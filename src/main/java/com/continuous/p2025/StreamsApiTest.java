@@ -5,6 +5,7 @@ import com.continuous.practice.EmployeeDatasource;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -52,9 +53,9 @@ public class StreamsApiTest {
 //        System.out.println(c1);
 
         System.out.println("10. Find Maximum & Minimum Number in a List (Fresher Level)");
-        List<Integer> numbers = Arrays.asList(10, 20, 5, 30, 50, 40);
-        Integer i = numbers.stream().max(Comparator.comparingInt(Integer::intValue)).orElse(-1);
-        System.out.println(i);
+        List<Integer> numbers = Arrays.asList(10, 20, 5, 30, 50, 40, 20,30);
+        Integer iwe = numbers.stream().max(Comparator.comparingInt(Integer::intValue)).orElse(-1);
+        System.out.println(iwe);
         Integer min = numbers.stream().min(Comparator.comparingInt(Integer::intValue)).orElse(-1);
         System.out.println(min);
 
@@ -198,6 +199,146 @@ public class StreamsApiTest {
                 .sorted(Map.Entry.comparingByKey())
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (oldValue, newValue) -> oldValue, LinkedHashMap::new));
         System.out.println(collect6);
+
+        Payment payment = (a,b)-> a+b;
+        int add = payment.add(12, 13);
+        System.out.println(add);
+
+        Predicate<Integer> predicate = a->{
+            System.out.println("redoicate");
+            a=a+a;
+            System.out.println(a);
+            //sdfsd
+            return a==12;
+        };
+        boolean test = predicate.test(6);
+        System.out.println(test);
+//        List<Integer> list3 = List.of(3,4,6,7,7);
+//
+//        Collections.sort(list3, (o1,o2)->{
+//            return o1-o2;
+//        });
+//        System.out.println(list3);
+
+
+        int arr[] = {7,2,9,1,4,0};
+//        for (int i = 0; i < arr.length - 1; i++) {
+//            for (int j = i+1; j < arr.length; j++) {
+//                if(arr[j]<arr[i]){
+//                    int temp = arr[i];
+//                    arr[i]=arr[j];
+//                    arr[j]=temp;
+//                }
+//            }
+//        }
+//        System.out.println(Arrays.toString(arr));
+        List<Integer> l3 = Arrays.stream(arr).boxed().collect(Collectors.toList());
+        // Custom Sorting Using Iterator
+        for (Iterator<Integer> it1 = numbers.iterator(); it1.hasNext(); ) {
+            Integer num1 = it1.next();
+            for (Iterator<Integer> it2 = numbers.iterator(); it2.hasNext(); it2.next()) {
+                Integer num2 = it2.next();
+                if (num1 < num2) { // Swap if out of order
+                    int index1 = numbers.indexOf(num1);
+                    int index2 = numbers.indexOf(num2);
+                    numbers.set(index1, num2);
+                    numbers.set(index2, num1);
+                }
+            }
+        }
+
+        // Traversing the sorted list using Iterator
+        System.out.println("Sorted List using Iterator:");
+        Iterator<Integer> iterator = numbers.iterator();
+        while (iterator.hasNext()) {
+            System.out.print(iterator.next() + " ");
+        }
+        // Q3 How to find duplicate elements in a given integers list in java using Stream functions?
+        Set<Integer> collect7 = numbers.stream().filter(i -> Collections.frequency(numbers, i) > 1).collect(Collectors.toSet());
+        System.out.println(collect7);
+        //Q8 Given a String, find the first repeated character in it using Stream functions?
+        System.out.println("Q8 Given a String, find the first repeated character in it using Stream functions?");
+
+        String input = "Java Hungry Blog Alive is Awesome";
+        LinkedHashMap<String, Long> collect8 = Arrays.stream(input.split(""))
+                .collect(Collectors.groupingBy(Function.identity(), LinkedHashMap::new, Collectors.counting()));
+
+        collect8.entrySet()
+                .stream()
+                .filter(stringLongEntry -> stringLongEntry.getValue()>1)
+                .map(Map.Entry::getValue)
+                .findFirst()
+                .orElse(-1L);
+
+        //Q #22) Write a Java 8 program to square the list of numbers and then filter out the numbers greater than 100 and then find the average of the remaining numbers?
+        Double collect9 = numbers.stream().map(i -> i * i).filter(i -> i > 100).collect(Collectors.averagingDouble(Integer::intValue));
+        System.out.println(collect9);
+
+        //Q #34) Explain StringJoiner Class in Java 8? How can we achieve joining multiple Strings using StringJoiner Class?
+        System.out.println("Q #34) Explain StringJoiner Class in Java 8? How can we achieve joining multiple Strings using StringJoiner Class?");
+        StringJoiner stj = new StringJoiner(",");
+        // Separated the elements with a comma in between.
+        stj.add("Saket");
+        stj.add("John");
+        stj.add("Franklin");
+        stj.add("Ricky");
+        stj.add("Trevor");
+        // Added elements into StringJoiner “stj
+        System.out.println(stj);
+
+        //Q #35) Write a Java 8 program to add prefix and suffix to the String?
+        System.out.println("Q #35) Write a Java 8 program to add prefix and suffix to the String?");
+        StringJoiner stj2 = new StringJoiner(",", "(", ")");
+
+        // Separated the elements with a comma in between.
+        //Added a prefix "(" and a suffix ")"
+        stj2.add("Saket");
+        stj2.add("John");
+        stj2.add("Franklin");
+        stj2.add("Ricky");
+        stj2.add("Trevor");
+        // Added elements into StringJoiner “stj”
+        System.out.println(stj2);
+
+        System.out.println("Collectors partitioningBy() method in Java");
+        Stream<Integer> stream = Stream.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+        Map<Boolean, List<Integer>> collect10 = stream.collect(Collectors.partitioningBy(integer3 -> integer3 > 3));
+        System.out.println(collect10);
+
+        System.out.println("Q #39) Write a Java 8 program to concatenate two Streams?");
+        List<String> list12 = Arrays.asList("Java", "8");
+        List<String> list13 = Arrays.asList("explained", "through", "programs");
+        Stream<String> concat = Stream.concat(list12.stream(), list13.stream());
+        Stream.of(concat, concat);
+        System.out.println(concat);
+    }
+}
+
+@FunctionalInterface
+interface Payment{
+    int add(int a, int b);
+    default float cashBack(){
+        return 2.7F;
+    }
+}
+
+class GooglePay implements Payment{
+
+    @Override
+    public int add(int a, int b) {
+        return 0;
     }
 
+    @Override
+    public float cashBack() {
+        return 5.7F;
+    }
+}
+
+class Phonepe implements Payment{
+
+    @Override
+    public int add(int a, int b) {
+        return 0;
+    }
 }

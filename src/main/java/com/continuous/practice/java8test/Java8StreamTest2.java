@@ -122,15 +122,12 @@ public class Java8StreamTest2 {
 
         // Separated the elements with a comma in between.
         //Added a prefix "(" and a suffix ")"
-
         stj2.add("Saket");
         stj2.add("John");
         stj2.add("Franklin");
         stj2.add("Ricky");
         stj2.add("Trevor");
-
         // Added elements into StringJoiner “stj”
-
         System.out.println(stj2);
 
         List<Employee> employeeList = EmployeeDatasource.getEmployees();

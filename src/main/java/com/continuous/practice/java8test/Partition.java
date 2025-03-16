@@ -58,6 +58,5 @@ public final class Partition<T> extends AbstractList<List<T>> {
         final List<Integer> numbers = Arrays.asList(1, 2, 3, 4, 5, 6, 7);
         System.out.println(Partition.ofSize(new ArrayList<>(), 3));
         System.out.println(LocalTime.now().toString());
-
     }
 }

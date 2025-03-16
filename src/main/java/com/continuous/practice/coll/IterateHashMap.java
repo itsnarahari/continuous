@@ -3,6 +3,7 @@ package com.continuous.practice.coll;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
+import java.util.TreeMap;
 
 public class IterateHashMap {
 
@@ -15,14 +16,14 @@ public class IterateHashMap {
         map.put(null, "abcd");
         System.out.println(map.get(null));
 
-//        map.put("one",1);
-//        map.put("two",2);
-//        map.put("three",3);
-//        for(Map.Entry<String, Object> entry:map.entrySet()){
-//            System.out.println(entry.getKey()+" "+entry.getValue());
-//        }
-//        TreeMap treeMap = new TreeMap();
-//        treeMap.putAll(map);
-//        System.out.println(treeMap);
+        map.put("one",1);
+        map.put("two",2);
+        map.put("three",3);
+        for(Map.Entry<String, Object> entry:map.entrySet()){
+            System.out.println(entry.getKey()+" "+entry.getValue());
+        }
+        TreeMap treeMap = new TreeMap();
+        treeMap.putAll(map);
+        System.out.println(treeMap);
     }
 }
