@@ -22,10 +22,10 @@
             opacity: 0.75;
             /* Adjust opacity if needed */
         }
-        .accordion-button {
-    user-select: text !important;
-}
 
+        .accordion-button {
+            user-select: text !important;
+        }
     </style>
 </head>
 
@@ -43,6 +43,8 @@
                 <a href="java8.html" class="btn btn-primary" target="_blank">Java 8</a>
                 <a href="java8_2.html" class="btn btn-primary" target="_blank">Java 8 Part 2</a>
                 <a href="springBootInterviewQuestion.html" class="btn btn-primary" target="_blank">Spring Boot</a>
+                <a href="companies.html" class="btn btn-primary">Company wise</a>
+                                <a href="coding.html" class="btn btn-primary">Coding</a>
             </div>
         </div>
 
@@ -23311,7 +23313,8 @@ System.out.println(count); // Output: 4
                         <b class="text-warning">Question:</b>
                         <p>In the following code, why does the <code>while</code> loop throw a
                             <code>ConcurrentModificationException</code>,
-                            but the <code>for</code> loop does not?</p>
+                            but the <code>for</code> loop does not?
+                        </p>
 
                         <pre class="bg-black text-light p-2 rounded overflow-auto"><code> 
 package com.continuous.practice.coll;
@@ -23368,7 +23371,8 @@ public class ArrayListTest {
                             <code>modCount</code>.
                             If the list is modified after the iterator is created (outside its <code>remove()</code>
                             method), it detects
-                            the change and throws <code>ConcurrentModificationException</code>.</p>
+                            the change and throws <code>ConcurrentModificationException</code>.
+                        </p>
 
                         <pre class="bg-black text-light p-2 rounded overflow-auto"><code>// Example of failing while loop with Iterator
 Iterator<Integer> iterator = sList.iterator();
@@ -23432,7 +23436,8 @@ sList.removeIf(n -> n % 2 == 0);  // Removes even numbers safely
                         <b class="text-warning">Answer:</b>
                         <p><code>TreeMap</code> is a part of the Java <code>java.util</code> package that implements the
                             <code>Map</code> interface and stores key-value pairs in a **sorted order** based on the
-                            keys.</p>
+                            keys.
+                        </p>
                         <p>It is implemented using a **Red-Black Tree**, ensuring that elements are **always sorted**
                             according to their natural ordering or a custom comparator.</p>
 
@@ -23508,25 +23513,27 @@ System.out.println("Reversed Order: " + descTreeMap);</code></pre>
                 </div>
             </div>
 
-<div class="accordion-item bg-dark border-secondary">
-    <h2 class="accordion-header">
-        <button class="accordion-button bg-black text-light border-secondary" type="button" data-bs-toggle="collapse"
-            data-bs-target="#q30">
-            🌳 Can a TreeMap be sorted by values instead of keys in Java?
-        </button>
-    </h2>
-    <div id="q30" class="accordion-collapse collapse" data-bs-parent="#qaAccordion">
-        <div class="accordion-body text-light">
-            <b class="text-warning">Answer:</b>
-            <p>No, a <code>TreeMap</code> **always sorts by keys**, not values. However, we can achieve sorting by values by:</p>
-            <ol>
-                <li>Converting the <code>TreeMap</code> to a <code>List</code> of key-value pairs.</li>
-                <li>Sorting the <code>List</code> based on values.</li>
-                <li>Storing the sorted entries in a <code>LinkedHashMap</code> to maintain the sorted order.</li>
-            </ol>
+            <div class="accordion-item bg-dark border-secondary">
+                <h2 class="accordion-header">
+                    <button class="accordion-button bg-black text-light border-secondary" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#q30">
+                        🌳 Can a TreeMap be sorted by values instead of keys in Java?
+                    </button>
+                </h2>
+                <div id="q30" class="accordion-collapse collapse" data-bs-parent="#qaAccordion">
+                    <div class="accordion-body text-light">
+                        <b class="text-warning">Answer:</b>
+                        <p>No, a <code>TreeMap</code> **always sorts by keys**, not values. However, we can achieve
+                            sorting by values by:</p>
+                        <ol>
+                            <li>Converting the <code>TreeMap</code> to a <code>List</code> of key-value pairs.</li>
+                            <li>Sorting the <code>List</code> based on values.</li>
+                            <li>Storing the sorted entries in a <code>LinkedHashMap</code> to maintain the sorted order.
+                            </li>
+                        </ol>
 
-            <p><b>Example: Sorting a TreeMap by Values</b></p>
-            <pre class="bg-black text-light p-2 rounded overflow-auto"><code>import java.util.*;
+                        <p><b>Example: Sorting a TreeMap by Values</b></p>
+                        <pre class="bg-black text-light p-2 rounded overflow-auto"><code>import java.util.*;
 
 public class TreeMapSortByValue {
     public static void main(String[] args) {
@@ -23556,42 +23563,45 @@ public class TreeMapSortByValue {
 }
 </code></pre>
 
-            <p><b>Output:</b></p>
-            <pre class="bg-black text-light p-2 rounded overflow-auto"><code>Original TreeMap (Sorted by Key): {Apple=50, Banana=10, Cherry=30, Mango=20}
+                        <p><b>Output:</b></p>
+                        <pre class="bg-black text-light p-2 rounded overflow-auto"><code>Original TreeMap (Sorted by Key): {Apple=50, Banana=10, Cherry=30, Mango=20}
 TreeMap Sorted by Values: {Banana=10, Mango=20, Cherry=30, Apple=50}</code></pre>
 
-            <p><b>🔹 Sorting in Descending Order</b></p>
-            <p>To sort the values in **descending order**, modify the comparator like this:</p>
-            <pre class="bg-black text-light p-2 rounded overflow-auto"><code>entryList.sort(Map.Entry.comparingByValue(Comparator.reverseOrder()));</code></pre>
+                        <p><b>🔹 Sorting in Descending Order</b></p>
+                        <p>To sort the values in **descending order**, modify the comparator like this:</p>
+                        <pre
+                            class="bg-black text-light p-2 rounded overflow-auto"><code>entryList.sort(Map.Entry.comparingByValue(Comparator.reverseOrder()));</code></pre>
 
-            <p><b>🔹 Why Not Use TreeMap Directly?</b></p>
-            <ul>
-                <li>TreeMap **only sorts by keys** automatically.</li>
-                <li>Sorting by values **requires a separate step**.</li>
-                <li>Using a <code>LinkedHashMap</code> preserves the new sorted order.</li>
-            </ul>
-        </div>
-    </div>
-</div>
-<div class="accordion-item bg-dark border-secondary">
-    <h2 class="accordion-header">
-        <button class="accordion-button bg-black text-light border-secondary" type="button" data-bs-toggle="collapse"
-            data-bs-target="#q31">
-            ⚡ If `RuntimeException` extends `Exception`, then what is the purpose of `RuntimeException`?
-        </button>
-    </h2>
-    <div id="q31" class="accordion-collapse collapse" data-bs-parent="#qaAccordion">
-        <div class="accordion-body text-light">
-            <b class="text-warning">Answer:</b>
-            <p>Even though <code>RuntimeException</code> extends <code>Exception</code>, it serves a different purpose. The key difference lies in <b>Checked vs. Unchecked Exceptions</b>.</p>
+                        <p><b>🔹 Why Not Use TreeMap Directly?</b></p>
+                        <ul>
+                            <li>TreeMap **only sorts by keys** automatically.</li>
+                            <li>Sorting by values **requires a separate step**.</li>
+                            <li>Using a <code>LinkedHashMap</code> preserves the new sorted order.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item bg-dark border-secondary">
+                <h2 class="accordion-header">
+                    <button class="accordion-button bg-black text-light border-secondary" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#q31">
+                        ⚡ If `RuntimeException` extends `Exception`, then what is the purpose of `RuntimeException`?
+                    </button>
+                </h2>
+                <div id="q31" class="accordion-collapse collapse" data-bs-parent="#qaAccordion">
+                    <div class="accordion-body text-light">
+                        <b class="text-warning">Answer:</b>
+                        <p>Even though <code>RuntimeException</code> extends <code>Exception</code>, it serves a
+                            different purpose. The key difference lies in <b>Checked vs. Unchecked Exceptions</b>.</p>
 
-            <h5 class="text-info">✅ `Exception` (Checked Exception)</h5>
-            <ul>
-                <li>Must be <b>declared</b> in the <code>throws</code> clause or handled using <code>try-catch</code>.</li>
-                <li>Compiler <b>forces</b> you to handle it.</li>
-                <li><b>Example:</b></li>
-            </ul>
-            <pre class="bg-black text-light p-2 rounded overflow-auto"><code>import java.io.*;
+                        <h5 class="text-info">✅ `Exception` (Checked Exception)</h5>
+                        <ul>
+                            <li>Must be <b>declared</b> in the <code>throws</code> clause or handled using
+                                <code>try-catch</code>.</li>
+                            <li>Compiler <b>forces</b> you to handle it.</li>
+                            <li><b>Example:</b></li>
+                        </ul>
+                        <pre class="bg-black text-light p-2 rounded overflow-auto"><code>import java.io.*;
 
 public class CheckedExceptionExample {
     public void readFile() throws IOException {  // Must be declared
@@ -23599,51 +23609,52 @@ public class CheckedExceptionExample {
     }
 }</code></pre>
 
-            <h5 class="text-danger">⚡ `RuntimeException` (Unchecked Exception)</h5>
-            <ul>
-                <li>Does **not** need to be declared in the <code>throws</code> clause.</li>
-                <li>Compiler **does not force** handling it.</li>
-                <li>Occurs due to **programming logic errors** like <code>NullPointerException</code>, <code>ArrayIndexOutOfBoundsException</code>.</li>
-                <li><b>Example:</b></li>
-            </ul>
-            <pre class="bg-black text-light p-2 rounded overflow-auto"><code>public class UncheckedExceptionExample {
+                        <h5 class="text-danger">⚡ `RuntimeException` (Unchecked Exception)</h5>
+                        <ul>
+                            <li>Does **not** need to be declared in the <code>throws</code> clause.</li>
+                            <li>Compiler **does not force** handling it.</li>
+                            <li>Occurs due to **programming logic errors** like <code>NullPointerException</code>,
+                                <code>ArrayIndexOutOfBoundsException</code>.</li>
+                            <li><b>Example:</b></li>
+                        </ul>
+                        <pre class="bg-black text-light p-2 rounded overflow-auto"><code>public class UncheckedExceptionExample {
     public static void main(String[] args) {
         String str = null;
         System.out.println(str.length());  // NullPointerException
     }
 }</code></pre>
 
-            <h5 class="text-warning">🚀 Key Differences</h5>
-            <table class="table table-dark table-bordered">
-                <thead>
-                    <tr>
-                        <th>Aspect</th>
-                        <th>Checked Exception (Exception)</th>
-                        <th>Unchecked Exception (RuntimeException)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Must be handled?</td>
-                        <td>✅ Yes, must be caught or declared.</td>
-                        <td>❌ No, handling is optional.</td>
-                    </tr>
-                    <tr>
-                        <td>Compiler checks?</td>
-                        <td>✅ Yes, enforced by Java.</td>
-                        <td>❌ No, unchecked at compile time.</td>
-                    </tr>
-                    <tr>
-                        <td>Examples</td>
-                        <td>IOException, SQLException</td>
-                        <td>NullPointerException, ArithmeticException</td>
-                    </tr>
-                </tbody>
-            </table>
+                        <h5 class="text-warning">🚀 Key Differences</h5>
+                        <table class="table table-dark table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Aspect</th>
+                                    <th>Checked Exception (Exception)</th>
+                                    <th>Unchecked Exception (RuntimeException)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Must be handled?</td>
+                                    <td>✅ Yes, must be caught or declared.</td>
+                                    <td>❌ No, handling is optional.</td>
+                                </tr>
+                                <tr>
+                                    <td>Compiler checks?</td>
+                                    <td>✅ Yes, enforced by Java.</td>
+                                    <td>❌ No, unchecked at compile time.</td>
+                                </tr>
+                                <tr>
+                                    <td>Examples</td>
+                                    <td>IOException, SQLException</td>
+                                    <td>NullPointerException, ArithmeticException</td>
+                                </tr>
+                            </tbody>
+                        </table>
 
-            <h5 class="text-primary">🛠️ Custom Exception Example</h5>
-            <p><b>Creating a Custom Checked Exception:</b></p>
-            <pre class="bg-black text-light p-2 rounded overflow-auto"><code>// Custom Checked Exception (Must be declared or handled)
+                        <h5 class="text-primary">🛠️ Custom Exception Example</h5>
+                        <p><b>Creating a Custom Checked Exception:</b></p>
+                        <pre class="bg-black text-light p-2 rounded overflow-auto"><code>// Custom Checked Exception (Must be declared or handled)
 class MyCheckedException extends Exception {
     public MyCheckedException(String message) {
         super(message);
@@ -23656,8 +23667,8 @@ public class TestChecked {
     }
 }</code></pre>
 
-            <p><b>Creating a Custom Unchecked Exception:</b></p>
-            <pre class="bg-black text-light p-2 rounded overflow-auto"><code>// Custom Unchecked Exception (Handling is optional)
+                        <p><b>Creating a Custom Unchecked Exception:</b></p>
+                        <pre class="bg-black text-light p-2 rounded overflow-auto"><code>// Custom Unchecked Exception (Handling is optional)
 class MyUncheckedException extends RuntimeException {
     public MyUncheckedException(String message) {
         super(message);
@@ -23670,30 +23681,32 @@ public class TestUnchecked {
     }
 }</code></pre>
 
-            <h5 class="text-success">🎯 Conclusion</h5>
-            <ul>
-                <li><code>Exception</code> (Checked) - Must be handled at compile time.</li>
-                <li><code>RuntimeException</code> (Unchecked) - Does not require handling.</li>
-                <li><b>Use Checked Exceptions for expected issues (e.g., file not found).</b></li>
-                <li><b>Use Unchecked Exceptions for programming errors (e.g., null pointer).</b></li>
-            </ul>
-        </div>
-    </div>
-</div>
-<div class="accordion-item bg-dark border-secondary">
-    <h2 class="accordion-header">
-        <button class="accordion-button bg-black text-light border-secondary" type="button" data-bs-toggle="collapse"
-            data-bs-target="#q32">
-            ⚡ How to get the count of male and female employees from each department using Java 8 Streams API?
-        </button>
-    </h2>
-    <div id="q32" class="accordion-collapse collapse" data-bs-parent="#qaAccordion">
-        <div class="accordion-body text-light">
-            <b class="text-warning">Answer:</b>
-            <p>Using Java 8 Streams API, we can group employees by department and gender, and then count them efficiently.</p>
+                        <h5 class="text-success">🎯 Conclusion</h5>
+                        <ul>
+                            <li><code>Exception</code> (Checked) - Must be handled at compile time.</li>
+                            <li><code>RuntimeException</code> (Unchecked) - Does not require handling.</li>
+                            <li><b>Use Checked Exceptions for expected issues (e.g., file not found).</b></li>
+                            <li><b>Use Unchecked Exceptions for programming errors (e.g., null pointer).</b></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item bg-dark border-secondary">
+                <h2 class="accordion-header">
+                    <button class="accordion-button bg-black text-light border-secondary" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#q32">
+                        ⚡ How to get the count of male and female employees from each department using Java 8 Streams
+                        API?
+                    </button>
+                </h2>
+                <div id="q32" class="accordion-collapse collapse" data-bs-parent="#qaAccordion">
+                    <div class="accordion-body text-light">
+                        <b class="text-warning">Answer:</b>
+                        <p>Using Java 8 Streams API, we can group employees by department and gender, and then count
+                            them efficiently.</p>
 
-            <h5 class="text-info">🛠️ Java 8 Solution</h5>
-            <pre class="bg-black text-light p-2 rounded overflow-auto"><code>import java.util.*;
+                        <h5 class="text-info">🛠️ Java 8 Solution</h5>
+                        <pre class="bg-black text-light p-2 rounded overflow-auto"><code>import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -23750,15 +23763,16 @@ public class EmployeeCountByDept {
     }
 }</code></pre>
 
-            <h5 class="text-warning">🚀 Explanation</h5>
-            <ul>
-                <li><code>groupingBy(Employee::getDepartment)</code> → Groups employees by department.</li>
-                <li><code>groupingBy(Employee::getGender, counting())</code> → Counts male & female employees in each department.</li>
-                <li>Uses **nested grouping** for department → gender → count.</li>
-            </ul>
+                        <h5 class="text-warning">🚀 Explanation</h5>
+                        <ul>
+                            <li><code>groupingBy(Employee::getDepartment)</code> → Groups employees by department.</li>
+                            <li><code>groupingBy(Employee::getGender, counting())</code> → Counts male & female
+                                employees in each department.</li>
+                            <li>Uses **nested grouping** for department → gender → count.</li>
+                        </ul>
 
-            <h5 class="text-success">🎯 Sample Output</h5>
-            <pre class="bg-black text-light p-2 rounded overflow-auto"><code>Department: IT
+                        <h5 class="text-success">🎯 Sample Output</h5>
+                        <pre class="bg-black text-light p-2 rounded overflow-auto"><code>Department: IT
   Female: 2
   Male: 1
 Department: HR
@@ -23767,47 +23781,52 @@ Department: Finance
   Female: 1
   Male: 1</code></pre>
 
-            <h5 class="text-danger">❌ Common Mistakes</h5>
-            <ul>
-                <li>Using <code>forEach</code> instead of **Streams API** (less efficient).</li>
-                <li>Not using <code>Collectors.counting()</code> (manually counting instead).</li>
-                <li>Forgetting nested <code>groupingBy</code> for gender.</li>
-            </ul>
+                        <h5 class="text-danger">❌ Common Mistakes</h5>
+                        <ul>
+                            <li>Using <code>forEach</code> instead of **Streams API** (less efficient).</li>
+                            <li>Not using <code>Collectors.counting()</code> (manually counting instead).</li>
+                            <li>Forgetting nested <code>groupingBy</code> for gender.</li>
+                        </ul>
 
-            <h5 class="text-primary">✅ Best Practices</h5>
-            <ul>
-                <li>Use **Streams API** for clean, efficient data processing.</li>
-                <li>Prefer <code>groupingBy</code> for multi-level aggregations.</li>
-                <li>Use <code>Collectors.counting()</code> to count efficiently.</li>
-            </ul>
-        </div>
-    </div>
-</div>
+                        <h5 class="text-primary">✅ Best Practices</h5>
+                        <ul>
+                            <li>Use **Streams API** for clean, efficient data processing.</li>
+                            <li>Prefer <code>groupingBy</code> for multi-level aggregations.</li>
+                            <li>Use <code>Collectors.counting()</code> to count efficiently.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
 
-<div class="accordion-item bg-dark border-secondary">
-    <h2 class="accordion-header">
-        <button class="accordion-button bg-black text-light border-secondary" type="button" data-bs-toggle="collapse"
-            data-bs-target="#qLocalDate">
-            ⚡ What are the improvements of LocalDate over Date in Java 8?
-        </button>
-    </h2>
-    <div id="qLocalDate" class="accordion-collapse collapse" data-bs-parent="#qaAccordion">
-        <div class="accordion-body text-light">
-            <b class="text-warning">Answer:</b>
-            <p>Java 8 introduced <code>LocalDate</code> to replace <code>Date</code>, solving many of its limitations.</p>
+            <div class="accordion-item bg-dark border-secondary">
+                <h2 class="accordion-header">
+                    <button class="accordion-button bg-black text-light border-secondary" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#qLocalDate">
+                        ⚡ What are the improvements of LocalDate over Date in Java 8?
+                    </button>
+                </h2>
+                <div id="qLocalDate" class="accordion-collapse collapse" data-bs-parent="#qaAccordion">
+                    <div class="accordion-body text-light">
+                        <b class="text-warning">Answer:</b>
+                        <p>Java 8 introduced <code>LocalDate</code> to replace <code>Date</code>, solving many of its
+                            limitations.</p>
 
-            <h5 class="text-info">🔍 Key Improvements</h5>
-            <ul>
-                <li><b>✅ Immutable:</b> <code>LocalDate</code> is immutable and thread-safe, unlike <code>Date</code>.</li>
-                <li><b>📅 Clear API:</b> Provides better methods like <code>plusDays()</code>, <code>minusMonths()</code>, etc.</li>
-                <li><b>⏳ No Time & Timezone:</b> Represents only a date, avoiding timezone confusion.</li>
-                <li><b>🎯 Better Parsing:</b> Easier conversion to/from strings with <code>DateTimeFormatter</code>.</li>
-                <li><b>🛠️ ChronoUnit Support:</b> Makes date calculations more readable.</li>
-                <li><b>🔥 New Methods:</b> Methods like <code>isBefore()</code>, <code>isAfter()</code>, <code>of()</code>, <code>parse()</code> simplify date operations.</li>
-            </ul>
+                        <h5 class="text-info">🔍 Key Improvements</h5>
+                        <ul>
+                            <li><b>✅ Immutable:</b> <code>LocalDate</code> is immutable and thread-safe, unlike
+                                <code>Date</code>.</li>
+                            <li><b>📅 Clear API:</b> Provides better methods like <code>plusDays()</code>,
+                                <code>minusMonths()</code>, etc.</li>
+                            <li><b>⏳ No Time & Timezone:</b> Represents only a date, avoiding timezone confusion.</li>
+                            <li><b>🎯 Better Parsing:</b> Easier conversion to/from strings with
+                                <code>DateTimeFormatter</code>.</li>
+                            <li><b>🛠️ ChronoUnit Support:</b> Makes date calculations more readable.</li>
+                            <li><b>🔥 New Methods:</b> Methods like <code>isBefore()</code>, <code>isAfter()</code>,
+                                <code>of()</code>, <code>parse()</code> simplify date operations.</li>
+                        </ul>
 
-            <h5 class="text-info">🛠️ Java 8 Code Example</h5>
-            <pre class="bg-black text-light p-2 rounded overflow-auto"><code>import java.time.LocalDate;
+                        <h5 class="text-info">🛠️ Java 8 Code Example</h5>
+                        <pre class="bg-black text-light p-2 rounded overflow-auto"><code>import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 
@@ -23833,40 +23852,40 @@ public class LocalDateExample {
     }
 }</code></pre>
 
-            <h5 class="text-warning">🚀 Explanation</h5>
-            <ul>
-                <li><code>LocalDate.now()</code> → Gets the current date.</li>
-                <li><code>LocalDate.of(1995, 5, 20)</code> → Creates a specific date.</li>
-                <li><code>isBefore()</code> / <code>isAfter()</code> → Compare dates easily.</li>
-                <li><code>LocalDate.parse()</code> → Converts string to date.</li>
-            </ul>
+                        <h5 class="text-warning">🚀 Explanation</h5>
+                        <ul>
+                            <li><code>LocalDate.now()</code> → Gets the current date.</li>
+                            <li><code>LocalDate.of(1995, 5, 20)</code> → Creates a specific date.</li>
+                            <li><code>isBefore()</code> / <code>isAfter()</code> → Compare dates easily.</li>
+                            <li><code>LocalDate.parse()</code> → Converts string to date.</li>
+                        </ul>
 
-            <h5 class="text-success">🎯 Sample Output</h5>
-            <pre class="bg-black text-light p-2 rounded overflow-auto"><code>Today: 2025-03-19
+                        <h5 class="text-success">🎯 Sample Output</h5>
+                        <pre class="bg-black text-light p-2 rounded overflow-auto"><code>Today: 2025-03-19
 Next Week: 2025-03-26
 Last Month: 2025-02-19
 Is today before birth date? false
 Is today after birth date? true
 Parsed Date: 2025-12-01</code></pre>
 
-            <h5 class="text-danger">❌ Limitations of Date</h5>
-            <ul>
-                <li>❌ Mutable (Not thread-safe).</li>
-                <li>❌ Requires <code>Calendar</code> for operations.</li>
-                <li>❌ Includes time by default (often unnecessary).</li>
-                <li>❌ Many deprecated methods (e.g., <code>getYear()</code>).</li>
-            </ul>
+                        <h5 class="text-danger">❌ Limitations of Date</h5>
+                        <ul>
+                            <li>❌ Mutable (Not thread-safe).</li>
+                            <li>❌ Requires <code>Calendar</code> for operations.</li>
+                            <li>❌ Includes time by default (often unnecessary).</li>
+                            <li>❌ Many deprecated methods (e.g., <code>getYear()</code>).</li>
+                        </ul>
 
-            <h5 class="text-primary">✅ Best Practices</h5>
-            <ul>
-                <li>Use <code>LocalDate</code> for dates without time.</li>
-                <li>Prefer <code>ChronoUnit</code> for date calculations.</li>
-                <li>Use <code>isBefore()</code> / <code>isAfter()</code> for comparisons.</li>
-                <li>Avoid <code>Date</code> for new Java 8+ applications.</li>
-            </ul>
-        </div>
-    </div>
-</div>
+                        <h5 class="text-primary">✅ Best Practices</h5>
+                        <ul>
+                            <li>Use <code>LocalDate</code> for dates without time.</li>
+                            <li>Prefer <code>ChronoUnit</code> for date calculations.</li>
+                            <li>Use <code>isBefore()</code> / <code>isAfter()</code> for comparisons.</li>
+                            <li>Avoid <code>Date</code> for new Java 8+ applications.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
 
 
             <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

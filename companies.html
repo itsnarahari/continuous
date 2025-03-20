@@ -1,0 +1,3130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Company Wise Q&A</title>
+
+    <!-- Bootstrap & Prism.js for Syntax Highlighting -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+
+    <style>
+        body {
+            background-color: #121212;
+            color: white;
+        }
+
+        .container {
+            max-width: 900px;
+            margin-top: 20px;
+        }
+
+        .accordion-button {
+            background-color: #343a40;
+            color: white;
+        }
+
+        .accordion-button:focus {
+            box-shadow: none;
+        }
+
+        .accordion-button:not(.collapsed) {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .accordion-body {
+            background-color: #1e1e1e;
+            color: white;
+        }
+
+        .highlight-yellow {
+            color: #ffcc00;
+            /* Yellow */
+            font-weight: bold;
+        }
+
+        .highlight-blue {
+            color: #4db8ff;
+            /* Light blue */
+            font-weight: bold;
+        }
+
+        pre[class*="language-"] {
+            background: #1e1e1e !important;
+            border-radius: 8px;
+            padding: 12px;
+        }
+
+        /* Search Box Styling */
+        .search-container {
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #666;
+            background: #222;
+            color: white;
+            outline: none;
+            font-size: 16px;
+        }
+
+        .search-input::placeholder {
+            color: #aaa;
+        }
+    </style>
+</head>
+
+<body class="bg-dark text-light">
+    <div class="container">
+        <div class="header fw-bold text-center mb-4">Company Wise Q&A</div>
+        <!-- Search Box in a Bootstrap Container -->
+        <div class="search-container">
+            <input type="text" class="search-input form-control" id="searchBox" placeholder="Search questions..."
+                onkeyup="searchQuestions()" />
+        </div>
+
+        <h3 class="text-warning">Paypal</h3>
+        <div class="accordion" id="googleAccordion">
+    <div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#microservicesQ1">
+      What are the key principles of microservices?
+    </button>
+  </h2>
+  <div id="microservicesQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      Microservices principles include:
+      <ul>
+        <li><span class="highlight-blue">Single Responsibility:</span> Each service should focus on a single functionality.</li>
+        <li><span class="highlight-blue">Independently Deployable:</span> Services can be deployed without affecting others.</li>
+        <li><span class="highlight-blue">Decentralized Data Management:</span> Each microservice should manage its own database.</li>
+        <li><span class="highlight-blue">Lightweight Communication:</span> Services should communicate via lightweight protocols like REST or gRPC.</li>
+        <li><span class="highlight-blue">Fault Isolation:</span> Failures in one service should not impact others.</li>
+        <li><span class="highlight-blue">Observability:</span> Logging, monitoring, and tracing should be integrated for better visibility.</li>
+      </ul>
+      <p class="highlight-yellow">Example:</p>
+      <pre class="language-java"><code> 
+        @RestController
+        @RequestMapping("/users")
+        public class UserService {
+          @GetMapping("/{id}")
+          public User getUser(@PathVariable Long id) {
+              return new User(id, "John Doe");
+          }
+        }
+      </code></pre>
+    </div>
+  </div>
+</div>
+
+
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#googleQ2">
+                        Explain the internal working of ConcurrentHashMap. How does it
+                        achieve thread safety, and what are its performance trade-offs?
+                    </button>
+                </h2>
+                <div id="googleQ2" class="accordion-collapse collapse" data-bs-parent="#googleAccordion">
+                    <div class="accordion-body">
+                        <p class="highlight-yellow">
+                            Internal Working of ConcurrentHashMap:
+                        </p>
+                        <ul>
+                            <li>
+                                <span class="highlight-blue">Segmentation (Before Java 8):</span>
+                                Used **segmented locking**, allowing multiple threads to
+                                access different segments concurrently.
+                            </li>
+                            <li>
+                                <span class="highlight-blue">Bucket-Level Locking (Java 8+):</span>
+                                Uses **CAS (Compare-And-Swap)** for atomic updates, reducing
+                                contention.
+                            </li>
+                            <li>
+                                <span class="highlight-blue">Lock-Free Reads:</span> `get()`
+                                operations are **completely lock-free**, improving
+                                performance.
+                            </li>
+                            <li>
+                                <span class="highlight-blue">Put & Update Operations:</span>
+                                Use **CAS and synchronized blocks** at the bucket level,
+                                ensuring safe updates.
+                            </li>
+                        </ul>
+
+                        <p class="highlight-yellow">Thread Safety Mechanism:</p>
+                        <ul>
+                            <li>
+                                Uses **volatile** variables and **CAS** operations to avoid
+                                race conditions.
+                            </li>
+                            <li>
+                                Locks are **only applied at the bucket level**, improving
+                                concurrency.
+                            </li>
+                            <li>
+                                Read operations are **non-blocking**, making it faster than
+                                synchronized alternatives.
+                            </li>
+                        </ul>
+
+                        <p class="highlight-yellow">Performance Trade-offs:</p>
+                        <ul>
+                            <li>Higher **memory usage** due to bucket-based structure.</li>
+                            <li>
+                                Faster than **Hashtable**, but slightly slower than
+                                **HashMap** due to synchronization.
+                            </li>
+                            <li>
+                                Best for **read-heavy scenarios** where multiple threads
+                                access data.
+                            </li>
+                        </ul>
+
+                        <p class="highlight-yellow">Code Example:</p>
+                        <pre class="language-java"><code>
+import java.util.concurrent.ConcurrentHashMap;
+
+public class ConcurrentHashMapExample {
+    public static void main(String[] args) {
+        ConcurrentHashMap&lt;Integer, String&gt; map = new ConcurrentHashMap&lt;&gt;();
+
+        // Adding elements
+        map.put(1, "Java");
+        map.put(2, "Spring");
+        map.put(3, "Microservices");
+
+        // Retrieving element
+        System.out.println("Value for key 2: " + map.get(2));
+
+        // Updating element safely
+        map.computeIfPresent(2, (key, val) -> val + " Boot");
+        System.out.println("Updated Value for key 2: " + map.get(2));
+
+        // Removing element
+        map.remove(3, "Microservices");
+        System.out.println("Key 3 removed: " + map.containsKey(3));
+    }
+}
+                    </code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#weakHashMapVsHashMap">
+                        Describe the differences between WeakHashMap and HashMap. When
+                        would you use each?
+                    </button>
+                </h2>
+                <div id="weakHashMapVsHashMap" class="accordion-collapse collapse" data-bs-parent="#googleAccordion">
+                    <div class="accordion-body">
+                        <p class="highlight-yellow">
+                            Differences Between WeakHashMap and HashMap:
+                        </p>
+
+                        <ul>
+                            <li>
+                                <span class="highlight-blue">Definition & Purpose:</span>
+                                <ul>
+                                    <li>
+                                        <b>HashMap:</b> A standard hash table that stores
+                                        key-value pairs with strong references.
+                                    </li>
+                                    <li>
+                                        <b>WeakHashMap:</b> Uses weak references for keys,
+                                        allowing them to be garbage collected when no longer used.
+                                    </li>
+                                </ul>
+                            </li>
+
+                            <li>
+                                <span class="highlight-blue">Garbage Collection Behavior:</span>
+                                <ul>
+                                    <li>
+                                        <b>HashMap:</b> Keys persist in memory unless explicitly
+                                        removed.
+                                    </li>
+                                    <li>
+                                        <b>WeakHashMap:</b> Entries are automatically removed if
+                                        the key is no longer referenced elsewhere.
+                                    </li>
+                                </ul>
+                            </li>
+
+                            <li>
+                                <span class="highlight-blue">Performance Considerations:</span>
+                                <ul>
+                                    <li>
+                                        <b>HashMap:</b> Slightly faster as it does not rely on
+                                        garbage collection.
+                                    </li>
+                                    <li>
+                                        <b>WeakHashMap:</b> May perform unpredictably due to
+                                        reliance on garbage collection.
+                                    </li>
+                                </ul>
+                            </li>
+
+                            <li>
+                                <span class="highlight-blue">Use Cases:</span>
+                                <ul>
+                                    <li>
+                                        <b>Use HashMap when:</b> You need strong references for
+                                        keys and want full control over memory management.
+                                    </li>
+                                    <li>
+                                        <b>Use WeakHashMap when:</b> You are implementing caches
+                                        or mappings where automatic removal of unused keys is
+                                        desired.
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                        <p class="highlight-yellow">Example Code:</p>
+                        <pre class="language-java"><code>
+import java.util.HashMap;
+import java.util.WeakHashMap;
+
+public class WeakHashMapExample {
+    public static void main(String[] args) {
+        HashMap&lt;String, String&gt; hashMap = new HashMap&lt;&gt;();
+        WeakHashMap&lt;String, String&gt; weakHashMap = new WeakHashMap&lt;&gt;();
+
+        String key1 = new String("Key1");
+        String key2 = new String("Key2");
+
+        hashMap.put(key1, "HashMap Value");
+        weakHashMap.put(key2, "WeakHashMap Value");
+
+        key1 = null; // HashMap still holds the reference
+        key2 = null; // WeakHashMap loses reference, eligible for GC
+
+        System.gc(); // Request Garbage Collection
+
+        System.out.println("HashMap: " + hashMap); // Key1 remains
+        System.out.println("WeakHashMap: " + weakHashMap); // Key2 might be removed
+    }
+}
+      </code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#duplicateTransactions">
+                        Given a large dataset (millions of records), how would you
+                        efficiently search for duplicate transactions?
+                    </button>
+                </h2>
+                <div id="duplicateTransactions" class="accordion-collapse collapse" data-bs-parent="#googleAccordion">
+                    <div class="accordion-body">
+                        <p class="highlight-yellow">
+                            Efficient Strategies to Find Duplicate Transactions:
+                        </p>
+
+                        <ul>
+                            <li>
+                                <span class="highlight-blue">1. Use a HashSet (Memory-based Approach):</span>
+                                <ul>
+                                    <li>
+                                        Insert unique transaction IDs into a <b>HashSet</b> and
+                                        check for duplicates in O(1) time.
+                                    </li>
+                                    <li>
+                                        Works well for medium-sized datasets but may cause
+                                        <b>high memory consumption</b> for millions of records.
+                                    </li>
+                                </ul>
+                            </li>
+
+                            <li>
+                                <span class="highlight-blue">2. Use a HashMap for Frequency Count:</span>
+                                <ul>
+                                    <li>
+                                        Maintain a <b>HashMap&lt;TransactionID, Count&gt;</b> to
+                                        track duplicates efficiently.
+                                    </li>
+                                    <li>Requires extra space but allows fast lookup.</li>
+                                </ul>
+                            </li>
+
+                            <li>
+                                <span class="highlight-blue">3. Sort & Find Duplicates (Disk-based Approach):</span>
+                                <ul>
+                                    <li>
+                                        Sort transactions by ID using an
+                                        <b>external sorting algorithm</b> (e.g., Merge Sort for
+                                        large files).
+                                    </li>
+                                    <li>Scan linearly to detect consecutive duplicates.</li>
+                                    <li>Efficient when dataset does not fit in memory.</li>
+                                </ul>
+                            </li>
+
+                            <li>
+                                <span class="highlight-blue">4. Use SQL Queries for Large Databases:</span>
+                                <ul>
+                                    <li>
+                                        For structured databases, use SQL query:
+                                        <pre class="language-sql"><code>
+SELECT transaction_id, COUNT(*) 
+FROM transactions 
+GROUP BY transaction_id 
+HAVING COUNT(*) > 1;
+              </code></pre>
+                                    </li>
+                                    <li>
+                                        Leverages <b>database indexing</b> for optimization.
+                                    </li>
+                                </ul>
+                            </li>
+
+                            <li>
+                                <span class="highlight-blue">5. Bloom Filters (Low Memory, Probabilistic
+                                    Approach):</span>
+                                <ul>
+                                    <li>Efficient for massive datasets with limited memory.</li>
+                                    <li>
+                                        Checks probable duplicates in O(1) time but may have false
+                                        positives.
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                        <p class="highlight-yellow">Example Java Code (Using HashSet):</p>
+                        <pre class="language-java"><code>
+import java.util.*;
+
+public class DuplicateTransactions {
+    public static void main(String[] args) {
+        List&lt;String&gt; transactions = Arrays.asList("TXN1001", "TXN1002", "TXN1001", "TXN1003", "TXN1002");
+        
+        Set&lt;String&gt; uniqueTransactions = new HashSet&lt;&gt;();
+        Set&lt;String&gt; duplicateTransactions = new HashSet&lt;&gt;();
+
+        for (String txn : transactions) {
+            if (!uniqueTransactions.add(txn)) {
+                duplicateTransactions.add(txn);
+            }
+        }
+
+        System.out.println("Duplicate Transactions: " + duplicateTransactions);
+    }
+}
+      </code></pre>
+
+                        <p class="highlight-yellow">Best Approach:</p>
+                        <ul>
+                            <li>For <b>small datasets</b>, use a <b>HashSet</b>.</li>
+                            <li>
+                                For <b>large databases</b>, leverage <b>SQL queries</b> with
+                                proper indexing.
+                            </li>
+                            <li>
+                                For <b>very large datasets</b>, use <b>external sorting</b> or
+                                <b>Bloom filters</b> for memory efficiency.
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button search-item" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#javaMemoryModel" aria-expanded="true">
+                        How does the Java Memory Model impact multi-threaded applications?
+                    </button>
+                </h2>
+                <div id="javaMemoryModel" class="accordion-collapse collapse show">
+                    <div class="accordion-body">
+                        <p class="highlight-yellow">
+                            Java Memory Model (JMM) and Multi-Threading:
+                        </p>
+                        <p>
+                            The Java Memory Model (JMM) defines how multiple threads
+                            interact through memory. It ensures consistency in variable
+                            visibility and execution order across different CPU
+                            architectures.
+                        </p>
+
+                        <p class="highlight-yellow">Key Concepts:</p>
+                        <ul>
+                            <li>
+                                <span class="highlight-blue">Volatile:</span> Ensures
+                                visibility of changes across threads. Example:
+                                <pre class="language-java"><code>
+          class SharedData {
+              private volatile boolean flag = false;
+              public void setFlagTrue() { flag = true; }
+              public boolean isFlagTrue() { return flag; }
+          }
+          </code></pre>
+                                Without <code>volatile</code>, one thread might not see
+                                updates made by another.
+                            </li>
+
+                            <li>
+                                <span class="highlight-blue">Happens-Before Relationship:</span>
+                                Guarantees memory consistency. If one action happens-before
+                                another, its changes are visible to the second thread.
+                            </li>
+
+                            <li>
+                                <span class="highlight-blue">Locks & Synchronization:</span>
+                                Ensures atomicity and visibility. Example:
+                                <pre class="language-java"><code>
+          class Counter {
+              private int count = 0;
+              public synchronized void increment() { count++; }
+              public synchronized int getCount() { return count; }
+          }
+          </code></pre>
+                                The <code>synchronized</code> keyword ensures that only one
+                                thread updates <code>count</code> at a time.
+                            </li>
+                        </ul>
+
+                        <p class="highlight-yellow">
+                            Example: Visibility Issue in Multi-threading
+                        </p>
+                        <p>
+                            Without proper synchronization, one thread's update may not be
+                            visible to another.
+                        </p>
+
+                        <pre class="language-java"><code>
+      class VisibilityIssue {
+          private static boolean flag = false;
+          
+          public static void main(String[] args) {
+              Thread writer = new Thread(() -> {
+                  try { Thread.sleep(1000); } catch (InterruptedException e) { }
+                  flag = true;
+                  System.out.println("Writer Thread: flag set to true");
+              });
+
+              Thread reader = new Thread(() -> {
+                  while (!flag) { } // May loop indefinitely due to visibility issue
+                  System.out.println("Reader Thread: flag detected as true");
+              });
+
+              writer.start();
+              reader.start();
+          }
+      }
+      </code></pre>
+
+                        <p>
+                            <span class="highlight-blue">Problem:</span> The
+                            <code>reader</code> thread may not detect the change in
+                            <code>flag</code> due to CPU caching.
+                        </p>
+                        <p>
+                            <span class="highlight-blue">Fix:</span> Use
+                            <code>volatile</code> to ensure visibility.
+                        </p>
+
+                        <pre class="language-java"><code>
+      class FixedVisibility {
+          private static volatile boolean flag = false;
+          
+          public static void main(String[] args) {
+              Thread writer = new Thread(() -> {
+                  try { Thread.sleep(1000); } catch (InterruptedException e) { }
+                  flag = true;
+                  System.out.println("Writer Thread: flag set to true");
+              });
+
+              Thread reader = new Thread(() -> {
+                  while (!flag) { } // Now properly detects changes
+                  System.out.println("Reader Thread: flag detected as true");
+              });
+
+              writer.start();
+              reader.start();
+          }
+      }
+      </code></pre>
+
+                        <p class="highlight-yellow">Best Practices:</p>
+                        <ul>
+                            <li>
+                                Use <code>volatile</code> for simple flags that need
+                                visibility across threads.
+                            </li>
+                            <li>
+                                Use <code>synchronized</code> or <code>Lock</code> for shared
+                                data modifications.
+                            </li>
+                            <li>
+                                Use concurrent collections like
+                                <code>ConcurrentHashMap</code> instead of
+                                <code>HashMap</code> for thread safety.
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#ttlCache">
+                        Design an in-memory key-value store that supports TTL (time to live) for entries. What is your
+                        best approach?
+                    </button>
+                </h2>
+                <div id="ttlCache" class="accordion-collapse collapse" data-bs-parent="#questionAccordion">
+                    <div class="accordion-body">
+                        <p class="highlight-yellow">Approach: HashMap + Background Cleanup Thread</p>
+                        <ul>
+                            <li><span class="highlight-blue">Fast lookups:</span> Use a <code>ConcurrentHashMap</code>
+                                for O(1) access.</li>
+                            <li><span class="highlight-blue">Efficient TTL Handling:</span> Store expiry times in a
+                                <code>PriorityQueue</code> (Min-Heap) to track the nearest expiration.
+                            </li>
+                            <li><span class="highlight-blue">Automatic Expiry:</span> A background thread runs
+                                periodically to remove expired entries.</li>
+                            <li><span class="highlight-blue">Thread-Safety:</span> Use <code>ConcurrentHashMap</code>
+                                for safe concurrent access.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">Java Implementation:</p>
+                        <pre class="language-java"><code>
+import java.util.concurrent.*;
+import java.util.*;
+
+class TTLCache&lt;K, V&gt; {
+    private final ConcurrentHashMap&lt;K, V&gt; cache = new ConcurrentHashMap&lt;&gt;();
+    private final ConcurrentHashMap&lt;K, Long&gt; expiryMap = new ConcurrentHashMap&lt;&gt;();
+    private final PriorityQueue&lt;Pair&lt;K, Long&gt;&gt; expiryQueue = 
+        new PriorityQueue&lt;&gt;(Comparator.comparingLong(p -> p.value));
+    private final ScheduledExecutorService cleaner = Executors.newSingleThreadScheduledExecutor();
+
+    public TTLCache() {
+        cleaner.scheduleAtFixedRate(this::removeExpiredEntries, 1, 1, TimeUnit.SECONDS);
+    }
+
+    public void put(K key, V value, long ttlMillis) {
+        long expiryTime = System.currentTimeMillis() + ttlMillis;
+        cache.put(key, value);
+        expiryMap.put(key, expiryTime);
+        synchronized (expiryQueue) {
+            expiryQueue.offer(new Pair&lt;&gt;(key, expiryTime));
+        }
+    }
+
+    public V get(K key) {
+        if (!expiryMap.containsKey(key) || expiryMap.get(key) &gt; System.currentTimeMillis()) {
+            return cache.get(key);
+        }
+        cache.remove(key);
+        expiryMap.remove(key);
+        return null;
+    }
+
+    private void removeExpiredEntries() {
+        long now = System.currentTimeMillis();
+        synchronized (expiryQueue) {
+            while (!expiryQueue.isEmpty() &amp;&amp; expiryQueue.peek().value &lt; now) {
+                K key = expiryQueue.poll().key;
+                cache.remove(key);
+                expiryMap.remove(key);
+            }
+        }
+    }
+}
+      </code></pre>
+
+                        <p class="highlight-yellow">Use Case:</p>
+                        <pre class="language-java"><code>
+public class Main {
+    public static void main(String[] args) throws InterruptedException {
+        TTLCache&lt;String, String&gt; cache = new TTLCache&lt;&gt;();
+        cache.put("user1", "John", 3000); // Expires in 3 sec
+        System.out.println(cache.get("user1")); // Prints "John"
+        Thread.sleep(4000);
+        System.out.println(cache.get("user1")); // Prints "null" (expired)
+    }
+}
+      </code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#multiConcurrency">
+                        Multithreading & Concurrency with Example
+                    </button>
+                </h2>
+                <div id="multiConcurrency" class="accordion-collapse collapse" data-bs-parent="#questionAccordion">
+                    <div class="accordion-body">
+                        <p class="highlight-yellow">Multithreading vs Concurrency:</p>
+                        <ul>
+                            <li><span class="highlight-blue">Multithreading:</span> Running multiple threads within a
+                                process to achieve parallel execution.</li>
+                            <li><span class="highlight-blue">Concurrency:</span> The ability to execute multiple tasks
+                                in overlapping time periods (not necessarily simultaneously).</li>
+                            <li><span class="highlight-blue">Key Difference:</span> Concurrency deals with managing
+                                multiple tasks efficiently, whereas multithreading specifically refers to multiple
+                                threads in execution.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">Example: Bank Account with Synchronization</p>
+                        <pre class="language-java"><code>
+class BankAccount {
+    private int balance = 100;
+
+    public synchronized void withdraw(String name, int amount) {
+        if (balance &gt;= amount) {
+            System.out.println(name + " is withdrawing " + amount);
+            balance -= amount;
+            System.out.println(name + " successfully withdrew. Remaining balance: " + balance);
+        } else {
+            System.out.println(name + " attempted to withdraw " + amount + " but insufficient funds.");
+        }
+    }
+}
+
+class Customer extends Thread {
+    private BankAccount account;
+    private int amount;
+
+    public Customer(BankAccount account, String name, int amount) {
+        super(name);
+        this.account = account;
+        this.amount = amount;
+    }
+
+    public void run() {
+        account.withdraw(Thread.currentThread().getName(), amount);
+    }
+}
+
+public class BankSimulation {
+    public static void main(String[] args) {
+        BankAccount account = new BankAccount();
+        Customer user1 = new Customer(account, "User1", 70);
+        Customer user2 = new Customer(account, "User2", 50);
+
+        user1.start();
+        user2.start();
+    }
+}
+      </code></pre>
+
+                        <p class="highlight-yellow">Explanation:</p>
+                        <ul>
+                            <li>Two threads (`User1`, `User2`) attempt to withdraw money from the same account.</li>
+                            <li>The method `withdraw()` is **synchronized** to ensure only one thread modifies the
+                                balance at a time.</li>
+                            <li>Without `synchronized`, both users might withdraw simultaneously, leading to incorrect
+                                balances.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">Concurrency Handling in Java:</p>
+                        <ul>
+                            <li><span class="highlight-blue">Volatile:</span> Ensures visibility of changes across
+                                threads.</li>
+                            <li><span class="highlight-blue">Synchronized:</span> Prevents multiple threads from
+                                modifying shared resources simultaneously.</li>
+                            <li><span class="highlight-blue">Locks (ReentrantLock):</span> More flexible locking
+                                mechanism compared to `synchronized`.</li>
+                            <li><span class="highlight-blue">Atomic Variables:</span> `AtomicInteger`, `AtomicBoolean`
+                                provide thread-safe operations.</li>
+                            <li><span class="highlight-blue">ExecutorService:</span> Manages a pool of threads
+                                efficiently.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#threadPool">
+                        How would you design a Thread Pool from scratch?
+                    </button>
+                </h2>
+                <div id="threadPool" class="accordion-collapse collapse" data-bs-parent="#questionAccordion">
+                    <div class="accordion-body">
+                        <p class="highlight-yellow">What is a Thread Pool?</p>
+                        <ul>
+                            <li>A <span class="highlight-blue">thread pool</span> is a group of pre-initialized threads
+                                that are managed and reused to execute multiple tasks efficiently.</li>
+                            <li>It improves <span class="highlight-blue">performance</span> by reusing threads instead
+                                of creating new ones for each task.</li>
+                            <li>Commonly used in <span class="highlight-blue">ExecutorService</span> in Java, but we can
+                                implement our own.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">Steps to Implement a Custom Thread Pool:</p>
+                        <ul>
+                            <li>Create a <span class="highlight-blue">Worker Thread</span> that continuously fetches
+                                tasks.</li>
+                            <li>Use a <span class="highlight-blue">Blocking Queue</span> to store submitted tasks.</li>
+                            <li>Threads pick tasks and execute them in a loop.</li>
+                            <li>Provide methods to <span class="highlight-blue">submit tasks</span> and gracefully <span
+                                    class="highlight-blue">shutdown</span> the pool.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">Example: Custom Thread Pool Implementation</p>
+                        <pre class="language-java"><code>
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+
+class CustomThreadPool {
+    private final int threadCount;
+    private final WorkerThread[] threads;
+    private final BlockingQueue&lt;Runnable&gt; taskQueue;
+
+    public CustomThreadPool(int threadCount) {
+        this.threadCount = threadCount;
+        taskQueue = new LinkedBlockingQueue&lt;&gt;();
+        threads = new WorkerThread[threadCount];
+
+        for (int i = 0; i &lt; threadCount; i++) {
+            threads[i] = new WorkerThread();
+            threads[i].start();
+        }
+    }
+
+    public void submitTask(Runnable task) {
+        taskQueue.offer(task);
+    }
+
+    public void shutdown() {
+        for (WorkerThread thread : threads) {
+            thread.running = false;
+        }
+    }
+
+    private class WorkerThread extends Thread {
+        private volatile boolean running = true;
+
+        public void run() {
+            while (running) {
+                try {
+                    Runnable task = taskQueue.take();
+                    task.run();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
+    }
+}
+
+public class ThreadPoolTest {
+    public static void main(String[] args) {
+        CustomThreadPool pool = new CustomThreadPool(3);
+
+        for (int i = 1; i &lt;= 5; i++) {
+            int taskNumber = i;
+            pool.submitTask(() -> {
+                System.out.println("Executing Task " + taskNumber + " by " + Thread.currentThread().getName());
+            });
+        }
+
+        pool.shutdown();
+    }
+}
+      </code></pre>
+
+                        <p class="highlight-yellow">Explanation:</p>
+                        <ul>
+                            <li><span class="highlight-blue">WorkerThread Class:</span> Each thread continuously picks
+                                tasks from the queue.</li>
+                            <li><span class="highlight-blue">BlockingQueue:</span> Ensures tasks are picked in a FIFO
+                                manner.</li>
+                            <li><span class="highlight-blue">submitTask():</span> Adds tasks to the queue.</li>
+                            <li><span class="highlight-blue">shutdown():</span> Stops the threads gracefully.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">Advantages:</p>
+                        <ul>
+                            <li>Efficient management of resources.</li>
+                            <li>Improves response time for executing tasks.</li>
+                            <li>Reduces thread creation overhead.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#falseSharing">
+                        Explain how Java handles false sharing in multi-core processors.
+                    </button>
+                </h2>
+                <div id="falseSharing" class="accordion-collapse collapse" data-bs-parent="#questionAccordion">
+                    <div class="accordion-body">
+                        <p class="highlight-yellow">What is False Sharing?</p>
+                        <ul>
+                            <li>False sharing occurs when multiple threads on different CPU cores modify <span
+                                    class="highlight-blue">different variables</span> located in the same cache line.
+                            </li>
+                            <li>Even though they modify <span class="highlight-blue">separate variables</span>, the CPU
+                                cache invalidates and reloads the entire cache line, leading to **performance
+                                degradation**.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">Why is False Sharing a Problem?</p>
+                        <ul>
+                            <li>Leads to **unnecessary cache coherency traffic**.</li>
+                            <li>Slows down **multi-threaded applications**, especially on multi-core CPUs.</li>
+                            <li>Occurs in **high-performance concurrent programming** where different threads update
+                                shared memory.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">Example: False Sharing in Java</p>
+                        <pre class="language-java"><code>
+class SharedData {
+    public volatile long value1 = 0;
+    public volatile long value2 = 0;
+}
+
+public class FalseSharingExample {
+    static SharedData data = new SharedData();
+
+    public static void main(String[] args) throws InterruptedException {
+        Thread t1 = new Thread(() -> {
+            for (long i = 0; i &lt; 10_000_000; i++) {
+                data.value1++;
+            }
+        });
+
+        Thread t2 = new Thread(() -> {
+            for (long i = 0; i &lt; 10_000_000; i++) {
+                data.value2++;
+            }
+        });
+
+        long start = System.nanoTime();
+        t1.start();
+        t2.start();
+        t1.join();
+        t2.join();
+        long end = System.nanoTime();
+
+        System.out.println("Time taken: " + (end - start) / 1_000_000 + " ms");
+    }
+}
+      </code></pre>
+
+                        <p class="highlight-yellow">Why Does This Cause False Sharing?</p>
+                        <ul>
+                            <li><span class="highlight-blue">value1</span> and <span
+                                    class="highlight-blue">value2</span> are in the same cache line.</li>
+                            <li>When **Thread-1 updates value1**, the entire cache line is **invalidated**.</li>
+                            <li>When **Thread-2 updates value2**, the cache line must be **reloaded**, causing
+                                unnecessary slowdowns.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">Solution: Padding to Prevent False Sharing</p>
+                        <pre class="language-java"><code>
+class PaddedData {
+    public volatile long value1 = 0;
+    private long p1, p2, p3, p4, p5, p6, p7; // Padding
+    public volatile long value2 = 0;
+}
+
+public class FalseSharingFixed {
+    static PaddedData data = new PaddedData();
+
+    public static void main(String[] args) throws InterruptedException {
+        Thread t1 = new Thread(() -> {
+            for (long i = 0; i &lt; 10_000_000; i++) {
+                data.value1++;
+            }
+        });
+
+        Thread t2 = new Thread(() -> {
+            for (long i = 0; i &lt; 10_000_000; i++) {
+                data.value2++;
+            }
+        });
+
+        long start = System.nanoTime();
+        t1.start();
+        t2.start();
+        t1.join();
+        t2.join();
+        long end = System.nanoTime();
+
+        System.out.println("Time taken (with padding): " + (end - start) / 1_000_000 + " ms");
+    }
+}
+      </code></pre>
+
+                        <p class="highlight-yellow">How Padding Fixes False Sharing?</p>
+                        <ul>
+                            <li>The **extra padding variables** ensure that <span class="highlight-blue">value1</span>
+                                and <span class="highlight-blue">value2</span> are in different cache lines.</li>
+                            <li>Prevents **cache invalidation** issues, improving **multi-threading performance**.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">Better Alternative: Java's @Contended Annotation</p>
+                        <pre class="language-java"><code>
+import jdk.internal.vm.annotation.Contended;
+
+class OptimizedData {
+    @Contended
+    public volatile long value1 = 0;
+
+    @Contended
+    public volatile long value2 = 0;
+}
+      </code></pre>
+
+                        <p class="highlight-yellow">Key Takeaways:</p>
+                        <ul>
+                            <li>False sharing **slows down multi-threaded applications** due to unnecessary cache
+                                invalidations.</li>
+                            <li>Using **padding** or **@Contended** annotation can solve the problem.</li>
+                            <li>Best practice is to **align frequently modified variables to separate cache lines**.
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#synchronizedVsReentrantLock">
+                        What are the main drawbacks of using synchronized methods? How does ReentrantLock improve
+                        performance?
+                    </button>
+                </h2>
+                <div id="synchronizedVsReentrantLock" class="accordion-collapse collapse"
+                    data-bs-parent="#questionAccordion">
+                    <div class="accordion-body">
+                        <p class="highlight-yellow">Drawbacks of Using Synchronized Methods</p>
+                        <ul>
+                            <li><span class="highlight-blue">Blocking Nature:</span> The `synchronized` keyword **blocks
+                                threads completely**, leading to performance bottlenecks.</li>
+                            <li><span class="highlight-blue">No Fairness Control:</span> Threads acquire locks
+                                arbitrarily, leading to **thread starvation**.</li>
+                            <li><span class="highlight-blue">No Try-Lock Mechanism:</span> A thread **must wait
+                                indefinitely** for a lock to be released.</li>
+                            <li><span class="highlight-blue">Cannot Check Lock Status:</span> No way to check if a lock
+                                is **held by another thread**.</li>
+                            <li><span class="highlight-blue">Interruptibility Issue:</span> `synchronized` blocks cannot
+                                be **interrupted**, leading to deadlocks in some cases.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">Example: Problems with Synchronized Methods</p>
+                        <pre class="language-java"><code>
+class SynchronizedCounter {
+    private int count = 0;
+
+    public synchronized void increment() {
+        count++;
+    }
+
+    public synchronized int getCount() {
+        return count;
+    }
+}
+
+public class SynchronizedTest {
+    public static void main(String[] args) throws InterruptedException {
+        SynchronizedCounter counter = new SynchronizedCounter();
+
+        Thread t1 = new Thread(() -> {
+            for (int i = 0; i &lt; 100000; i++) counter.increment();
+        });
+
+        Thread t2 = new Thread(() -> {
+            for (int i = 0; i &lt; 100000; i++) counter.increment();
+        });
+
+        long start = System.nanoTime();
+        t1.start();
+        t2.start();
+        t1.join();
+        t2.join();
+        long end = System.nanoTime();
+
+        System.out.println("Final Count: " + counter.getCount());
+        System.out.println("Execution Time: " + (end - start) / 1_000_000 + " ms");
+    }
+}
+      </code></pre>
+
+                        <p class="highlight-yellow">How Does ReentrantLock Improve Performance?</p>
+                        <ul>
+                            <li><span class="highlight-blue">Try-Lock Mechanism:</span> Threads can attempt to **acquire
+                                the lock and move on** if it's unavailable.</li>
+                            <li><span class="highlight-blue">Interruptible Locks:</span> Allows **interrupting blocked
+                                threads**, avoiding deadlocks.</li>
+                            <li><span class="highlight-blue">Fair Locking:</span> Supports **first-come-first-serve
+                                (FIFO)** locking to prevent starvation.</li>
+                            <li><span class="highlight-blue">Locking with Conditions:</span> Provides **multiple
+                                conditions** for fine-grained control.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">Example: Using ReentrantLock</p>
+                        <pre class="language-java"><code>
+import java.util.concurrent.locks.ReentrantLock;
+
+class LockCounter {
+    private int count = 0;
+    private final ReentrantLock lock = new ReentrantLock();
+
+    public void increment() {
+        lock.lock(); // Acquiring lock
+        try {
+            count++;
+        } finally {
+            lock.unlock(); // Always unlock to prevent deadlock
+        }
+    }
+
+    public int getCount() {
+        return count;
+    }
+}
+
+public class ReentrantLockTest {
+    public static void main(String[] args) throws InterruptedException {
+        LockCounter counter = new LockCounter();
+
+        Thread t1 = new Thread(() -> {
+            for (int i = 0; i &lt; 100000; i++) counter.increment();
+        });
+
+        Thread t2 = new Thread(() -> {
+            for (int i = 0; i &lt; 100000; i++) counter.increment();
+        });
+
+        long start = System.nanoTime();
+        t1.start();
+        t2.start();
+        t1.join();
+        t2.join();
+        long end = System.nanoTime();
+
+        System.out.println("Final Count: " + counter.getCount());
+        System.out.println("Execution Time: " + (end - start) / 1_000_000 + " ms");
+    }
+}
+      </code></pre>
+
+                        <p class="highlight-yellow">Key Advantages of ReentrantLock</p>
+                        <ul>
+                            <li><span class="highlight-blue">Better Performance:</span> Less blocking, improves
+                                concurrency.</li>
+                            <li><span class="highlight-blue">Deadlock Prevention:</span> Supports **timeout-based
+                                locking**.</li>
+                            <li><span class="highlight-blue">More Flexibility:</span> Supports **fair locking and
+                                interruptible locks**.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">When to Use Which?</p>
+                        <ul>
+                            <li><span class="highlight-blue">Use `synchronized`</span> for **simple cases** where
+                                blocking is acceptable.</li>
+                            <li><span class="highlight-blue">Use `ReentrantLock`</span> for **highly concurrent
+                                applications** needing better control.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#rateLimiter">
+                        Implement a multi-threaded rate limiter that handles API requests.
+                    </button>
+                </h2>
+                <div id="rateLimiter" class="accordion-collapse collapse" data-bs-parent="#questionAccordion">
+                    <div class="accordion-body">
+                        <p class="highlight-yellow">What is a Rate Limiter?</p>
+                        <p>
+                            A <span class="highlight-blue">Rate Limiter</span> controls the rate at which requests are
+                            processed
+                            to prevent overloading a system. It ensures that only a certain number of requests are
+                            allowed per time window.
+                        </p>
+
+                        <p class="highlight-yellow">Approach: Token Bucket Algorithm</p>
+                        <ul>
+                            <li>Uses a **fixed capacity bucket** that holds tokens.</li>
+                            <li>Each request **consumes a token**; if none are available, the request is rejected or
+                                delayed.</li>
+                            <li>Tokens are **refilled periodically** at a fixed rate.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">Example: Multi-threaded Rate Limiter in Java</p>
+                        <pre class="language-java"><code>
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
+
+class RateLimiter {
+    private final Semaphore semaphore;
+    private final int maxRequests;
+    private final int refillRate;
+    
+    public RateLimiter(int maxRequests, int refillRate) {
+        this.maxRequests = maxRequests;
+        this.refillRate = refillRate;
+        this.semaphore = new Semaphore(maxRequests, true);
+        
+        // Schedule token refill
+        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+        scheduler.scheduleAtFixedRate(this::refillTokens, 0, 1, TimeUnit.SECONDS);
+    }
+
+    private void refillTokens() {
+        int tokensToAdd = Math.min(maxRequests - semaphore.availablePermits(), refillRate);
+        semaphore.release(tokensToAdd);
+    }
+
+    public boolean tryAcquire() {
+        return semaphore.tryAcquire();
+    }
+}
+
+public class RateLimiterTest {
+    public static void main(String[] args) {
+        RateLimiter rateLimiter = new RateLimiter(5, 2); // Allow 5 requests max, refill 2 per sec
+        ExecutorService executor = Executors.newFixedThreadPool(10);
+        AtomicInteger successfulRequests = new AtomicInteger(0);
+
+        Runnable task = () -> {
+            if (rateLimiter.tryAcquire()) {
+                System.out.println(Thread.currentThread().getName() + " - Request processed.");
+                successfulRequests.incrementAndGet();
+            } else {
+                System.out.println(Thread.currentThread().getName() + " - Rate limit exceeded.");
+            }
+        };
+
+        for (int i = 0; i < 20; i++) {
+            executor.execute(task);
+            try { Thread.sleep(200); } catch (InterruptedException ignored) {} // Simulate incoming requests
+        }
+
+        executor.shutdown();
+        try {
+            executor.awaitTermination(5, TimeUnit.SECONDS);
+        } catch (InterruptedException ignored) {}
+        
+        System.out.println("Total Successful Requests: " + successfulRequests.get());
+    }
+}
+      </code></pre>
+
+                        <p class="highlight-yellow">Key Features of This Implementation</p>
+                        <ul>
+                            <li><span class="highlight-blue">Semaphore-Based:</span> Ensures only a fixed number of
+                                requests are allowed.</li>
+                            <li><span class="highlight-blue">Periodic Token Refill:</span> Uses
+                                `ScheduledExecutorService` to **refill tokens every second**.</li>
+                            <li><span class="highlight-blue">Multi-Threaded Handling:</span> Uses a **thread pool** to
+                                simulate multiple API requests.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">Use Cases</p>
+                        <ul>
+                            <li><span class="highlight-blue">API Rate Limiting:</span> Prevents excessive API calls.
+                            </li>
+                            <li><span class="highlight-blue">Thread Throttling:</span> Controls the number of parallel
+                                tasks.</li>
+                            <li><span class="highlight-blue">Traffic Shaping:</span> Regulates request flow in
+                                **distributed systems**.</li>
+                        </ul>
+
+                        <p><strong>Would you like an implementation with Redis for distributed rate limiting?</strong>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#threadStarvation">
+                        How would you handle thread starvation in high-throughput applications?
+                    </button>
+                </h2>
+                <div id="threadStarvation" class="accordion-collapse collapse" data-bs-parent="#questionAccordion">
+                    <div class="accordion-body">
+                        <p class="highlight-yellow">What is Thread Starvation?</p>
+                        <p>
+                            <span class="highlight-blue">Thread starvation</span> occurs when low-priority threads
+                            are unable to execute because higher-priority threads keep consuming CPU time.
+                            This issue is common in **high-throughput applications** where limited resources
+                            are overwhelmed by CPU-bound or I/O-heavy tasks.
+                        </p>
+
+                        <p class="highlight-yellow">Causes of Thread Starvation</p>
+                        <ul>
+                            <li><span class="highlight-blue">Unfair Scheduling:</span> Higher-priority threads dominate
+                                CPU cycles.</li>
+                            <li><span class="highlight-blue">Infinite Loops:</span> Long-running tasks never release CPU
+                                time.</li>
+                            <li><span class="highlight-blue">Synchronized Locks:</span> Low-priority threads keep
+                                waiting for locks held by high-priority threads.</li>
+                            <li><span class="highlight-blue">Thread Pool Exhaustion:</span> All available worker threads
+                                are busy processing long tasks.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">Solutions to Handle Thread Starvation</p>
+                        <ul>
+                            <li><span class="highlight-blue">Use Fair Locks:</span> Prefer
+                                <code>ReentrantLock(true)</code> to ensure fairness.
+                            </li>
+                            <li><span class="highlight-blue">Avoid High-Priority Thread Dominance:</span> Use thread
+                                pools with balanced priorities.</li>
+                            <li><span class="highlight-blue">Limit Task Execution Time:</span> Use
+                                <code>Future.get(timeout)</code> to avoid long waits.
+                            </li>
+                            <li><span class="highlight-blue">Implement Work Stealing:</span> Assign idle worker threads
+                                dynamically.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">Example: Handling Starvation with a Fair Thread Pool</p>
+                        <pre class="language-java"><code>
+import java.util.concurrent.*;
+
+class FairThreadPool {
+    private final ExecutorService executor;
+
+    public FairThreadPool(int poolSize) {
+        this.executor = new ThreadPoolExecutor(
+                poolSize, 
+                poolSize, 
+                0L, TimeUnit.MILLISECONDS, 
+                new LinkedBlockingQueue<>(),
+                new ThreadFactory() {
+                    @Override
+                    public Thread newThread(Runnable r) {
+                        Thread t = new Thread(r);
+                        t.setPriority(Thread.NORM_PRIORITY); // Avoid starvation by keeping priorities equal
+                        return t;
+                    }
+                }
+        );
+    }
+
+    public void submitTask(Runnable task) {
+        executor.execute(task);
+    }
+
+    public void shutdown() {
+        executor.shutdown();
+    }
+}
+
+public class ThreadStarvationExample {
+    public static void main(String[] args) {
+        FairThreadPool pool = new FairThreadPool(5);
+
+        // Simulating high-priority and low-priority tasks
+        Runnable highPriorityTask = () -> {
+            System.out.println(Thread.currentThread().getName() + " - High Priority Task Running...");
+            try { Thread.sleep(2000); } catch (InterruptedException ignored) {}
+        };
+
+        Runnable lowPriorityTask = () -> {
+            System.out.println(Thread.currentThread().getName() + " - Low Priority Task Running...");
+            try { Thread.sleep(1000); } catch (InterruptedException ignored) {}
+        };
+
+        for (int i = 0; i < 5; i++) {
+            pool.submitTask(highPriorityTask);
+            pool.submitTask(lowPriorityTask);
+        }
+
+        pool.shutdown();
+    }
+}
+      </code></pre>
+
+                        <p class="highlight-yellow">How This Prevents Starvation?</p>
+                        <ul>
+                            <li><span class="highlight-blue">Fair Scheduling:</span> Uses a balanced **thread priority**
+                                model.</li>
+                            <li><span class="highlight-blue">Avoids Blocking:</span> Ensures **all tasks get a chance**
+                                to execute.</li>
+                            <li><span class="highlight-blue">Thread Pool Management:</span> Controls the **number of
+                                concurrent tasks**, preventing long waits.</li>
+                        </ul>
+
+                        <p><strong>Would you like a solution for starvation in database queries or distributed
+                                systems?</strong></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#springAutoConfig">
+                        How does Spring Boot’s auto-configuration determine which beans to load?
+                    </button>
+                </h2>
+                <div id="springAutoConfig" class="accordion-collapse collapse" data-bs-parent="#questionAccordion">
+                    <div class="accordion-body">
+                        <p class="highlight-yellow">What is Spring Boot Auto-Configuration?</p>
+                        <p>
+                            Spring Boot’s **auto-configuration** mechanism automatically configures beans
+                            based on the dependencies available in the **classpath** and certain **conditions**.
+                            This helps developers avoid **manual configuration** of common components like databases,
+                            message brokers, and security settings.
+                        </p>
+
+                        <p class="highlight-yellow">How Does Spring Boot Determine Which Beans to Load?</p>
+                        <ul>
+                            <li>
+                                <span class="highlight-blue">1. Classpath Scanning:</span> If a specific library (e.g.,
+                                **Spring Data JPA**) is detected,
+                                Spring Boot loads the corresponding **auto-configuration classes**.
+                            </li>
+                            <li>
+                                <span class="highlight-blue">2. Conditional Beans:</span> Uses annotations like
+                                <code>@ConditionalOnClass</code>, <code>@ConditionalOnMissingBean</code>,
+                                and <code>@ConditionalOnProperty</code> to control bean registration.
+                            </li>
+                            <li>
+                                <span class="highlight-blue">3. Configuration Properties:</span> Reads properties from
+                                **application.properties**
+                                or **application.yml** to enable or disable specific configurations.
+                            </li>
+                            <li>
+                                <span class="highlight-blue">4. Spring Factories:</span> Uses the
+                                <code>META-INF/spring.factories</code> file to register **auto-configuration classes**.
+                            </li>
+                        </ul>
+
+                        <p class="highlight-yellow">Example: Auto-Configuration in Action</p>
+                        <pre class="language-java"><code>
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+@ConditionalOnClass(name = "org.h2.Driver") // Load only if H2 Database is present
+public class H2AutoConfig {
+
+    @Bean
+    @ConditionalOnMissingBean
+    public DataSource dataSource() {
+        System.out.println("Auto-configuring H2 DataSource...");
+        return new HikariDataSource();
+    }
+}
+      </code></pre>
+
+                        <p class="highlight-yellow">Key Annotations in Auto-Configuration</p>
+                        <ul>
+                            <li>
+                                <code>@ConditionalOnClass</code> → Loads beans only if a specific class is present in
+                                the **classpath**.
+                            </li>
+                            <li>
+                                <code>@ConditionalOnMissingBean</code> → Registers a bean **only if** it doesn’t already
+                                exist.
+                            </li>
+                            <li>
+                                <code>@ConditionalOnProperty</code> → Enables beans based on properties like
+                                <code>spring.datasource.enabled=true</code>.
+                            </li>
+                        </ul>
+
+                        <p class="highlight-yellow">How to Disable Auto-Configuration?</p>
+                        <p>
+                            If you want to disable a specific auto-configuration, use:
+                        </p>
+                        <pre class="language-java"><code>
+@SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
+      </code></pre>
+
+                        <p class="highlight-yellow">How to Debug Auto-Configuration?</p>
+                        <p>
+                            Run the application with the <code>--debug</code> flag to see which auto-configurations were
+                            **enabled/disabled**:
+                        </p>
+                        <pre class="language-bash"><code>
+mvn spring-boot:run --debug
+      </code></pre>
+
+                        <p><strong>Would you like an example for custom auto-configuration?</strong></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#circuitBreaker">
+                        What is Circuit Breaker, and how does it prevent cascading failures in microservices?
+                    </button>
+                </h2>
+                <div id="circuitBreaker" class="accordion-collapse collapse" data-bs-parent="#questionAccordion">
+                    <div class="accordion-body">
+                        <p class="highlight-yellow">What is a Circuit Breaker?</p>
+                        <p>
+                            A **Circuit Breaker** is a design pattern used in **microservices** to prevent **cascading
+                            failures**.
+                            It monitors service calls and **opens** when failures exceed a threshold, stopping further
+                            calls
+                            to the failing service for a cooldown period.
+                        </p>
+
+                        <p class="highlight-yellow">Why is it Needed?</p>
+                        <ul>
+                            <li>Prevents **overloading** of a failing service.</li>
+                            <li>Improves **resilience** in distributed systems.</li>
+                            <li>Avoids **thread exhaustion** by stopping unnecessary retries.</li>
+                            <li>Reduces **latency spikes** and enhances **user experience**.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">Circuit Breaker States</p>
+                        <ul>
+                            <li>
+                                <span class="highlight-blue">1. CLOSED:</span> Requests are sent **normally**. If
+                                failures increase beyond a limit, it switches to OPEN.
+                            </li>
+                            <li>
+                                <span class="highlight-blue">2. OPEN:</span> Requests are **blocked** for a cooldown
+                                period. After a delay, it moves to HALF-OPEN.
+                            </li>
+                            <li>
+                                <span class="highlight-blue">3. HALF-OPEN:</span> Allows **limited requests** to check
+                                if the service recovers. If successful, it **closes** the circuit.
+                            </li>
+                        </ul>
+
+                        <p class="highlight-yellow">Example: Implementing Circuit Breaker with Resilience4j</p>
+                        <pre class="language-java"><code>
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+@Service
+public class PaymentService {
+  
+    private final RestTemplate restTemplate = new RestTemplate();
+  
+    @CircuitBreaker(name = "paymentService", fallbackMethod = "fallbackPayment")
+    public String processPayment() {
+        return restTemplate.getForObject("http://payment-service/process", String.class);
+    }
+
+    // Fallback method executed when circuit breaker is OPEN
+    public String fallbackPayment(Exception e) {
+        return "Payment service is temporarily unavailable. Please try again later.";
+    }
+}
+      </code></pre>
+
+                        <p class="highlight-yellow">Configuration in <code>application.yml</code></p>
+                        <pre class="language-yaml"><code>
+resilience4j.circuitbreaker:
+  instances:
+    paymentService:
+      failureRateThreshold: 50  # Open circuit if 50% requests fail
+      waitDurationInOpenState: 5000ms  # Wait 5 seconds before retrying
+      permittedNumberOfCallsInHalfOpenState: 3
+      slidingWindowSize: 10  # Evaluate failures over last 10 requests
+      minimumNumberOfCalls: 5
+      automaticTransitionFromOpenToHalfOpenEnabled: true
+      recordExceptions:
+        - java.io.IOException
+        - java.net.ConnectException
+      ignoreExceptions:
+        - com.example.MyCustomException
+      </code></pre>
+
+                        <p class="highlight-yellow">How It Works:</p>
+                        <ul>
+                            <li>When the failure rate exceeds **50%**, the circuit breaker switches to **OPEN** state.
+                            </li>
+                            <li>After **5 seconds**, it moves to **HALF-OPEN** and allows **3 test requests**.</li>
+                            <li>If successful, it **closes**; otherwise, it stays **open**.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">Advantages:</p>
+                        <ul>
+                            <li>Prevents **cascading failures** in microservices.</li>
+                            <li>Improves **system stability and resilience**.</li>
+                            <li>Allows **graceful degradation** using fallback methods.</li>
+                            <li>Optimizes **resource utilization**.</li>
+                        </ul>
+
+                        <p><strong>Would you like to see a working Spring Boot project using Circuit Breaker?</strong>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#blueGreenDeployment">
+                        How would you handle blue-green deployments in a Spring Boot microservices setup?
+                    </button>
+                </h2>
+                <div id="blueGreenDeployment" class="accordion-collapse collapse" data-bs-parent="#questionAccordion">
+                    <div class="accordion-body">
+                        <p class="highlight-yellow">What is Blue-Green Deployment?</p>
+                        <p>
+                            **Blue-Green Deployment** is a release management strategy where two identical environments
+                            (**Blue** and **Green**)
+                            are maintained. Only one environment is live at a time, reducing **downtime** and **risk**
+                            when deploying new versions.
+                        </p>
+
+                        <p class="highlight-yellow">How It Works?</p>
+                        <ul>
+                            <li><span class="highlight-blue">Blue:</span> The current **active production** environment.
+                            </li>
+                            <li><span class="highlight-blue">Green:</span> The **new version** of the application,
+                                deployed in parallel.</li>
+                            <li>After testing Green, traffic is switched from Blue to Green using a **load balancer**.
+                            </li>
+                            <li>If issues occur, traffic is quickly reverted to Blue.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">Why Use Blue-Green Deployment?</p>
+                        <ul>
+                            <li>**Zero-downtime deployments**</li>
+                            <li>**Quick rollback** in case of failure</li>
+                            <li>**Seamless user experience** during updates</li>
+                            <li>Enables **canary testing** before full rollout</li>
+                        </ul>
+
+                        <p class="highlight-yellow">Implementation in a Spring Boot Microservices Setup</p>
+
+                        <p class="highlight-blue">1. Using Nginx as a Load Balancer</p>
+                        <pre class="language-nginx"><code>
+upstream app {
+    server green-service:8080;
+    # Switch to blue-service if rollback needed
+    # server blue-service:8080;
+}
+
+server {
+    listen 80;
+
+    location / {
+        proxy_pass http://app;
+    }
+}
+      </code></pre>
+
+                        <p class="highlight-blue">2. Automating Deployment with Kubernetes</p>
+                        <pre class="language-yaml"><code>
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: green-service
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: green-service
+  template:
+    metadata:
+      labels:
+        app: green-service
+    spec:
+      containers:
+        - name: app
+          image: my-app:latest
+          ports:
+            - containerPort: 8080
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app-service
+spec:
+  selector:
+    app: green-service
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+      </code></pre>
+
+                        <p class="highlight-blue">3. Switching Traffic via Kubernetes Service</p>
+                        <p>Update the **service selector** to point to the Green version:</p>
+                        <pre class="language-yaml"><code>
+kubectl patch service my-app-service -p '{"spec":{"selector":{"app":"green-service"}}}'
+      </code></pre>
+
+                        <p class="highlight-yellow">Rollback Strategy</p>
+                        <ul>
+                            <li>Switch back to **Blue** by updating the load balancer or service selector.</li>
+                            <li>Monitor **logs** and **metrics** for anomalies after switching traffic.</li>
+                            <li>Use **feature flags** for partial rollouts before full deployment.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">Advantages of Blue-Green Deployment</p>
+                        <ul>
+                            <li>**Instant rollback** in case of failure</li>
+                            <li>**No downtime**, ensuring continuous service availability</li>
+                            <li>Reduces risk by allowing **testing in production-like environments**</li>
+                        </ul>
+
+                        <p><strong>Would you like an example using AWS Elastic Load Balancer (ELB)?</strong></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#eventualConsistency">
+                        Explain Eventual Consistency. How would you ensure data consistency across distributed services?
+                    </button>
+                </h2>
+                <div id="eventualConsistency" class="accordion-collapse collapse" data-bs-parent="#questionAccordion">
+                    <div class="accordion-body">
+                        <p class="highlight-yellow">What is Eventual Consistency?</p>
+                        <p>
+                            **Eventual Consistency** is a consistency model in distributed systems where **data updates
+                            are not immediately visible across all nodes**, but after a period of time, all nodes will
+                            eventually reach the same state.
+                        </p>
+                        <p>It is commonly used in **highly available distributed systems**, such as cloud databases,
+                            microservices, and NoSQL databases.</p>
+
+                        <p class="highlight-yellow">Key Characteristics:</p>
+                        <ul>
+                            <li>Data updates **propagate asynchronously** across the system.</li>
+                            <li>Guarantees that, **given enough time**, all replicas will have the same data.</li>
+                            <li>Trades **strong consistency** for **higher availability and performance**.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">Examples of Eventual Consistency</p>
+                        <ul>
+                            <li>**DNS Systems**: Updates to domain records take time to propagate.</li>
+                            <li>**Amazon DynamoDB, Cassandra**: NoSQL databases that use eventual consistency.</li>
+                            <li>**Microservices Event-Driven Architecture**: Services sync data asynchronously using
+                                events.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">How to Ensure Data Consistency Across Distributed Services?</p>
+                        <p>
+                            Achieving **eventual consistency** requires techniques that allow distributed services to
+                            **synchronize** while maintaining availability.
+                        </p>
+
+                        <p class="highlight-blue">1. Using an Event-Driven Architecture</p>
+                        <p>Microservices can publish events to ensure consistency asynchronously.</p>
+                        <pre class="language-java"><code>
+// Order Service - Publishing an event
+public void placeOrder(Order order) {
+    orderRepository.save(order);
+    eventPublisher.publishEvent(new OrderCreatedEvent(order.getId()));
+}
+
+// Payment Service - Listening for the event
+@EventListener
+public void handleOrderCreated(OrderCreatedEvent event) {
+    processPayment(event.getOrderId());
+}
+      </code></pre>
+
+                        <p class="highlight-blue">2. Implementing the Saga Pattern</p>
+                        <p>Sagas handle **long-running transactions** by breaking them into a sequence of steps with
+                            compensating actions.</p>
+                        <pre class="language-java"><code>
+// Step 1: Order Service creates an order and publishes an event
+orderService.createOrder();
+
+// Step 2: Payment Service processes payment
+paymentService.processPayment(orderId);
+
+// Step 3: If payment fails, Order Service compensates by canceling the order
+if (paymentFailed) {
+    orderService.cancelOrder(orderId);
+}
+      </code></pre>
+
+                        <p class="highlight-blue">3. Using Distributed Transactions (Two-Phase Commit - 2PC)</p>
+                        <p>2PC ensures strong consistency by having a **prepare** and **commit** phase.</p>
+                        <pre class="language-java"><code>
+// Prepare phase: Each service acknowledges it is ready to commit
+boolean canCommit = serviceA.prepare() &amp;&amp; serviceB.prepare();
+
+// Commit phase: If all services agreed, commit the transaction
+if (canCommit) {
+    serviceA.commit();
+    serviceB.commit();
+} else {
+    serviceA.rollback();
+    serviceB.rollback();
+}
+      </code></pre>
+
+                        <p class="highlight-blue">4. Using a Change Data Capture (CDC) Approach</p>
+                        <p>CDC tracks database changes and synchronizes them across services.</p>
+                        <pre class="language-sql"><code>
+-- Capturing changes in MySQL binlog
+UPDATE orders SET status = 'COMPLETED' WHERE order_id = 123;
+
+-- Kafka streams this change to other services
+      </code></pre>
+
+                        <p class="highlight-yellow">When to Use Eventual Consistency?</p>
+                        <ul>
+                            <li>When **high availability** is critical.</li>
+                            <li>For **large-scale distributed systems** (e.g., microservices, cloud databases).</li>
+                            <li>Where immediate consistency is **not required** (e.g., user activity logs, analytics).
+                            </li>
+                        </ul>
+
+                        <p class="highlight-yellow">Challenges of Eventual Consistency</p>
+                        <ul>
+                            <li>Temporary **stale reads** until synchronization completes.</li>
+                            <li>Requires **conflict resolution mechanisms** in case of concurrent updates.</li>
+                            <li>Complex to implement in **financial transactions** where strong consistency is required.
+                            </li>
+                        </ul>
+
+                        <p><strong>Would you like a Kafka-based real-world example?</strong></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#rateLimiter">
+                        Implement a rate-limited API in Spring Boot that handles 10,000 requests per second.
+                    </button>
+                </h2>
+                <div id="rateLimiter" class="accordion-collapse collapse">
+                    <div class="accordion-body">
+                        <p class="highlight-yellow">1️⃣ Add Dependencies (pom.xml)</p>
+                        <pre class="language-xml">
+        &lt;dependencies&gt;
+            &lt;dependency&gt;
+                &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+                &lt;artifactId&gt;spring-boot-starter-web&lt;/artifactId&gt;
+            &lt;/dependency&gt;
+            &lt;dependency&gt;
+                &lt;groupId&gt;com.github.vladimir-bukhtoyarov&lt;/groupId&gt;
+                &lt;artifactId&gt;bucket4j-core&lt;/artifactId&gt;
+                &lt;version&gt;8.4.1&lt;/version&gt;
+            &lt;/dependency&gt;
+        &lt;/dependencies&gt;
+      </pre>
+
+                        <p class="highlight-yellow">2️⃣ Create Rate Limiting Interceptor</p>
+                        <pre class="language-java">
+        import io.github.bucket4j.Bandwidth;
+        import io.github.bucket4j.Bucket;
+        import io.github.bucket4j.Refill;
+        import jakarta.servlet.http.HttpServletRequest;
+        import jakarta.servlet.http.HttpServletResponse;
+        import org.springframework.stereotype.Component;
+        import org.springframework.web.servlet.HandlerInterceptor;
+
+        import java.time.Duration;
+        import java.util.concurrent.ConcurrentHashMap;
+        import java.util.concurrent.ConcurrentMap;
+
+        @Component
+        public class RateLimitInterceptor implements HandlerInterceptor {
+            private final ConcurrentMap&lt;String, Bucket&gt; bucketCache = new ConcurrentHashMap&lt;&gt;();
+
+            private Bucket getBucket(String ip) {
+                return bucketCache.computeIfAbsent(ip, k -&gt; Bucket.builder()
+                        .addLimit(Bandwidth.classic(10_000, Refill.greedy(10_000, Duration.ofSeconds(1))))
+                        .build());
+            }
+
+            @Override
+            public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+                String clientIp = request.getRemoteAddr();
+                Bucket bucket = getBucket(clientIp);
+
+                if (bucket.tryConsume(1)) {
+                    return true;
+                } else {
+                    response.setStatus(429);
+                    response.getWriter().write("Rate limit exceeded. Try again later.");
+                    return false;
+                }
+            }
+        }
+      </pre>
+
+                        <p class="highlight-yellow">3️⃣ Register the Interceptor</p>
+                        <pre class="language-java">
+        import org.springframework.beans.factory.annotation.Autowired;
+        import org.springframework.context.annotation.Configuration;
+        import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+        import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+        @Configuration
+        public class WebConfig implements WebMvcConfigurer {
+            @Autowired
+            private RateLimitInterceptor rateLimitInterceptor;
+
+            @Override
+            public void addInterceptors(InterceptorRegistry registry) {
+                registry.addInterceptor(rateLimitInterceptor);
+            }
+        }
+      </pre>
+
+                        <p class="highlight-yellow">4️⃣ Test the API</p>
+                        <pre class="language-java">
+        import org.springframework.web.bind.annotation.GetMapping;
+        import org.springframework.web.bind.annotation.RequestMapping;
+        import org.springframework.web.bind.annotation.RestController;
+
+        @RestController
+        @RequestMapping("/api")
+        public class RateLimitedController {
+            @GetMapping("/data")
+            public String getData() {
+                return "Request successful!";
+            }
+        }
+      </pre>
+
+                        <p class="highlight-yellow">🔹 Now, test the API:</p>
+                        <pre class="language-bash">
+        curl -X GET http://localhost:8080/api/data
+      </pre>
+
+                        <p>If more than 10,000 requests are sent in a second, a <code>429 Too Many Requests</code> error
+                            is returned.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#apiGateway">
+                        How would you design an API Gateway to handle dynamic routing and security policies?
+                    </button>
+                </h2>
+                <div id="apiGateway" class="accordion-collapse collapse">
+                    <div class="accordion-body">
+                        <p class="highlight-yellow">1️⃣ Add Dependencies (pom.xml)</p>
+                        <pre class="language-xml">
+        &lt;dependencies&gt;
+            &lt;dependency&gt;
+                &lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;
+                &lt;artifactId&gt;spring-cloud-starter-gateway&lt;/artifactId&gt;
+            &lt;/dependency&gt;
+            &lt;dependency&gt;
+                &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+                &lt;artifactId&gt;spring-boot-starter-security&lt;/artifactId&gt;
+            &lt;/dependency&gt;
+            &lt;dependency&gt;
+                &lt;groupId&gt;io.jsonwebtoken&lt;/groupId&gt;
+                &lt;artifactId&gt;jjwt&lt;/artifactId&gt;
+                &lt;version&gt;0.11.5&lt;/version&gt;
+            &lt;/dependency&gt;
+        &lt;/dependencies&gt;
+      </pre>
+
+                        <p class="highlight-yellow">2️⃣ Define API Gateway Configuration (Dynamic Routing)</p>
+                        <pre class="language-java">
+        import org.springframework.cloud.gateway.route.RouteLocator;
+        import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
+        import org.springframework.context.annotation.Bean;
+        import org.springframework.context.annotation.Configuration;
+
+        @Configuration
+        public class ApiGatewayConfig {
+
+            @Bean
+            public RouteLocator gatewayRoutes(RouteLocatorBuilder builder) {
+                return builder.routes()
+                    .route("user-service", r -> r.path("/user/**")
+                        .uri("http://localhost:8081"))
+                    
+                    .route("order-service", r -> r.path("/order/**")
+                        .uri("http://localhost:8082"))
+
+                    .route("payment-service", r -> r.path("/payment/**")
+                        .uri("http://localhost:8083"))
+                    
+                    .build();
+            }
+        }
+      </pre>
+
+                        <p class="highlight-yellow">3️⃣ Implement JWT Authentication Filter</p>
+                        <pre class="language-java">
+        import io.jsonwebtoken.Claims;
+        import io.jsonwebtoken.Jwts;
+        import org.springframework.http.HttpHeaders;
+        import org.springframework.http.server.reactive.ServerHttpRequest;
+        import org.springframework.stereotype.Component;
+        import org.springframework.web.server.ServerWebExchange;
+        import org.springframework.web.server.WebFilter;
+        import org.springframework.web.server.WebFilterChain;
+        import reactor.core.publisher.Mono;
+
+        import java.nio.charset.StandardCharsets;
+        import java.util.Base64;
+
+        @Component
+        public class JwtAuthenticationFilter implements WebFilter {
+            private static final String SECRET_KEY = "my-secret-key";
+
+            @Override
+            public Mono&lt;Void&gt; filter(ServerWebExchange exchange, WebFilterChain chain) {
+                ServerHttpRequest request = exchange.getRequest();
+                if (!request.getHeaders().containsKey(HttpHeaders.AUTHORIZATION)) {
+                    exchange.getResponse().setStatusCode(org.springframework.http.HttpStatus.UNAUTHORIZED);
+                    return exchange.getResponse().setComplete();
+                }
+
+                String token = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION).replace("Bearer ", "");
+                try {
+                    Claims claims = Jwts.parser()
+                        .setSigningKey(Base64.getEncoder().encodeToString(SECRET_KEY.getBytes(StandardCharsets.UTF_8)))
+                        .parseClaimsJws(token)
+                        .getBody();
+
+                    System.out.println("Authenticated user: " + claims.getSubject());
+                } catch (Exception e) {
+                    exchange.getResponse().setStatusCode(org.springframework.http.HttpStatus.UNAUTHORIZED);
+                    return exchange.getResponse().setComplete();
+                }
+                return chain.filter(exchange);
+            }
+        }
+      </pre>
+
+                        <p class="highlight-yellow">4️⃣ Enable Security for API Gateway</p>
+                        <pre class="language-java">
+        import org.springframework.context.annotation.Bean;
+        import org.springframework.context.annotation.Configuration;
+        import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
+        import org.springframework.security.config.web.server.ServerHttpSecurity;
+        import org.springframework.security.web.server.SecurityWebFilterChain;
+
+        @Configuration
+        @EnableWebFluxSecurity
+        public class SecurityConfig {
+            @Bean
+            public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
+                return http.csrf().disable()
+                        .authorizeExchange()
+                        .pathMatchers("/user/**", "/order/**", "/payment/**").authenticated()
+                        .anyExchange().permitAll()
+                        .and()
+                        .build();
+            }
+        }
+      </pre>
+
+                        <p class="highlight-yellow">5️⃣ Implement Rate Limiting for API Gateway</p>
+                        <pre class="language-java">
+        import org.springframework.cloud.gateway.filter.ratelimit.KeyResolver;
+        import org.springframework.context.annotation.Bean;
+        import org.springframework.context.annotation.Configuration;
+        import reactor.core.publisher.Mono;
+
+        @Configuration
+        public class RateLimitConfig {
+            @Bean
+            public KeyResolver userKeyResolver() {
+                return exchange -&gt; Mono.just(exchange.getRequest().getRemoteAddress().getHostName());
+            }
+        }
+      </pre>
+
+                        <p class="highlight-yellow">🔹 Now, test the API Gateway:</p>
+                        <pre class="language-bash">
+        curl -H "Authorization: Bearer YOUR_JWT_TOKEN" -X GET http://localhost:8080/user/profile
+      </pre>
+
+                        <p>If the token is valid, the request will be forwarded to
+                            <code>http://localhost:8081/user/profile</code>.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#paginationChallenges">
+                        Explain the challenges of handling pagination in REST APIs for massive datasets.
+                    </button>
+                </h2>
+                <div id="paginationChallenges" class="accordion-collapse collapse">
+                    <div class="accordion-body">
+                        <p class="highlight-yellow">1️⃣ Performance Issues with OFFSET-based Pagination</p>
+                        <ul>
+                            <li>
+                                Traditional pagination uses <code>OFFSET</code> and <code>LIMIT</code> in SQL queries.
+                            </li>
+                            <li>
+                                For large datasets, higher offsets result in **slow performance** because the database
+                                must scan and discard previous rows.
+                            </li>
+                        </ul>
+                        <p class="highlight-blue">🔹 Example (Slow Query for Large Offset)</p>
+                        <pre class="language-sql">
+        SELECT * FROM transactions ORDER BY created_at DESC LIMIT 10 OFFSET 1000000;
+      </pre>
+
+                        <p class="highlight-yellow">2️⃣ Data Consistency Issues</p>
+                        <ul>
+                            <li>
+                                If new records are inserted while paginating, users may see **duplicate or missing
+                                records**.
+                            </li>
+                            <li>
+                                Example: **If a new transaction is added to page 1, all other pages shift, causing
+                                incorrect data.**
+                            </li>
+                        </ul>
+
+                        <p class="highlight-yellow">3️⃣ Memory & Indexing Overhead</p>
+                        <ul>
+                            <li>
+                                Large offsets force databases to scan **millions of records**, consuming **high memory
+                                and CPU**.
+                            </li>
+                            <li>
+                                Requires **proper indexing** (e.g., using composite indexes for pagination efficiency).
+                            </li>
+                        </ul>
+
+                        <p class="highlight-yellow">4️⃣ Cursor-Based Pagination as an Alternative</p>
+                        <ul>
+                            <li>
+                                Instead of using OFFSET, use **cursors** to fetch the next set of records efficiently.
+                            </li>
+                            <li>
+                                Cursors store a **unique identifier** (e.g., timestamp or ID) to fetch records **greater
+                                than the last seen record**.
+                            </li>
+                        </ul>
+
+                        <p class="highlight-blue">🔹 Example (Efficient Cursor-Based Query)</p>
+                        <pre class="language-sql">
+        SELECT * FROM transactions WHERE created_at < '2025-03-20T10:00:00'
+        ORDER BY created_at DESC LIMIT 10;
+      </pre>
+
+                        <p class="highlight-yellow">5️⃣ Pagination in Distributed Systems</p>
+                        <ul>
+                            <li>
+                                **Sharded databases** require careful handling of pagination across multiple database
+                                nodes.
+                            </li>
+                            <li>
+                                Solutions like **ElasticSearch**, **Cassandra**, and **Kafka Streams** use distributed
+                                pagination techniques.
+                            </li>
+                        </ul>
+
+                        <p class="highlight-yellow">✅ Best Practices</p>
+                        <ul>
+                            <li>Prefer **cursor-based pagination** over OFFSET/LIMIT for massive datasets.</li>
+                            <li>Use **indexed columns** (e.g., primary keys, timestamps) for efficient querying.</li>
+                            <li>For distributed databases, leverage **search engines** like ElasticSearch for
+                                pagination.</li>
+                            <li>Cache frequently accessed pages using **Redis** or **CDNs** to reduce database load.
+                            </li>
+                        </ul>
+
+                        <p class="highlight-blue">🔹 Example: REST API Response with Cursor-Based Pagination</p>
+                        <pre class="language-json">
+        {
+          "data": [...],
+          "next_cursor": "2025-03-20T10:00:00"
+        }
+      </pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#apiTimeoutsRetries">
+                        How would you manage API timeouts and retries in a distributed system?
+                    </button>
+                </h2>
+                <div id="apiTimeoutsRetries" class="accordion-collapse collapse">
+                    <div class="accordion-body">
+
+                        <p class="highlight-yellow">1️⃣ Understanding API Timeouts</p>
+                        <ul>
+                            <li>
+                                In a **distributed system**, network latency, overloaded services, or failures can lead
+                                to timeouts.
+                            </li>
+                            <li>
+                                APIs should have **appropriate timeout settings** to avoid waiting indefinitely.
+                            </li>
+                        </ul>
+
+                        <p class="highlight-blue">🔹 Example: Configuring Timeout in Spring Boot (RestTemplate)</p>
+                        <pre class="language-java">
+        HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory();
+        factory.setConnectTimeout(3000); // 3 seconds timeout
+        factory.setReadTimeout(5000);    // 5 seconds read timeout
+        RestTemplate restTemplate = new RestTemplate(factory);
+      </pre>
+
+                        <p class="highlight-yellow">2️⃣ Implementing Retry Mechanism</p>
+                        <ul>
+                            <li>
+                                Instead of failing immediately, **retrying** requests can handle transient failures.
+                            </li>
+                            <li>
+                                Use **exponential backoff** to increase delay between retries and prevent overloading
+                                the service.
+                            </li>
+                        </ul>
+
+                        <p class="highlight-blue">🔹 Example: Retry with Exponential Backoff in Spring Boot
+                            (Resilience4j)</p>
+                        <pre class="language-java">
+        RetryConfig config = RetryConfig.custom()
+            .maxAttempts(3) // Maximum 3 retries
+            .waitDuration(Duration.ofSeconds(2)) // Initial wait time
+            .retryExceptions(IOException.class, TimeoutException.class)
+            .build();
+
+        RetryRegistry registry = RetryRegistry.of(config);
+        Retry retry = registry.retry("apiRetry");
+
+        Supplier<String> supplier = Retry.decorateSupplier(retry, () -> callExternalApi());
+        String response = supplier.get();
+      </pre>
+
+                        <p class="highlight-yellow">3️⃣ Using Circuit Breaker to Avoid Overloading</p>
+                        <ul>
+                            <li>
+                                A **circuit breaker** prevents excessive retries when a service is failing.
+                            </li>
+                            <li>
+                                After a threshold is reached, it **stops requests** to the failing service for a while.
+                            </li>
+                        </ul>
+
+                        <p class="highlight-blue">🔹 Example: Circuit Breaker with Resilience4j</p>
+                        <pre class="language-java">
+        CircuitBreakerConfig cbConfig = CircuitBreakerConfig.custom()
+            .failureRateThreshold(50) // Open circuit if 50% failures
+            .waitDurationInOpenState(Duration.ofSeconds(10)) // Wait before retrying
+            .build();
+
+        CircuitBreakerRegistry cbRegistry = CircuitBreakerRegistry.of(cbConfig);
+        CircuitBreaker circuitBreaker = cbRegistry.circuitBreaker("apiBreaker");
+
+        Supplier<String> supplier = CircuitBreaker.decorateSupplier(circuitBreaker, () -> callExternalApi());
+        String response = supplier.get();
+      </pre>
+
+                        <p class="highlight-yellow">4️⃣ Handling Idempotency in Retries</p>
+                        <ul>
+                            <li>
+                                If an API modifies data (e.g., **payment processing**), retries can cause **duplicate
+                                operations**.
+                            </li>
+                            <li>
+                                Use **idempotency keys** to prevent unintended side effects.
+                            </li>
+                        </ul>
+
+                        <p class="highlight-blue">🔹 Example: Sending Idempotency Key in API Request</p>
+                        <pre class="language-json">
+        {
+          "request_id": "123e4567-e89b-12d3-a456-426614174000",
+          "amount": 100,
+          "currency": "USD"
+        }
+      </pre>
+
+                        <p class="highlight-yellow">5️⃣ Logging & Monitoring Timeouts and Retries</p>
+                        <ul>
+                            <li>
+                                Use **distributed tracing tools** (Zipkin, Jaeger) to detect timeout issues.
+                            </li>
+                            <li>
+                                Log failed requests to track patterns of failures.
+                            </li>
+                        </ul>
+
+                        <p class="highlight-blue">🔹 Example: Distributed Tracing with Zipkin</p>
+                        <pre class="language-java">
+        @Bean
+        public Sampler defaultSampler() {
+            return Sampler.ALWAYS_SAMPLE;
+        }
+      </pre>
+
+                        <p class="highlight-yellow">✅ Best Practices</p>
+                        <ul>
+                            <li>Set **reasonable timeouts** (connection & read) to prevent stuck requests.</li>
+                            <li>Use **exponential backoff** to retry requests smartly.</li>
+                            <li>Implement **circuit breakers** to stop retrying when a service is down.</li>
+                            <li>Ensure **idempotency** for critical operations to prevent duplicate requests.</li>
+                            <li>Use **monitoring tools** (Prometheus, Zipkin, Grafana) for real-time visibility.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#websocketQ1">
+                        What’s the best way to implement WebSockets in a fintech application?
+                    </button>
+                </h2>
+                <div id="websocketQ1" class="accordion-collapse collapse" data-bs-parent="#websocketAccordion">
+                    <div class="accordion-body">
+                        <p class="highlight-yellow">🚀 Best Approach for Implementing WebSockets in a Fintech
+                            Application</p>
+                        <ul>
+                            <li><span class="highlight-blue">Real-time Data Streaming:</span> Stock prices, transaction
+                                updates, account balance changes.</li>
+                            <li><span class="highlight-blue">Low Latency:</span> Required for financial applications to
+                                ensure instant updates.</li>
+                            <li><span class="highlight-blue">Secure Communication:</span> Uses WebSocket Secure (WSS)
+                                with JWT authentication.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">📌 WebSocket Implementation in Spring Boot</p>
+                        <p><strong>Step 1: Add WebSocket Dependencies</strong></p>
+                        <pre class="language-xml">
+        <code>
+          &lt;dependency&gt;
+            &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+            &lt;artifactId&gt;spring-boot-starter-websocket&lt;/artifactId&gt;
+          &lt;/dependency&gt;
+        </code>
+      </pre>
+
+                        <p><strong>Step 2: WebSocket Configuration</strong></p>
+                        <pre class="language-java">
+        <code>
+          import org.springframework.context.annotation.Configuration;
+          import org.springframework.web.socket.config.annotation.EnableWebSocket;
+          import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
+          import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
+
+          @Configuration
+          @EnableWebSocket
+          public class WebSocketConfig implements WebSocketConfigurer {
+              @Override
+              public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
+                  registry.addHandler(new FintechWebSocketHandler(), "/ws/transactions").setAllowedOrigins("*");
+              }
+          }
+        </code>
+      </pre>
+
+                        <p><strong>Step 3: WebSocket Handler</strong></p>
+                        <pre class="language-java">
+        <code>
+          import org.springframework.web.socket.TextMessage;
+          import org.springframework.web.socket.WebSocketSession;
+          import org.springframework.web.socket.handler.TextWebSocketHandler;
+          
+          public class FintechWebSocketHandler extends TextWebSocketHandler {
+              @Override
+              protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
+                  String response = "Real-time update: " + message.getPayload();
+                  session.sendMessage(new TextMessage(response));
+              }
+          }
+        </code>
+      </pre>
+
+                        <p><strong>Step 4: WebSocket Client (JavaScript)</strong></p>
+                        <pre class="language-javascript">
+        <code>
+          const socket = new WebSocket("wss://yourserver.com/ws/transactions");
+          
+          socket.onopen = () => {
+              console.log("Connected to WebSocket");
+              socket.send("Requesting transaction updates");
+          };
+
+          socket.onmessage = (event) => {
+              console.log("Received update:", event.data);
+          };
+
+          socket.onerror = (error) => {
+              console.error("WebSocket Error:", error);
+          };
+        </code>
+      </pre>
+
+                        <p class="highlight-yellow">🔹 Key Takeaways</p>
+                        <ul>
+                            <li>Uses <span class="highlight-blue">Spring Boot</span> for real-time financial updates.
+                            </li>
+                            <li>Secure <span class="highlight-blue">JWT authentication</span> can be added.</li>
+                            <li>Client <span class="highlight-blue">subscribes</span> to transaction updates via
+                                WebSockets.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#idempotencyQ1">
+                        How would you enforce idempotency in payment APIs?
+                    </button>
+                </h2>
+                <div id="idempotencyQ1" class="accordion-collapse collapse" data-bs-parent="#idempotencyAccordion">
+                    <div class="accordion-body">
+                        <p class="highlight-yellow">🚀 What is Idempotency?</p>
+                        <p>Idempotency ensures that multiple identical requests result in a single transaction
+                            execution, preventing duplicate payments.</p>
+
+                        <p class="highlight-yellow">📌 Steps to Enforce Idempotency in Payment APIs</p>
+                        <ul>
+                            <li><span class="highlight-blue">Idempotency Key:</span> Clients send a unique
+                                <code>Idempotency-Key</code> in request headers.
+                            </li>
+                            <li><span class="highlight-blue">Server-Side Storage:</span> The server stores processed
+                                requests to prevent re-execution.</li>
+                            <li><span class="highlight-blue">Consistent Responses:</span> If a duplicate request is
+                                detected, the server returns the **previous response** instead of processing again.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">📌 Example: Implementing Idempotency in Spring Boot</p>
+                        <p><strong>Step 1: Add Redis for Storing Idempotency Keys</strong></p>
+                        <pre class="language-xml">
+        <code>
+          &lt;dependency&gt;
+            &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+            &lt;artifactId&gt;spring-boot-starter-data-redis&lt;/artifactId&gt;
+          &lt;/dependency&gt;
+        </code>
+      </pre>
+
+                        <p><strong>Step 2: Payment Controller with Idempotency Handling</strong></p>
+                        <pre class="language-java">
+        <code>
+          import org.springframework.web.bind.annotation.*;
+          import org.springframework.data.redis.core.StringRedisTemplate;
+          import java.util.concurrent.TimeUnit;
+
+          @RestController
+          @RequestMapping("/payments")
+          public class PaymentController {
+              
+              private final StringRedisTemplate redisTemplate;
+
+              public PaymentController(StringRedisTemplate redisTemplate) {
+                  this.redisTemplate = redisTemplate;
+              }
+
+              @PostMapping
+              public ResponseEntity&lt;String&gt; processPayment(@RequestHeader("Idempotency-Key") String idempotencyKey) {
+                  // Check if request has already been processed
+                  if (Boolean.TRUE.equals(redisTemplate.hasKey(idempotencyKey))) {
+                      return ResponseEntity.status(409).body("Duplicate request detected!");
+                  }
+
+                  // Mark the request as processed
+                  redisTemplate.opsForValue().set(idempotencyKey, "PROCESSED", 5, TimeUnit.MINUTES);
+
+                  // Simulate Payment Processing
+                  return ResponseEntity.ok("Payment successful!");
+              }
+          }
+        </code>
+      </pre>
+
+                        <p><strong>Step 3: Client-Side Implementation (JavaScript)</strong></p>
+                        <pre class="language-javascript">
+        <code>
+          async function makePayment() {
+              const idempotencyKey = crypto.randomUUID(); // Generate unique key
+
+              const response = await fetch("/payments", {
+                  method: "POST",
+                  headers: {
+                      "Content-Type": "application/json",
+                      "Idempotency-Key": idempotencyKey
+                  }
+              });
+
+              const data = await response.text();
+              console.log(data);
+          }
+        </code>
+      </pre>
+
+                        <p class="highlight-yellow">🔹 Key Takeaways</p>
+                        <ul>
+                            <li>Prevents **duplicate transactions** in **distributed systems**.</li>
+                            <li>Uses **Redis** to store idempotency keys for a limited duration.</li>
+                            <li>Ensures **high reliability** in **payment processing APIs**.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#orderMatching">
+                        Design a high-throughput, low-latency order-matching system for a stock exchange.
+                    </button>
+                </h2>
+                <div id="orderMatching" class="accordion-collapse collapse">
+                    <div class="accordion-body">
+                        <p class="highlight-yellow">📌 Key Requirements:</p>
+                        <ul>
+                            <li><span class="highlight-blue">High Throughput:</span> Handles thousands of trades per
+                                second.</li>
+                            <li><span class="highlight-blue">Low Latency:</span> Processes orders in microseconds.</li>
+                            <li><span class="highlight-blue">Concurrency:</span> Efficient multi-threading to process
+                                orders in parallel.</li>
+                            <li><span class="highlight-blue">Fault Tolerance:</span> Ensures consistency and durability
+                                of trades.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">🔹 Architecture Components:</p>
+                        <ul>
+                            <li><b>Order Gateway:</b> Accepts buy/sell orders via REST API, WebSockets, or FIX protocol.
+                            </li>
+                            <li><b>Matching Engine:</b> Core logic to match orders based on price-time priority.</li>
+                            <li><b>Order Book:</b> Stores active buy/sell orders, sorted by priority.</li>
+                            <li><b>Event Queue:</b> Uses Kafka/RabbitMQ to handle order processing asynchronously.</li>
+                            <li><b>Database:</b> Uses event sourcing to store trade history.</li>
+                            <li><b>Market Data Broadcaster:</b> Publishes trade updates via WebSockets.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">🔹 Matching Algorithm:</p>
+                        <pre class="language-java"><code>
+class Order {
+    long id;
+    String type; // "BUY" or "SELL"
+    double price;
+    int quantity;
+    long timestamp;
+}
+
+class OrderMatchingEngine {
+    private PriorityQueue&lt;Order&gt; buyOrders = new PriorityQueue<>(Comparator.comparing(Order::getPrice).reversed());
+    private PriorityQueue&lt;Order&gt; sellOrders = new PriorityQueue<>(Comparator.comparing(Order::getPrice));
+
+    public synchronized void placeOrder(Order order) {
+        if (order.type.equals("BUY")) {
+            matchOrder(order, sellOrders, buyOrders);
+        } else {
+            matchOrder(order, buyOrders, sellOrders);
+        }
+    }
+
+    private void matchOrder(Order order, PriorityQueue&lt;Order&gt; oppositeOrders, PriorityQueue&lt;Order&gt; sameOrders) {
+        while (!oppositeOrders.isEmpty() && isMatch(order, oppositeOrders.peek())) {
+            Order matchedOrder = oppositeOrders.poll();
+            executeTrade(order, matchedOrder);
+        }
+        if (order.quantity > 0) {
+            sameOrders.add(order);
+        }
+    }
+
+    private boolean isMatch(Order newOrder, Order existingOrder) {
+        return newOrder.type.equals("BUY") ? newOrder.price >= existingOrder.price : newOrder.price <= existingOrder.price;
+    }
+
+    private void executeTrade(Order buyOrder, Order sellOrder) {
+        int tradedQty = Math.min(buyOrder.quantity, sellOrder.quantity);
+        buyOrder.quantity -= tradedQty;
+        sellOrder.quantity -= tradedQty;
+        System.out.println("Trade Executed: " + tradedQty + " @ " + sellOrder.price);
+    }
+}
+      </code></pre>
+
+                        <p class="highlight-yellow">🔹 Performance Optimizations:</p>
+                        <ul>
+                            <li><b>Lock-Free Data Structures:</b> Use Disruptor Queue for high-speed event processing.
+                            </li>
+                            <li><b>Memory-Mapped Files:</b> Use Chronicle Queue for persistence with low-latency
+                                reads/writes.</li>
+                            <li><b>Multi-Threaded Processing:</b> Assign separate threads for order intake, matching,
+                                and persistence.</li>
+                            <li><b>Sharding:</b> Distribute order books across multiple nodes for scalability.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">🚀 Result:</p>
+                        <p>With this approach, the system can handle millions of trades per second while maintaining
+                            consistency and speed.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#multiRegionDB">
+                        How would you ensure data integrity in a multi-region database setup?
+                    </button>
+                </h2>
+                <div id="multiRegionDB" class="accordion-collapse collapse">
+                    <div class="accordion-body">
+                        <p class="highlight-yellow">📌 Challenges in Multi-Region Databases:</p>
+                        <ul>
+                            <li><span class="highlight-blue">Network Latency:</span> Data replication across regions
+                                introduces delays.</li>
+                            <li><span class="highlight-blue">Eventual Consistency:</span> Distributed databases may
+                                allow temporary inconsistencies.</li>
+                            <li><span class="highlight-blue">Conflict Resolution:</span> Concurrent updates from
+                                different regions can lead to conflicts.</li>
+                            <li><span class="highlight-blue">Failover Handling:</span> Ensuring availability during
+                                region failures without data corruption.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">🔹 Strategies to Ensure Data Integrity:</p>
+                        <ul>
+                            <li><b>Strong Consistency with Global Transactions:</b> Use **distributed transactions**
+                                (e.g., <span class="highlight-blue">Two-Phase Commit (2PC)</span> or <span
+                                    class="highlight-blue">Paxos/Raft-based Consensus</span>) to ensure atomic updates.
+                            </li>
+                            <li><b>Leader-Follower Replication:</b> Designate a **primary region** for writes and
+                                replicate to secondary regions asynchronously.</li>
+                            <li><b>Multi-Active Setup with Conflict Resolution:</b> Use **CRDTs (Conflict-Free
+                                Replicated Data Types)** or **custom reconciliation logic** to handle concurrent
+                                updates.</li>
+                            <li><b>Versioning & Timestamps:</b> Maintain **logical clocks** (e.g., **Lamport
+                                Timestamps**) or **Vector Clocks** to detect and resolve conflicts.</li>
+                            <li><b>Geo-Partitioning:</b> Route requests to the closest database instance using
+                                **Geo-aware DNS** to reduce latency.</li>
+                            <li><b>Eventual Consistency with Idempotency:</b> Ensure **idempotent writes** and retries
+                                for safe reprocessing of transactions.</li>
+                            <li><b>Strong Read-Your-Own-Writes Guarantees:</b> Implement **session affinity** to ensure
+                                users see their latest changes.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">🔹 Example: Implementing Conflict Resolution</p>
+                        <pre class="language-java"><code>
+class MultiRegionDB {
+    private ConcurrentHashMap&lt;String, DataRecord&gt; dataStore = new ConcurrentHashMap&lt;&gt;();
+
+    public synchronized void writeData(String key, DataRecord newData) {
+        DataRecord existingData = dataStore.get(key);
+
+        if (existingData == null || newData.getTimestamp() > existingData.getTimestamp()) {
+            dataStore.put(key, newData);
+        } else {
+            System.out.println("Conflict detected, applying resolution strategy...");
+        }
+    }
+}
+
+class DataRecord {
+    private String value;
+    private long timestamp;
+
+    public DataRecord(String value, long timestamp) {
+        this.value = value;
+        this.timestamp = timestamp;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
+    }
+}
+      </code></pre>
+
+                        <p class="highlight-yellow">🚀 Best Practices:</p>
+                        <ul>
+                            <li>Use **Google Spanner, AWS DynamoDB Global Tables**, or **CockroachDB** for strong
+                                consistency.</li>
+                            <li>Apply **quorum-based writes** (e.g., **3 out of 5 nodes must acknowledge** an update).
+                            </li>
+                            <li>Implement **background reconciliation jobs** to periodically sync data.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">🔹 Summary:</p>
+                        <p>By combining **strong consistency, conflict resolution, and partitioning strategies**, you
+                            can ensure high availability while maintaining data integrity across multiple regions.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#leaderElection">
+                        Explain Leader Election. How would you implement it in a microservices-based system?
+                    </button>
+                </h2>
+                <div id="leaderElection" class="accordion-collapse collapse">
+                    <div class="accordion-body">
+                        <p class="highlight-yellow">📌 What is Leader Election?</p>
+                        <p>Leader election is a process in distributed systems where one node is designated as the
+                            "leader" to manage coordination tasks while others act as followers.</p>
+
+                        <p class="highlight-yellow">🔹 Why is Leader Election Needed?</p>
+                        <ul>
+                            <li><span class="highlight-blue">Ensures a single point of coordination</span> (e.g.,
+                                managing database writes, scheduling jobs).</li>
+                            <li><span class="highlight-blue">Prevents conflicts</span> in a distributed system where
+                                multiple services operate independently.</li>
+                            <li><span class="highlight-blue">Enhances fault tolerance</span> by electing a new leader if
+                                the current one fails.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">🔹 How to Implement Leader Election in Microservices?</p>
+                        <ul>
+                            <li><b>Using Zookeeper:</b> Services create an **ephemeral sequential znode**, and the one
+                                with the **smallest ID becomes the leader**.</li>
+                            <li><b>Using Redis:</b> Services attempt to acquire a **distributed lock (SETNX)**, and the
+                                winner becomes the leader.</li>
+                            <li><b>Using Kubernetes Leader Election:</b> Leverage **ConfigMaps or Lease objects** to
+                                determine the leader.</li>
+                            <li><b>Using Raft Consensus:</b> Implement **RAFT protocol** for decentralized leader
+                                election (e.g., in Apache Kafka, Consul).</li>
+                        </ul>
+
+                        <p class="highlight-yellow">🔹 Example: Leader Election Using Redis</p>
+                        <pre class="language-java"><code>
+import redis.clients.jedis.Jedis;
+
+public class LeaderElection {
+    private static final String LEADER_KEY = "leader";
+    private static final int EXPIRATION_TIME = 10; // Leader expires after 10 seconds
+
+    public static boolean tryToBecomeLeader(Jedis jedis, String serviceId) {
+        String response = jedis.set(LEADER_KEY, serviceId, "NX", "EX", EXPIRATION_TIME);
+        return "OK".equals(response);
+    }
+
+    public static String getLeader(Jedis jedis) {
+        return jedis.get(LEADER_KEY);
+    }
+
+    public static void main(String[] args) {
+        Jedis jedis = new Jedis("localhost", 6379);
+        String serviceId = "service-1";
+
+        if (tryToBecomeLeader(jedis, serviceId)) {
+            System.out.println("I am the leader!");
+        } else {
+            System.out.println("Current leader: " + getLeader(jedis));
+        }
+    }
+}
+      </code></pre>
+
+                        <p class="highlight-yellow">🚀 Best Practices:</p>
+                        <ul>
+                            <li>Use **ephemeral nodes** in Zookeeper to avoid stale leaders.</li>
+                            <li>Implement **leader expiry** to prevent a dead leader from blocking the system.</li>
+                            <li>Ensure **automatic re-election** if the leader crashes.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">🔹 Summary:</p>
+                        <p>Leader election ensures efficient coordination in distributed microservices. Tools like
+                            **Zookeeper, Redis, and Kubernetes** provide built-in mechanisms to handle it.</p>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#cqrsVsCrud">
+                        What are the trade-offs between CQRS and traditional CRUD-based systems?
+                    </button>
+                </h2>
+                <div id="cqrsVsCrud" class="accordion-collapse collapse">
+                    <div class="accordion-body">
+                        <p class="highlight-yellow">📌 What is CQRS?</p>
+                        <p>Command Query Responsibility Segregation (CQRS) is an architectural pattern that separates
+                            **read** and **write** operations into different models.</p>
+
+                        <p class="highlight-yellow">📌 What is CRUD?</p>
+                        <p>Traditional CRUD-based systems use a **single model** for both **reading and writing** data
+                            (Create, Read, Update, Delete).</p>
+
+                        <p class="highlight-yellow">🔹 CQRS vs. CRUD: Key Differences</p>
+                        <table class="table table-dark">
+                            <thead>
+                                <tr>
+                                    <th>Aspect</th>
+                                    <th>CQRS</th>
+                                    <th>CRUD</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><b>Data Model</b></td>
+                                    <td>Separate **Command** (write) and **Query** (read) models</td>
+                                    <td>Single unified model for both read & write</td>
+                                </tr>
+                                <tr>
+                                    <td><b>Scalability</b></td>
+                                    <td>Highly scalable; read and write operations can scale independently</td>
+                                    <td>Less scalable; single database handles all operations</td>
+                                </tr>
+                                <tr>
+                                    <td><b>Performance</b></td>
+                                    <td>Faster reads (optimized queries), but added complexity</td>
+                                    <td>Simpler but can degrade with high traffic</td>
+                                </tr>
+                                <tr>
+                                    <td><b>Complexity</b></td>
+                                    <td>More complex due to multiple data models</td>
+                                    <td>Simpler and easier to implement</td>
+                                </tr>
+                                <tr>
+                                    <td><b>Data Consistency</b></td>
+                                    <td>Eventually consistent (event-driven)</td>
+                                    <td>Strong consistency (single data source)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <p class="highlight-yellow">🔹 When to Use CQRS?</p>
+                        <ul>
+                            <li>High **read-write imbalance** (e.g., e-commerce, reporting dashboards).</li>
+                            <li>Complex **domain logic** that requires different data representations.</li>
+                            <li>Systems needing **event sourcing** for tracking state changes.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">🔹 When to Use CRUD?</p>
+                        <ul>
+                            <li>Simple applications with **low complexity**.</li>
+                            <li>Use cases where **strong consistency** is required.</li>
+                            <li>Applications that don’t require **separate read/write models**.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">🔹 Example: CQRS Implementation in Java</p>
+                        <pre class="language-java"><code>
+class OrderCommandService {
+    public void createOrder(Order order) {
+        // Save order in write database
+        writeRepository.save(order);
+    }
+}
+
+class OrderQueryService {
+    public OrderDTO getOrderDetails(Long orderId) {
+        // Fetch from read database (optimized for queries)
+        return readRepository.findById(orderId);
+    }
+}
+      </code></pre>
+
+                        <p class="highlight-yellow">🚀 Best Practices:</p>
+                        <ul>
+                            <li>Use **event-driven architectures** (Kafka, RabbitMQ) for CQRS.</li>
+                            <li>Optimize read models for **fast queries** (e.g., NoSQL, caching).</li>
+                            <li>Ensure **eventual consistency** with proper sync mechanisms.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">🔹 Summary:</p>
+                        <p>CQRS improves scalability and performance but adds complexity. CRUD is simpler and ensures
+                            consistency but may not scale well for high-read workloads.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#kafkaBackpressure">
+                        How does a Distributed Message Queue (like Kafka) handle backpressure?
+                    </button>
+                </h2>
+                <div id="kafkaBackpressure" class="accordion-collapse collapse">
+                    <div class="accordion-body">
+                        <p class="highlight-yellow">📌 What is Backpressure?</p>
+                        <p>Backpressure occurs when **consumers can't keep up** with the rate of messages produced,
+                            leading to system overload or failure.</p>
+
+                        <p class="highlight-yellow">🔹 How Kafka Handles Backpressure</p>
+                        <ul>
+                            <li><b>Message Retention & Durable Storage</b>: Messages are stored in Kafka for a
+                                configurable retention period, preventing data loss even if consumers are slow.</li>
+                            <li><b>Consumer Lag Monitoring</b>: Kafka tracks consumer offsets, allowing monitoring tools
+                                to detect lag and alert if processing falls behind.</li>
+                            <li><b>Partitioning & Parallelism</b>: Kafka uses **partitions** to distribute the load
+                                across multiple consumers in a **consumer group**, improving throughput.</li>
+                            <li><b>Flow Control via Consumer Pull Model</b>: Kafka consumers **pull messages** at their
+                                own pace instead of being force-fed by the broker.</li>
+                            <li><b>Backoff & Retry Strategies</b>: Consumers can implement exponential backoff or
+                                throttling when overwhelmed.</li>
+                            <li><b>Load Shedding</b>: Producers can drop non-critical messages if system pressure
+                                exceeds a certain threshold.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">🔹 Example: Handling Backpressure in a Kafka Consumer</p>
+                        <pre class="language-java"><code>
+import org.apache.kafka.clients.consumer.*;
+
+import java.time.Duration;
+import java.util.Collections;
+import java.util.Properties;
+
+public class BackpressureAwareConsumer {
+    public static void main(String[] args) {
+        Properties props = new Properties();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, "order-processing-group");
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
+
+        KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props);
+        consumer.subscribe(Collections.singletonList("orders"));
+
+        try {
+            while (true) {
+                ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
+
+                for (ConsumerRecord<String, String> record : records) {
+                    // Simulate processing delay
+                    Thread.sleep(500); 
+                    System.out.println("Processing Order: " + record.value());
+                }
+                consumer.commitSync(); // Commit offsets to prevent reprocessing
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            consumer.close();
+        }
+    }
+}
+      </code></pre>
+
+                        <p class="highlight-yellow">🚀 Best Practices for Handling Backpressure in Kafka</p>
+                        <ul>
+                            <li>Increase **consumer parallelism** by adding more partitions and consumer instances.</li>
+                            <li>Use **batch processing** to consume multiple messages at once instead of processing them
+                                one-by-one.</li>
+                            <li>Adjust **polling intervals** to dynamically control the rate of message retrieval.</li>
+                            <li>Implement **dead-letter queues (DLQ)** to handle unprocessable messages separately.</li>
+                            <li>Use **Kafka Streams or Reactive frameworks** like Project Reactor for better flow
+                                control.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">🔹 Summary</p>
+                        <p>Kafka handles backpressure using **message retention, partitioning, flow control, and retry
+                            mechanisms**. Consumers should optimize **parallelism, batching, and backoff strategies** to
+                            process messages efficiently under load.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#apiOptimizations">
+                        API Optimizations: Best Practices & Examples
+                    </button>
+                </h2>
+                <div id="apiOptimizations" class="accordion-collapse collapse">
+                    <div class="accordion-body">
+                        <p class="highlight-yellow">📌 Why Optimize APIs?</p>
+                        <p>Efficient APIs improve **performance, reduce latency, and scale better** under high traffic.
+                        </p>
+
+                        <p class="highlight-yellow">🔹 Key API Optimization Techniques</p>
+                        <ul>
+                            <li><b>Pagination & Limit Offsets:</b> Prevents fetching large datasets at once.</li>
+                            <li><b>Asynchronous Processing:</b> Use message queues (Kafka, RabbitMQ) for background
+                                tasks.</li>
+                            <li><b>Caching:</b> Store frequent API responses in Redis or CDN for faster retrieval.</li>
+                            <li><b>Compression (GZIP/Brotli):</b> Reduces payload size, improving network performance.
+                            </li>
+                            <li><b>Database Query Optimization:</b> Use indexes, denormalization, and optimized joins.
+                            </li>
+                            <li><b>Rate Limiting:</b> Protects APIs from abuse using tools like Redis Bucket4J.</li>
+                            <li><b>GraphQL / Partial Responses:</b> Allows clients to fetch only required data.</li>
+                            <li><b>Connection Pooling:</b> Reuse database connections for better resource management.
+                            </li>
+                        </ul>
+
+                        <p class="highlight-yellow">🔹 Example: Optimizing an API in Spring Boot</p>
+                        <pre class="language-java"><code>
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.web.bind.annotation.*;
+import java.util.List;
+
+@RestController
+@RequestMapping("/products")
+public class ProductController {
+
+    private final ProductService productService;
+
+    public ProductController(ProductService productService) {
+        this.productService = productService;
+    }
+
+    @GetMapping
+    @Cacheable(value = "products") // Caching API responses
+    public List<Product> getProducts(@RequestParam(defaultValue = "0") int page, 
+                                     @RequestParam(defaultValue = "10") int size) {
+        return productService.getPaginatedProducts(page, size);
+    }
+}
+      </code></pre>
+
+                        <p class="highlight-yellow">🚀 Best Practices for Optimized APIs</p>
+                        <ul>
+                            <li>Use **CDNs and Edge Caching** for static and frequently accessed resources.</li>
+                            <li>Leverage **WebSockets** for real-time updates instead of polling.</li>
+                            <li>Optimize **SQL queries** with proper indexing and query tuning.</li>
+                            <li>Enable **lazy loading** for large responses to improve efficiency.</li>
+                            <li>Implement **Circuit Breaker patterns** (e.g., Resilience4J) to handle failures
+                                gracefully.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">🔹 Summary</p>
+                        <p>API optimization improves **scalability, latency, and efficiency** by leveraging caching,
+                            pagination, compression, and better query handling.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#microservicesResilience">
+                        Microservices Resilience Patterns & Examples
+                    </button>
+                </h2>
+                <div id="microservicesResilience" class="accordion-collapse collapse">
+                    <div class="accordion-body">
+                        <p class="highlight-yellow">📌 Why Microservices Need Resilience?</p>
+                        <p>Microservices run in **distributed environments**, making them prone to **failures, network
+                            issues, and high latency**. Resilience patterns help ensure system stability.</p>
+
+                        <p class="highlight-yellow">🔹 Key Microservices Resilience Patterns</p>
+                        <ul>
+                            <li><b>Retry Pattern:</b> Automatically retries failed operations.</li>
+                            <li><b>Circuit Breaker Pattern:</b> Prevents repeated calls to failing services.</li>
+                            <li><b>Bulkhead Pattern:</b> Isolates service failures to prevent cascading issues.</li>
+                            <li><b>Rate Limiting:</b> Controls excessive requests to prevent overload.</li>
+                            <li><b>Timeout Pattern:</b> Avoids long waits for unresponsive services.</li>
+                            <li><b>Failover & Redundancy:</b> Uses backup instances in case of failures.</li>
+                            <li><b>Event Sourcing:</b> Maintains system state through immutable events.</li>
+                            <li><b>Saga Pattern:</b> Handles distributed transactions across multiple services.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">🔹 Example: Circuit Breaker with Resilience4J</p>
+                        <pre class="language-java"><code>
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import java.util.Random;
+
+@RestController
+@RequestMapping("/orders")
+public class OrderController {
+
+    @GetMapping
+    @CircuitBreaker(name = "orderService", fallbackMethod = "fallbackResponse")
+    public String placeOrder() {
+        if (new Random().nextBoolean()) { // Simulate random failure
+            throw new RuntimeException("Service Unavailable");
+        }
+        return "Order placed successfully!";
+    }
+
+    public String fallbackResponse(Exception ex) {
+        return "Fallback: Order service is currently unavailable.";
+    }
+}
+      </code></pre>
+
+                        <p class="highlight-yellow">🚀 Best Practices for Resilient Microservices</p>
+                        <ul>
+                            <li>Use **timeouts** to prevent indefinite waiting.</li>
+                            <li>Enable **retry logic** with exponential backoff.</li>
+                            <li>Implement **circuit breakers** to avoid repeated failures.</li>
+                            <li>Isolate failures with **bulkheads**.</li>
+                            <li>Use **distributed tracing** (Jaeger, Zipkin) for observability.</li>
+                            <li>Store critical data using **event-driven architectures**.</li>
+                        </ul>
+
+                        <p class="highlight-yellow">🔹 Summary</p>
+                        <p>Microservices resilience patterns ensure system **stability, fault tolerance, and
+                            reliability** in distributed environments.</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Bootstrap & Search Script -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function searchQuestions() {
+            let input = document.getElementById("searchBox").value.toLowerCase();
+            let items = document.querySelectorAll(".search-item");
+
+            items.forEach((item) => {
+                let text = item.textContent.toLowerCase();
+                let parent = item.closest(".accordion-item");
+
+                if (text.includes(input)) {
+                    parent.style.display = "";
+                } else {
+                    parent.style.display = "none";
+                }
+            });
+        }
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert("Copied: " + text);
+            }).catch(err => {
+                console.error("Failed to copy:", err);
+            });
+        }
+    </script>
+</body>
+
+</html>
