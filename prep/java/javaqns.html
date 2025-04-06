@@ -16764,7 +16764,812 @@ protected void configure(HttpSecurity http) throws Exception {
           </div>
         </div>
       </div>
+<div class="accordion-item">
+    <h2 class="accordion-header">
+        <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#junitMockitoAnnotations">
+            Important Annotations in JUnit 5 and Mockito
+        </button>
+    </h2>
+    <div id="junitMockitoAnnotations" class="accordion-collapse collapse">
+        <div class="accordion-body">
+            <h5 class="text-info">📌 JUnit 5 Annotations</h5>
+            <ul>
+                <li><strong>@Test</strong>: Marks a method as a test method.</li>
+                <pre class="language-java"><code>
+@Test
+public void testMethod() {
+    // Test logic
+}
+                </code></pre>
 
+                <li><strong>@BeforeEach</strong>: Runs before each test method. It is used for setup tasks.</li>
+                <pre class="language-java"><code>
+@BeforeEach
+public void setUp() {
+    // Initialization logic
+}
+                </code></pre>
+
+                <li><strong>@AfterEach</strong>: Runs after each test method to perform cleanup.</li>
+                <pre class="language-java"><code>
+@AfterEach
+public void tearDown() {
+    // Cleanup logic
+}
+                </code></pre>
+
+                <li><strong>@BeforeAll</strong>: Runs once before all test methods in a test class. Typically used for expensive setup tasks.</li>
+                <pre class="language-java"><code>
+@BeforeAll
+public static void init() {
+    // Expensive setup logic
+}
+                </code></pre>
+
+                <li><strong>@AfterAll</strong>: Runs once after all test methods in a test class to perform cleanup tasks.</li>
+                <pre class="language-java"><code>
+@AfterAll
+public static void cleanUp() {
+    // Cleanup logic after all tests
+}
+                </code></pre>
+
+                <li><strong>@EnabledIf</strong>: Enables the test conditionally based on a specific condition.</li>
+                <pre class="language-java"><code>
+@EnabledIf("someCondition")
+public void testConditional() {
+    // Test logic
+}
+                </code></pre>
+
+                <li><strong>@DisplayName</strong>: Allows you to specify a custom display name for the test.</li>
+                <pre class="language-java"><code>
+@DisplayName("This is a custom test name")
+@Test
+public void testWithCustomName() {
+    // Test logic
+}
+                </code></pre>
+            </ul>
+
+            <h5 class="text-info">📌 Mockito Annotations</h5>
+            <ul>
+                <li><strong>@Mock</strong>: Creates a mock object for the given class or interface.</li>
+                <pre class="language-java"><code>
+@Mock
+private MyService myService;
+                </code></pre>
+
+                <li><strong>@InjectMocks</strong>: Injects mock dependencies into the class under test.</li>
+                <pre class="language-java"><code>
+@InjectMocks
+private MyController myController;
+                </code></pre>
+
+                <li><strong>@Spy</strong>: Creates a spy of the class or interface, allowing for partial mocking (calls the real methods unless mocked explicitly).</li>
+                <pre class="language-java"><code>
+@Spy
+private MyService myServiceSpy;
+                </code></pre>
+
+                <li><strong>@Captor</strong>: Used to capture arguments passed to mock methods.</li>
+                <pre class="language-java"><code>
+@Captor
+private ArgumentCaptor<String> stringCaptor;
+                </code></pre>
+
+                <li><strong>@MockBean</strong>: This annotation is typically used in Spring Boot tests for mocking beans in the application context.</li>
+                <pre class="language-java"><code>
+@MockBean
+private MyService myService;
+                </code></pre>
+
+                <li><strong>@RunWith(MockitoJUnitRunner.class)</strong>: A JUnit 4 annotation to initialize mocks automatically (deprecated in JUnit 5).</li>
+            </ul>
+
+            <h5 class="text-info">📌 Example of Mockito with JUnit 5</h5>
+            <pre class="language-java"><code>
+@ExtendWith(MockitoExtension.class) // JUnit 5 extension for Mockito
+public class MyServiceTest {
+
+    @Mock
+    private MyRepository myRepository;
+
+    @InjectMocks
+    private MyService myService;
+
+    @Test
+    public void testServiceMethod() {
+        when(myRepository.getData()).thenReturn("Mock Data");
+        
+        String result = myService.fetchData();
+        
+        assertEquals("Mock Data", result);
+    }
+}
+            </code></pre>
+        </div>
+    </div>
+</div>
+<div class="accordion-item">
+    <h2 class="accordion-header">
+        <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#junitMockitoPractice">
+            How JUnit 5 and Mockito Annotations Work Together in Practice
+        </button>
+    </h2>
+    <div id="junitMockitoPractice" class="accordion-collapse collapse">
+        <div class="accordion-body">
+            <h5 class="text-info">📌 Setting Up JUnit 5 and Mockito</h5>
+            <p>In JUnit 5, Mockito annotations can be used to mock dependencies and inject them into the class under test. You can combine JUnit 5’s lifecycle annotations with Mockito’s mocking capabilities to write clean and effective unit tests.</p>
+
+            <h5 class="text-info">📌 Key Annotations and Their Role</h5>
+            <ul>
+                <li><strong>@Mock</strong>: Creates a mock object for the given class or interface. It is used to simulate behavior of dependencies.</li>
+                <li><strong>@InjectMocks</strong>: Automatically injects the mock objects into the class under test, helping test the behavior of the class using the mocked dependencies.</li>
+                <li><strong>@ExtendWith(MockitoExtension.class)</strong>: This annotation from JUnit 5 enables Mockito to initialize mocks in the test class and manage the lifecycle.</li>
+                <li><strong>@Test</strong>: Marks the method as a test method to be executed by JUnit 5.</li>
+            </ul>
+
+            <h5 class="text-info">📌 Example of JUnit 5 and Mockito Working Together</h5>
+            <p>Here’s an example where we use JUnit 5 and Mockito annotations to test a service class that depends on a repository class:</p>
+            <pre class="language-java"><code>
+@ExtendWith(MockitoExtension.class) // Enables Mockito in JUnit 5 tests
+public class MyServiceTest {
+
+    @Mock // Creates a mock instance of MyRepository
+    private MyRepository myRepository;
+
+    @InjectMocks // Injects the mock repository into MyService
+    private MyService myService;
+
+    @Test
+    public void testFetchData() {
+        // Given: Setting up mock behavior
+        when(myRepository.getData()).thenReturn("Mocked Data");
+
+        // When: Calling the method under test
+        String result = myService.fetchData();
+
+        // Then: Verifying the result
+        assertEquals("Mocked Data", result);
+    }
+}
+            </code></pre>
+
+            <h5 class="text-info">📌 How They Work Together</h5>
+            <ul>
+                <li>In the example, `@Mock` is used to create a mock of the `MyRepository` dependency.</li>
+                <li>The `@InjectMocks` annotation injects this mock into the `MyService` class.</li>
+                <li>With `@ExtendWith(MockitoExtension.class)`, Mockito automatically initializes the mocks before the test method is executed.</li>
+                <li>The `when(...).thenReturn(...)` pattern is used to define the behavior of the mock, and assertions are made to verify the expected output.</li>
+            </ul>
+
+            <h5 class="text-info">📌 Advantages of Using JUnit 5 and Mockito Together</h5>
+            <ul>
+                <li><strong>Separation of concerns</strong>: JUnit 5 handles the test lifecycle, while Mockito handles mocking and stubbing.</li>
+                <li><strong>Clear syntax</strong>: The annotations like `@Mock` and `@InjectMocks` make it easy to see what is being mocked and injected.</li>
+                <li><strong>Cleaner tests</strong>: Mockito annotations reduce boilerplate code in tests, allowing for more readable and maintainable tests.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+<div class="accordion-item">
+    <h2 class="accordion-header">
+        <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#complexMockitoTest">
+            Complex Testing Scenario Using Mockito Annotations
+        </button>
+    </h2>
+    <div id="complexMockitoTest" class="accordion-collapse collapse">
+        <div class="accordion-body">
+            <h5 class="text-info">📌 Scenario: Testing a Service with Multiple Dependencies</h5>
+            <p>Let's say we have a service class that depends on multiple repositories and external APIs. We’ll use Mockito annotations to mock these dependencies and test the service’s behavior.</p>
+
+            <h5 class="text-info">📌 System Under Test (SUT)</h5>
+            <p>We have a service class `OrderService` that interacts with two repositories (`OrderRepository` and `PaymentRepository`) and an external `ShippingService` API. We will test its `processOrder` method that should complete the order processing flow.</p>
+
+            <pre class="language-java"><code>
+public class OrderService {
+
+    private final OrderRepository orderRepository;
+    private final PaymentRepository paymentRepository;
+    private final ShippingService shippingService;
+
+    public OrderService(OrderRepository orderRepository, PaymentRepository paymentRepository, ShippingService shippingService) {
+        this.orderRepository = orderRepository;
+        this.paymentRepository = paymentRepository;
+        this.shippingService = shippingService;
+    }
+
+    public String processOrder(Order order) {
+        // Step 1: Check payment status
+        boolean paymentStatus = paymentRepository.processPayment(order.getPaymentDetails());
+        if (!paymentStatus) {
+            return "Payment Failed";
+        }
+
+        // Step 2: Save order to database
+        orderRepository.saveOrder(order);
+
+        // Step 3: Initiate shipping
+        boolean shippingStatus = shippingService.initiateShipping(order.getShippingDetails());
+        if (!shippingStatus) {
+            return "Shipping Failed";
+        }
+
+        return "Order Processed Successfully";
+    }
+}
+            </code></pre>
+
+            <h5 class="text-info">📌 Test Class Using Mockito</h5>
+            <p>Now, let's write a test for this `processOrder` method using Mockito annotations to mock the dependencies:</p>
+
+            <pre class="language-java"><code>
+@ExtendWith(MockitoExtension.class) // Enabling Mockito in JUnit 5
+public class OrderServiceTest {
+
+    @Mock // Mocking OrderRepository
+    private OrderRepository orderRepository;
+
+    @Mock // Mocking PaymentRepository
+    private PaymentRepository paymentRepository;
+
+    @Mock // Mocking ShippingService
+    private ShippingService shippingService;
+
+    @InjectMocks // Injecting all mocks into the OrderService instance
+    private OrderService orderService;
+
+    @Test
+    void testProcessOrderPaymentFailed() {
+        // Given: Setting up the mock behavior
+        Order order = new Order("123", "user1", "paymentDetails", "shippingDetails");
+        when(paymentRepository.processPayment(any())).thenReturn(false); // Payment fails
+
+        // When: Calling the method under test
+        String result = orderService.processOrder(order);
+
+        // Then: Verifying the result
+        assertEquals("Payment Failed", result);
+        verify(paymentRepository).processPayment(any()); // Verifying payment method was called
+        verifyNoInteractions(orderRepository, shippingService); // Ensuring no other interactions
+    }
+
+    @Test
+    void testProcessOrderShippingFailed() {
+        // Given: Setting up mock behavior
+        Order order = new Order("124", "user2", "paymentDetails", "shippingDetails");
+        when(paymentRepository.processPayment(any())).thenReturn(true); // Payment succeeds
+        when(shippingService.initiateShipping(any())).thenReturn(false); // Shipping fails
+
+        // When: Calling the method under test
+        String result = orderService.processOrder(order);
+
+        // Then: Verifying the result
+        assertEquals("Shipping Failed", result);
+        verify(paymentRepository).processPayment(any()); // Verifying payment method was called
+        verify(orderRepository).saveOrder(any()); // Verifying order was saved
+        verify(shippingService).initiateShipping(any()); // Verifying shipping method was called
+    }
+
+    @Test
+    void testProcessOrderSuccess() {
+        // Given: Setting up mock behavior
+        Order order = new Order("125", "user3", "paymentDetails", "shippingDetails");
+        when(paymentRepository.processPayment(any())).thenReturn(true); // Payment succeeds
+        when(shippingService.initiateShipping(any())).thenReturn(true); // Shipping succeeds
+
+        // When: Calling the method under test
+        String result = orderService.processOrder(order);
+
+        // Then: Verifying the result
+        assertEquals("Order Processed Successfully", result);
+        verify(paymentRepository).processPayment(any()); // Verifying payment method was called
+        verify(orderRepository).saveOrder(any()); // Verifying order was saved
+        verify(shippingService).initiateShipping(any()); // Verifying shipping method was called
+    }
+}
+            </code></pre>
+
+            <h5 class="text-info">📌 Explanation</h5>
+            <p>In this scenario, we mock the following:</p>
+            <ul>
+                <li><strong>@Mock</strong> is used to mock the `OrderRepository`, `PaymentRepository`, and `ShippingService` dependencies.</li>
+                <li><strong>@InjectMocks</strong> automatically injects these mocks into the `OrderService` instance.</li>
+                <li>We define mock behavior for the `processPayment` and `initiateShipping` methods using `when(...).thenReturn(...)`.</li>
+                <li>The tests cover different scenarios: when payment fails, when shipping fails, and when the order is processed successfully.</li>
+                <li>We verify the behavior using `verify(...)` to check if the mock methods were called and `verifyNoInteractions(...)` to ensure no unexpected interactions occurred.</li>
+            </ul>
+
+            <h5 class="text-info">📌 Benefits of This Approach</h5>
+            <ul>
+                <li><strong>Isolation:</strong> Each test is independent and isolates the behavior of `OrderService` by mocking its dependencies.</li>
+                <li><strong>Clear Intent:</strong> The use of Mockito annotations makes the test intent clear and helps in defining specific mock behaviors.</li>
+                <li><strong>Comprehensive Coverage:</strong> Multiple test cases cover different outcomes like payment failure, shipping failure, and successful order processing.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+<div class="accordion-item">
+    <h2 class="accordion-header">
+        <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#dbTestApproaches">
+            Alternative Approaches for Testing Database Interactions
+        </button>
+    </h2>
+    <div id="dbTestApproaches" class="accordion-collapse collapse">
+        <div class="accordion-body">
+            <h5 class="text-info">📌 Testing Database Interactions</h5>
+            <p>When testing database interactions in Spring Boot applications, there are several approaches you can take to ensure your tests are effective, maintainable, and efficient. Below are some alternative approaches to consider:</p>
+
+            <div class="accordion" id="dbTestApproachesList">
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#approach1">
+                            Approach 1: Using In-Memory Databases (H2 or HSQLDB)
+                        </button>
+                    </h2>
+                    <div id="approach1" class="accordion-collapse collapse">
+                        <div class="accordion-body">
+                            <p>In-memory databases like H2 or HSQLDB are commonly used for testing database interactions. They are lightweight, fast, and don't require any external database setup, making them ideal for testing purposes.</p>
+
+                            <h5 class="text-info">📌 Example: Configuring H2 in Spring Boot</h5>
+                            <pre class="language-yaml"><code>
+# application.yml
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL
+    driverClassName: org.h2.Driver
+    username: sa
+    password:
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+                            </code></pre>
+
+                            <p>With this setup, you can test your Spring Boot application using an in-memory database without needing a real database instance. This approach is fast, but you should ensure the database is compatible with your production DB to avoid issues.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#approach2">
+                            Approach 2: Using @DataJpaTest for Repository Layer Tests
+                        </button>
+                    </h2>
+                    <div id="approach2" class="accordion-collapse collapse">
+                        <div class="accordion-body">
+                            <p>Spring Boot provides the @DataJpaTest annotation, which configures an embedded database and scans only the JPA components (like repositories) for testing purposes. This is useful for testing the persistence layer without involving the full application context.</p>
+
+                            <h5 class="text-info">📌 Example: Testing with @DataJpaTest</h5>
+                            <pre class="language-java"><code>
+@DataJpaTest
+public class UserRepositoryTest {
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Test
+    void testFindByUsername() {
+        User user = new User("john", "john@example.com");
+        userRepository.save(user);
+
+        User found = userRepository.findByUsername("john");
+        assertEquals(user.getEmail(), found.getEmail());
+    }
+}
+                            </code></pre>
+
+                            <p>In this example, @DataJpaTest will automatically configure an in-memory H2 database, run the test, and ensure database transactions are rolled back after each test method, keeping the tests isolated and repeatable.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#approach3">
+                            Approach 3: Using @SpringBootTest for Full Integration Testing
+                        </button>
+                    </h2>
+                    <div id="approach3" class="accordion-collapse collapse">
+                        <div class="accordion-body">
+                            <p>If you need to test the entire Spring Boot application, including database interactions with the full context (repositories, services, controllers), you can use @SpringBootTest. This will load the full application context and allow you to test the entire flow.</p>
+
+                            <h5 class="text-info">📌 Example: Full Integration Test with @SpringBootTest</h5>
+                            <pre class="language-java"><code>
+@SpringBootTest
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+public class OrderServiceIntegrationTest {
+
+    @Autowired
+    private OrderService orderService;
+
+    @Autowired
+    private OrderRepository orderRepository;
+
+    @Test
+    void testCreateOrder() {
+        Order order = new Order("123", "itemA", 1);
+        Order savedOrder = orderService.createOrder(order);
+
+        assertNotNull(savedOrder.getId());
+        assertEquals(order.getItem(), savedOrder.getItem());
+    }
+}
+                            </code></pre>
+
+                            <p>This approach ensures that the entire system is tested, including the real database (configured through @AutoConfigureTestDatabase) or an embedded database, depending on your setup. It's more resource-intensive but provides a more complete test.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#approach4">
+                            Approach 4: Using Mocking for Database Calls (Mockito + @MockBean)
+                        </button>
+                    </h2>
+                    <div id="approach4" class="accordion-collapse collapse">
+                        <div class="accordion-body">
+                            <p>In some cases, you may want to test database interactions without actually interacting with the database. Using Mockito’s @MockBean annotation, you can mock database calls in Spring Boot applications and verify behavior without hitting the real database.</p>
+
+                            <h5 class="text-info">📌 Example: Mocking Repository with @MockBean</h5>
+                            <pre class="language-java"><code>
+@SpringBootTest
+public class OrderServiceMockTest {
+
+    @MockBean
+    private OrderRepository orderRepository;
+
+    @Autowired
+    private OrderService orderService;
+
+    @Test
+    void testCreateOrderMock() {
+        Order order = new Order("123", "itemA", 1);
+        when(orderRepository.save(any())).thenReturn(order);
+
+        Order savedOrder = orderService.createOrder(order);
+
+        assertNotNull(savedOrder);
+        assertEquals("123", savedOrder.getId());
+        verify(orderRepository).save(any());
+    }
+}
+                            </code></pre>
+
+                            <p>In this approach, we mock the `OrderRepository` to simulate database operations. The advantage is that we don't need a real database connection, and the test can run faster, focusing only on the business logic.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#approach5">
+                            Approach 5: Using TestContainers for Real Database Integration Tests
+                        </button>
+                    </h2>
+                    <div id="approach5" class="accordion-collapse collapse">
+                        <div class="accordion-body">
+                            <p>TestContainers provides a way to run real databases in Docker containers for integration testing. This allows you to test with actual database instances without needing to rely on external databases or in-memory solutions.</p>
+
+                            <h5 class="text-info">📌 Example: Using TestContainers for MySQL</h5>
+                            <pre class="language-java"><code>
+@Testcontainers
+public class OrderRepositoryTest {
+
+    @Container
+    public static MySQLContainer mysql = new MySQLContainer("mysql:8.0")
+        .withDatabaseName("testdb")
+        .withUsername("user")
+        .withPassword("password");
+
+    @Autowired
+    private OrderRepository orderRepository;
+
+    @Test
+    void testDatabaseConnection() {
+        assertNotNull(mysql.getJdbcUrl());
+        // Use orderRepository to test database interactions here
+    }
+}
+                            </code></pre>
+
+                            <p>With this approach, the TestContainers library spins up a real MySQL container for testing, allowing you to test real database interactions in a safe and isolated environment.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h5 class="text-info">📌 Conclusion</h5>
+            <p>Each of the above approaches has its own advantages and trade-offs:</p>
+            <ul>
+                <li><strong>In-memory databases:</strong> Quick and simple but may not exactly replicate your production database.</li>
+                <li><strong>@DataJpaTest:</strong> Focused on JPA and repository testing with an in-memory DB, keeping tests lightweight.</li>
+                <li><strong>@SpringBootTest:</strong> Complete integration testing with the real application context and database.</li>
+                <li><strong>Mockito + @MockBean:</strong> Useful for unit testing where you mock database calls and isolate business logic.</li>
+                <li><strong>TestContainers:</strong> Real database testing with containers, ensuring compatibility with the actual database environment.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div class="accordion-item">
+    <h2 class="accordion-header">
+        <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#realDatabaseImplications">
+            Implications of Using Real Databases in Integration Tests
+        </button>
+    </h2>
+    <div id="realDatabaseImplications" class="accordion-collapse collapse">
+        <div class="accordion-body">
+            <h5 class="text-info">📌 Overview</h5>
+            <p>Using real databases in integration tests can provide more accurate and realistic test results, as the tests operate on an actual database system similar to the production environment. However, there are several implications, both positive and negative, that need to be considered when adopting this approach in your testing strategy.</p>
+
+            <h5 class="text-info">📌 Implications:</h5>
+            <ul>
+                <li><strong>Increased Test Execution Time:</strong> Running tests with real databases generally increases the execution time of your tests due to overheads such as network communication and disk I/O. This can slow down your CI/CD pipeline.</li>
+                <li><strong>Database Setup and Maintenance:</strong> Using a real database requires ongoing management, including database setup, schema changes, and ensuring it remains in a clean state for each test run. It can be cumbersome, especially in complex environments.</li>
+                <li><strong>Potential for Test Flakiness:</strong> Tests using real databases are more prone to flakiness due to network issues, database locking, and inconsistent performance. This can make it difficult to reproduce test failures and track down the cause.</li>
+                <li><strong>Data Integrity and Isolation:</strong> Tests may interact with live data, so it’s crucial to ensure proper isolation and data cleanup after each test. Failing to do so can lead to inconsistent test results or corruption of production data.</li>
+                <li><strong>Database-Specific Configurations and Dependencies:</strong> Real database tests introduce dependencies on database configurations and versions. This can cause inconsistencies between different environments (e.g., different database versions in test vs production) that may lead to failed tests.</li>
+                <li><strong>Cost and Resource Usage:</strong> Running tests with real databases, especially in cloud environments, incurs additional costs. Even local databases require resources like CPU, RAM, and disk usage, which may impact system performance.</li>
+            </ul>
+
+            <h5 class="text-info">📌 Conclusion</h5>
+            <p>While using real databases in integration tests can provide more realistic results, it brings challenges like increased execution time, setup and maintenance overhead, potential flakiness, data integrity concerns, and resource usage. Consider using in-memory databases or mocking for certain tests to mitigate some of these challenges, or limit real database usage to key integration tests that require it.</p>
+        </div>
+    </div>
+</div>
+
+<div class="accordion-item">
+    <h2 class="accordion-header">
+        <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#isolatingTestData">
+            Best Practices for Isolating Test Data
+        </button>
+    </h2>
+    <div id="isolatingTestData" class="accordion-collapse collapse">
+        <div class="accordion-body">
+            <h5 class="text-info">📌 1. Use In-Memory Databases</h5>
+            <p>In-memory databases like H2 or HSQLDB help you quickly set up and tear down databases without impacting real data. They are fast, easy to configure, and help avoid any potential side effects on your production or development databases.</p>
+            <pre class="language-properties"><code>
+spring.datasource.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=MySQL
+spring.datasource.driverClassName=org.h2.Driver
+spring.datasource.username=sa
+spring.datasource.password=password
+spring.jpa.database-platform=org.hibernate.dialect.H2Dialect
+            </code></pre>
+
+            <h5 class="text-info">📌 2. Test Transactional Boundaries</h5>
+            <p>Using transactional boundaries (i.e., wrapping tests in transactions) allows changes to be rolled back after each test, preventing test data from affecting the database state for subsequent tests.</p>
+            <pre class="language-java"><code>
+@Test
+@Transactional
+public void testCreateUser() {
+    User user = new User("John Doe");
+    userRepository.save(user);
+    // Test assertions
+}
+// No need to manually clean up - transaction will be rolled back after test execution
+            </code></pre>
+
+            <h5 class="text-info">📌 3. Use Data Builders or Factory Methods</h5>
+            <p>Data builders or factory methods allow you to create consistent and isolated test data by encapsulating object creation logic, making it easier to create fresh data for each test case.</p>
+            <pre class="language-java"><code>
+public class UserBuilder {
+    private String name = "John Doe";
+    
+    public UserBuilder withName(String name) {
+        this.name = name;
+        return this;
+    }
+    
+    public User build() {
+        return new User(name);
+    }
+}
+Usage:
+User user = new UserBuilder().withName("Jane Doe").build();
+            </code></pre>
+
+            <h5 class="text-info">📌 4. Test with Isolated Database Schemas or Separate Databases</h5>
+            <p>For more complex applications, using different database schemas or completely separate databases for testing ensures complete isolation of test data from production data.</p>
+            <pre class="language-properties"><code>
+spring.datasource.url=jdbc:mysql://localhost:3306/testdb
+            </code></pre>
+
+            <h5 class="text-info">📌 5. Use Fixtures or Mocking Frameworks for Data Setup</h5>
+            <p>Predefined sets of test data (fixtures) help standardize test data and reduce test setup time. Alternatively, frameworks like Mockito or TestContainers can mock or simulate data access layers, preventing real database operations.</p>
+            <pre class="language-java"><code>
+@Test
+public void testWithTestContainer() {
+    try (MySQLContainer container = new MySQLContainer("mysql:5.7")) {
+        container.start();
+        // Test logic using the database
+    }
+}
+            </code></pre>
+
+            <h5 class="text-info">📌 6. Clean Up Data After Tests (Test Cleanup)</h5>
+            <p>Ensure that any data created during a test is removed once the test completes. This can be done through a combination of test frameworks and rollback strategies.</p>
+        </div>
+    </div>
+</div>
+<div class="accordion-item">
+    <h2 class="accordion-header">
+        <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#testDataGenerationTools">
+            Tools for Generating Test Data
+        </button>
+    </h2>
+    <div id="testDataGenerationTools" class="accordion-collapse collapse">
+        <div class="accordion-body">
+            <h5 class="text-info">📌 1. Faker</h5>
+            <p>Faker is a popular library for generating random but realistic-looking test data (e.g., names, addresses, phone numbers, etc.). It can be used in Java applications to populate test datasets.</p>
+            <pre class="language-java"><code>
+import com.github.javafaker.Faker;
+
+Faker faker = new Faker();
+String name = faker.name().fullName();
+String address = faker.address().fullAddress();
+            </code></pre>
+
+            <h5 class="text-info">📌 2. Java Object Faker (Java Faker)</h5>
+            <p>Java Faker is another powerful library for generating random data, including people names, addresses, books, dates, and more. It's very useful for populating databases with random data for testing.</p>
+            <pre class="language-java"><code>
+import com.github.javafaker.Faker;
+
+Faker faker = new Faker();
+System.out.println(faker.name().fullName());
+System.out.println(faker.address().streetAddress());
+            </code></pre>
+
+            <h5 class="text-info">📌 3. Testcontainers</h5>
+            <p>Testcontainers is a Java library that supports running Docker containers for integration tests. It can be used for creating isolated environments for tests, such as running actual database instances.</p>
+            <pre class="language-java"><code>
+import org.testcontainers.containers.MySQLContainer;
+
+MySQLContainer mysql = new MySQLContainer("mysql:5.7");
+mysql.start();
+System.out.println(mysql.getJdbcUrl());
+            </code></pre>
+
+            <h5 class="text-info">📌 4. RandomBeans</h5>
+            <p>RandomBeans is a library for generating random Java objects, ensuring that all fields are populated with random but sensible data. It's great for testing complex object models.</p>
+            <pre class="language-java"><code>
+import io.github.benas.randombeans.api.BeanGenerationException;
+import io.github.benas.randombeans.api.BeanGenerator;
+
+BeanGenerator generator = new BeanGenerator();
+MyClass myClass = generator.nextBean(MyClass.class);
+            </code></pre>
+
+            <h5 class="text-info">📌 5. JFairy</h5>
+            <p>JFairy generates random test data like names, addresses, emails, and more, in various languages. It is a flexible tool that integrates well with Java projects.</p>
+            <pre class="language-java"><code>
+import io.codearte.jfairy.Fairy;
+
+Fairy fairy = Fairy.create();
+String email = fairy.person().getEmail();
+            </code></pre>
+
+            <h5 class="text-info">📌 6. Mockaroo</h5>
+            <p>Mockaroo is an online tool that allows you to generate large volumes of realistic test data in various formats like CSV, JSON, SQL, and more. It is easy to integrate into projects using APIs.</p>
+            <pre class="language-bash"><code>
+curl -X GET "https://api.mockaroo.com/api/generate.json?key=YOUR_API_KEY&num=1000"
+            </code></pre>
+
+            <h5 class="text-info">📌 7. DBUnit</h5>
+            <p>DBUnit is a testing framework used to manage database testing. It helps you load predefined test data into your database before tests and clean up after tests.</p>
+            <pre class="language-java"><code>
+@Test
+public void testDatabase() throws Exception {
+    // Insert data into the database
+    IDataSet dataSet = new FlatXmlDataSetBuilder().build(new FileInputStream("data.xml"));
+    DatabaseOperation.CLEAN_INSERT.execute(connection, dataSet);
+}
+            </code></pre>
+
+            <h5 class="text-info">📌 8. Factory Boy</h5>
+            <p>Factory Boy is another tool that helps generate test data through factory patterns, allowing you to create complex objects with ease.</p>
+        </div>
+    </div>
+</div>
+<div class="accordion-item">
+    <h2 class="accordion-header">
+        <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#integratingFaker">
+            Integrating Faker with Spring Boot Application
+        </button>
+    </h2>
+    <div id="integratingFaker" class="accordion-collapse collapse">
+        <div class="accordion-body">
+            <h5 class="text-info">📌 Step 1: Add Faker Dependency</h5>
+            <p>First, add the Faker dependency in your `pom.xml` (if you're using Maven):</p>
+            <pre class="language-xml"><code>
+<dependency>
+    <groupId>com.github.javafaker</groupId>
+    <artifactId>javafaker</artifactId>
+    <version>1.0.2</version>
+</dependency>
+            </code></pre>
+            <p>If you're using Gradle, add the following to your `build.gradle`:</p>
+            <pre class="language-gradle"><code>
+implementation 'com.github.javafaker:javafaker:1.0.2'
+            </code></pre>
+
+            <h5 class="text-info">📌 Step 2: Use Faker in a Spring Service</h5>
+            <p>Create a service where you will use Faker to generate random data:</p>
+            <pre class="language-java"><code>
+import com.github.javafaker.Faker;
+import org.springframework.stereotype.Service;
+
+@Service
+public class FakeDataService {
+
+    private final Faker faker;
+
+    public FakeDataService() {
+        this.faker = new Faker();
+    }
+
+    public String generateRandomName() {
+        return faker.name().fullName(); // Random full name
+    }
+
+    public String generateRandomAddress() {
+        return faker.address().fullAddress(); // Random address
+    }
+
+    public String generateRandomEmail() {
+        return faker.internet().emailAddress(); // Random email
+    }
+}
+            </code></pre>
+
+            <h5 class="text-info">📌 Step 3: Autowire the Service in a Controller</h5>
+            <p>Next, autowire the service in your controller and expose endpoints to get fake data:</p>
+            <pre class="language-java"><code>
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class FakeDataController {
+
+    private final FakeDataService fakeDataService;
+
+    @Autowired
+    public FakeDataController(FakeDataService fakeDataService) {
+        this.fakeDataService = fakeDataService;
+    }
+
+    @GetMapping("/random-name")
+    public String getRandomName() {
+        return fakeDataService.generateRandomName();
+    }
+
+    @GetMapping("/random-address")
+    public String getRandomAddress() {
+        return fakeDataService.generateRandomAddress();
+    }
+
+    @GetMapping("/random-email")
+    public String getRandomEmail() {
+        return fakeDataService.generateRandomEmail();
+    }
+}
+            </code></pre>
+
+            <h5 class="text-info">📌 Step 4: Test the Endpoints</h5>
+            <p>Run your Spring Boot application, and then visit the following URLs to test the generated data:</p>
+            <ul>
+                <li>http://localhost:8080/random-name</li>
+                <li>http://localhost:8080/random-address</li>
+                <li>http://localhost:8080/random-email</li>
+            </ul>
+            <p>This will return random names, addresses, and emails generated using the Faker library.</p>
+        </div>
+    </div>
+</div>
 
 
 
