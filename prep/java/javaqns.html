@@ -82,6 +82,8 @@
 <body class="bg-dark text-light">
   <div class="container">
     <div class="header fw-bold text-center mb-4">Java Q&A</div>
+
+    
     <!-- Search Box in a Bootstrap Container -->
     <div class="search-container">
       <input type="text" class="search-input form-control" id="searchBox" placeholder="Search questions..."
@@ -11295,7 +11297,7 @@ public void printLength(String input) {
         </code></pre>
 
             <h5>✅ Summary</h5>
-            <table class="table table-bordered table-sm">
+            <table class="table table-bordered ">
               <thead>
                 <tr>
                   <th>Aspect</th>
@@ -11828,7 +11830,7 @@ public class CompletableFutureExample {
       </code></pre>
 
             <h5>⚖️ Key Differences Between Future and CompletableFuture</h5>
-            <table class="table table-dark table-sm ">
+            <table class="table table-dark  ">
               <thead>
                 <tr>
                   <th>Feature</th>
@@ -17570,6 +17572,1489 @@ public class FakeDataController {
         </div>
     </div>
 </div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#nPlusOne">
+      What is the N+1 Problem in Hibernate?
+    </button>
+  </h2>
+  <div id="nPlusOne" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <h5 class="text-info">🔍 What is the N+1 Problem?</h5>
+      <p>
+        The N+1 problem in Hibernate occurs when Hibernate executes one query to retrieve the parent entities and then executes an additional query for each parent to retrieve its child entities.
+        This results in <strong>N+1 SQL queries</strong>, which can severely affect performance.
+      </p>
+
+      <h5 class="text-info">📌 Example</h5>
+      <pre class="language-java"><code>
+// Assume a OneToMany relationship: Department -> Employees
+
+List&lt;Department&gt; departments = session.createQuery("from Department", Department.class).list();
+
+for (Department dept : departments) {
+    System.out.println(dept.getEmployees().size());
+}
+      </code></pre>
+      <p>
+        - Hibernate first fetches all departments: <code>1 query</code><br>
+        - Then, for each department, it runs another query to fetch employees: <code>N queries</code><br>
+        👉 Total = N + 1 queries
+      </p>
+
+      <h5 class="text-info">⚠️ Problem</h5>
+      <p>This causes performance issues, especially when you have large datasets. It results in multiple unnecessary database hits.</p>
+
+      <h5 class="text-info">✅ Solution: Fetch Joins</h5>
+      <p>Use JPQL fetch joins to load both parent and children in a single query:</p>
+      <pre class="language-java"><code>
+List&lt;Department&gt; departments = session.createQuery(
+    "select d from Department d join fetch d.employees", Department.class
+).list();
+      </code></pre>
+      <p>This way, Hibernate executes just <strong>one query</strong> to fetch all departments along with their employees.</p>
+
+      <h5 class="text-info">🛠️ Alternative: @BatchSize</h5>
+      <p>
+        You can use the <code>@BatchSize</code> annotation to batch load collections and reduce the number of queries.
+        It's useful when eager fetching is not desired.
+      </p>
+
+      <h5 class="text-info">📚 Summary</h5>
+      <ul>
+        <li>🔴 N+1 happens when lazy associations cause many queries.</li>
+        <li>✅ Use <code>join fetch</code> or <code>@BatchSize</code> to solve it.</li>
+        <li>🧠 Analyze queries using Hibernate logs to catch N+1 issues.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#hibernateTransactions">
+      How does Hibernate handle transactions internally?
+    </button>
+  </h2>
+  <div id="hibernateTransactions" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <h5 class="text-info">🧩 Hibernate & Transactions</h5>
+      <p>Hibernate abstracts the underlying database transaction management by integrating with **JDBC**, **JTA**, or **Spring-managed transactions**.</p>
+
+      <h5 class="text-info">🔄 Basic Flow (with JDBC)</h5>
+      <pre class="language-java"><code>
+Session session = sessionFactory.openSession();
+Transaction tx = session.beginTransaction();
+
+try {
+    // DB operations
+    session.save(entity);
+    tx.commit();
+} catch (Exception e) {
+    tx.rollback();
+}
+      </code></pre>
+
+      <p>Here's what happens under the hood:</p>
+      <ul>
+        <li>✅ `beginTransaction()` calls `connection.setAutoCommit(false)`</li>
+        <li>✅ Hibernate keeps track of all SQL operations in the session</li>
+        <li>✅ On `commit()`, Hibernate flushes the session and commits the JDBC connection</li>
+        <li>❌ On `rollback()`, the JDBC connection is rolled back and the session is cleared</li>
+      </ul>
+
+      <h5 class="text-info">💡 Flush vs Commit</h5>
+      <ul>
+        <li><strong>Flush</strong>: Pushes SQL statements to the database but doesn't commit</li>
+        <li><strong>Commit</strong>: Actually makes changes permanent in the DB</li>
+      </ul>
+
+      <h5 class="text-info">📦 Transaction Management in Spring</h5>
+      <p>In Spring Boot, transaction management is handled using <code>@Transactional</code>. Spring uses AOP proxies to begin, commit, or rollback transactions automatically:</p>
+      <pre class="language-java"><code>
+@Transactional
+public void saveUser(User user) {
+    userRepository.save(user);
+}
+      </code></pre>
+
+      <h5 class="text-info">🔌 Underlying APIs</h5>
+      <ul>
+        <li>Hibernate supports both <strong>JDBC transactions</strong> and <strong>JTA (Java Transaction API)</strong></li>
+        <li>In standalone apps, JDBC is used</li>
+        <li>In enterprise apps (e.g., EJB, Spring), JTA or container-managed transactions are preferred</li>
+      </ul>
+
+      <h5 class="text-info">🧠 Summary</h5>
+      <ul>
+        <li>Hibernate manages transactions via its `Transaction` interface</li>
+        <li>It abstracts JDBC/JTA to provide uniform APIs</li>
+        <li>Spring Boot simplifies it further with `@Transactional`</li>
+      </ul>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#jvmPerformanceTools">
+      What tools do you use for profiling and debugging JVM performance?
+    </button>
+  </h2>
+  <div id="jvmPerformanceTools" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <h5 class="text-info">🧪 Common JVM Profiling & Debugging Tools</h5>
+
+      <ul>
+        <li>
+          <strong>VisualVM</strong>:
+          <ul>
+            <li>Monitors heap usage, GC activity, thread activity</li>
+            <li>Can take heap dumps and profile CPU/memory</li>
+          </ul>
+        </li>
+
+        <li>
+          <strong>JConsole</strong>:
+          <ul>
+            <li>Lightweight monitoring tool bundled with JDK</li>
+            <li>Shows memory, threads, classes, MBeans</li>
+          </ul>
+        </li>
+
+        <li>
+          <strong>Java Flight Recorder (JFR)</strong>:
+          <ul>
+            <li>Low-overhead event recording system built into the JVM</li>
+            <li>Best for analyzing performance issues in production</li>
+          </ul>
+        </li>
+
+        <li>
+          <strong>JMC (Java Mission Control)</strong>:
+          <ul>
+            <li>Used to analyze recordings generated by JFR</li>
+            <li>Gives deep insights into memory usage, lock contention, GC pauses</li>
+          </ul>
+        </li>
+
+        <li>
+          <strong>YourKit / JProfiler</strong>:
+          <ul>
+            <li>Commercial profilers with advanced visual tools</li>
+            <li>Can profile live applications (CPU, memory, threads)</li>
+          </ul>
+        </li>
+
+        <li>
+          <strong>GC Logs + GCViewer / GCeasy</strong>:
+          <ul>
+            <li>Used to analyze Garbage Collection logs</li>
+            <li>Helpful in tuning memory and minimizing pause times</li>
+          </ul>
+        </li>
+
+        <li>
+          <strong>Perf / async-profiler</strong>:
+          <ul>
+            <li>Used for low-level, high-performance profiling (native + JVM)</li>
+            <li>Supports flame graphs and sampling-based analysis</li>
+          </ul>
+        </li>
+      </ul>
+
+      <h5 class="text-info">🔧 Tools You Can Use with Spring Boot</h5>
+      <ul>
+        <li><code>spring-boot-actuator</code> – exposes endpoints for metrics, health, env, etc.</li>
+        <li><code>Micrometer</code> – integrates with Prometheus, Datadog, New Relic</li>
+        <li><code>Zipkin / Sleuth</code> – for distributed tracing</li>
+      </ul>
+
+      <h5 class="text-info">🧠 Tip</h5>
+      <p>Start with <strong>VisualVM</strong> or <strong>JFR</strong> for basic profiling and move to <strong>async-profiler</strong> or <strong>YourKit</strong> for deep insights.</p>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#hibernateCaching">
+      First Level Cache vs Second Level Cache in Hibernate
+    </button>
+  </h2>
+  <div id="hibernateCaching" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <h5 class="text-info">📌 First Level Cache</h5>
+      <ul>
+        <li>Enabled by default in Hibernate.</li>
+        <li>It is associated with the <code>Session</code> object.</li>
+        <li>Each Hibernate session has its own first level cache.</li>
+        <li>Data is cached in the same session – reused until the session is closed or cleared.</li>
+        <li>Helps reduce duplicate SQL queries during the same session.</li>
+      </ul>
+      <p><strong>Example:</strong></p>
+      <pre class="language-java"><code>
+Session session = sessionFactory.openSession();
+User user1 = session.get(User.class, 1); // Hits DB
+User user2 = session.get(User.class, 1); // Uses first-level cache
+      </code></pre>
+
+      <hr/>
+
+      <h5 class="text-info">📌 Second Level Cache</h5>
+      <ul>
+        <li>Optional and must be explicitly enabled/configured.</li>
+        <li>It is shared across sessions – scoped to the <code>SessionFactory</code>.</li>
+        <li>Improves performance across multiple sessions.</li>
+        <li>Requires third-party providers like Ehcache, Infinispan, Hazelcast, etc.</li>
+      </ul>
+      <p><strong>Usage:</strong> Configure it in <code>hibernate.cfg.xml</code> or <code>application.properties</code></p>
+      <pre class="language-properties"><code>
+spring.jpa.properties.hibernate.cache.use_second_level_cache=true
+spring.jpa.properties.hibernate.cache.region.factory_class=org.hibernate.cache.jcache.JCacheRegionFactory
+      </code></pre>
+
+      <hr/>
+
+      <h5 class="text-info">🔍 Key Differences</h5>
+      <table class="table table-bordered table-dark table-striped">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>First Level Cache</th>
+            <th>Second Level Cache</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Scope</td>
+            <td>Session</td>
+            <td>SessionFactory</td>
+          </tr>
+          <tr>
+            <td>Enabled by default</td>
+            <td>Yes</td>
+            <td>No (requires setup)</td>
+          </tr>
+          <tr>
+            <td>Sharing across sessions</td>
+            <td>No</td>
+            <td>Yes</td>
+          </tr>
+          <tr>
+            <td>Customizable with providers</td>
+            <td>No</td>
+            <td>Yes (e.g., EhCache, Redis)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#loadingTypes">
+      How does Lazy Loading vs Eager Loading work in Hibernate?
+    </button>
+  </h2>
+  <div id="loadingTypes" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <h5 class="text-info">📌 Lazy Loading</h5>
+      <ul>
+        <li>Objects are loaded only when accessed (on demand).</li>
+        <li>Improves performance by avoiding unnecessary data retrieval.</li>
+        <li>Default behavior for most Hibernate associations.</li>
+        <li>Uses proxy objects initially.</li>
+        <li>Can cause <code>LazyInitializationException</code> if accessed outside session.</li>
+      </ul>
+      <p><strong>Example:</strong></p>
+      <pre class="language-java"><code>
+@Entity
+public class Department {
+    @OneToMany(mappedBy = "department", fetch = FetchType.LAZY)
+    private List<Employee> employees;
+}
+      </code></pre>
+
+      <hr/>
+
+      <h5 class="text-info">⚡ Eager Loading</h5>
+      <ul>
+        <li>All related objects are fetched immediately (with parent object).</li>
+        <li>May lead to performance issues if unused data is fetched.</li>
+        <li>Useful when you always need related data.</li>
+      </ul>
+      <p><strong>Example:</strong></p>
+      <pre class="language-java"><code>
+@Entity
+public class Department {
+    @OneToMany(mappedBy = "department", fetch = FetchType.EAGER)
+    private List<Employee> employees;
+}
+      </code></pre>
+
+      <hr/>
+
+      <h5 class="text-info">🔍 Key Differences</h5>
+      <table class="table table-bordered table-dark table-striped">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>Lazy Loading</th>
+            <th>Eager Loading</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Fetch timing</td>
+            <td>On access (just-in-time)</td>
+            <td>Immediately (with main entity)</td>
+          </tr>
+          <tr>
+            <td>Performance</td>
+            <td>Efficient if data isn't always used</td>
+            <td>May cause over-fetching</td>
+          </tr>
+          <tr>
+            <td>Risk of Exception</td>
+            <td>May throw LazyInitializationException</td>
+            <td>No such risk</td>
+          </tr>
+          <tr>
+            <td>Default</td>
+            <td>Yes (for collections)</td>
+            <td>No</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h5 class="text-info">💡 Best Practice</h5>
+      <p>Use <code>Lazy</code> loading by default and fetch eagerly only when really needed to optimize performance and memory usage.</p>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#criteriaApi">
+      What is the use of Criteria API in Hibernate?
+    </button>
+  </h2>
+  <div id="criteriaApi" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <h5 class="text-info">📌 Purpose of Criteria API</h5>
+      <p>The <strong>Criteria API</strong> is used for building type-safe, dynamic, and programmatic queries in Hibernate without writing HQL (Hibernate Query Language).</p>
+
+      <h5 class="text-info">💡 Benefits</h5>
+      <ul>
+        <li>Type-safe (in JPA Criteria API with metamodel).</li>
+        <li>No need to write query strings manually.</li>
+        <li>Useful for dynamic query construction at runtime.</li>
+        <li>Reduces risk of query syntax errors.</li>
+      </ul>
+
+      <h5 class="text-info">🔍 Example: Find all employees with salary &gt; 50000</h5>
+      <pre class="language-java"><code>
+CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+CriteriaQuery&lt;Employee&gt; query = cb.createQuery(Employee.class);
+Root&lt;Employee&gt; root = query.from(Employee.class);
+query.select(root).where(cb.gt(root.get("salary"), 50000));
+List&lt;Employee&gt; result = entityManager.createQuery(query).getResultList();
+      </code></pre>
+
+      <h5 class="text-info">🛠️ Components</h5>
+      <ul>
+        <li><code>CriteriaBuilder</code> – Used to build queries.</li>
+        <li><code>CriteriaQuery</code> – Represents the actual query.</li>
+        <li><code>Root</code> – Represents the FROM clause (main entity).</li>
+        <li><code>Predicate</code> – Represents WHERE conditions.</li>
+      </ul>
+
+      <h5 class="text-info">📘 Comparison with HQL</h5>
+      <table class="table table-bordered table-dark table-striped">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>Criteria API</th>
+            <th>HQL</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Type Safety</td>
+            <td>Yes (especially with Metamodel)</td>
+            <td>No</td>
+          </tr>
+          <tr>
+            <td>Query String</td>
+            <td>Not required</td>
+            <td>Required</td>
+          </tr>
+          <tr>
+            <td>Dynamic Query</td>
+            <td>Easy to build</td>
+            <td>More difficult</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h5 class="text-info">✅ Use Case</h5>
+      <p>Criteria API is ideal when building complex or dynamic queries, especially when input parameters change at runtime.</p>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#namedQuery">
+      How does @NamedQuery work in Hibernate?
+    </button>
+  </h2>
+  <div id="namedQuery" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <h5 class="text-info">📌 What is @NamedQuery?</h5>
+      <p>
+        <code>@NamedQuery</code> is used to define static, reusable HQL queries with a name that can be called in the code. These queries are defined at the entity level and are parsed during application startup for syntax validation.
+      </p>
+
+      <h5 class="text-info">🔧 Syntax</h5>
+      <pre class="language-java"><code>
+@Entity
+@NamedQuery(
+  name = "Employee.findByDepartment",
+  query = "FROM Employee e WHERE e.department = :dept"
+)
+public class Employee {
+    // fields, getters, setters
+}
+      </code></pre>
+
+      <h5 class="text-info">🛠️ How to Use</h5>
+      <pre class="language-java"><code>
+List&lt;Employee&gt; employees = entityManager
+    .createNamedQuery("Employee.findByDepartment", Employee.class)
+    .setParameter("dept", "IT")
+    .getResultList();
+      </code></pre>
+
+      <h5 class="text-info">💡 Benefits</h5>
+      <ul>
+        <li>Centralized query definitions.</li>
+        <li>Syntax checked at startup (less runtime errors).</li>
+        <li>Improves code reusability.</li>
+      </ul>
+
+      <h5 class="text-info">🧩 @NamedQueries</h5>
+      <p>You can define multiple named queries using the <code>@NamedQueries</code> annotation:</p>
+      <pre class="language-java"><code>
+@NamedQueries({
+  @NamedQuery(name = "Employee.findAll", query = "FROM Employee"),
+  @NamedQuery(name = "Employee.findByName", query = "FROM Employee e WHERE e.name = :name")
+})
+      </code></pre>
+
+      <h5 class="text-info">🔍 Notes</h5>
+      <ul>
+        <li>Works with both JPA and Hibernate.</li>
+        <li>Not suitable for dynamic conditions – use Criteria API instead.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#hibernateTransaction">
+      How does Hibernate handle transactions internally?
+    </button>
+  </h2>
+  <div id="hibernateTransaction" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <h5 class="text-info">🔄 Transaction Management in Hibernate</h5>
+      <p>
+        Hibernate uses the Java Transaction API (JTA) or JDBC transactions internally, depending on the configuration. It ensures **atomicity, consistency, isolation, and durability (ACID)** during database operations.
+      </p>
+
+      <h5 class="text-info">🔧 Steps in Transaction Lifecycle</h5>
+      <ol>
+        <li>Begin a transaction using <code>session.beginTransaction()</code></li>
+        <li>Execute your CRUD operations</li>
+        <li>Commit or rollback based on success or failure</li>
+        <li>Session is either flushed or cleared</li>
+      </ol>
+
+      <h5 class="text-info">💡 Example Code</h5>
+      <pre class="language-java"><code>
+Session session = sessionFactory.openSession();
+Transaction tx = null;
+
+try {
+    tx = session.beginTransaction();
+    Employee emp = new Employee("John", "IT");
+    session.save(emp);
+    tx.commit(); // commit if all good
+} catch (Exception e) {
+    if (tx != null) tx.rollback(); // rollback if error
+    e.printStackTrace();
+} finally {
+    session.close();
+}
+      </code></pre>
+
+      <h5 class="text-info">🧠 Internally...</h5>
+      <ul>
+        <li>Hibernate wraps the JDBC <code>Connection</code> in a transaction.</li>
+        <li>When you call <code>beginTransaction()</code>, Hibernate gets a JDBC connection and sets <code>autoCommit = false</code>.</li>
+        <li>On <code>commit()</code>, Hibernate calls JDBC <code>commit()</code> on the connection.</li>
+        <li>If rollback is needed, it calls JDBC <code>rollback()</code>.</li>
+      </ul>
+
+      <h5 class="text-info">🔄 Flushing</h5>
+      <p>
+        Before committing, Hibernate automatically **flushes** the session — synchronizing in-memory changes to the database.
+      </p>
+
+      <h5 class="text-info">✅ Transaction Propagation with Spring</h5>
+      <p>
+        In Spring, using <code>@Transactional</code> makes Hibernate transaction management declarative. Spring handles the begin, commit, and rollback logic.
+      </p>
+
+      <h5 class="text-info">⚠️ Tips</h5>
+      <ul>
+        <li>Always commit or rollback to release DB resources.</li>
+        <li>Don't forget to close the session — it holds a DB connection.</li>
+        <li>Use Spring's <code>@Transactional</code> whenever possible for cleaner management.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#hibernatePerformance">
+      🚀 How to Improve Hibernate Performance in High-Load Applications?
+    </button>
+  </h2>
+  <div id="hibernatePerformance" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">🔄 1. Enable Second-Level and Query Caching</h5>
+      <ul>
+        <li>Use providers like Ehcache, Caffeine, or Redis.</li>
+        <li>Configure entity-level caching using <code>@Cacheable</code> and query cache with <code>setCacheable(true)</code>.</li>
+        <pre class="language-properties"><code>
+spring.jpa.properties.hibernate.cache.use_second_level_cache=true
+spring.jpa.properties.hibernate.cache.region.factory_class=org.hibernate.cache.jcache.JCacheRegionFactory
+        </code></pre>
+      </ul>
+
+      <h5 class="text-info">📊 2. Use Fetch Strategies Smartly</h5>
+      <ul>
+        <li>Prefer <strong>Lazy loading</strong> for associations to avoid loading unnecessary data.</li>
+        <li>Use <code>JOIN FETCH</code> in JPQL only when needed.</li>
+        <li>Avoid N+1 problem using <code>@BatchSize</code> or fetch joins.</li>
+      </ul>
+
+      <h5 class="text-info">📦 3. Connection Pooling</h5>
+      <ul>
+        <li>Use efficient connection poolers like **HikariCP** (default in Spring Boot).</li>
+        <li>Configure optimal pool size based on expected load.</li>
+        <pre class="language-yml"><code>
+spring.datasource.hikari.maximum-pool-size: 20
+spring.datasource.hikari.minimum-idle: 5
+        </code></pre>
+      </ul>
+
+      <h5 class="text-info">📁 4. Use Pagination</h5>
+      <ul>
+        <li>Never fetch thousands of records at once.</li>
+        <li>Use <code>Pageable</code> or <code>LIMIT/OFFSET</code> based queries.</li>
+        <pre class="language-java"><code>
+Page&lt;User&gt; users = userRepository.findAll(PageRequest.of(0, 50));
+        </code></pre>
+      </ul>
+
+      <h5 class="text-info">🧠 5. Minimize Session Scope</h5>
+      <ul>
+        <li>Keep Hibernate session open only for the time needed.</li>
+        <li>Use the **Open Session in View** pattern only when absolutely required.</li>
+      </ul>
+
+      <h5 class="text-info">🧹 6. Tune Entity Mappings</h5>
+      <ul>
+        <li>Index frequently used columns.</li>
+        <li>Use correct data types and column definitions to avoid implicit type casting.</li>
+      </ul>
+
+      <h5 class="text-info">🧾 7. Monitor SQL Queries</h5>
+      <ul>
+        <li>Use Hibernate logging or tools like **p6spy**, **DataDog**, **NewRelic**.</li>
+        <li>Enable SQL formatting during development to read generated SQL easily.</li>
+        <pre class="language-properties"><code>
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+        </code></pre>
+      </ul>
+
+      <h5 class="text-info">🔄 8. Avoid Overuse of Merge()</h5>
+      <ul>
+        <li><code>merge()</code> always loads from DB before merging, causing performance overhead.</li>
+        <li>Use <code>update()</code> if you know the entity exists.</li>
+      </ul>
+
+      <h5 class="text-info">📚 9. Use DTO Projections</h5>
+      <ul>
+        <li>Use constructor expressions in JPQL or Spring Data projections to fetch only needed fields.</li>
+        <pre class="language-java"><code>
+@Query("SELECT new com.example.dto.UserDto(u.id, u.name) FROM User u")
+List&lt;UserDto&gt; findUsersLightweight();
+        </code></pre>
+      </ul>
+
+      <h5 class="text-info">🛠️ 10. Profile & Tune Queries</h5>
+      <ul>
+        <li>Use **JPA/Hibernate Statistics**, **JProfiler**, **VisualVM**, or **YourKit** to analyze query performance.</li>
+        <li>Look for slow queries and missing indexes using your DB’s EXPLAIN plan.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#dockerJava">
+      🐳 What is Docker, and how does it help in Java applications?
+    </button>
+  </h2>
+  <div id="dockerJava" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      
+      <h5 class="text-info">📦 What is Docker?</h5>
+      <p>
+        Docker is a platform that allows you to build, ship, and run applications inside lightweight, portable containers. 
+        A container packages an application with all its dependencies and environment, ensuring consistent behavior across systems.
+      </p>
+
+      <h5 class="text-info">☕ How Docker Helps Java Applications?</h5>
+      <ul>
+        <li><strong>Consistency:</strong> Java app runs the same way on dev, test, and production.</li>
+        <li><strong>Isolation:</strong> Avoids conflicts between different Java versions or dependencies.</li>
+        <li><strong>Portability:</strong> Containers can run on any system with Docker installed (Windows, Linux, Mac).</li>
+        <li><strong>Simplified Deployment:</strong> No need to install JDK or configure environments manually.</li>
+        <li><strong>Scalability:</strong> Easily scale containers with orchestration tools like Kubernetes.</li>
+      </ul>
+
+      <h5 class="text-info">🚀 Sample Dockerfile for Java App</h5>
+      <pre class="language-dockerfile"><code>
+FROM openjdk:17-jdk-slim
+WORKDIR /app
+COPY target/my-app.jar my-app.jar
+ENTRYPOINT ["java", "-jar", "my-app.jar"]
+      </code></pre>
+
+      <h5 class="text-info">🔧 Build & Run Docker Container</h5>
+      <pre class="language-bash"><code>
+# Build Docker Image
+docker build -t my-java-app .
+
+# Run Container
+docker run -p 8080:8080 my-java-app
+      </code></pre>
+
+      <p>With Docker, your Java app becomes much easier to manage, scale, and deploy 🚀</p>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#k8sManagement">
+      ☸️ How does Kubernetes manage containerized applications?
+    </button>
+  </h2>
+  <div id="k8sManagement" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What is Kubernetes?</h5>
+      <p>
+        Kubernetes (K8s) is an open-source container orchestration platform for automating deployment, scaling, and management of containerized applications. It abstracts the underlying infrastructure and provides a declarative way to manage containers.
+      </p>
+
+      <h5 class="text-info">🧩 Key Kubernetes Components</h5>
+      <ul>
+        <li><strong>Pod:</strong> The smallest unit, contains one or more containers.</li>
+        <li><strong>Node:</strong> A worker machine where containers are deployed (can be physical or virtual).</li>
+        <li><strong>Cluster:</strong> A group of nodes managed by a Kubernetes control plane.</li>
+        <li><strong>Deployment:</strong> Manages stateless applications with rolling updates and scaling.</li>
+        <li><strong>Service:</strong> Exposes Pods to the network and enables internal/external access.</li>
+        <li><strong>ConfigMap & Secret:</strong> Externalize configuration and sensitive data from code.</li>
+        <li><strong>Ingress:</strong> Manages external HTTP(S) access to services, often with load balancing.</li>
+      </ul>
+
+      <h5 class="text-info">⚙️ Core Features & Management Capabilities</h5>
+      <ul>
+        <li><strong>Self-Healing:</strong> Automatically replaces crashed or unresponsive containers.</li>
+        <li><strong>Auto-scaling:</strong> Scales pods based on CPU/memory usage or custom metrics.</li>
+        <li><strong>Rolling Updates & Rollbacks:</strong> Deploy new versions with zero downtime.</li>
+        <li><strong>Resource Management:</strong> Limits and requests for CPU/memory prevent overuse.</li>
+        <li><strong>Service Discovery:</strong> Internal DNS-based discovery of services between pods.</li>
+        <li><strong>Persistent Storage:</strong> Mount volumes (local, NFS, cloud) for stateful apps.</li>
+        <li><strong>Monitoring & Logging:</strong> Integrates with tools like Prometheus, Grafana, Fluentd, and ELK.</li>
+      </ul>
+
+      <h5 class="text-info">📦 How it Works: App Lifecycle in Kubernetes</h5>
+      <ol>
+        <li>You define a deployment YAML manifest for your app.</li>
+        <li>Apply the manifest with <code>kubectl apply -f app-deployment.yml</code>.</li>
+        <li>Kubernetes scheduler places pods on available nodes.</li>
+        <li>Container runtime (like Docker or containerd) pulls images and runs containers.</li>
+        <li>Kubelet monitors container health; controllers ensure desired state is maintained.</li>
+      </ol>
+
+      <h5 class="text-info">🛡️ Security & Isolation</h5>
+      <ul>
+        <li>Namespaces for resource isolation.</li>
+        <li>RBAC (Role-Based Access Control) for API access control.</li>
+        <li>Network Policies to control communication between pods.</li>
+        <li>Secrets for storing sensitive data securely.</li>
+      </ul>
+
+      <h5 class="text-info">🚀 Benefits of Using Kubernetes</h5>
+      <ul>
+        <li>Infrastructure abstraction: portable across cloud providers.</li>
+        <li>Declarative & versioned configuration.</li>
+        <li>Efficient resource utilization & cost savings.</li>
+        <li>Zero downtime deployments & seamless rollbacks.</li>
+        <li>Ecosystem support: Helm charts, operators, CI/CD integrations.</li>
+      </ul>
+
+      <h5 class="text-info">📘 Sample Deployment YAML</h5>
+      <pre class="language-yaml"><code>
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: springboot-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: springboot-app
+  template:
+    metadata:
+      labels:
+        app: springboot-app
+    spec:
+      containers:
+        - name: app
+          image: my-springboot-app:latest
+          ports:
+            - containerPort: 8080
+      </code></pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#ciCdMicroservices">
+      🔁 How do you implement CI/CD pipelines in a Microservices environment?
+    </button>
+  </h2>
+  <div id="ciCdMicroservices" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 CI/CD Overview in Microservices</h5>
+      <p>
+        In a microservices environment, each service is developed, tested, deployed, and scaled independently. CI/CD pipelines ensure faster and reliable delivery of features, fixes, and configurations.
+      </p>
+
+      <h5 class="text-info">🏗️ Pipeline Stages</h5>
+      <ol>
+        <li><strong>Code Commit:</strong> Developers push code to version control (e.g., GitHub, GitLab, Bitbucket).</li>
+        <li><strong>CI Stage:</strong>
+          <ul>
+            <li>Run Unit Tests (JUnit/Mockito)</li>
+            <li>Run Static Code Analysis (SonarQube, PMD, Checkstyle)</li>
+            <li>Build Artifacts (Maven/Gradle)</li>
+            <li>Generate Docker Image</li>
+            <li>Push image to Docker Registry (ECR, Docker Hub)</li>
+          </ul>
+        </li>
+        <li><strong>CD Stage:</strong>
+          <ul>
+            <li>Deploy to Dev/QA environments</li>
+            <li>Run integration, API, and smoke tests</li>
+            <li>Approval gates</li>
+            <li>Deploy to Prod (Canary/Blue-Green/Rolling)</li>
+          </ul>
+        </li>
+      </ol>
+
+      <h5 class="text-info">🔧 Tools Used</h5>
+      <ul>
+        <li><strong>CI Servers:</strong> Jenkins, GitHub Actions, GitLab CI, CircleCI</li>
+        <li><strong>Build:</strong> Maven, Gradle</li>
+        <li><strong>Docker:</strong> Dockerfile for containerization</li>
+        <li><strong>Image Registry:</strong> AWS ECR, Docker Hub, GitHub Packages</li>
+        <li><strong>CD/Deployment:</strong> ArgoCD, Spinnaker, Helm, FluxCD</li>
+        <li><strong>Kubernetes:</strong> EKS, GKE, AKS, or on-prem clusters</li>
+        <li><strong>Monitoring:</strong> Prometheus, Grafana, ELK stack</li>
+      </ul>
+
+      <h5 class="text-info">🚀 Sample GitHub Actions CI Pipeline</h5>
+      <pre class="language-yaml"><code>
+name: Build & Push Spring Boot App
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up JDK 17
+        uses: actions/setup-java@v2
+        with:
+          java-version: '17'
+      - name: Build with Maven
+        run: mvn clean package
+      - name: Docker Build
+        run: docker build -t my-app .
+      - name: Docker Push
+        run: |
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+          docker tag my-app:latest my-repo/my-app:latest
+          docker push my-repo/my-app:latest
+      </code></pre>
+
+      <h5 class="text-info">🔁 CD Strategies</h5>
+      <ul>
+        <li><strong>Canary Deployment:</strong> Route a small % of traffic to new version</li>
+        <li><strong>Blue-Green Deployment:</strong> Switch between old (blue) and new (green) environments</li>
+        <li><strong>Rolling Updates:</strong> Gradually replace old pods with new ones</li>
+      </ul>
+
+      <h5 class="text-info">✅ Best Practices</h5>
+      <ul>
+        <li>Use <strong>versioned images</strong> for traceability</li>
+        <li><strong>Rollback mechanisms</strong> in case of failures</li>
+        <li><strong>Environment parity</strong> across Dev, QA, and Prod</li>
+        <li>Secrets should be managed securely (e.g., AWS Secrets Manager, Vault)</li>
+        <li>Monitoring + Alerting after deployment</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#beforeK8s">
+      ⏳ What Were We Using Before Kubernetes?
+    </button>
+  </h2>
+  <div id="beforeK8s" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📦 Pre-Kubernetes Era: How We Deployed Apps</h5>
+      <p>
+        Before Kubernetes became the industry standard for container orchestration, various tools and strategies were used to manage application deployment, scaling, and operations.
+      </p>
+
+      <h5 class="text-info">🔹 Traditional Deployment Methods</h5>
+      <ul>
+        <li><strong>Manual Deployments:</strong> Uploading WAR/JAR files manually to application servers (like Tomcat, JBoss).</li>
+        <li><strong>Scripting (Bash/Ansible):</strong> Custom shell scripts or configuration tools to automate basic tasks.</li>
+        <li><strong>Monolithic Architecture:</strong> Large applications deployed as a single unit — harder to scale and manage.</li>
+      </ul>
+
+      <h5 class="text-info">🔸 Pre-Kubernetes Orchestration Tools</h5>
+      <ul>
+        <li><strong>Docker Compose:</strong> Used to define and run multi-container Docker applications locally. Not suitable for production at scale.</li>
+        <li><strong>Fleet (CoreOS):</strong> Used systemd and etcd to manage Docker containers across machines.</li>
+        <li><strong>Mesos + Marathon:</strong> Apache Mesos with Marathon for container scheduling — complex and hard to configure.</li>
+        <li><strong>Swarm Mode:</strong> Native clustering tool from Docker — simpler than Kubernetes, but less feature-rich.</li>
+        <li><strong>Cloud Foundry / Heroku:</strong> Platform-as-a-Service options to abstract away infrastructure but with vendor lock-in.</li>
+      </ul>
+
+      <h5 class="text-info">⚠️ Limitations of Pre-K8s Solutions</h5>
+      <ul>
+        <li>No self-healing — crashed apps stayed down until manual restart</li>
+        <li>Scalability was manual or handled by external scripts</li>
+        <li>Limited service discovery and load balancing</li>
+        <li>Infrastructure coupling — hard to move across cloud/on-prem</li>
+        <li>No standardized way to manage configs, secrets, or rollbacks</li>
+      </ul>
+
+      <h5 class="text-info">🚀 Why Kubernetes Took Over</h5>
+      <ul>
+        <li>Declarative configuration for desired state</li>
+        <li>Auto-scaling, self-healing, rolling deployments</li>
+        <li>Portable across any environment (cloud, on-prem, hybrid)</li>
+        <li>Vast ecosystem (Helm, ArgoCD, Prometheus, etc.)</li>
+        <li>Strong community and CNCF support</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#iacConcept">
+      🧱 What is Infrastructure as Code (IaC) in DevOps?
+    </button>
+  </h2>
+  <div id="iacConcept" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">💡 Definition</h5>
+      <p>
+        <strong>Infrastructure as Code (IaC)</strong> is the practice of managing and provisioning infrastructure (networks, servers, databases, etc.) through machine-readable definition files, rather than manual processes or interactive configuration tools.
+      </p>
+
+      <h5 class="text-info">📦 Key Concepts</h5>
+      <ul>
+        <li><strong>Declarative:</strong> Define the desired state (e.g., Terraform, CloudFormation).</li>
+        <li><strong>Imperative:</strong> Specify the exact steps to reach the desired state (e.g., Ansible, Chef).</li>
+        <li><strong>Version-controlled:</strong> Infrastructure code is stored in Git and treated like application code.</li>
+        <li><strong>Repeatable:</strong> Run the same code to get identical environments (Dev, QA, Prod).</li>
+      </ul>
+
+      <h5 class="text-info">🔧 Common IaC Tools</h5>
+      <ul>
+        <li><strong>Terraform:</strong> Cloud-agnostic declarative tool</li>
+        <li><strong>AWS CloudFormation:</strong> Native IaC for AWS resources</li>
+        <li><strong>Ansible:</strong> Configuration management with YAML-based playbooks</li>
+        <li><strong>Pulumi:</strong> IaC using general-purpose programming languages</li>
+        <li><strong>Chef/Puppet:</strong> Older config management tools</li>
+      </ul>
+
+      <h5 class="text-info">🚀 Benefits</h5>
+      <ul>
+        <li><strong>Speed:</strong> Quickly spin up environments using scripts</li>
+        <li><strong>Consistency:</strong> Eliminates configuration drift</li>
+        <li><strong>Auditability:</strong> Track infrastructure changes over time</li>
+        <li><strong>Automation:</strong> Integrate with CI/CD pipelines for full automation</li>
+      </ul>
+
+      <h5 class="text-info">📘 Example (Terraform)</h5>
+      <pre><code class="language-hcl">
+resource "aws_instance" "web" {
+  ami           = "ami-0abcdef1234567890"
+  instance_type = "t2.micro"
+  tags = {
+    Name = "MyWebApp"
+  }
+}
+      </code></pre>
+
+      <h5 class="text-info">🔐 Best Practices</h5>
+      <ul>
+        <li>Use variables and modules for reusability</li>
+        <li>Keep state securely (e.g., S3 for Terraform)</li>
+        <li>Run validation and plan before applying</li>
+        <li>Separate environments with workspaces or branches</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#springK8sBenefits">
+      🚀 Benefits of Spring Boot with Kubernetes
+    </button>
+  </h2>
+  <div id="springK8sBenefits" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">🔄 Seamless Deployment</h5>
+      <p>
+        Kubernetes enables easy, repeatable deployments of Spring Boot applications using YAML files or Helm charts.
+      </p>
+
+      <h5 class="text-info">⚖️ Auto Scaling</h5>
+      <p>
+        Horizontal Pod Autoscaler (HPA) in Kubernetes can scale Spring Boot app pods based on CPU, memory, or custom metrics.
+      </p>
+
+      <h5 class="text-info">🔁 Rolling Updates & Rollbacks</h5>
+      <p>
+        Kubernetes supports zero-downtime deployments and easy rollback mechanisms, making app updates smoother and safer.
+      </p>
+
+      <h5 class="text-info">📡 Service Discovery & Load Balancing</h5>
+      <p>
+        Kubernetes provides built-in DNS-based service discovery and load balancing, making it easy for Spring Boot services to talk to each other.
+      </p>
+
+      <h5 class="text-info">🔍 Centralized Monitoring</h5>
+      <p>
+        Tools like Prometheus, Grafana, and Kubernetes metrics server can monitor Spring Boot app health and performance.
+      </p>
+
+      <h5 class="text-info">📦 Configuration Management</h5>
+      <p>
+        Kubernetes ConfigMaps and Secrets let you externalize Spring Boot configurations for flexibility and security.
+      </p>
+
+      <h5 class="text-info">🔐 Enhanced Security</h5>
+      <p>
+        Kubernetes provides RBAC, Secrets encryption, Network Policies, and Pod Security Policies to secure Spring Boot deployments.
+      </p>
+
+      <h5 class="text-info">⛓️ CI/CD Integration</h5>
+      <p>
+        Spring Boot works great in a CI/CD pipeline with tools like Jenkins, ArgoCD, GitLab CI, etc., deploying straight into Kubernetes clusters.
+      </p>
+
+      <h5 class="text-info">🧰 Spring Cloud Kubernetes Integration</h5>
+      <p>
+        Use <code>spring-cloud-starter-kubernetes</code> to integrate Spring Boot with Kubernetes for features like:
+        <ul>
+          <li>Service discovery</li>
+          <li>Dynamic config reload from ConfigMaps/Secrets</li>
+          <li>Leader election</li>
+        </ul>
+      </p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#jvmArchitecture">
+      🧠 JVM Architecture - Key Components
+    </button>
+  </h2>
+  <div id="jvmArchitecture" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 1. Class Loader Subsystem</h5>
+      <p>
+        Responsible for loading, linking, and initializing classes and interfaces.
+        <ul>
+          <li><strong>Loading:</strong> Finds and loads class files.</li>
+          <li><strong>Linking:</strong> Verifies bytecode and prepares memory.</li>
+          <li><strong>Initialization:</strong> Static blocks and variable initialization.</li>
+        </ul>
+      </p>
+
+      <h5 class="text-info">📌 2. Runtime Data Areas</h5>
+      <ul>
+        <li><strong>Method Area:</strong> Stores class-level metadata like method names, constant pool, etc.</li>
+        <li><strong>Heap:</strong> Stores all objects and class instances (shared among threads).</li>
+        <li><strong>Java Stack:</strong> Stores stack frames for each thread's method calls.</li>
+        <li><strong>PC Register:</strong> Each thread has one; holds the address of the current instruction.</li>
+        <li><strong>Native Method Stack:</strong> Executes native (non-Java) methods via JNI.</li>
+      </ul>
+
+      <h5 class="text-info">📌 3. Execution Engine</h5>
+      <p>
+        Core component that executes the bytecode:
+        <ul>
+          <li><strong>Interpreter:</strong> Executes bytecode line-by-line (slow but simple).</li>
+          <li><strong>JIT Compiler:</strong> Converts bytecode into native code for faster execution.</li>
+        </ul>
+      </p>
+
+      <h5 class="text-info">📌 4. Native Method Interface (JNI)</h5>
+      <p>
+        Allows JVM to interact with native applications or libraries written in C/C++.
+      </p>
+
+      <h5 class="text-info">📌 5. Native Method Libraries</h5>
+      <p>
+        Collection of precompiled native libraries required by the JVM and loaded via JNI.
+      </p>
+
+      <h5 class="text-info">📌 Summary Diagram (🧬 Textual View)</h5>
+      <pre class="bg-dark text-white p-2 rounded">
++----------------------+
+|  Native Libraries    |
++----------+-----------+
+           |
++----------v-----------+
+| Native Method Interface |
++----------+-----------+
+           |
++----------v-----------+
+|   Execution Engine   |
+|  (Interpreter, JIT)  |
++----------+-----------+
+           |
++----------v-----------+
+| Runtime Data Areas   |
+| - Method Area        |
+| - Heap               |
+| - Java Stack         |
+| - PC Registers       |
+| - Native Stack       |
++----------+-----------+
+           |
++----------v-----------+
+| Class Loader System  |
++----------------------+
+      </pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#raceCondition">
+      ⚠️ Race Condition in Java with Example
+    </button>
+  </h2>
+  <div id="raceCondition" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What is a Race Condition?</h5>
+      <p>
+        A <strong>Race Condition</strong> occurs in a multi-threaded environment when two or more threads access shared data and try to change it at the same time. If the outcome of execution depends on the timing of threads, then it's a race condition — leading to unpredictable behavior or incorrect results.
+      </p>
+
+      <h5 class="text-info">💡 Problem Example (Without Synchronization)</h5>
+      <pre class="language-java"><code>
+public class Counter {
+    private int count = 0;
+
+    public void increment() {
+        count++; // Not thread-safe
+    }
+
+    public int getCount() {
+        return count;
+    }
+}
+
+public class RaceConditionExample {
+    public static void main(String[] args) throws InterruptedException {
+        Counter counter = new Counter();
+
+        Thread t1 = new Thread(() -> {
+            for (int i = 0; i < 1000; i++) counter.increment();
+        });
+
+        Thread t2 = new Thread(() -> {
+            for (int i = 0; i < 1000; i++) counter.increment();
+        });
+
+        t1.start();
+        t2.start();
+        t1.join();
+        t2.join();
+
+        System.out.println("Final Count: " + counter.getCount()); // Expected: 2000, Actual: Less than 2000
+    }
+}
+      </code></pre>
+      <p>
+        Even though 2000 increments are expected, due to race conditions, the actual count is often less.
+      </p>
+
+      <h5 class="text-success">✅ Solution: Synchronization</h5>
+      <pre class="language-java"><code>
+public synchronized void increment() {
+    count++;
+}
+      </code></pre>
+
+      <h5 class="text-info">🛠 Alternative Solutions</h5>
+      <ul>
+        <li><strong>Use Atomic Variables:</strong> <code>AtomicInteger</code></li>
+        <li><strong>Locks:</strong> <code>ReentrantLock</code> for advanced scenarios</li>
+        <li><strong>Thread-safe Collections:</strong> <code>ConcurrentHashMap</code>, etc.</li>
+      </ul>
+
+      <h5 class="text-warning">🧠 Key Takeaways</h5>
+      <ul>
+        <li>Avoid shared mutable state across threads.</li>
+        <li>Always synchronize or use concurrency-safe constructs.</li>
+        <li>Race conditions are tricky to debug due to timing sensitivity.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#fileIO">
+      📂 Efficient File Reading and Writing in Java
+    </button>
+  </h2>
+  <div id="fileIO" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Traditional File Reading - BufferedReader</h5>
+      <pre class="language-java"><code>
+try (BufferedReader reader = new BufferedReader(new FileReader("data.txt"))) {
+    String line;
+    while ((line = reader.readLine()) != null) {
+        System.out.println(line);
+    }
+}
+      </code></pre>
+      <p>
+        <strong>BufferedReader</strong> is efficient because it reads large chunks at a time and buffers the data internally, reducing disk access.
+      </p>
+
+      <h5 class="text-info">📌 Traditional File Writing - BufferedWriter</h5>
+      <pre class="language-java"><code>
+try (BufferedWriter writer = new BufferedWriter(new FileWriter("output.txt"))) {
+    writer.write("Hello, World!");
+    writer.newLine();
+    writer.write("Java I/O is cool.");
+}
+      </code></pre>
+      <p>BufferedWriter writes to the file efficiently by reducing the number of disk I/O operations.</p>
+
+      <h5 class="text-info">📦 Using Java NIO (Non-blocking I/O)</h5>
+      <pre class="language-java"><code>
+Path path = Paths.get("data.txt");
+List&lt;String&gt; lines = Files.readAllLines(path);
+lines.forEach(System.out::println);
+      </code></pre>
+      <p><code>java.nio.file.Files</code> offers utility methods to read/write files efficiently with fewer lines of code.</p>
+
+      <pre class="language-java"><code>
+Path outputPath = Paths.get("output.txt");
+Files.write(outputPath, Arrays.asList("Line 1", "Line 2"), StandardOpenOption.CREATE);
+      </code></pre>
+
+      <h5 class="text-info">🚀 For Very Large Files: Use Streams</h5>
+      <pre class="language-java"><code>
+try (Stream&lt;String&gt; stream = Files.lines(Paths.get("bigfile.txt"))) {
+    stream.forEach(System.out::println);
+}
+      </code></pre>
+      <p>This reads lines lazily and is memory-efficient, ideal for huge files.</p>
+
+      <h5 class="text-success">✅ Best Practices</h5>
+      <ul>
+        <li>Always close resources using <code>try-with-resources</code>.</li>
+        <li>Use buffering (<code>BufferedReader</code>/<code>BufferedWriter</code>) for performance.</li>
+        <li>Use <code>Files.lines()</code> or <code>Streams</code> for large files to avoid memory issues.</li>
+        <li>For multithreaded or async file operations, explore <code>java.nio.channels</code>.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#parallelStreamException">
+      ⚠️ Exception Handling in Java parallelStream()
+    </button>
+  </h2>
+  <div id="parallelStreamException" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Problem with Exceptions in parallelStream()</h5>
+      <p>
+        When using <code>parallelStream()</code>, exceptions thrown inside the stream may be wrapped in a <code>CompletionException</code> or <code>UncheckedExecutionException</code>, making debugging tricky.
+      </p>
+
+      <h5 class="text-info">🚫 Without Handling</h5>
+      <pre class="language-java"><code>
+List&lt;String&gt; data = List.of("A", "B", null, "C");
+
+data.parallelStream()
+    .map(String::toLowerCase)  // Will throw NullPointerException
+    .forEach(System.out::println);
+      </code></pre>
+
+      <p>This will crash with a <code>NullPointerException</code>.</p>
+
+      <h5 class="text-success">✅ Safe Handling with Wrapper</h5>
+      <pre class="language-java"><code>
+data.parallelStream()
+    .map(item -&gt; {
+        try {
+            return item.toLowerCase();
+        } catch (Exception e) {
+            System.err.println("Error processing: " + item);
+            return "DEFAULT";
+        }
+    })
+    .forEach(System.out::println);
+      </code></pre>
+
+      <p>Wrap the logic inside a try-catch to handle each element gracefully.</p>
+
+      <h5 class="text-info">🔁 Using Utility Wrapper Function</h5>
+      <pre class="language-java"><code>
+public static &lt;T, R&gt; Function&lt;T, R&gt; safe(Function&lt;T, R&gt; function, R fallback) {
+    return input -&gt; {
+        try {
+            return function.apply(input);
+        } catch (Exception e) {
+            return fallback;
+        }
+    };
+}
+
+data.parallelStream()
+    .map(safe(String::toLowerCase, "fallback"))
+    .forEach(System.out::println);
+      </code></pre>
+
+      <p>Use reusable wrappers for cleaner code and better error management.</p>
+
+      <h5 class="text-warning">💡 Important Notes</h5>
+      <ul>
+        <li><strong>Do not throw checked exceptions</strong> in lambdas without wrapping.</li>
+        <li>Use logging inside catch blocks to debug errors properly.</li>
+        <li>Use <code>ExceptionUtils</code> (from Apache Commons Lang) if you want more detailed stack traces.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#synchronizedThis">
+      🔐 What Happens If You Use <code>synchronized(this)</code> Instead?
+    </button>
+  </h2>
+  <div id="synchronizedThis" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What Is <code>synchronized(this)</code>?</h5>
+      <p>
+        <code>synchronized(this)</code> synchronizes the block of code on the current instance of the object. It means **only one thread per object** can enter that block at a time.
+      </p>
+
+      <h5 class="text-info">🧠 Example</h5>
+      <pre class="language-java"><code>
+public class Printer {
+    public void print() {
+        synchronized (this) {
+            System.out.println("Thread " + Thread.currentThread().getName() + " is printing...");
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            System.out.println("Thread " + Thread.currentThread().getName() + " finished printing.");
+        }
+    }
+}
+      </code></pre>
+
+      <p>If multiple threads use the same instance of <code>Printer</code>, only one can enter the synchronized block at a time.</p>
+
+      <h5 class="text-success">✅ When Should You Use It?</h5>
+      <ul>
+        <li>When you're synchronizing access to a shared resource on a **per-object** basis.</li>
+        <li>If every thread has its own object, they won't block each other.</li>
+      </ul>
+
+      <h5 class="text-warning">⚠️ Drawbacks</h5>
+      <ul>
+        <li>Can lead to performance bottlenecks if overused, since threads will block unnecessarily.</li>
+        <li>Not useful for static members — use <code>synchronized(ClassName.class)</code> instead for class-level locking.</li>
+      </ul>
+
+      <h5 class="text-info">🔄 Comparison</h5>
+      <pre class="language-java"><code>
+// Object-level lock
+synchronized(this) {
+    // only one thread per instance can enter
+}
+
+// Class-level lock
+synchronized(Printer.class) {
+    // only one thread for the entire class can enter
+}
+      </code></pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#syncComparison">
+      🔄 Difference Between <code>synchronized(this)</code> and Static Synchronized Methods
+    </button>
+  </h2>
+  <div id="syncComparison" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">🔐 synchronized(this)</h5>
+      <p>
+        This applies a **lock on the current object instance**. Only one thread per instance can execute the synchronized block at a time.
+      </p>
+
+      <pre class="language-java"><code>
+public class Printer {
+    public void print() {
+        synchronized(this) {
+            System.out.println("Instance sync: " + Thread.currentThread().getName());
+        }
+    }
+}
+      </code></pre>
+
+      <ul>
+        <li>🔸 Lock is instance-level (per object).</li>
+        <li>🔸 Threads accessing different instances won’t block each other.</li>
+        <li>🔸 Suitable for non-static data or behavior.</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-info">🔐 synchronized static methods or <code>synchronized(ClassName.class)</code></h5>
+      <p>
+        Applies a **lock on the class's Class object**. All instances share this lock.
+      </p>
+
+      <pre class="language-java"><code>
+public class Printer {
+    public static synchronized void print() {
+        System.out.println("Class-level sync: " + Thread.currentThread().getName());
+    }
+}
+      </code></pre>
+
+      <ul>
+        <li>🔹 Lock is class-level — one lock for all instances.</li>
+        <li>🔹 If one thread is executing the static method, no other thread can access it even on a different object.</li>
+        <li>🔹 Best for static data or global configuration.</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-success">📌 Summary</h5>
+      <table class="table table-dark">
+        <thead>
+          <tr>
+            <th>Aspect</th>
+            <th><code>synchronized(this)</code></th>
+            <th><code>synchronized static</code></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Lock Type</td>
+            <td>Instance Lock</td>
+            <td>Class Lock</td>
+          </tr>
+          <tr>
+            <td>Scope</td>
+            <td>Single Object</td>
+            <td>All Objects of Class</td>
+          </tr>
+          <tr>
+            <td>Access</td>
+            <td>Multiple threads can access other instances</td>
+            <td>Only one thread across all instances</td>
+          </tr>
+          <tr>
+            <td>Use Case</td>
+            <td>Non-static resource</td>
+            <td>Static/shared resource</td>
+          </tr>
+        </tbody>
+      </table>
+
+    </div>
+  </div>
+</div>
+
 
 
 
