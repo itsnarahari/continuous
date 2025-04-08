@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DSA Concepts</title>
+
+  <!-- Bootstrap & Prism CSS for styling and syntax highlighting -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+
+  <!-- Prism.js for code highlighting -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+
+  <style>
+    body {
+      background-color: #121212;
+      color: #ffffff;
+    }
+
+    .container {
+      max-width: 900px;
+      margin-top: 40px;
+    }
+
+    .accordion-button {
+      background-color: #343a40;
+      color: #ffffff;
+    }
+
+    .accordion-button:focus {
+      box-shadow: none;
+    }
+
+    .accordion-button:not(.collapsed) {
+      background-color: #007bff;
+      color: #ffffff;
+    }
+
+    .accordion-body {
+      background-color: #191818;
+    }
+
+    .highlight-yellow {
+      color: #ffcc00;
+      font-weight: bold;
+    }
+
+    .highlight-blue {
+      color: #4db8ff;
+      font-weight: bold;
+    }
+
+    pre[class*="language-"] {
+      background: #000000 !important;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 0.95rem;
+    }
+
+    .search-container {
+      margin-bottom: 25px;
+      text-align: center;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #f4f2f2;
+      background: #000000;
+      color: #ffffff;
+      font-size: 16px;
+      outline: none;
+    }
+
+    .accordion-button::after {
+      filter: brightness(0) invert(1);
+    }
+
+    .accordion-button.collapsed::after {
+      filter: brightness(0) invert(1);
+    } 
+
+    .search-input::placeholder {
+      color: #ffffff;
+    }
+
+    .accordion-item {
+      border: 1px solid #ffffff; /* Ensures border is visible */
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+
+    .accordion-body {
+      color: #ffffff; /* or any other light color you prefer */
+      line-height: 1.6;
+    }
+
+
+
+
+  </style>
+</head>
+
+<body class="bg-dark text-light">
+
+  <!-- Main Content Container -->
+  <div class="container">
+
+    <!-- Search Box -->
+    <div class="search-container">
+      <input type="text" id="searchBox" class="search-input" placeholder="Search questions..." onkeyup="filterQuestions()" />
+    </div>
+
+    <!-- Accordion for Questions -->
+    <div class="accordion" id="qaAccordion">
+
+      <!-- Question 1 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#q2">
+            What is Time Complexity?
+          </button>
+        </h2>
+        <div id="q2" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <p class="highlight-yellow">Time Complexity represents how execution time grows with input size.</p>
+            <p class="highlight-blue">Diagram Link:</p>
+            <p>
+              <a href="https://jaro-website.s3.ap-south-1.amazonaws.com/2024/06/0_ouBkTMgA_yg_Etfz.png" target="_blank">View Time Complexity Diagram</a>
+            </p>
+            <p class="highlight-blue">Common Complexities:</p>
+            <pre class="language-java"><code>
+              O(1)       → Constant
+              O(log n)   → Logarithmic
+              O(n)       → Linear
+              O(n log n) → Linearithmic
+              O(n²)      → Quadratic
+              O(2ⁿ)      → Exponential
+              O(n!)      → Factorial
+            </code></pre>
+            <p class="highlight-yellow">Example (O(n)):</p>
+            <pre class="language-java"><code>
+              public class TimeComplexityExample {
+                  public static void main(String[] args) {
+                      int[] arr = {10, 20, 30, 40, 50};
+                      int sum = 0;
+
+                      for (int i = 0; i &lt; arr.length; i++) {
+                          sum += arr[i];
+                      }
+
+                      System.out.println("Sum = " + sum);
+                  }
+              }
+            </code></pre>
+
+            <p class="highlight-yellow">Output:</p>
+            <pre class="language-java"><code>Sum = 150</code></pre>
+            <p>One operation per element makes it O(n).</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Question 2 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#q3">
+            What is Space Complexity?
+          </button>
+        </h2>
+        <div id="q3" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <p class="highlight-yellow">Space Complexity = Auxiliary Space + Input Size</p>
+
+            <p class="highlight-blue">Diagram Link:</p>
+            <p>
+              <a href="https://www.researchgate.net/publication/235331818/figure/fig3/AS:393480246448149@1470824409858/Graph-to-Understand-Space-complexity-Figure-2-depicts-how-the-consumption-of-time-gets.png" target="_blank">View Space Complexity Diagram</a>
+
+            <p class="highlight-blue">Example (Java):</p>
+            <pre class="language-java"><code>
+              public class SpaceComplexityExample {
+                  public static int sum(int a, int b) {
+                      int result = a + b;  // O(1)
+                      return result;
+                  }
+
+                  public static int[] createArray(int n) {
+                      int[] arr = new int[n];  // O(n)
+                      for (int i = 0; i &lt; n; i++) {
+                          arr[i] = i * i;
+                      }
+                      return arr;
+                  }
+
+                  public static void main(String[] args) {
+                      int result = sum(3, 5);
+                      System.out.println("Sum: " + result);
+
+                      int[] squareArray = createArray(5);
+                      System.out.print("Array: ");
+                      for (int val : squareArray) {
+                          System.out.print(val + " ");
+                      }
+                  }
+              }
+            </code></pre>
+
+            <p class="highlight-yellow">Output:</p>
+            <pre class="language-java"><code>
+              Sum: 8
+              Array: 0 1 4 9 16
+            </code></pre>
+            <p>`sum()` is constant space O(1), `createArray()` is linear O(n).</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Question 3 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#qArray">
+            What is an Array?
+          </button>
+        </h2>
+        <div id="qArray" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <p class="highlight-yellow">
+              An Array is a data structure that stores a fixed-size sequence of elements of the same data type in contiguous memory locations.
+            </p>
+      
+            <p class="highlight-blue">Key Points:</p>
+            <ul>
+              <li>Index-based: Access elements using index (0-based).</li>
+              <li>Fixed Size: Size must be defined at creation.</li>
+              <li>Efficient Access: O(1) time complexity for access via index.</li>
+              <li>Inefficient Insert/Delete (in middle): O(n) time complexity.</li>
+            </ul>
+
+            <p class="highlight-blue">Array Diagram:</p>
+            <img src="https://miro.medium.com/v2/resize:fit:1200/1*N03-qPmuZ2pekKNcolpM5Q.gif" alt="Array Diagram" style="max-width: 100%; height: auto;" /> 
+      
+            <p class="highlight-blue">Example (Java):</p>
+            <pre class="language-java"><code>
+              public class ArrayExample {
+                  public static void main(String[] args) {
+                      // Declare and initialize an array of size 5
+                      int[] numbers = new int[5];
+      
+                      // Assign values
+                      numbers[0] = 10;
+                      numbers[1] = 20;
+                      numbers[2] = 30;
+                      numbers[3] = 40;
+                      numbers[4] = 50;
+      
+                      // Access and print values
+                      System.out.println("Element at index 2: " + numbers[2]);
+      
+                      // Traverse the array
+                      System.out.print("Array Elements: ");
+                      for (int i = 0; i < numbers.length; i++) {
+                          System.out.print(numbers[i] + " ");
+                      }
+                  }
+              }
+            </code></pre>
+      
+            <p class="highlight-yellow">Output:</p>
+            <pre class="language-java"><code>
+              Element at index 2: 30
+              Array Elements: 10 20 30 40 50
+            </code></pre>
+      
+            <p class="highlight-yellow">Time & Space Complexity:</p>
+            <ul>
+              <li><b>Access by index:</b> O(1)</li>
+              <li><b>Insertion at end:</b> O(1) (if space available)</li>
+              <li><b>Insertion at start/middle:</b> O(n)</li>
+              <li><b>Deletion:</b> O(n)</li>
+              <li><b>Space Complexity:</b> O(n) for storing 'n' elements</li>
+            </ul>
+      
+            <p class="highlight-blue">Why Use Arrays?</p>
+            <ul>
+              <li>Simple to use and efficient for static data.</li>
+              <li>Useful as the base for other data structures (e.g., matrices, heaps, stacks).</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Question 4 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#qLinkedList">
+            What is a Linked List?
+          </button>
+        </h2>
+        <div id="qLinkedList" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <p class="highlight-yellow">
+              A Linked List is a linear data structure where each element (called a node) contains data and a reference (link) to the next node in the sequence.
+            </p>
+
+            <p class="highlight-blue">Key Points:</p>
+            <ul>
+              <li>Dynamic Size: Can grow or shrink during runtime.</li>
+              <li>Efficient Insertion/Deletion: O(1) time if position is known.</li>
+              <li>No Random Access: Cannot access elements via index directly (O(n) time).</li>
+              <li>Each node contains: data + next pointer.</li>
+            </ul>
+
+            <p class="highlight-blue">Singly LinkedList Diagram:</p>
+            <img src="https://miro.medium.com/v2/resize:fit:1400/format:webp/0*e_7aSji_9ZhPdooX.gif" alt="Singly Linked List Diagram" style="max-width: 100%; height: auto;" /> 
+
+            <p class="highlight-blue">Basic Node Structure (Java):</p>
+            <pre class="language-java"><code>
+              class Node {
+                  int data;
+                  Node next;
+
+                  Node(int data) {
+                      this.data = data;
+                      this.next = null;
+                  }
+              }
+            </code></pre>
+
+            <p class="highlight-blue">LinkedList Operations (Java):</p>
+            <pre class="language-java"><code>
+              public class LinkedList {
+                  Node head;
+
+                  // Add at Beginning
+                  public void addAtBeginning(int data) {
+                      Node newNode = new Node(data);
+                      newNode.next = head;
+                      head = newNode;
+                  }
+
+                  // Add at End
+                  public void addAtEnd(int data) {
+                      Node newNode = new Node(data);
+                      if (head == null) {
+                          head = newNode;
+                          return;
+                      }
+                      Node temp = head;
+                      while (temp.next != null) {
+                          temp = temp.next;
+                      }
+                      temp.next = newNode;
+                  }
+
+                  // Add at Position (1-based index)
+                  public void addAtPosition(int data, int position) {
+                      if (position <= 0) {
+                          System.out.println("Invalid Position");
+                          return;
+                      }
+                      if (position == 1) {
+                          addAtBeginning(data);
+                          return;
+                      }
+                      Node newNode = new Node(data);
+                      Node temp = head;
+                      for (int i = 1; temp != null && i < position - 1; i++) {
+                          temp = temp.next;
+                      }
+                      if (temp == null) {
+                          System.out.println("Position out of range");
+                          return;
+                      }
+                      newNode.next = temp.next;
+                      temp.next = newNode;
+                  }
+
+                  // Delete at Beginning
+                  public void deleteAtBeginning() {
+                      if (head != null) {
+                          head = head.next;
+                      }
+                  }
+
+                  // Delete at End
+                  public void deleteAtEnd() {
+                      if (head == null || head.next == null) {
+                          head = null;
+                          return;
+                      }
+                      Node temp = head;
+                      while (temp.next.next != null) {
+                          temp = temp.next;
+                      }
+                      temp.next = null;
+                  }
+
+                  // Delete at Position
+                  public void deleteAtPosition(int position) {
+                      if (head == null || position <= 0) {
+                          System.out.println("Invalid Position");
+                          return;
+                      }
+                      if (position == 1) {
+                          deleteAtBeginning();
+                          return;
+                      }
+                      Node temp = head;
+                      for (int i = 1; temp != null && i < position - 1; i++) {
+                          temp = temp.next;
+                      }
+                      if (temp == null || temp.next == null) {
+                          System.out.println("Position out of range");
+                          return;
+                      }
+                      temp.next = temp.next.next;
+                  }
+
+                  // Print List
+                  public void printList() {
+                      Node temp = head;
+                      while (temp != null) {
+                          System.out.print(temp.data + " -> ");
+                          temp = temp.next;
+                      }
+                      System.out.println("null");
+                  }
+
+                  public static void main(String[] args) {
+                      LinkedList list = new LinkedList();
+
+                      list.addAtEnd(10);
+                      list.addAtBeginning(5);
+                      list.addAtEnd(20);
+                      list.addAtPosition(15, 3);
+                      list.printList(); // 5 -> 10 -> 15 -> 20 -> null
+
+                      list.deleteAtBeginning();
+                      list.deleteAtEnd();
+                      list.deleteAtPosition(2);
+                      list.printList(); // 10 -> null
+                  }
+              }
+            </code></pre>
+
+            <p class="highlight-yellow">Output:</p>
+            <pre class="language-java"><code>
+              5 -> 10 -> 15 -> 20 -> null
+              10 -> null
+            </code></pre>
+
+            <p class="highlight-yellow">Time & Space Complexity:</p>
+            <ul>
+              <li><b>Insertion at beginning:</b> O(1)</li>
+              <li><b>Insertion at end/position:</b> O(n)</li>
+              <li><b>Deletion at beginning:</b> O(1)</li>
+              <li><b>Deletion at end/position:</b> O(n)</li>
+              <li><b>Space Complexity:</b> O(n) for storing 'n' nodes</li>
+            </ul>
+
+            <p class="highlight-blue">Why Use Linked Lists?</p>
+            <ul>
+              <li>When frequent insertions/deletions are required.</li>
+              <li>Memory-efficient for dynamic size data structures.</li>
+              <li>Foundation for advanced structures like stacks, queues, graphs.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Question 5 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#qDoublyLinkedList">
+            What is a Doubly Linked List?
+          </button>
+        </h2>
+        <div id="qDoublyLinkedList" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <p class="highlight-yellow">
+              A Doubly Linked List is a type of Linked List where each node contains three parts: data, a reference to the next node, and a reference to the previous node. It allows traversal in both forward and backward directions.
+            </p>
+
+            <p class="highlight-blue">Key Points:</p>
+            <ul>
+              <li>Each node has <code>prev</code> and <code>next</code> pointers.</li>
+              <li>Efficient for bidirectional traversal.</li>
+              <li>Insertion/Deletion is easier compared to Singly Linked List at both ends.</li>
+              <li>Requires more memory per node due to extra pointer.</li>
+            </ul>
+
+            <p class="highlight-blue">Doubly LinkedList Diagram:</p>
+            <img src="https://miro.medium.com/v2/resize:fit:1400/format:webp/1*lCPgbrm9f7MQ75hvGV5p8Q.gif" alt="Circular Linked List Diagram" style="max-width: 100%; height: auto;" />  
+
+            <p class="highlight-blue">Java Example:</p>
+            <pre class="language-java"><code>
+      class Node {
+          int data;
+          Node prev, next;
+          Node(int data) {
+              this.data = data;
+              this.prev = this.next = null;
+          }
+      }
+
+      class DoublyLinkedList {
+          Node head;
+
+          void insertAtBeginning(int data) {
+              Node newNode = new Node(data);
+              if (head != null) {
+                  newNode.next = head;
+                  head.prev = newNode;
+              }
+              head = newNode;
+          }
+
+          void insertAtEnd(int data) {
+              Node newNode = new Node(data);
+              if (head == null) {
+                  head = newNode;
+                  return;
+              }
+              Node temp = head;
+              while (temp.next != null)
+                  temp = temp.next;
+              temp.next = newNode;
+              newNode.prev = temp;
+          }
+
+          void insertAtPosition(int data, int pos) {
+              if (pos <= 1) {
+                  insertAtBeginning(data);
+                  return;
+              }
+              Node newNode = new Node(data);
+              Node temp = head;
+              for (int i = 1; temp != null && i < pos - 1; i++)
+                  temp = temp.next;
+              if (temp == null || temp.next == null) {
+                  insertAtEnd(data);
+              } else {
+                  newNode.next = temp.next;
+                  newNode.prev = temp;
+                  temp.next.prev = newNode;
+                  temp.next = newNode;
+              }
+          }
+
+          void deleteAtBeginning() {
+              if (head == null) return;
+              head = head.next;
+              if (head != null)
+                  head.prev = null;
+          }
+
+          void deleteAtEnd() {
+              if (head == null) return;
+              if (head.next == null) {
+                  head = null;
+                  return;
+              }
+              Node temp = head;
+              while (temp.next != null)
+                  temp = temp.next;
+              temp.prev.next = null;
+          }
+
+          void deleteAtPosition(int pos) {
+              if (head == null || pos <= 1) {
+                  deleteAtBeginning();
+                  return;
+              }
+              Node temp = head;
+              for (int i = 1; temp != null && i < pos; i++)
+                  temp = temp.next;
+              if (temp == null || temp.next == null) {
+                  deleteAtEnd();
+              } else {
+                  temp.prev.next = temp.next;
+                  temp.next.prev = temp.prev;
+              }
+          }
+
+          void display() {
+              Node temp = head;
+              System.out.print("Doubly Linked List: ");
+              while (temp != null) {
+                  System.out.print(temp.data + " ");
+                  temp = temp.next;
+              }
+              System.out.println();
+          }
+      }
+
+      public class Main {
+          public static void main(String[] args) {
+              DoublyLinkedList dll = new DoublyLinkedList();
+              dll.insertAtEnd(10);
+              dll.insertAtBeginning(5);
+              dll.insertAtEnd(20);
+              dll.insertAtPosition(15, 3);
+              dll.display(); // Output: 5 10 15 20
+
+              dll.deleteAtBeginning();
+              dll.deleteAtEnd();
+              dll.deleteAtPosition(2);
+              dll.display(); // Output: 10
+          }
+      }
+            </code></pre>
+
+            <p class="highlight-yellow">Output:</p>
+            <pre class="language-java"><code>
+      Doubly Linked List: 5 10 15 20 
+      Doubly Linked List: 10
+            </code></pre>
+
+            <p class="highlight-yellow">Time & Space Complexity:</p>
+            <ul>
+              <li><b>Insertion at beginning/end:</b> O(1)</li>
+              <li><b>Insertion at position:</b> O(n)</li>
+              <li><b>Deletion at beginning/end:</b> O(1)</li>
+              <li><b>Deletion at position:</b> O(n)</li>
+              <li><b>Space Complexity:</b> O(n) for n nodes (with extra prev pointer)</li>
+            </ul>
+
+            <p class="highlight-blue">Why Use Doubly Linked List?</p>
+            <ul>
+              <li>Allows bidirectional traversal.</li>
+              <li>Efficient insertions and deletions at both ends.</li>
+              <li>Useful in navigation systems, undo-redo operations, and browser history.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Question 6 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#qCircularLinkedList">
+            What is a Circular Linked List?
+          </button>
+        </h2>
+        <div id="qCircularLinkedList" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <p class="highlight-yellow">
+              A Circular Linked List is a type of linked list in which the last node points back to the first node, forming a circular structure.
+            </p>
+
+            <p class="highlight-blue">Key Points:</p>
+            <ul>
+              <li>Last node’s next points to the head node.</li>
+              <li>No null in the last node, making traversal circular.</li>
+              <li>Can be singly or doubly circular linked.</li>
+              <li>Efficient for applications with cyclic traversals (e.g., round-robin schedulers).</li>
+            </ul>
+
+            <p class="highlight-blue">Circular Linked List Diagram:</p>
+            <img src="https://akcoding.com/wp-content/uploads/2024/03/Circular-linked-list.gif" alt="Circular Linked List Diagram" style="max-width: 100%; height: auto;" />  
+
+            <p class="highlight-blue">Java Example:</p>
+            <pre class="language-java"><code>
+              class Node {
+                  int data;
+                  Node next;
+
+                  Node(int data) {
+                      this.data = data;
+                      this.next = null;
+                  }
+              }
+
+              public class CircularLinkedList {
+                  Node head = null;
+                  Node tail = null;
+
+                  // Add at Beginning
+                  void addAtBeginning(int data) {
+                      Node newNode = new Node(data);
+                      if (head == null) {
+                          head = newNode;
+                          tail = newNode;
+                          newNode.next = head;
+                      } else {
+                          newNode.next = head;
+                          head = newNode;
+                          tail.next = head;
+                      }
+                  }
+
+                  // Add at End
+                  void addAtEnd(int data) {
+                      Node newNode = new Node(data);
+                      if (head == null) {
+                          head = newNode;
+                          tail = newNode;
+                          newNode.next = head;
+                      } else {
+                          tail.next = newNode;
+                          tail = newNode;
+                          tail.next = head;
+                      }
+                  }
+
+                  // Add at Position
+                  void addAtPosition(int data, int position) {
+                      if (position == 1) {
+                          addAtBeginning(data);
+                          return;
+                      }
+                      Node newNode = new Node(data);
+                      Node temp = head;
+                      for (int i = 1; i < position - 1 && temp.next != head; i++) {
+                          temp = temp.next;
+                      }
+                      newNode.next = temp.next;
+                      temp.next = newNode;
+                      if (temp == tail) tail = newNode;
+                  }
+
+                  // Delete at Beginning
+                  void deleteAtBeginning() {
+                      if (head == null) return;
+                      if (head == tail) {
+                          head = null;
+                          tail = null;
+                      } else {
+                          head = head.next;
+                          tail.next = head;
+                      }
+                  }
+
+                  // Delete at End
+                  void deleteAtEnd() {
+                      if (head == null) return;
+                      if (head == tail) {
+                          head = null;
+                          tail = null;
+                          return;
+                      }
+                      Node temp = head;
+                      while (temp.next != tail) {
+                          temp = temp.next;
+                      }
+                      temp.next = head;
+                      tail = temp;
+                  }
+
+                  // Delete at Position
+                  void deleteAtPosition(int position) {
+                      if (head == null) return;
+                      if (position == 1) {
+                          deleteAtBeginning();
+                          return;
+                      }
+                      Node temp = head;
+                      for (int i = 1; i < position - 1 && temp.next != head; i++) {
+                          temp = temp.next;
+                      }
+                      if (temp.next == tail) {
+                          deleteAtEnd();
+                      } else {
+                          temp.next = temp.next.next;
+                      }
+                  }
+
+                  // Display list
+                  void display() {
+                      if (head == null) {
+                          System.out.println("List is empty");
+                          return;
+                      }
+                      Node temp = head;
+                      do {
+                          System.out.print(temp.data + " ");
+                          temp = temp.next;
+                      } while (temp != head);
+                      System.out.println();
+                  }
+
+                  public static void main(String[] args) {
+                      CircularLinkedList cll = new CircularLinkedList();
+                      cll.addAtEnd(10);
+                      cll.addAtEnd(20);
+                      cll.addAtEnd(30);
+                      cll.addAtBeginning(5);
+                      cll.addAtPosition(15, 3);
+                      cll.display(); // 5 10 15 20 30
+
+                      cll.deleteAtBeginning();
+                      cll.deleteAtEnd();
+                      cll.deleteAtPosition(2);
+                      cll.display(); // 10 20
+                  }
+              }
+            </code></pre>
+
+            <p class="highlight-yellow">Output:</p>
+            <pre class="language-java"><code>
+              5 10 15 20 30
+              10 20
+            </code></pre>
+
+            <p class="highlight-yellow">Time & Space Complexity:</p>
+            <ul>
+              <li><b>Traversal:</b> O(n)</li>
+              <li><b>Insert at beginning:</b> O(1)</li>
+              <li><b>Insert at end:</b> O(1) (if tail maintained)</li>
+              <li><b>Insert at position:</b> O(n)</li>
+              <li><b>Delete at beginning:</b> O(1)</li>
+              <li><b>Delete at end:</b> O(n)</li>
+              <li><b>Delete at position:</b> O(n)</li>
+              <li><b>Space:</b> O(n) for storing n elements</li>
+            </ul>
+
+            <p class="highlight-blue">Why Use Circular Linked List?</p>
+            <ul>
+              <li>Useful in applications that require a continuous loop (e.g., round-robin scheduling, multiplayer games).</li>
+              <li>More efficient than singly/doubly linked list in circular traversal cases.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Question 7 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#qStack">
+            What is a Stack and its operations?
+          </button>
+        </h2>
+        <div id="qStack" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <p class="highlight-yellow">
+              A Stack is a linear data structure that follows the Last In First Out (LIFO) principle, where the last element added is the first one to be removed.
+            </p>
+
+            <p class="highlight-blue">Key Points:</p>
+            <ul>
+              <li>LIFO structure: Last inserted element is removed first.</li>
+              <li>Primary operations: <code>push()</code> to insert, <code>pop()</code> to remove.</li>
+              <li>Additional operations: <code>peek()</code> to view top, <code>isEmpty()</code> to check emptiness.</li>
+              <li>Used in recursion, undo features, expression evaluation, and backtracking.</li>
+            </ul>
+
+            <p class="highlight-blue">Stack Diagram:</p>
+            <img src="https://akcoding.com/wp-content/uploads/2024/03/Stack-in-data-structure.gif" alt="Stack Diagram" style="max-width: 100%; height: auto;" />  
+
+            <p class="highlight-blue">Example (Java):</p>
+            <pre class="language-java"><code>
+      public class StackExample {
+          static final int MAX = 5;
+          int top = -1;
+          int[] stack = new int[MAX];
+
+          void push(int val) {
+              if (top == MAX - 1) {
+                  System.out.println("Stack Overflow");
+              } else {
+                  stack[++top] = val;
+                  System.out.println(val + " pushed");
+              }
+          }
+
+          void pop() {
+              if (top == -1) {
+                  System.out.println("Stack Underflow");
+              } else {
+                  System.out.println(stack[top--] + " popped");
+              }
+          }
+
+          void peek() {
+              if (top == -1) {
+                  System.out.println("Stack is empty");
+              } else {
+                  System.out.println("Top element: " + stack[top]);
+              }
+          }
+
+          void display() {
+              if (top == -1) {
+                  System.out.println("Stack is empty");
+                  return;
+              }
+              System.out.print("Stack Elements: ");
+              for (int i = 0; i <= top; i++) {
+                  System.out.print(stack[i] + " ");
+              }
+              System.out.println();
+          }
+
+          public static void main(String[] args) {
+              StackExample s = new StackExample();
+              s.push(10);
+              s.push(20);
+              s.push(30);
+              s.peek();
+              s.display();
+              s.pop();
+              s.display();
+          }
+      }
+            </code></pre>
+
+            <p class="highlight-yellow">Output:</p>
+            <pre class="language-java"><code>
+      10 pushed
+      20 pushed
+      30 pushed
+      Top element: 30
+      Stack Elements: 10 20 30 
+      30 popped
+      Stack Elements: 10 20
+            </code></pre>
+
+            <p class="highlight-yellow">Time & Space Complexity:</p>
+            <ul>
+              <li><b>Push:</b> O(1)</li>
+              <li><b>Pop:</b> O(1)</li>
+              <li><b>Peek:</b> O(1)</li>
+              <li><b>Space Complexity:</b> O(n), where n is the maximum number of elements</li>
+            </ul>
+
+            <p class="highlight-blue">Why Use Stack?</p>
+            <ul>
+              <li>Simple and efficient for temporary storage of data.</li>
+              <li>Supports recursion and function call stack.</li>
+              <li>Crucial in undo operations, syntax parsing, and backtracking.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Question 8 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#qQueue">
+            What is a Queue?
+          </button>
+        </h2>
+        <div id="qQueue" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <p class="highlight-yellow">
+              A Queue is a linear data structure that follows the First-In-First-Out (FIFO) principle, meaning the element inserted first is removed first.
+            </p>
+
+            <p class="highlight-blue">Key Points:</p>
+            <ul>
+              <li>FIFO Order: First element inserted is the first to be removed.</li>
+              <li>Operations: Enqueue (insert), Dequeue (remove), Peek (view front).</li>
+              <li>Used in: CPU scheduling, IO buffers, printers, etc.</li>
+              <li>Types: Simple Queue, Circular Queue, Priority Queue, Deque.</li>
+            </ul>
+
+            <p class="highlight-blue">Queue Diagram:</p>
+            <img src="http://akcoding.com/wp-content/uploads/2024/03/Queue-in-Data-Structure.gif" alt="Queue Diagram" style="max-width: 100%; height: auto;" />
+
+            <p class="highlight-blue">Basic Queue Implementation (Java):</p>
+            <pre class="language-java"><code>
+              class Queue {
+                  int size;
+                  int[] arr;
+                  int front, rear;
+
+                  Queue(int size) {
+                      this.size = size;
+                      arr = new int[size];
+                      front = 0;
+                      rear = -1;
+                  }
+
+                  // Enqueue: Add element at rear
+                  public void enqueue(int data) {
+                      if (rear == size - 1) {
+                          System.out.println("Queue is Full");
+                          return;
+                      }
+                      arr[++rear] = data;
+                  }
+
+                  // Dequeue: Remove element from front
+                  public void dequeue() {
+                      if (front > rear) {
+                          System.out.println("Queue is Empty");
+                          return;
+                      }
+                      front++;
+                  }
+
+                  // Peek: View front element
+                  public void peek() {
+                      if (front > rear) {
+                          System.out.println("Queue is Empty");
+                          return;
+                      }
+                      System.out.println("Front element: " + arr[front]);
+                  }
+
+                  // Print the queue
+                  public void printQueue() {
+                      if (front > rear) {
+                          System.out.println("Queue is Empty");
+                          return;
+                      }
+                      for (int i = front; i <= rear; i++) {
+                          System.out.print(arr[i] + " ");
+                      }
+                      System.out.println();
+                  }
+
+                  public static void main(String[] args) {
+                      Queue q = new Queue(5);
+                      q.enqueue(10);
+                      q.enqueue(20);
+                      q.enqueue(30);
+                      q.printQueue(); // 10 20 30
+                      q.peek();       // 10
+
+                      q.dequeue();
+                      q.printQueue(); // 20 30
+                      q.peek();       // 20
+                  }
+              }
+            </code></pre>
+
+            <p class="highlight-yellow">Output:</p>
+            <pre class="language-java"><code>
+              10 20 30
+              Front element: 10
+              20 30
+              Front element: 20
+            </code></pre>
+
+            <p class="highlight-yellow">Time & Space Complexity:</p>
+            <ul>
+              <li><b>Enqueue:</b> O(1)</li>
+              <li><b>Dequeue:</b> O(1)</li>
+              <li><b>Peek:</b> O(1)</li>
+              <li><b>Space Complexity:</b> O(n)</li>
+            </ul>
+
+            <p class="highlight-blue">Why Use Queues?</p>
+            <ul>
+              <li>Useful in real-world scheduling scenarios (CPU, printer).</li>
+              <li>When order of processing matters (FIFO).</li>
+              <li>Foundation for BFS traversal in Graphs and Trees.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      
+
+    </div>
+  </div>
+
+  <!-- Bootstrap Bundle JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Search Filter Script -->
+  <script>
+    function filterQuestions() {
+      const query = document.getElementById("searchBox").value.toLowerCase();
+      const items = document.querySelectorAll(".search-item");
+
+      items.forEach(item => {
+        const parent = item.closest(".accordion-item");
+        const match = item.textContent.toLowerCase().includes(query);
+        parent.style.display = match ? "" : "none";
+      });
+    }
+
+    // Numbering the questions dynamically
+    document.addEventListener("DOMContentLoaded", () => {
+      const items = document.querySelectorAll(".accordion-item");
+      items.forEach((item, index) => {
+        const button = item.querySelector(".accordion-button");
+        if (button) {
+          button.innerHTML = `<span class="fw-bold me-2">${index + 1}.</span> ${button.textContent.trim()}`;
+        }
+      });
+    });
+  </script>
+
+</body>
+
+</html>
