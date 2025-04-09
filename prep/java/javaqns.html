@@ -5818,6 +5818,347 @@ mvn jacoco:report
   </div>
 </div>
 
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#jpaMappings">
+                        What is Spring Boot JPA Hibernate Relational Mapping?
+                    </button>
+                </h2>
+                <div id="jpaMappings" class="accordion-collapse collapse">
+                    <div class="accordion-body">
+
+                        <p class="highlight-yellow">
+                            JPA (Java Persistence API) is a specification for ORM (Object-Relational Mapping) in Java. Hibernate is the most popular JPA implementation. In Spring Boot, Spring Data JPA simplifies JPA-based data access layers.
+                        </p>
+
+                        <h5 class="text-info">📌 What is Relational Mapping?</h5>
+                        <p>Relational mapping defines how Java objects (entities) are mapped to database tables. JPA annotations are used to declare entity relationships like OneToOne, OneToMany, ManyToOne, and ManyToMany.</p>
+
+                        <h5 class="text-primary">✅ Types of JPA Relationships</h5>
+                        <ul>
+                            <li><b>@OneToOne:</b> Maps a one-to-one relationship between two entities.</li>
+                            <li><b>@OneToMany:</b> Maps one entity to many (child) entities.</li>
+                            <li><b>@ManyToOne:</b> Many entities share a single parent entity.</li>
+                            <li><b>@ManyToMany:</b> Each entity can relate to many others and vice versa.</li>
+                        </ul>
+
+                        <h5 class="text-primary">✅ Example Entity with All Mappings</h5>
+                        <pre class="language-java"><code>
+@Entity
+public class User {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "profile_id", referencedColumnName = "id")
+    private Profile profile;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List&lt;Order&gt; orders;
+
+    @ManyToOne
+    @JoinColumn(name = "department_id")
+    private Department department;
+
+    @ManyToMany
+    @JoinTable(
+        name = "user_roles",
+        joinColumns = @JoinColumn(name = "user_id"),
+        inverseJoinColumns = @JoinColumn(name = "role_id"))
+    private Set&lt;Role&gt; roles;
+}
+      </code></pre>
+
+                        <h5 class="text-primary">✅ Annotation Properties Explained</h5>
+                        <ul>
+                            <li><b>@JoinColumn:</b> Specifies the foreign key column.
+                                <ul>
+                                    <li><code>name</code>: Column name in current entity.</li>
+                                    <li><code>referencedColumnName</code>: Target column in the referenced entity.</li>
+                                </ul>
+                            </li>
+                            <li><b>@OneToOne / @OneToMany / @ManyToOne / @ManyToMany:</b> Relationship type.</li>
+                            <li><b>cascade</b>: Operations to cascade (e.g., ALL, PERSIST, REMOVE).</li>
+                            <li><b>mappedBy</b>: Used in bidirectional mapping to indicate the owning side.</li>
+                            <li><b>@JoinTable:</b> Used in @ManyToMany for defining join table and columns.</li>
+                        </ul>
+
+                        <h5 class="text-primary">✅ Supporting Entities</h5>
+                        <pre class="language-java"><code>
+@Entity
+public class Profile {
+    @Id
+    private Long id;
+    private String bio;
+}
+
+@Entity
+public class Order {
+    @Id
+    private Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+}
+
+@Entity
+public class Department {
+    @Id
+    private Long id;
+    private String name;
+}
+
+@Entity
+public class Role {
+    @Id
+    private Long id;
+    private String roleName;
+}
+      </code></pre>
+
+                        <h5 class="text-success">✅ Summary</h5>
+                        <ul>
+                            <li>JPA + Hibernate handles object-relational mapping in Spring Boot.</li>
+                            <li>Use annotations like <code>@OneToOne</code>, <code>@ManyToOne</code>, etc., to define relationships.</li>
+                            <li>Use <code>@JoinColumn</code> and <code>@JoinTable</code> to control DB schema generation.</li>
+                            <li>Cascading and bidirectional mappings improve data handling efficiency.</li>
+                        </ul>
+
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#manyToManyMapping">
+                        What is the Best Use Case for @ManyToMany Mapping in JPA?
+                    </button>
+                </h2>
+                <div id="manyToManyMapping" class="accordion-collapse collapse">
+                    <div class="accordion-body">
+
+                        <p class="highlight-yellow">
+                            The best use case for <code>@ManyToMany</code> is when both entities can have a many-to-many relationship. A common example is <b>User</b> and <b>Role</b> — where a user can have multiple roles, and a role can be assigned to multiple users.
+                        </p>
+
+                        <h5 class="text-info">📌 Real-Life Example: Users and Roles</h5>
+                        <ul>
+                            <li>A user can have multiple roles like ADMIN, USER, MANAGER.</li>
+                            <li>Each role can be assigned to multiple users.</li>
+                        </ul>
+
+                        <h5 class="text-primary">✅ Entity Classes</h5>
+                        <pre class="language-java"><code>
+// User Entity
+@Entity
+public class User {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String name;
+
+    @ManyToMany
+    @JoinTable(
+        name = "user_roles",
+        joinColumns = @JoinColumn(name = "user_id"),
+        inverseJoinColumns = @JoinColumn(name = "role_id"))
+    private Set&lt;Role&gt; roles = new HashSet&lt;&gt;();
+}
+
+// Role Entity
+@Entity
+public class Role {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String roleName;
+
+    @ManyToMany(mappedBy = "roles")
+    private Set&lt;User&gt; users = new HashSet&lt;&gt;();
+}
+      </code></pre>
+
+                        <h5 class="text-primary">✅ Table Structure in Database</h5>
+                        <ul>
+                            <li><b>user</b>: stores user data</li>
+                            <li><b>role</b>: stores role data</li>
+                            <li><b>user_roles</b>: join table with foreign keys</li>
+                        </ul>
+
+                        <table class="table table-dark table-bordered">
+                            <thead>
+                            <tr>
+                                <th>Table</th>
+                                <th>Columns</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td><code>user</code></td>
+                                <td>id, name</td>
+                            </tr>
+                            <tr>
+                                <td><code>role</code></td>
+                                <td>id, role_name</td>
+                            </tr>
+                            <tr>
+                                <td><code>user_roles</code></td>
+                                <td>user_id, role_id (composite PK / foreign keys)</td>
+                            </tr>
+                            </tbody>
+                        </table>
+
+                        <h5 class="text-success">✅ Summary</h5>
+                        <ul>
+                            <li><code>@ManyToMany</code> is ideal for relationships like User ↔ Role, Student ↔ Course, etc.</li>
+                            <li>A third table (join table) holds the relationship mapping.</li>
+                            <li>Use <code>@JoinTable</code> to define join table name and columns.</li>
+                            <li>Use <code>mappedBy</code> to make the relationship bidirectional.</li>
+                        </ul>
+
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#manyToManyCascade">
+                        How to Handle Cascading Operations in @ManyToMany Relationships?
+                    </button>
+                </h2>
+                <div id="manyToManyCascade" class="accordion-collapse collapse">
+                    <div class="accordion-body">
+
+                        <p class="highlight-yellow">
+                            Cascading in a <code>@ManyToMany</code> relationship determines how operations like <b>persist</b>, <b>merge</b>, <b>remove</b>, and <b>refresh</b> are propagated from one entity to its related entities.
+                        </p>
+
+                        <h5 class="text-info">📌 Why Cascading Is Important</h5>
+                        <p>Without cascading, you have to explicitly save or delete both sides of the relationship. Cascading helps propagate the operation automatically.</p>
+
+                        <h5 class="text-primary">✅ Example with Cascade</h5>
+                        <pre class="language-java"><code>
+@Entity
+public class User {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+
+    @ManyToMany(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+    @JoinTable(
+        name = "user_roles",
+        joinColumns = @JoinColumn(name = "user_id"),
+        inverseJoinColumns = @JoinColumn(name = "role_id"))
+    private Set&lt;Role&gt; roles = new HashSet&lt;&gt;();
+}
+
+@Entity
+public class Role {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String roleName;
+
+    @ManyToMany(mappedBy = "roles")
+    private Set&lt;User&gt; users = new HashSet&lt;&gt;();
+}
+      </code></pre>
+
+                        <h5 class="text-primary">✅ Cascade Types Explained</h5>
+                        <ul>
+                            <li><b>CascadeType.PERSIST:</b> Saves the related entity when the owning entity is saved.</li>
+                            <li><b>CascadeType.MERGE:</b> Updates the related entity when the owning entity is updated.</li>
+                            <li><b>CascadeType.REMOVE:</b> Deletes the related entity — <b>⚠️ not recommended in @ManyToMany</b> as it can lead to unintended deletions.</li>
+                            <li><b>CascadeType.REFRESH:</b> Refreshes the related entity when the owning entity is refreshed.</li>
+                            <li><b>CascadeType.ALL:</b> Includes all of the above.</li>
+                        </ul>
+
+                        <h5 class="text-danger">⚠️ Important Notes</h5>
+                        <ul>
+                            <li><b>DO NOT use <code>CascadeType.REMOVE</code></b> in <code>@ManyToMany</code> unless you're absolutely sure — it can delete shared entities from the database.</li>
+                            <li>It's safer to use only <code>PERSIST</code> and <code>MERGE</code>.</li>
+                            <li>The owning side (entity with <code>@JoinTable</code>) should control cascade behavior.</li>
+                        </ul>
+
+                        <h5 class="text-success">✅ Summary</h5>
+                        <ul>
+                            <li>Use <code>cascade = { PERSIST, MERGE }</code> for safe propagation in <code>@ManyToMany</code>.</li>
+                            <li>Avoid <code>REMOVE</code> unless managing deletion very carefully.</li>
+                            <li>Cascading helps automate saving/updating related entities.</li>
+                        </ul>
+
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#manyToManyInverse">
+                        What is "Inverse Side" in @ManyToMany Relationships?
+                    </button>
+                </h2>
+                <div id="manyToManyInverse" class="accordion-collapse collapse">
+                    <div class="accordion-body">
+
+                        <p class="highlight-yellow">
+                            In a bidirectional <code>@ManyToMany</code> relationship, the <b>inverse side</b> is the entity that does <i>not</i> own the relationship. It just maps the relationship using the <code>mappedBy</code> attribute.
+                        </p>
+
+                        <h5 class="text-info">📌 Owning vs Inverse Side</h5>
+                        <ul>
+                            <li><b>Owning Side:</b> The entity that defines the <code>@JoinTable</code>. It controls inserts/updates to the join table.</li>
+                            <li><b>Inverse Side:</b> The entity with <code>mappedBy</code>, which simply reflects the relationship defined by the owning side.</li>
+                        </ul>
+
+                        <h5 class="text-primary">✅ Example: User ↔ Role</h5>
+                        <pre class="language-java"><code>
+// Owning Side
+@Entity
+public class User {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+
+    @ManyToMany
+    @JoinTable(
+        name = "user_roles",
+        joinColumns = @JoinColumn(name = "user_id"),
+        inverseJoinColumns = @JoinColumn(name = "role_id"))
+    private Set&lt;Role&gt; roles = new HashSet&lt;&gt;();
+}
+
+// Inverse Side
+@Entity
+public class Role {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String roleName;
+
+    @ManyToMany(mappedBy = "roles") // Inverse side: refers to 'roles' in User
+    private Set&lt;User&gt; users = new HashSet&lt;&gt;();
+}
+      </code></pre>
+
+                        <h5 class="text-success">✅ Summary</h5>
+                        <ul>
+                            <li>The <b>owning side</b> defines the <code>@JoinTable</code> and controls DB updates.</li>
+                            <li>The <b>inverse side</b> uses <code>mappedBy</code> to mirror the relationship.</li>
+                            <li>Only the owning side should be used to persist changes to the join table.</li>
+                            <li>Inverse helps avoid duplicate join table definitions and keeps the mapping clean.</li>
+                        </ul>
+
+                    </div>
+                </div>
+            </div>
 
 
 
