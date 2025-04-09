@@ -84,72 +84,177 @@
     </style>
 </head>
 
-<body class="container bg-dark text-light">
-        <div class="accordion" id="coding">
-            <div class="accordion-item">
-  <h2 class="accordion-header">
-    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
-      data-bs-target="#groupEmployeesByMultipleHobbies">
-      How to group employees by multiple hobbies?
-    </button>
-  </h2>
-  <div id="groupEmployeesByMultipleHobbies" class="accordion-collapse collapse">
-    <div class="accordion-body">
-      <p class="highlight-yellow">When employees have multiple hobbies, we use <code>flatMap()</code> to properly group them.</p>
-      
-      <p class="highlight-blue">Example:</p>
-      <pre class="language-java"><code> 
-        import java.util.*;
-        import java.util.stream.Collectors;
 
-        class Employee {
-            String name;
-            List&lt;String&gt; hobbies;
-
-            public Employee(String name, List&lt;String&gt; hobbies) {
-                this.name = name;
-                this.hobbies = hobbies;
-            }
-
-            public List&lt;String&gt; getHobbies() { return hobbies; }
-            public String getName() { return name; }
-        }
-
-        public class GroupByHobbyExample {
-            public static void main(String[] args) {
-                List&lt;Employee&gt; employees = Arrays.asList(
-                    new Employee("Alice", Arrays.asList("Reading", "Gaming")),
-                    new Employee("Bob", Arrays.asList("Gaming", "Cycling")),
-                    new Employee("Charlie", Arrays.asList("Reading", "Music")),
-                    new Employee("David", Arrays.asList("Gaming", "Music")),
-                    new Employee("Eve", Arrays.asList("Cycling", "Reading"))
-                );
-
-                // Group employees by hobbies
-                Map&lt;String, List&lt;String&gt;&gt; groupedByHobbies = employees.stream()
-                    .flatMap(emp -> emp.getHobbies().stream().map(hobby -> new AbstractMap.SimpleEntry&lt;&gt;(hobby, emp.getName())))
-                    .collect(Collectors.groupingBy(Map.Entry::getKey, 
-                            Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
-
-                groupedByHobbies.forEach((hobby, empList) -> {
-                    System.out.println(hobby + ": " + String.join(", ", empList));
-                });
-            }
-        }
-      </code></pre>
-      
-      <p class="highlight-yellow">Output:</p>
-      <pre class="language-java"><code> 
-        Reading: Alice, Charlie, Eve
-        Gaming: Alice, Bob, David
-        Cycling: Bob, Eve
-        Music: Charlie, David
-      </code></pre>
-      
-      <p>Here, each hobby is mapped to multiple employees, even when employees have multiple hobbies.</p>
+<div class="accordion-item">
+    <h2 class="accordion-header">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+        data-bs-target="#timeComplexityExplanation">
+        What is Time Complexity ?
+      </button>
+    </h2>
+    <div id="timeComplexityExplanation" class="accordion-collapse collapse">
+      <div class="accordion-body">
+        <p class="highlight-yellow">
+          Time Complexity is a way to represent the amount of time an algorithm takes to run, in terms of the size of the input. It helps analyze and compare algorithm efficiency without executing them.
+        </p>
+  
+        <p class="highlight-blue">Common Time Complexities:</p>
+        <pre class="language-java"><code>
+  O(1)   → Constant Time: Accessing an array element by index  
+  O(log n) → Logarithmic Time: Binary Search  
+  O(n)   → Linear Time: Simple for-loop  
+  O(n log n) → Linearithmic Time: Merge Sort, Quick Sort (average case)  
+  O(n²)  → Quadratic Time: Nested loops (e.g., Bubble Sort)  
+  O(2ⁿ)  → Exponential Time: Recursive Fibonacci  
+  O(n!)  → Factorial Time: Solving permutations (e.g., Traveling Salesman)
+        </code></pre>
+  
+        <p class="highlight-yellow">Example: Linear Time Complexity</p>
+        <pre class="language-java"><code>
+  public class TimeComplexityExample {
+      public static void main(String[] args) {
+          int[] arr = {10, 20, 30, 40, 50};
+          int sum = 0;
+  
+          for (int i = 0; i &lt; arr.length; i++) {
+              sum += arr[i]; // One operation per element → O(n)
+          }
+  
+          System.out.println("Sum = " + sum);
+      }
+  }
+        </code></pre>
+  
+        <p class="highlight-yellow">Output:</p>
+        <pre class="language-java"><code>
+  Sum = 150
+        </code></pre>
+  
+        <p>
+          In the above example, we traverse the array once. As the input size increases, the time taken grows linearly. Hence, it has a <span class="highlight-yellow">Time Complexity of O(n)</span>.
+        </p>
+      </div>
     </div>
   </div>
-</div>
+
+
+  <div class="accordion-item">
+    <h2 class="accordion-header">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+        data-bs-target="#spaceComplexity">
+        What is Space Complexity?
+      </button>
+    </h2>
+    <div id="spaceComplexity" class="accordion-collapse collapse">
+      <div class="accordion-body">
+        <p class="highlight-yellow">
+          <strong>Space Complexity</strong> refers to the total amount of memory space that an algorithm or program requires relative to the input size. It includes memory for input values, auxiliary variables, and function call stacks.
+
+          <strong>Space Complexity</strong> = Auxiliary Space + Input Size
+        </p>
+  
+        <p>It is expressed in terms of Big O notation like <code>O(1)</code>, <code>O(n)</code>, etc.</p>
+  
+        <p class="highlight-blue">Example (Java):</p>
+        <pre class="language-java"><code>
+  public class SpaceComplexityExample {
+  
+      // This function demonstrates O(1) space complexity
+      public static int sum(int a, int b) {
+          int result = a + b; // Only one variable is used
+          return result;
+      }
+  
+      // This function demonstrates O(n) space complexity
+      public static int[] createArray(int n) {
+          int[] arr = new int[n]; // Array of size n
+          for (int i = 0; i < n; i++) {
+              arr[i] = i * i;
+          }
+          return arr;
+      }
+  
+      public static void main(String[] args) {
+          int result = sum(3, 5);
+          System.out.println("Sum: " + result);
+  
+          int[] squareArray = createArray(5);
+          System.out.print("Array: ");
+          for (int val : squareArray) {
+              System.out.print(val + " ");
+          }
+      }
+  }
+        </code></pre>
+  
+        <p class="highlight-yellow">Output:</p>
+        <pre class="language-java"><code>
+  Sum: 8
+  Array: 0 1 4 9 16
+        </code></pre>
+  
+        <p>
+          In the first function, space complexity is <code>O(1)</code> since only one variable is used.<br>
+          In the second, it's <code>O(n)</code> because it stores <code>n</code> elements in an array.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="accordion-item">
+    <h2 class="accordion-header">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+        data-bs-target="#arrayDSA">
+        What is an Array ?
+      </button>
+    </h2>
+    <div id="arrayDSA" class="accordion-collapse collapse">
+      <div class="accordion-body">
+        <p class="highlight-yellow">
+          An <strong>Array</strong> is a linear data structure that stores elements of the same type in contiguous memory locations.
+        </p>
+  
+        <p class="highlight-blue">Key Features:</p>
+        <ul>
+          <li>Fixed size (static memory allocation)</li>
+          <li>Random access using index</li>
+          <li>Efficient for read/write operations</li>
+        </ul>
+  
+        <p class="highlight-yellow">Types of Arrays:</p>
+        <ul>
+          <li><strong>1D Array:</strong> Single row of elements</li>
+          <li><strong>2D Array:</strong> Table or matrix-like structure</li>
+          <li><strong>Multidimensional Array:</strong> Array of arrays</li>
+        </ul>
+  
+        <p class="highlight-blue">Example (Java):</p>
+        <pre class="language-java"><code>
+          public class ArrayExample {
+              public static void main(String[] args) {
+                  int[] arr = {10, 20, 30, 40, 50};
+  
+                  // Accessing elements
+                  for (int i = 0; i &lt; arr.length; i++) {
+                      System.out.println("Element at index " + i + ": " + arr[i]);
+                  }
+              }
+          }
+        </code></pre>
+  
+        <p class="highlight-yellow">Time Complexities:</p>
+        <ul>
+          <li><strong>Access:</strong> O(1)</li>
+          <li><strong>Search:</strong> O(n)</li>
+          <li><strong>Insert/Delete (at end):</strong> O(1) / O(n) (for shift)</li>
+        </ul>
+  
+        <p>
+          Arrays are widely used in DSA for implementing other data structures like stacks, queues, matrices, etc.
+        </p>
+      </div>
+    </div>
+  </div>
 
 </div>
     <!-- Bootstrap & Search Script -->
