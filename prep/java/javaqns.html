@@ -17572,63 +17572,7 @@ public class FakeDataController {
         </div>
     </div>
 </div>
-<div class="accordion-item">
-  <h2 class="accordion-header">
-    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#nPlusOne">
-      What is the N+1 Problem in Hibernate?
-    </button>
-  </h2>
-  <div id="nPlusOne" class="accordion-collapse collapse">
-    <div class="accordion-body">
-      <h5 class="text-info">🔍 What is the N+1 Problem?</h5>
-      <p>
-        The N+1 problem in Hibernate occurs when Hibernate executes one query to retrieve the parent entities and then executes an additional query for each parent to retrieve its child entities.
-        This results in <strong>N+1 SQL queries</strong>, which can severely affect performance.
-      </p>
 
-      <h5 class="text-info">📌 Example</h5>
-      <pre class="language-java"><code>
-// Assume a OneToMany relationship: Department -> Employees
-
-List&lt;Department&gt; departments = session.createQuery("from Department", Department.class).list();
-
-for (Department dept : departments) {
-    System.out.println(dept.getEmployees().size());
-}
-      </code></pre>
-      <p>
-        - Hibernate first fetches all departments: <code>1 query</code><br>
-        - Then, for each department, it runs another query to fetch employees: <code>N queries</code><br>
-        👉 Total = N + 1 queries
-      </p>
-
-      <h5 class="text-info">⚠️ Problem</h5>
-      <p>This causes performance issues, especially when you have large datasets. It results in multiple unnecessary database hits.</p>
-
-      <h5 class="text-info">✅ Solution: Fetch Joins</h5>
-      <p>Use JPQL fetch joins to load both parent and children in a single query:</p>
-      <pre class="language-java"><code>
-List&lt;Department&gt; departments = session.createQuery(
-    "select d from Department d join fetch d.employees", Department.class
-).list();
-      </code></pre>
-      <p>This way, Hibernate executes just <strong>one query</strong> to fetch all departments along with their employees.</p>
-
-      <h5 class="text-info">🛠️ Alternative: @BatchSize</h5>
-      <p>
-        You can use the <code>@BatchSize</code> annotation to batch load collections and reduce the number of queries.
-        It's useful when eager fetching is not desired.
-      </p>
-
-      <h5 class="text-info">📚 Summary</h5>
-      <ul>
-        <li>🔴 N+1 happens when lazy associations cause many queries.</li>
-        <li>✅ Use <code>join fetch</code> or <code>@BatchSize</code> to solve it.</li>
-        <li>🧠 Analyze queries using Hibernate logs to catch N+1 issues.</li>
-      </ul>
-    </div>
-  </div>
-</div>
 <div class="accordion-item">
   <h2 class="accordion-header">
     <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#hibernateTransactions">

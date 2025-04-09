@@ -88,7 +88,7 @@
   <div class="container">
     <div class="header fw-bold text-center mb-4">Spring Boot Q&A</div>
     <!-- Search Box in a Bootstrap Container -->
-    <div class="search-container">
+            <div class="search-container">
       <input type="text" class="search-input form-control" id="searchBox" placeholder="Search questions..."
         onkeyup="searchQuestions()" />
     </div>
@@ -7710,6 +7710,234 @@ public class SchedulerConfig {
         </div>
       </div>
 
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingOne">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+        data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+        Spring Boot App – How to Improve Server Startup Time (Production Checklist)
+      </button>
+    </h2>
+    <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne"
+      data-bs-parent="#startupAccordion">
+      <div class="accordion-body">
+        <ol>
+          <li><strong>Enable Startup Performance Metrics:</strong>
+            <ul>
+              <li>Add to <code>application.properties</code>:
+                <pre style="background-color: #1e1e2f; color: #00ff90;">management.endpoint.startup.enabled=true
+management.endpoints.web.exposure.include=startup</pre>
+              </li>
+              <li>Call <code>/actuator/startup</code> after start to analyze slow beans.</li>
+            </ul>
+          </li>
+
+          <li><strong>Lazy Initialization for Beans:</strong>
+            <ul>
+              <li>Enable globally with: <code>spring.main.lazy-initialization=true</code></li>
+              <li>Use <code>@Lazy</code> on specific beans if needed.</li>
+              <li>Make background tasks <code>@Async</code> to avoid blocking startup.</li>
+            </ul>
+          </li>
+
+          <li><strong>Database and External Services:</strong>
+            <ul>
+              <li>Check DB latency and avoid long connection waits.</li>
+              <li>Ensure DNS is fast and reliable (e.g., Kubernetes DNS sometimes delays).</li>
+              <li>Use timeouts for DB and API clients to avoid indefinite waits.</li>
+            </ul>
+          </li>
+
+          <li><strong>Reduce Logging Overhead:</strong>
+            <ul>
+              <li>Set log level to <code>INFO</code> or <code>WARN</code> in production.</li>
+              <li>If using Log4j2, use async appenders to avoid blocking startup.</li>
+            </ul>
+          </li>
+
+          <li><strong>Trim Dependencies:</strong>
+            <ul>
+              <li>Remove unused Spring Boot starters.</li>
+              <li>Remove <code>spring-boot-devtools</code> from production builds.</li>
+              <li>Disable unneeded Actuator endpoints.</li>
+            </ul>
+          </li>
+
+          <li><strong>JVM and Memory Tuning:</strong>
+            <ul>
+              <li>Use Java 17+ for better performance.</li>
+              <li>Pass startup flags: <code>-Xms512m -Xmx1024m</code></li>
+              <li>Enable class data sharing (CDS) if supported.</li>
+            </ul>
+          </li>
+
+          <li><strong>Spring Boot Native (Optional):</strong>
+            <ul>
+              <li>Use Spring Boot 3 + GraalVM Native Image for millisecond startup times.</li>
+              <li>Beware of feature limitations and extra build complexity.</li>
+              <li>Good fit for serverless and CLI-style apps.</li>
+              <li><a href="https://docs.spring.io/spring-boot/docs/current/reference/html/native-image.html" target="_blank">Read official Spring Native guide</a></li>
+            </ul>
+          </li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#graalvmNativeImage">
+      🚀 GraalVM Native Image in Spring Boot
+    </button>
+  </h2>
+  <div id="graalvmNativeImage" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <h5 class="text-info">📌 What is GraalVM Native Image?</h5>
+      <p>
+        GraalVM Native Image is a technology that compiles your Spring Boot application ahead-of-time (AOT) into a
+        standalone, native binary (like a Linux executable) instead of running on the traditional JVM.
+      </p>
+
+      <h5 class="text-info">📌 How It Boosts Startup Time</h5>
+      <ul>
+        <li>🚀 <strong>Fast startup:</strong> Native images skip JVM warm-up, class loading, and bytecode interpretation.</li>
+        <li>💡 <strong>Lower memory usage:</strong> It strips unused classes and loads only what’s required.</li>
+        <li>🧊 <strong>Perfect for cloud & serverless:</strong> Especially in containers and short-lived services.</li>
+      </ul>
+
+      <p><strong>Example:</strong> A regular Spring Boot app may take <code>2–5 seconds</code> to start, whereas a native image version can start in <code>50–100ms</code> ⚡</p>
+
+      <h5 class="text-info">📌 What We Used Before This?</h5>
+      <ul>
+        <li>🔁 Traditional JVM-based apps, which run `.jar` files using HotSpot or OpenJDK.</li>
+        <li>🐢 These apps involve:
+          <ul>
+            <li>Classpath scanning</li>
+            <li>Dynamic proxies</li>
+            <li>Reflection-based bean initialization</li>
+          </ul>
+          which makes startup slower and memory heavier.
+        </li>
+      </ul>
+
+      <h5 class="text-info">📌 Native Image Build Example (Spring Boot 3)</h5>
+      <p>Add this to <code>pom.xml</code> if you're using Spring Boot 3.x with AOT:</p>
+      <pre class="language-xml"><code>
+&lt;plugin&gt;
+  &lt;groupId&gt;org.graalvm.buildtools&lt;/groupId&gt;
+  &lt;artifactId&gt;native-maven-plugin&lt;/artifactId&gt;
+  &lt;version&gt;0.10.1&lt;/version&gt;
+  &lt;executions&gt;
+    &lt;execution&gt;
+      &lt;goals&gt;
+        &lt;goal&gt;compile-no-fork&lt;/goal&gt;
+      &lt;/goals&gt;
+    &lt;/execution&gt;
+  &lt;/executions&gt;
+&lt;/plugin&gt;
+      </code></pre>
+
+      <h5 class="text-info">📌 Run the Native Image</h5>
+      <p>Once built, you can run it like a regular binary:</p>
+      <pre class="language-bash"><code>
+./my-spring-app
+      </code></pre>
+
+      <h5 class="text-info">📌 Limitations</h5>
+      <ul>
+        <li>Complex to debug and build initially</li>
+        <li>Some Java features like reflection or dynamic class loading need special config</li>
+        <li>Longer build times than regular `.jar` builds</li>
+      </ul>
+
+      <h5 class="text-info">📌 Summary</h5>
+      <ul>
+        <li>✅ Ideal for microservices, serverless, and fast-start apps</li>
+        <li>✅ Offers faster startup and lower resource usage</li>
+        <li>🛠️ Requires extra setup, but worth it in performance-critical apps</li>
+      </ul>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#nPlusOneProblem">
+      N+1 Problem in Spring Boot (JPA)
+    </button>
+  </h2>
+  <div id="nPlusOneProblem" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <h5 class="text-info">📌 What is the N+1 Problem?</h5>
+      <p>
+        The <strong>N+1 problem</strong> in JPA happens when you load an entity and then lazily fetch a collection or
+        reference which causes one extra query per item. So, for <code>N</code> entities, it results in <code>N + 1</code> SQL queries.
+      </p>
+
+      <p><strong>Example:</strong></p>
+      <pre class="language-java"><code>
+// Fetch all authors and print their books
+List&lt;Author&gt; authors = authorRepository.findAll();
+for (Author author : authors) {
+    System.out.println(author.getBooks()); // Triggers 1 query per author
+}
+      </code></pre>
+      <p>This causes:</p>
+      <ul>
+        <li>1 query for all authors</li>
+        <li>+ 1 query per author to fetch books = N + 1 total</li>
+      </ul>
+
+      <h5 class="text-info">📌 Why is this Bad?</h5>
+      <ul>
+        <li>⏱️ Performance hit due to multiple DB calls</li>
+        <li>🔄 More network round-trips</li>
+        <li>📉 Doesn’t scale well with larger datasets</li>
+      </ul>
+
+      <h5 class="text-info">📌 How to Fix It (4 Common Ways)</h5>
+
+      <ol>
+        <li><strong>Use <code>@EntityGraph</code> (Recommended)</strong>
+          <p>This tells JPA to eagerly load the relationship in one query:</p>
+          <pre class="language-java"><code>
+@EntityGraph(attributePaths = "books")
+List&lt;Author&gt; findAll();</code></pre>
+        </li>
+
+        <li><strong>Use <code>JOIN FETCH</code> in JPQL</strong>
+          <p>Custom query to fetch related entities in the same query:</p>
+          <pre class="language-java"><code>
+@Query("SELECT a FROM Author a JOIN FETCH a.books")
+List&lt;Author&gt; findAllWithBooks();</code></pre>
+        </li>
+
+        <li><strong>DTO Projections</strong>
+          <p>Load only what you need using DTOs instead of full entities:</p>
+          <pre class="language-java"><code>
+@Query("SELECT new com.example.dto.AuthorBookDto(a.name, b.title) 
+       FROM Author a JOIN a.books b")
+List&lt;AuthorBookDto&gt; fetchAuthorBooks();</code></pre>
+        </li>
+
+        <li><strong>Batch Fetching</strong> (Hibernate specific)
+          <p>Use when lazy loading is still needed but you want fewer queries:</p>
+          <pre class="language-properties"><code>
+hibernate.default_batch_fetch_size=10
+          </code></pre>
+          <p>JPA will group lazy fetches into batches instead of one-by-one.</p>
+        </li>
+      </ol>
+
+      <h5 class="text-info">📌 Summary</h5>
+      <ul>
+        <li>N+1 is caused by lazy loading of relationships in a loop</li>
+        <li>Use <code>@EntityGraph</code> or <code>JOIN FETCH</code> to load related data upfront</li>
+        <li>Use DTOs or batch fetching based on your use case</li>
+      </ul>
+    </div>
+  </div>
+</div>
 
 
 
@@ -7723,9 +7951,13 @@ public class SchedulerConfig {
     </div>
   </div>
 
-  <!-- Bootstrap & Search Script -->
+<!-- Bootstrap & Search Script -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
+                    document.addEventListener("DOMContentLoaded", function () {
+                    let questionCount = document.querySelectorAll(".accordion-item").length;
+                    document.getElementById("questionCount").innerHTML = `<strong>Total Questions: ${questionCount}</strong>`;
+                });     
     document.addEventListener("DOMContentLoaded", function () {
       let items = document.querySelectorAll(".accordion-item");
 
