@@ -79,7 +79,7 @@
   </style>
 </head>
 
-<body class="bg-dark text-light">
+<body class="bg-dark text-light mb-4">
   <div class="container">
     <div class="header fw-bold text-center mb-4">Java Q&A</div>
 
@@ -19340,6 +19340,320 @@ public class Role {
                     </div>
                 </div>
             </div>
+        <!-- Container Accordion Item -->
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#containerMicroservice">
+                    🔹 What is a Container in Microservices?
+                </button>
+            </h2>
+            <div id="containerMicroservice" class="accordion-collapse collapse">
+                <div class="accordion-body">
+
+                    <p class="highlight-yellow">
+                        A <b>container</b> is a lightweight, portable, and consistent runtime environment that packages a microservice along with its dependencies, libraries, and configuration files.
+                    </p>
+
+                    <h5 class="text-info">📦 Key Benefits of Containers</h5>
+                    <ul>
+                        <li>Isolation of microservices — each runs independently without conflicts.</li>
+                        <li>Portability — "build once, run anywhere" behavior.</li>
+                        <li>Faster startup and lower overhead compared to virtual machines.</li>
+                        <li>Better resource utilization on the host system.</li>
+                    </ul>
+
+                    <h5 class="text-primary">✅ Example: Docker Container for a Spring Boot App</h5>
+                    <pre class="language-dockerfile"><code>
+# Dockerfile
+FROM openjdk:17
+COPY target/user-service.jar app.jar
+ENTRYPOINT ["java", "-jar", "/app.jar"]
+      </code></pre>
+
+                    <h5 class="text-success">✅ Summary</h5>
+                    <ul>
+                        <li>Containers encapsulate microservices in a consistent runtime.</li>
+                        <li>Popular container tool: <code>Docker</code>.</li>
+                        <li>They simplify testing, deployment, and scaling of microservices.</li>
+                    </ul>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Orchestration Accordion Item -->
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#orchestrationMicroservice">
+                    🔧 What is Orchestration in Microservices?
+                </button>
+            </h2>
+            <div id="orchestrationMicroservice" class="accordion-collapse collapse">
+                <div class="accordion-body">
+
+                    <p class="highlight-yellow">
+                        <b>Orchestration</b> refers to the automated management of containerized microservices — including deployment, scaling, networking, and health monitoring.
+                    </p>
+
+                    <h5 class="text-info">⚙️ Key Features of Orchestration Tools</h5>
+                    <ul>
+                        <li>Auto-scaling and load balancing of containers.</li>
+                        <li>Service discovery and communication management.</li>
+                        <li>Self-healing — automatically restarts failed services.</li>
+                        <li>Zero-downtime deployments and rollbacks.</li>
+                    </ul>
+
+                    <h5 class="text-primary">✅ Popular Orchestration Tool: Kubernetes</h5>
+                    <pre class="language-yaml"><code>
+# Simple Kubernetes deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+      - name: user-container
+        image: user-service:latest
+        ports:
+        - containerPort: 8080
+      </code></pre>
+
+                    <h5 class="text-success">✅ Summary</h5>
+                    <ul>
+                        <li>Orchestration simplifies managing multiple containerized services.</li>
+                        <li><code>Kubernetes</code> is the industry standard tool.</li>
+                        <li>It ensures reliability, scalability, and fault tolerance of microservices in production.</li>
+                    </ul>
+
+                </div>
+            </div>
+        </div>
+        <!-- Request DTO Validation in Spring Boot 3 -->
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#dtoValidation">
+                    ✅ How to validate Request DTO in Spring Boot 3 and handle it centrally?
+                </button>
+            </h2>
+            <div id="dtoValidation" class="accordion-collapse collapse">
+                <div class="accordion-body">
+
+                    <p class="highlight-yellow">
+                        Spring Boot 3 uses <code>jakarta.validation</code> (JSR 380) to annotate DTO fields with validation constraints. You can then handle validation errors globally using <code>@ControllerAdvice</code>.
+                    </p>
+
+                    <h5 class="text-info">📌 Step 1: Add Validation Annotations in DTO</h5>
+                    <pre class="language-java"><code>
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
+public class UserRequestDTO {
+
+    @NotBlank(message = "Name is required")
+    private String name;
+
+    @Email(message = "Invalid email format")
+    private String email;
+
+    @Size(min = 6, message = "Password must be at least 6 characters")
+    private String password;
+
+    // Getters and Setters
+}
+      </code></pre>
+
+                    <h5 class="text-info">📌 Step 2: Enable Validation in Controller</h5>
+                    <pre class="language-java"><code>
+import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
+
+@RestController
+@RequestMapping("/api/users")
+public class UserController {
+
+    @PostMapping
+    public ResponseEntity&lt;String&gt; createUser(@Valid @RequestBody UserRequestDTO dto) {
+        return ResponseEntity.ok("User created successfully!");
+    }
+}
+      </code></pre>
+
+                    <h5 class="text-info">📌 Step 3: Centralized Error Handling</h5>
+                    <pre class="language-java"><code>
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.http.ResponseEntity;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; handleValidationErrors(MethodArgumentNotValidException ex) {
+        Map&lt;String, String&gt; errors = new HashMap&lt;&gt;();
+        ex.getBindingResult().getFieldErrors().forEach(error -&gt;
+            errors.put(error.getField(), error.getDefaultMessage())
+        );
+        return ResponseEntity.badRequest().body(errors);
+    }
+}
+      </code></pre>
+
+                    <h5 class="text-success">✅ Summary</h5>
+                    <ul>
+                        <li>Use <code>jakarta.validation</code> annotations to validate DTO fields.</li>
+                        <li>Annotate your controller method parameter with <code>@Valid</code>.</li>
+                        <li>Catch all validation errors centrally using <code>@RestControllerAdvice</code>.</li>
+                        <li>Spring Boot auto-detects and triggers validation logic before hitting the method body.</li>
+                    </ul>
+
+                </div>
+            </div>
+        </div>
+        <!-- JPA Save: Insert vs Update Behavior -->
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#jpaSaveBehavior">
+                    💡 How does JPA's <code>save()</code> method decide between INSERT and UPDATE?
+                </button>
+            </h2>
+            <div id="jpaSaveBehavior" class="accordion-collapse collapse">
+                <div class="accordion-body">
+
+                    <p class="highlight-yellow">
+                        The <code>JpaRepository.save()</code> method can perform either an <b>INSERT</b> or an <b>UPDATE</b>, depending on whether the entity is considered new or managed by the persistence context.
+                    </p>
+
+                    <h5 class="text-info">📌 How does JPA determine INSERT vs UPDATE?</h5>
+                    <ul>
+                        <li>If the entity's ID is <code>null</code> → it's considered <b>new</b> → <code>INSERT</code> is executed.</li>
+                        <li>If the ID is <b>non-null</b> and entity is already in DB (or attached to persistence context) → <code>UPDATE</code>.</li>
+                        <li>If the ID is non-null but doesn’t exist in DB → **it still tries to update**, but nothing happens unless `@GeneratedValue` is used — behavior depends on persistence provider.</li>
+                    </ul>
+
+                    <h5 class="text-primary">✅ Example Scenario</h5>
+                    <pre class="language-java"><code>
+User user = new User();
+user.setId(10L); // Assuming ID 10 does NOT exist in DB
+user.setName("Narahari");
+
+userRepository.save(user);
+      </code></pre>
+
+                    <h6 class="text-warning">❓ What happens here?</h6>
+                    <ul>
+                        <li>If <code>user</code> is a new object with a non-existing ID, JPA will treat it as a detached entity.</li>
+                        <li>It might execute <code>UPDATE</code> → but no rows will be affected if ID doesn’t exist.</li>
+                        <li>If you use <code>@GeneratedValue</code> on ID and omit setting ID manually → JPA will do an <code>INSERT</code>.</li>
+                    </ul>
+
+                    <h5 class="text-info">📌 How to check if entity exists before update?</h5>
+                    <pre class="language-java"><code>
+if (userRepository.existsById(user.getId())) {
+    userRepository.save(user); // UPDATE
+} else {
+    // Handle not found or throw exception
+}
+      </code></pre>
+
+                    <h5 class="text-success">✅ Summary</h5>
+                    <ul>
+                        <li><code>save()</code> checks ID presence and assumes:
+                            <ul>
+                                <li><code>null</code> ID = new entity → INSERT</li>
+                                <li>Non-null ID = existing → UPDATE (if found in DB or session)</li>
+                            </ul>
+                        </li>
+                        <li>To avoid unwanted updates/inserts, check with <code>existsById()</code> or <code>findById()</code> before saving.</li>
+                        <li>JPA does not hit DB to verify existence during <code>save()</code> — it relies on session context and ID strategy.</li>
+                    </ul>
+
+                </div>
+            </div>
+        </div>
+        <!-- Bulk Insert/Update Optimization in Spring Data JPA -->
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#bulkOptimization">
+                    🚀 How to optimize performance for bulk inserts or updates in Spring Data JPA?
+                </button>
+            </h2>
+            <div id="bulkOptimization" class="accordion-collapse collapse">
+                <div class="accordion-body">
+
+                    <p class="highlight-yellow">
+                        Bulk operations in JPA can be expensive due to persistence context overhead. Spring Data JPA can be optimized using batching, manual flush, and clearing strategies to improve performance during mass inserts/updates.
+                    </p>
+
+                    <h5 class="text-info">📌 Recommended Optimizations</h5>
+                    <ul>
+                        <li>Enable JDBC batch processing.</li>
+                        <li>Use chunked loops with periodic <code>flush()</code> and <code>clear()</code>.</li>
+                        <li>Avoid using <code>saveAll()</code> for massive records — it loads everything into the persistence context.</li>
+                        <li>Use native SQL or Spring JDBC Template for very large datasets.</li>
+                    </ul>
+
+                    <h5 class="text-primary">✅ Example: Batch Insert with EntityManager</h5>
+                    <pre class="language-java"><code>
+@Autowired
+private EntityManager entityManager;
+
+@Transactional
+public void bulkInsert(List&lt;User&gt; users) {
+    int batchSize = 50;
+
+    for (int i = 0; i &lt; users.size(); i++) {
+        entityManager.persist(users.get(i));
+
+        if (i % batchSize == 0 && i &gt; 0) {
+            entityManager.flush();  // Push to DB
+            entityManager.clear();  // Detach all to avoid memory issues
+        }
+    }
+    entityManager.flush();
+    entityManager.clear();
+}
+      </code></pre>
+
+                    <h5 class="text-primary">✅ application.properties Setup</h5>
+                    <pre class="language-properties"><code>
+spring.jpa.properties.hibernate.jdbc.batch_size=50
+spring.jpa.properties.hibernate.order_inserts=true
+spring.jpa.properties.hibernate.order_updates=true
+spring.jpa.properties.hibernate.generate_statistics=true
+      </code></pre>
+
+                    <h5 class="text-info">⚡ For Native Bulk Updates</h5>
+                    <pre class="language-java"><code>
+@Modifying
+@Query("UPDATE User u SET u.status = :status WHERE u.lastLogin &lt; :cutoff")
+int bulkDeactivateOldUsers(@Param("status") String status, @Param("cutoff") LocalDate cutoff);
+      </code></pre>
+
+                    <h5 class="text-success">✅ Summary</h5>
+                    <ul>
+                        <li>Enable <code>hibernate.jdbc.batch_size</code> and tune it based on your DB limits.</li>
+                        <li>Use <code>EntityManager</code> for controlled batching (especially for large inserts).</li>
+                        <li>Call <code>flush()</code> + <code>clear()</code> periodically to prevent memory bloat.</li>
+                        <li>Use native or JPQL bulk queries for update/delete operations where possible.</li>
+                    </ul>
+
+                </div>
+            </div>
+        </div>
 
 
 
