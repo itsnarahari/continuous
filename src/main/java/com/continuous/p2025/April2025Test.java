@@ -50,6 +50,6 @@ public static boolean isPrime(int number){
 }
 
 //3. Java program to find Fibonacci series upto a  given number range
-    
+
 
 }

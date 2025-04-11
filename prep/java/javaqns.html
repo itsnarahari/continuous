@@ -502,6 +502,394 @@ public class AbstractFactoryPatternDemo {
       </div>
 
       <div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#virtualThreadsJava">
+      🧵 Virtual Threads in Java (Project Loom)
+    </button>
+  </h2>
+  <div id="virtualThreadsJava" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <h5 class="text-info">📌 What are Virtual Threads?</h5>
+      <p>
+        Virtual Threads are lightweight threads introduced in Java 21 as part of <strong>Project Loom</strong>. They allow
+        you to create thousands (even millions) of threads without the performance and memory limitations of traditional (platform) threads.
+      </p>
+
+      <ul>
+        <li>🪶 Virtual threads are managed by the JVM, not the OS.</li>
+        <li>🧠 They are ideal for handling concurrent tasks like I/O without blocking real threads.</li>
+        <li>🌱 Syntax and usage is very similar to regular threads.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Benefits of Virtual Threads</h5>
+      <ul>
+        <li>💡 Lightweight: Thousands of threads use very little memory.</li>
+        <li>⏱️ Scalable: You can handle high-concurrency apps like chat servers or HTTP services.</li>
+        <li>🔄 Non-blocking I/O made simple: Blocking calls are efficiently paused without blocking the CPU.</li>
+        <li>🧵 Each request can have its own thread — cleaner and easier to debug than reactive code.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Code Example: Creating a Virtual Thread</h5>
+      <pre class="language-java"><code>
+public class VirtualThreadDemo {
+    public static void main(String[] args) {
+        Runnable task = () -> {
+            System.out.println("Running on thread: " + Thread.currentThread());
+        };
+
+        Thread.startVirtualThread(task);
+    }
+}
+      </code></pre>
+
+      <p>You can also use <code>Executors</code>:</p>
+      <pre class="language-java"><code>
+ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+executor.submit(() -> {
+    // simulate I/O
+    Thread.sleep(1000);
+    System.out.println("Task done!");
+});
+      </code></pre>
+
+      <h5 class="text-info">📌 How Are They Different from Platform Threads?</h5>
+      <table class="table table-dark table-bordered mt-3">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>Platform Thread</th>
+            <th>Virtual Thread</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Managed By</td>
+            <td>OS Kernel</td>
+            <td>JVM</td>
+          </tr>
+          <tr>
+            <td>Creation Cost</td>
+            <td>High (1MB stack)</td>
+            <td>Low (~bytes)</td>
+          </tr>
+          <tr>
+            <td>Blocking I/O</td>
+            <td>Consumes thread</td>
+            <td>Doesn't block carrier thread</td>
+          </tr>
+          <tr>
+            <td>Ideal Use</td>
+            <td>Limited tasks</td>
+            <td>Massive concurrency</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h5 class="text-info">📌 Where to Use Virtual Threads?</h5>
+      <ul>
+        <li>🌐 Web servers (like Spring Boot apps)</li>
+        <li>📬 Message processing</li>
+        <li>🛠️ Microservices needing concurrency but readable code</li>
+        <li>✅ Replacing thread pools for async tasks</li>
+      </ul>
+
+      <h5 class="text-info">📌 Limitations and Notes</h5>
+      <ul>
+        <li>❗ Still new — watch for library compatibility issues.</li>
+        <li>📦 Spring Boot supports it from Spring 6 / Spring Boot 3+.</li>
+        <li>🛑 Avoid CPU-intensive tasks on virtual threads (use platform threads or ForkJoinPool).</li>
+      </ul>
+
+      <h5 class="text-info">📌 Summary</h5>
+      <ul>
+        <li>✅ Virtual Threads make concurrency easier and scalable.</li>
+        <li>📉 No need for complex reactive/non-blocking frameworks unless needed.</li>
+        <li>🧪 Java 21 is the first LTS version to fully support them.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#virtualVsTraditionalThreads">
+      🧵 Virtual Threads vs Traditional Threads vs Executor Framework
+    </button>
+  </h2>
+  <div id="virtualVsTraditionalThreads" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <h5 class="text-info">📌 Overview</h5>
+      <p>Java supports multiple threading models:</p>
+      <ul>
+        <li><strong>Platform (Traditional) Threads</strong> – backed by native OS threads</li>
+        <li><strong>Executor Framework</strong> – thread pool abstraction over platform threads</li>
+        <li><strong>Virtual Threads</strong> – lightweight threads managed by JVM (Project Loom)</li>
+      </ul>
+
+      <h5 class="text-info">📌 Detailed Comparison</h5>
+      <table class="table table-dark table-bordered mt-3">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>Traditional Threads</th>
+            <th>Executor Framework</th>
+            <th>Virtual Threads</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Thread Creation</td>
+            <td><code>new Thread()</code></td>
+            <td><code>Executors.newFixedThreadPool()</code></td>
+            <td><code>Thread.startVirtualThread()</code> (Java 21+)</td>
+          </tr>
+          <tr>
+            <td>Backed By</td>
+            <td>OS kernel threads</td>
+            <td>OS kernel threads via pooling</td>
+            <td>JVM-managed (not tied to OS)</td>
+          </tr>
+          <tr>
+            <td>Memory Per Thread</td>
+            <td>~1 MB</td>
+            <td>~1 MB</td>
+            <td>~Few KB (stack is managed dynamically)</td>
+          </tr>
+          <tr>
+            <td>Concurrency</td>
+            <td>Limited (~thousands max)</td>
+            <td>Limited by pool size</td>
+            <td>Massive (millions possible)</td>
+          </tr>
+          <tr>
+            <td>Blocking I/O</td>
+            <td>Blocks thread (wastes resource)</td>
+            <td>Same (though reusable)</td>
+            <td>Does not block carrier thread — efficient!</td>
+          </tr>
+          <tr>
+            <td>Debuggability</td>
+            <td>Easy to debug</td>
+            <td>Requires managing thread pools</td>
+            <td>Easy (like traditional) — readable and structured</td>
+          </tr>
+          <tr>
+            <td>Best For</td>
+            <td>Small concurrency, background tasks</td>
+            <td>Controlled concurrency with reusable threads</td>
+            <td>Highly concurrent I/O-bound systems</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h5 class="text-info">📌 Code Snippets Comparison</h5>
+
+      <h6>🧵 Traditional Thread</h6>
+      <pre class="language-java"><code>
+Thread thread = new Thread(() -> {
+    System.out.println("Running task");
+});
+thread.start();
+      </code></pre>
+
+      <h6>⚙️ Executor Framework</h6>
+      <pre class="language-java"><code>
+ExecutorService executor = Executors.newFixedThreadPool(10);
+executor.submit(() -> {
+    System.out.println("Task in thread pool");
+});
+      </code></pre>
+
+      <h6>🌱 Virtual Thread</h6>
+      <pre class="language-java"><code>
+Thread.startVirtualThread(() -> {
+    System.out.println("Task in virtual thread");
+});
+      </code></pre>
+
+      <h5 class="text-info">📌 Real-World Use Cases</h5>
+      <ul>
+        <li>🕸️ <strong>Traditional:</strong> Desktop apps, occasional background tasks</li>
+        <li>🏗️ <strong>Executor Framework:</strong> Web servers, thread-pool-controlled apps</li>
+        <li>⚡ <strong>Virtual Threads:</strong> High-concurrency microservices, REST APIs, schedulers, chat servers, etc.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Conclusion</h5>
+      <ul>
+        <li>🔄 Virtual Threads combine ease of traditional threading with the scalability of non-blocking models</li>
+        <li>✅ Backed by the structured concurrency model in Java 21+</li>
+        <li>🛠️ Recommended for I/O-heavy, concurrent apps without sacrificing code clarity</li>
+      </ul>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#chooseJavaOrVirtualThreads">
+      ⚖️ Choosing Between Java Threads vs Virtual Threads
+    </button>
+  </h2>
+  <div id="chooseJavaOrVirtualThreads" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 When to Use <span class="text-light">Platform (Traditional) Threads</span></h5>
+      <ul>
+        <li>🧮 Your application is <strong>CPU-intensive</strong> (e.g., mathematical calculations, rendering engines)</li>
+        <li>🔍 You need <strong>tight control over thread behavior</strong> (e.g., priorities, affinity, tuning thread pools)</li>
+        <li>📦 Third-party libraries are <strong>not yet compatible with virtual threads</strong></li>
+        <li>🧵 You only need a few threads (say, < 1000), and scaling isn’t a concern</li>
+        <li>🛠️ You already have optimized thread pool management and want to stick with proven, stable thread models</li>
+      </ul>
+
+      <h5 class="text-info">🌱 When to Use <span class="text-light">Virtual Threads</span></h5>
+      <ul>
+        <li>🌐 You’re building a <strong>high-concurrency, I/O-heavy system</strong> like a web server or microservices</li>
+        <li>🧪 You want to avoid complex async or reactive programming and still get scalability</li>
+        <li>🧵 You need to spawn <strong>many short-lived or blocking tasks</strong> (e.g., one thread per HTTP request)</li>
+        <li>✅ You’re using Java 21+ and Spring Boot 3.2+ (both support virtual threads)</li>
+        <li>🔍 You value readable, imperative code over callback chains and non-blocking logic</li>
+      </ul>
+
+      <h5 class="text-info">📊 Summary Comparison Table</h5>
+      <table class="table table-dark table-bordered mt-3">
+        <thead>
+          <tr>
+            <th>Aspect</th>
+            <th>Platform Thread</th>
+            <th>Virtual Thread</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Best For</td>
+            <td>CPU-bound tasks</td>
+            <td>I/O-bound tasks</td>
+          </tr>
+          <tr>
+            <td>Thread Limit</td>
+            <td>~Few thousands</td>
+            <td>Millions possible</td>
+          </tr>
+          <tr>
+            <td>Resource Usage</td>
+            <td>Heavy (1MB stack)</td>
+            <td>Lightweight (few KB)</td>
+          </tr>
+          <tr>
+            <td>Blocking Behavior</td>
+            <td>Blocks physical thread</td>
+            <td>Only suspends virtual thread, not carrier</td>
+          </tr>
+          <tr>
+            <td>Readability</td>
+            <td>Easy</td>
+            <td>Easy</td>
+          </tr>
+          <tr>
+            <td>Reactive Needed?</td>
+            <td>Maybe (for scale)</td>
+            <td>No (still scalable)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h5 class="text-info">🎯 Final Decision Tips</h5>
+      <ul>
+        <li>➡️ Default to <strong>virtual threads</strong> for most <strong>I/O-bound web applications</strong></li>
+        <li>➡️ Use <strong>platform threads</strong> if you’re doing <strong>heavy computation</strong> or interacting with <strong>non-compatible libraries</strong></li>
+        <li>➡️ Consider <strong>structured concurrency</strong> (Java 21) when using virtual threads to manage lifecycle and cancellation cleanly</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#sslHttpHttps">
+      🔐 What is SSL? HTTP vs HTTPS? Who Secures HTTPS? Is It Free?
+    </button>
+  </h2>
+  <div id="sslHttpHttps" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What is SSL?</h5>
+      <ul>
+        <li><strong>SSL</strong> stands for <strong>Secure Sockets Layer</strong>.</li>
+        <li>It is a security protocol that creates an encrypted link between a web server and a browser.</li>
+        <li>It ensures that all data transferred between the server and client is private and secure.</li>
+        <li>Modern websites use an updated version called <strong>TLS (Transport Layer Security)</strong>, but it's still commonly referred to as "SSL."</li>
+      </ul>
+
+      <h5 class="text-info">🌐 Difference Between HTTP and HTTPS</h5>
+      <table class="table table-dark table-bordered mt-3">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>HTTP</th>
+            <th>HTTPS</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Protocol</td>
+            <td>HyperText Transfer Protocol</td>
+            <td>HyperText Transfer Protocol Secure</td>
+          </tr>
+          <tr>
+            <td>Security</td>
+            <td>Data is <strong>not encrypted</strong></td>
+            <td>Data is <strong>encrypted using SSL/TLS</strong></td>
+          </tr>
+          <tr>
+            <td>Port Used</td>
+            <td>80</td>
+            <td>443</td>
+          </tr>
+          <tr>
+            <td>Data Protection</td>
+            <td>Vulnerable to attacks (like man-in-the-middle)</td>
+            <td>Safe from eavesdropping and tampering</td>
+          </tr>
+          <tr>
+            <td>Browser Indicator</td>
+            <td>No padlock, shows “Not Secure”</td>
+            <td>Padlock symbol in address bar</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h5 class="text-info">🔐 Who Makes HTTPS Secure?</h5>
+      <ul>
+        <li>HTTPS uses an <strong>SSL Certificate</strong> issued by a trusted <strong>Certificate Authority (CA)</strong>.</li>
+        <li>CA verifies your website identity and gives a digital certificate.</li>
+        <li>This certificate is used to establish secure and encrypted connections.</li>
+        <li>Popular CAs: <code>Let's Encrypt</code> (free), <code>Comodo</code>, <code>DigiCert</code>, <code>GoDaddy</code>, etc.</li>
+      </ul>
+
+      <h5 class="text-info">💰 Is It Free or Paid?</h5>
+      <ul>
+        <li>✅ Yes, there are <strong>free SSL providers</strong> like <code>Let's Encrypt</code>.</li>
+        <li>💼 For extra validation (e.g., company name in certificate), <strong>paid SSL</strong> options are available.</li>
+        <li>For most websites and apps, <strong>free SSL is enough</strong> and trusted by all browsers.</li>
+      </ul>
+
+      <h5 class="text-info">📦 Summary</h5>
+      <ul>
+        <li>Use <strong>HTTPS</strong> always — it's the secure version of HTTP.</li>
+        <li>HTTPS uses <strong>SSL/TLS certificates</strong> to encrypt data.</li>
+        <li>These certificates are issued by a trusted <strong>Certificate Authority</strong>.</li>
+        <li>You can get them for <strong>free (Let’s Encrypt)</strong> or pay for advanced options.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+
+      <div class="accordion-item">
         <h2 class="accordion-header">
           <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
             data-bs-target="#inheritanceQ1">
@@ -2497,7 +2885,7 @@ public class FailSafeExample {
               CopyOnWriteArrayList works on a separate copy.</p>
 
             <h5 class="text-primary">✅ Comparison Table</h5>
-            <table class="table table-bordered text-light">
+            <table class="table table-bordered table-dark">
               <thead>
                 <tr>
                   <th>Feature</th>
@@ -18998,6 +19386,354 @@ public class Printer {
     </div>
   </div>
 </div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#sqlInjectionInJava">
+      🛡️ What is SQL Injection in Java?
+    </button>
+  </h2>
+  <div id="sqlInjectionInJava" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">💣 What is SQL Injection?</h5>
+      <ul>
+        <li><strong>SQL Injection</strong> is a type of security vulnerability where an attacker injects malicious SQL statements into an application’s input fields.</li>
+        <li>This allows the attacker to <strong>manipulate database queries</strong>, access unauthorized data, or even destroy the database.</li>
+      </ul>
+
+      <h5 class="text-info">⚠️ Vulnerable Example in Java</h5>
+      <p>This example is vulnerable because it directly concatenates user input into the SQL query:</p>
+      <pre class="language-java"><code>
+String username = request.getParameter("username");
+String query = "SELECT * FROM users WHERE username = '" + username + "'";
+
+Statement stmt = connection.createStatement();
+ResultSet rs = stmt.executeQuery(query);
+      </code></pre>
+      <p><strong>Problem:</strong> If someone enters <code>' OR '1'='1</code> as username, it becomes:</p>
+      <pre><code>
+SELECT * FROM users WHERE username = '' OR '1'='1'
+      </code></pre>
+      <p>This returns <em>all users</em>, bypassing authentication.</p>
+
+      <h5 class="text-info">✅ How to Prevent SQL Injection</h5>
+      <p>Use <strong>PreparedStatement</strong> instead of string concatenation. It safely escapes user input:</p>
+      <pre class="language-java"><code>
+String username = request.getParameter("username");
+String query = "SELECT * FROM users WHERE username = ?";
+PreparedStatement pstmt = connection.prepareStatement(query);
+pstmt.setString(1, username);
+ResultSet rs = pstmt.executeQuery();
+      </code></pre>
+
+      <h5 class="text-info">🔐 Best Practices to Prevent SQL Injection</h5>
+      <ul>
+        <li>✅ Always use <strong>PreparedStatement</strong> or <strong>JPA/Hibernate</strong></li>
+        <li>❌ Never build SQL queries using string concatenation</li>
+        <li>✅ Use ORM frameworks like <code>Spring Data JPA</code></li>
+        <li>✅ Validate and sanitize user inputs</li>
+        <li>✅ Use stored procedures (with parameters)</li>
+        <li>✅ Keep DB permissions minimal (least privilege)</li>
+      </ul>
+
+      <h5 class="text-info">🛡️ Spring Boot & JPA Are Safe by Default</h5>
+      <ul>
+        <li>If you're using Spring Data JPA and method naming like:
+          <pre class="language-java"><code>
+User findByUsername(String username);
+          </code></pre>
+        then it is already safe against SQL injection.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Summary</h5>
+      <ul>
+        <li>SQL Injection is dangerous — can expose or damage your DB.</li>
+        <li>It happens when user input is directly added to SQL queries.</li>
+        <li>Use <strong>PreparedStatements or JPA</strong> to stay safe.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#covariantJava">
+      🔁 What is Covariant Return Type in Java?
+    </button>
+  </h2>
+  <div id="covariantJava" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What is Covariant Return Type?</h5>
+      <ul>
+        <li>In Java, a <strong>covariant return type</strong> means that a method in a subclass can return a more specific type than the method it overrides in the parent class.</li>
+        <li>This feature was introduced in <strong>Java 5</strong>.</li>
+        <li>It improves code flexibility and allows better use of inheritance.</li>
+      </ul>
+
+      <h5 class="text-info">🧪 Simple Example</h5>
+      <pre class="language-java"><code>
+class Animal { }
+
+class Dog extends Animal { }
+
+class AnimalFactory {
+    Animal getAnimal() {
+        return new Animal();
+    }
+}
+
+class DogFactory extends AnimalFactory {
+    @Override
+    Dog getAnimal() {
+        return new Dog(); // ✅ Covariant return type
+    }
+}
+      </code></pre>
+
+      <h5 class="text-info">🔍 Key Points</h5>
+      <ul>
+        <li>Both methods have the <strong>same name and parameters</strong>.</li>
+        <li>The return type in the subclass is a <strong>subtype</strong> of the return type in the parent class.</li>
+        <li>This avoids the need for casting and improves type safety.</li>
+      </ul>
+
+      <h5 class="text-info">❌ Without Covariant Return</h5>
+      <p>Before Java 5, you'd have to return the superclass and cast it:</p>
+      <pre class="language-java"><code>
+Animal animal = dogFactory.getAnimal();
+Dog dog = (Dog) animal; // Unsafe & ugly
+      </code></pre>
+
+      <h5 class="text-info">✅ With Covariant Return</h5>
+      <p>No need for casting when you return subtype directly:</p>
+      <pre class="language-java"><code>
+Dog dog = dogFactory.getAnimal(); // Clean & safe
+      </code></pre>
+
+      <h5 class="text-info">📌 Where It’s Used</h5>
+      <ul>
+        <li>Overriding methods in <strong>inheritance hierarchy</strong></li>
+        <li>Builder patterns or Factory patterns</li>
+        <li>Generic types (though they’re a separate concept)</li>
+      </ul>
+
+      <h5 class="text-info">🎯 Summary</h5>
+      <ul>
+        <li>Covariant return types allow overridden methods to return <strong>more specific types</strong>.</li>
+        <li>This leads to <strong>cleaner, safer, and more flexible code</strong>.</li>
+        <li>Java ensures type compatibility during compile time.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#tomcatThreadsSpringBoot3">
+      ⚙️ Default Tomcat Thread Pool in Spring Boot 3 & Handling More Concurrent Users
+    </button>
+  </h2>
+  <div id="tomcatThreadsSpringBoot3" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">🔍 Default Tomcat Thread Configuration</h5>
+      <ul>
+        <li>Spring Boot 3 uses <strong>Apache Tomcat</strong> as the default embedded servlet container.</li>
+        <li>By default, Tomcat uses a <strong>thread pool</strong> to handle incoming HTTP requests.</li>
+        <li>Default thread settings in <code>server.tomcat</code>:</li>
+      </ul>
+
+      <pre class="language-properties"><code>
+# Default values
+server.tomcat.threads.max=200
+server.tomcat.threads.min-spare=10
+      </code></pre>
+
+      <ul>
+        <li><strong>max-threads</strong>: The maximum number of request processing threads (default = 200)</li>
+        <li><strong>min-spare-threads</strong>: Minimum number of threads always kept alive (default = 10)</li>
+      </ul>
+
+      <h5 class="text-info">📈 What Happens When Concurrent Users Increase?</h5>
+      <ul>
+        <li>Each incoming HTTP request is handled by a thread from the Tomcat thread pool.</li>
+        <li>If all <code>max-threads</code> are busy, incoming requests are queued.</li>
+        <li>Tomcat uses an <code>accept-count</code> queue to hold incoming connections.</li>
+        <li>If the queue is also full, requests are rejected (HTTP 503).</li>
+      </ul>
+
+      <h5 class="text-info">🛠️ Customizing Tomcat Thread Pool</h5>
+      <p>In <code>application.properties</code> or <code>application.yml</code>:</p>
+      <pre class="language-properties"><code>
+# Increase max threads and accept count
+server.tomcat.threads.max=500
+server.tomcat.threads.min-spare=50
+server.tomcat.accept-count=200
+      </code></pre>
+
+      <h5 class="text-info">🧠 Important Concepts</h5>
+      <ul>
+        <li><strong>max-threads</strong>: Total threads for serving requests</li>
+        <li><strong>accept-count</strong>: Queue size for incoming requests waiting for a thread</li>
+        <li><strong>min-spare-threads</strong>: Minimum threads available at all times</li>
+      </ul>
+
+      <h5 class="text-info">🚀 Tips to Handle High Load</h5>
+      <ul>
+        <li>Use async processing (`@Async`, `WebFlux`) where possible</li>
+        <li>Optimize request handling logic and DB access</li>
+        <li>Use load balancers (e.g., Nginx) to distribute load</li>
+        <li>Monitor with tools like <code>Spring Boot Actuator</code> or <code>Prometheus + Grafana</code></li>
+      </ul>
+
+      <h5 class="text-info">📦 Summary</h5>
+      <ul>
+        <li>Spring Boot 3's default max Tomcat threads = <strong>200</strong></li>
+        <li>You can increase threads using <code>application.properties</code></li>
+        <li>If threads are full, requests wait in queue (accept-count)</li>
+        <li>More threads = more memory, so scale wisely</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#nginxIntro">
+      🌐 What is NGINX and How It Helps?
+    </button>
+  </h2>
+  <div id="nginxIntro" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">🔍 What is NGINX?</h5>
+      <ul>
+        <li><strong>NGINX</strong> (pronounced “engine-x”) is a high-performance, open-source web server and reverse proxy server.</li>
+        <li>It is also used as a load balancer, HTTP cache, and media streaming server.</li>
+        <li>Popular due to its speed, low memory usage, and scalability.</li>
+      </ul>
+
+      <h5 class="text-info">📦 What Can NGINX Do?</h5>
+      <ul>
+        <li>🌐 Serve static content (HTML, CSS, JS, images)</li>
+        <li>🔁 Act as a <strong>reverse proxy</strong> (forwards client requests to backend servers)</li>
+        <li>⚖️ Load balancing (distribute traffic across multiple servers)</li>
+        <li>🔒 Handle SSL/TLS termination (HTTPS support)</li>
+        <li>📤 Caching (to reduce load on backend)</li>
+        <li>🔐 Act as a basic security layer (rate-limiting, IP blocking, etc.)</li>
+      </ul>
+
+      <h5 class="text-info">🛠️ Example: Spring Boot Behind NGINX</h5>
+      <p>Suppose your Spring Boot app is running on port 8080:</p>
+      <pre class="language-nginx"><code>
+server {
+    listen 80;
+
+    server_name myapp.com;
+
+    location / {
+        proxy_pass http://localhost:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+      </code></pre>
+
+      <h5 class="text-info">🚀 How NGINX Helps?</h5>
+      <ul>
+        <li>🔁 <strong>Reverse Proxy:</strong> Hides backend services and improves security</li>
+        <li>⚖️ <strong>Load Balancer:</strong> Distributes load across multiple instances of your app</li>
+        <li>🌐 <strong>Static File Hosting:</strong> Quickly serves frontend resources without hitting the backend</li>
+        <li>🧊 <strong>Caching:</strong> Speeds up repeated requests</li>
+        <li>📉 <strong>Reduces Backend Load:</strong> Only forwards necessary traffic</li>
+        <li>🔐 <strong>Secures Apps:</strong> Handles HTTPS and limits request rates</li>
+      </ul>
+
+      <h5 class="text-info">📌 When to Use NGINX?</h5>
+      <ul>
+        <li>When you're hosting a production Spring Boot or any backend app</li>
+        <li>To improve performance and scalability of your web services</li>
+        <li>To manage SSL certificates (HTTPS)</li>
+        <li>When you want to serve frontend + backend in one domain</li>
+      </ul>
+
+      <h5 class="text-info">📊 Summary</h5>
+      <ul>
+        <li>NGINX is a powerful web server and reverse proxy.</li>
+        <li>It boosts performance, adds security, and helps scale applications.</li>
+        <li>Often used in modern production setups with Spring Boot, Node.js, React, etc.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#reverseProxy">
+      🔄 What is a Reverse Proxy?
+    </button>
+  </h2>
+  <div id="reverseProxy" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Reverse Proxy: The Concept</h5>
+      <ul>
+        <li>A <strong>Reverse Proxy</strong> is a server that sits between clients (e.g., browsers) and your backend servers (e.g., Spring Boot app).</li>
+        <li>It receives requests from clients and <strong>forwards them to the appropriate backend server</strong>.</li>
+        <li>It then sends the backend's response back to the client — the client doesn't know about the backend at all.</li>
+      </ul>
+
+      <h5 class="text-info">🔁 How It Works</h5>
+      <pre>
+Client --> Reverse Proxy (NGINX) --> Spring Boot App (port 8080)
+      </pre>
+      <ul>
+        <li>Client sends request to <code>http://myapp.com</code> (NGINX)</li>
+        <li>NGINX forwards it to <code>http://localhost:8080</code> (Spring Boot)</li>
+        <li>Spring Boot responds → NGINX → Client</li>
+      </ul>
+
+      <h5 class="text-info">🔒 Benefits of Using Reverse Proxy</h5>
+      <ul>
+        <li>🔐 <strong>Security:</strong> Backend app is not exposed to the internet</li>
+        <li>🌐 <strong>SSL Termination:</strong> Handles HTTPS at NGINX, not app level</li>
+        <li>⚖️ <strong>Load Balancing:</strong> NGINX can forward traffic to multiple app instances</li>
+        <li>📤 <strong>Caching:</strong> Frequently requested data can be cached at proxy level</li>
+        <li>🛡️ <strong>Rate Limiting:</strong> Protects your app from request floods</li>
+      </ul>
+
+      <h5 class="text-info">🧪 Example NGINX Config for Reverse Proxy</h5>
+      <pre class="language-nginx"><code>
+server {
+    listen 80;
+    server_name myapp.com;
+
+    location / {
+        proxy_pass http://localhost:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+      </code></pre>
+
+      <h5 class="text-info">📊 Summary</h5>
+      <ul>
+        <li>A reverse proxy like NGINX <strong>receives client requests and forwards them</strong> to a backend server.</li>
+        <li>It improves security, performance, and scalability.</li>
+        <li>Commonly used in front of Spring Boot, Node.js, Python Flask, etc.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+
 
 
 
