@@ -20121,6 +20121,156 @@ server {
     </div>
   </div>
 </div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#reactInsteadOfThymeleaf">
+      ⚛️ Using React in Place of Thymeleaf in Spring Boot 3
+    </button>
+  </h2>
+  <div id="reactInsteadOfThymeleaf" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Overview</h5>
+      <ul>
+        <li>Yes, you can use <strong>React</strong> as the view layer in your Spring Boot application instead of <strong>Thymeleaf</strong>.</li>
+        <li>React is a modern front-end JavaScript library that allows for building rich, interactive Single Page Applications (SPAs), whereas Thymeleaf is a server-side templating engine.</li>
+      </ul>
+
+      <h5 class="text-info">📌 How to Integrate React with Spring Boot</h5>
+      <ul>
+        <li>Develop your <strong>React application</strong> as a standalone project. You can use tools like <code>create-react-app</code> to bootstrap your project.</li>
+        <li>Build your React app into static files (HTML, CSS, JavaScript) using <code>npm run build</code>.</li>
+        <li>Serve the static files by placing them in Spring Boot’s <code>src/main/resources/static</code> folder or use a dedicated static file server (like NGINX) as a reverse proxy.</li>
+        <li>Use Spring Boot to expose RESTful APIs that your React app calls to fetch or update data.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Benefits of Using React Over Thymeleaf</h5>
+      <ul>
+        <li><strong>Rich User Experience:</strong> React enables highly interactive and dynamic UI experiences.</li>
+        <li><strong>Client-Side Rendering:</strong> Offloads rendering logic to the client, potentially reducing server load.</li>
+        <li><strong>Separation of Concerns:</strong> Clearly separates the front-end from the back-end, allowing teams to develop and deploy independently.</li>
+        <li><strong>Modern Ecosystem:</strong> React’s ecosystem with libraries like Redux, React Router, etc., provides extra tools for scaling complex applications.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Deployment Options</h5>
+      <ul>
+        <li><strong>Monolithic Deployment:</strong> Bundle the built React app as static resources inside your Spring Boot app.</li>
+        <li><strong>Decoupled Deployment:</strong> Host the React app on a separate server or content delivery network (CDN) while keeping Spring Boot as a backend API provider.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Summary</h5>
+      <ul>
+        <li>React can completely replace Thymeleaf for the front-end part of your Spring Boot 3 application.</li>
+        <li>This approach is especially ideal if you want to build a highly responsive SPA with a RESTful backend.</li>
+        <li>Choose between a monolithic or decoupled deployment based on your project needs.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#reactSpringBootIntegration">
+      🔗 React Integration with Spring Boot 3 (Step-by-Step Guide)
+    </button>
+  </h2>
+  <div id="reactSpringBootIntegration" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Goal</h5>
+      <p>Integrate a React frontend with a Spring Boot 3 backend so that the frontend communicates via REST APIs.</p>
+
+      <h5 class="text-info">🧱 Project Structure</h5>
+      <pre>
+my-app/
+├── backend/         <-- Spring Boot App
+├── frontend/        <-- React App
+      </pre>
+
+      <h5 class="text-info">🧪 Step 1: Create the Spring Boot App</h5>
+      <p>Use Spring Initializr or your IDE to create a Spring Boot 3 app with dependencies:</p>
+      <ul>
+        <li>Spring Web</li>
+        <li>Spring Boot DevTools</li>
+        <li>Spring Data JPA (optional)</li>
+      </ul>
+
+      <pre class="language-java"><code>
+@RestController
+@RequestMapping("/api")
+public class GreetingController {
+    
+    @GetMapping("/greet")
+    public String greet() {
+        return "Hello from Spring Boot!";
+    }
+}
+      </code></pre>
+
+      <h5 class="text-info">⚛️ Step 2: Create the React App</h5>
+      <p>In the root directory:</p>
+      <pre><code>npx create-react-app frontend</code></pre>
+
+      <p>Inside <code>frontend/src/App.js</code>:</p>
+      <pre class="language-js"><code>
+import { useEffect, useState } from 'react';
+
+function App() {
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    fetch('/api/greet')
+      .then(res => res.text())
+      .then(data => setMessage(data));
+  }, []);
+
+  return (
+    &lt;div&gt;
+      &lt;h1&gt;{message}&lt;/h1&gt;
+    &lt;/div&gt;
+  );
+}
+
+export default App;
+      </code></pre>
+
+      <h5 class="text-info">⚙️ Step 3: Configure Proxy in React</h5>
+      <p>Edit <code>frontend/package.json</code> to proxy API requests to Spring Boot:</p>
+      <pre><code>
+"proxy": "http://localhost:8080",
+      </code></pre>
+
+      <h5 class="text-info">🏗️ Step 4: Build React and Copy to Spring Boot</h5>
+      <ul>
+        <li>Run: <code>cd frontend &amp;&amp; npm run build</code></li>
+        <li>Copy <code>frontend/build</code> contents to <code>backend/src/main/resources/static</code></li>
+      </ul>
+
+      <h5 class="text-info">🧪 Step 5: Run Spring Boot</h5>
+      <ul>
+        <li>Start the Spring Boot app.</li>
+        <li>Open <code>http://localhost:8080</code> and you'll see your React app served by Spring Boot!</li>
+      </ul>
+
+      <h5 class="text-info">🚀 Bonus: Live Development (Optional)</h5>
+      <ul>
+        <li>Run React frontend with <code>npm start</code></li>
+        <li>Run Spring Boot backend with <code>mvn spring-boot:run</code></li>
+        <li>React will forward all API calls to Spring Boot via the proxy.</li>
+      </ul>
+
+      <h5 class="text-info">📊 Summary</h5>
+      <ul>
+        <li>React and Spring Boot can be integrated via REST APIs.</li>
+        <li>Use proxy for development and serve static files in production.</li>
+        <li>This setup supports full-stack development with modern UI and robust backend.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
 
 
 
