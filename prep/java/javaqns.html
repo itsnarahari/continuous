@@ -79,7 +79,7 @@
   </style>
 </head>
 
-<body class="bg-dark text-light">
+<body class="bg-dark text-light mb-4">
   <div class="container">
     <div class="header fw-bold text-center mb-4">Java Q&A</div>
 
@@ -500,6 +500,394 @@ public class AbstractFactoryPatternDemo {
           </div>
         </div>
       </div>
+
+      <div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#virtualThreadsJava">
+      🧵 Virtual Threads in Java (Project Loom)
+    </button>
+  </h2>
+  <div id="virtualThreadsJava" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <h5 class="text-info">📌 What are Virtual Threads?</h5>
+      <p>
+        Virtual Threads are lightweight threads introduced in Java 21 as part of <strong>Project Loom</strong>. They allow
+        you to create thousands (even millions) of threads without the performance and memory limitations of traditional (platform) threads.
+      </p>
+
+      <ul>
+        <li>🪶 Virtual threads are managed by the JVM, not the OS.</li>
+        <li>🧠 They are ideal for handling concurrent tasks like I/O without blocking real threads.</li>
+        <li>🌱 Syntax and usage is very similar to regular threads.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Benefits of Virtual Threads</h5>
+      <ul>
+        <li>💡 Lightweight: Thousands of threads use very little memory.</li>
+        <li>⏱️ Scalable: You can handle high-concurrency apps like chat servers or HTTP services.</li>
+        <li>🔄 Non-blocking I/O made simple: Blocking calls are efficiently paused without blocking the CPU.</li>
+        <li>🧵 Each request can have its own thread — cleaner and easier to debug than reactive code.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Code Example: Creating a Virtual Thread</h5>
+      <pre class="language-java"><code>
+public class VirtualThreadDemo {
+    public static void main(String[] args) {
+        Runnable task = () -> {
+            System.out.println("Running on thread: " + Thread.currentThread());
+        };
+
+        Thread.startVirtualThread(task);
+    }
+}
+      </code></pre>
+
+      <p>You can also use <code>Executors</code>:</p>
+      <pre class="language-java"><code>
+ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+executor.submit(() -> {
+    // simulate I/O
+    Thread.sleep(1000);
+    System.out.println("Task done!");
+});
+      </code></pre>
+
+      <h5 class="text-info">📌 How Are They Different from Platform Threads?</h5>
+      <table class="table table-dark table-bordered mt-3">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>Platform Thread</th>
+            <th>Virtual Thread</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Managed By</td>
+            <td>OS Kernel</td>
+            <td>JVM</td>
+          </tr>
+          <tr>
+            <td>Creation Cost</td>
+            <td>High (1MB stack)</td>
+            <td>Low (~bytes)</td>
+          </tr>
+          <tr>
+            <td>Blocking I/O</td>
+            <td>Consumes thread</td>
+            <td>Doesn't block carrier thread</td>
+          </tr>
+          <tr>
+            <td>Ideal Use</td>
+            <td>Limited tasks</td>
+            <td>Massive concurrency</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h5 class="text-info">📌 Where to Use Virtual Threads?</h5>
+      <ul>
+        <li>🌐 Web servers (like Spring Boot apps)</li>
+        <li>📬 Message processing</li>
+        <li>🛠️ Microservices needing concurrency but readable code</li>
+        <li>✅ Replacing thread pools for async tasks</li>
+      </ul>
+
+      <h5 class="text-info">📌 Limitations and Notes</h5>
+      <ul>
+        <li>❗ Still new — watch for library compatibility issues.</li>
+        <li>📦 Spring Boot supports it from Spring 6 / Spring Boot 3+.</li>
+        <li>🛑 Avoid CPU-intensive tasks on virtual threads (use platform threads or ForkJoinPool).</li>
+      </ul>
+
+      <h5 class="text-info">📌 Summary</h5>
+      <ul>
+        <li>✅ Virtual Threads make concurrency easier and scalable.</li>
+        <li>📉 No need for complex reactive/non-blocking frameworks unless needed.</li>
+        <li>🧪 Java 21 is the first LTS version to fully support them.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#virtualVsTraditionalThreads">
+      🧵 Virtual Threads vs Traditional Threads vs Executor Framework
+    </button>
+  </h2>
+  <div id="virtualVsTraditionalThreads" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <h5 class="text-info">📌 Overview</h5>
+      <p>Java supports multiple threading models:</p>
+      <ul>
+        <li><strong>Platform (Traditional) Threads</strong> – backed by native OS threads</li>
+        <li><strong>Executor Framework</strong> – thread pool abstraction over platform threads</li>
+        <li><strong>Virtual Threads</strong> – lightweight threads managed by JVM (Project Loom)</li>
+      </ul>
+
+      <h5 class="text-info">📌 Detailed Comparison</h5>
+      <table class="table table-dark table-bordered mt-3">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>Traditional Threads</th>
+            <th>Executor Framework</th>
+            <th>Virtual Threads</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Thread Creation</td>
+            <td><code>new Thread()</code></td>
+            <td><code>Executors.newFixedThreadPool()</code></td>
+            <td><code>Thread.startVirtualThread()</code> (Java 21+)</td>
+          </tr>
+          <tr>
+            <td>Backed By</td>
+            <td>OS kernel threads</td>
+            <td>OS kernel threads via pooling</td>
+            <td>JVM-managed (not tied to OS)</td>
+          </tr>
+          <tr>
+            <td>Memory Per Thread</td>
+            <td>~1 MB</td>
+            <td>~1 MB</td>
+            <td>~Few KB (stack is managed dynamically)</td>
+          </tr>
+          <tr>
+            <td>Concurrency</td>
+            <td>Limited (~thousands max)</td>
+            <td>Limited by pool size</td>
+            <td>Massive (millions possible)</td>
+          </tr>
+          <tr>
+            <td>Blocking I/O</td>
+            <td>Blocks thread (wastes resource)</td>
+            <td>Same (though reusable)</td>
+            <td>Does not block carrier thread — efficient!</td>
+          </tr>
+          <tr>
+            <td>Debuggability</td>
+            <td>Easy to debug</td>
+            <td>Requires managing thread pools</td>
+            <td>Easy (like traditional) — readable and structured</td>
+          </tr>
+          <tr>
+            <td>Best For</td>
+            <td>Small concurrency, background tasks</td>
+            <td>Controlled concurrency with reusable threads</td>
+            <td>Highly concurrent I/O-bound systems</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h5 class="text-info">📌 Code Snippets Comparison</h5>
+
+      <h6>🧵 Traditional Thread</h6>
+      <pre class="language-java"><code>
+Thread thread = new Thread(() -> {
+    System.out.println("Running task");
+});
+thread.start();
+      </code></pre>
+
+      <h6>⚙️ Executor Framework</h6>
+      <pre class="language-java"><code>
+ExecutorService executor = Executors.newFixedThreadPool(10);
+executor.submit(() -> {
+    System.out.println("Task in thread pool");
+});
+      </code></pre>
+
+      <h6>🌱 Virtual Thread</h6>
+      <pre class="language-java"><code>
+Thread.startVirtualThread(() -> {
+    System.out.println("Task in virtual thread");
+});
+      </code></pre>
+
+      <h5 class="text-info">📌 Real-World Use Cases</h5>
+      <ul>
+        <li>🕸️ <strong>Traditional:</strong> Desktop apps, occasional background tasks</li>
+        <li>🏗️ <strong>Executor Framework:</strong> Web servers, thread-pool-controlled apps</li>
+        <li>⚡ <strong>Virtual Threads:</strong> High-concurrency microservices, REST APIs, schedulers, chat servers, etc.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Conclusion</h5>
+      <ul>
+        <li>🔄 Virtual Threads combine ease of traditional threading with the scalability of non-blocking models</li>
+        <li>✅ Backed by the structured concurrency model in Java 21+</li>
+        <li>🛠️ Recommended for I/O-heavy, concurrent apps without sacrificing code clarity</li>
+      </ul>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#chooseJavaOrVirtualThreads">
+      ⚖️ Choosing Between Java Threads vs Virtual Threads
+    </button>
+  </h2>
+  <div id="chooseJavaOrVirtualThreads" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 When to Use <span class="text-light">Platform (Traditional) Threads</span></h5>
+      <ul>
+        <li>🧮 Your application is <strong>CPU-intensive</strong> (e.g., mathematical calculations, rendering engines)</li>
+        <li>🔍 You need <strong>tight control over thread behavior</strong> (e.g., priorities, affinity, tuning thread pools)</li>
+        <li>📦 Third-party libraries are <strong>not yet compatible with virtual threads</strong></li>
+        <li>🧵 You only need a few threads (say, < 1000), and scaling isn’t a concern</li>
+        <li>🛠️ You already have optimized thread pool management and want to stick with proven, stable thread models</li>
+      </ul>
+
+      <h5 class="text-info">🌱 When to Use <span class="text-light">Virtual Threads</span></h5>
+      <ul>
+        <li>🌐 You’re building a <strong>high-concurrency, I/O-heavy system</strong> like a web server or microservices</li>
+        <li>🧪 You want to avoid complex async or reactive programming and still get scalability</li>
+        <li>🧵 You need to spawn <strong>many short-lived or blocking tasks</strong> (e.g., one thread per HTTP request)</li>
+        <li>✅ You’re using Java 21+ and Spring Boot 3.2+ (both support virtual threads)</li>
+        <li>🔍 You value readable, imperative code over callback chains and non-blocking logic</li>
+      </ul>
+
+      <h5 class="text-info">📊 Summary Comparison Table</h5>
+      <table class="table table-dark table-bordered mt-3">
+        <thead>
+          <tr>
+            <th>Aspect</th>
+            <th>Platform Thread</th>
+            <th>Virtual Thread</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Best For</td>
+            <td>CPU-bound tasks</td>
+            <td>I/O-bound tasks</td>
+          </tr>
+          <tr>
+            <td>Thread Limit</td>
+            <td>~Few thousands</td>
+            <td>Millions possible</td>
+          </tr>
+          <tr>
+            <td>Resource Usage</td>
+            <td>Heavy (1MB stack)</td>
+            <td>Lightweight (few KB)</td>
+          </tr>
+          <tr>
+            <td>Blocking Behavior</td>
+            <td>Blocks physical thread</td>
+            <td>Only suspends virtual thread, not carrier</td>
+          </tr>
+          <tr>
+            <td>Readability</td>
+            <td>Easy</td>
+            <td>Easy</td>
+          </tr>
+          <tr>
+            <td>Reactive Needed?</td>
+            <td>Maybe (for scale)</td>
+            <td>No (still scalable)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h5 class="text-info">🎯 Final Decision Tips</h5>
+      <ul>
+        <li>➡️ Default to <strong>virtual threads</strong> for most <strong>I/O-bound web applications</strong></li>
+        <li>➡️ Use <strong>platform threads</strong> if you’re doing <strong>heavy computation</strong> or interacting with <strong>non-compatible libraries</strong></li>
+        <li>➡️ Consider <strong>structured concurrency</strong> (Java 21) when using virtual threads to manage lifecycle and cancellation cleanly</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#sslHttpHttps">
+      🔐 What is SSL? HTTP vs HTTPS? Who Secures HTTPS? Is It Free?
+    </button>
+  </h2>
+  <div id="sslHttpHttps" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What is SSL?</h5>
+      <ul>
+        <li><strong>SSL</strong> stands for <strong>Secure Sockets Layer</strong>.</li>
+        <li>It is a security protocol that creates an encrypted link between a web server and a browser.</li>
+        <li>It ensures that all data transferred between the server and client is private and secure.</li>
+        <li>Modern websites use an updated version called <strong>TLS (Transport Layer Security)</strong>, but it's still commonly referred to as "SSL."</li>
+      </ul>
+
+      <h5 class="text-info">🌐 Difference Between HTTP and HTTPS</h5>
+      <table class="table table-dark table-bordered mt-3">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>HTTP</th>
+            <th>HTTPS</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Protocol</td>
+            <td>HyperText Transfer Protocol</td>
+            <td>HyperText Transfer Protocol Secure</td>
+          </tr>
+          <tr>
+            <td>Security</td>
+            <td>Data is <strong>not encrypted</strong></td>
+            <td>Data is <strong>encrypted using SSL/TLS</strong></td>
+          </tr>
+          <tr>
+            <td>Port Used</td>
+            <td>80</td>
+            <td>443</td>
+          </tr>
+          <tr>
+            <td>Data Protection</td>
+            <td>Vulnerable to attacks (like man-in-the-middle)</td>
+            <td>Safe from eavesdropping and tampering</td>
+          </tr>
+          <tr>
+            <td>Browser Indicator</td>
+            <td>No padlock, shows “Not Secure”</td>
+            <td>Padlock symbol in address bar</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h5 class="text-info">🔐 Who Makes HTTPS Secure?</h5>
+      <ul>
+        <li>HTTPS uses an <strong>SSL Certificate</strong> issued by a trusted <strong>Certificate Authority (CA)</strong>.</li>
+        <li>CA verifies your website identity and gives a digital certificate.</li>
+        <li>This certificate is used to establish secure and encrypted connections.</li>
+        <li>Popular CAs: <code>Let's Encrypt</code> (free), <code>Comodo</code>, <code>DigiCert</code>, <code>GoDaddy</code>, etc.</li>
+      </ul>
+
+      <h5 class="text-info">💰 Is It Free or Paid?</h5>
+      <ul>
+        <li>✅ Yes, there are <strong>free SSL providers</strong> like <code>Let's Encrypt</code>.</li>
+        <li>💼 For extra validation (e.g., company name in certificate), <strong>paid SSL</strong> options are available.</li>
+        <li>For most websites and apps, <strong>free SSL is enough</strong> and trusted by all browsers.</li>
+      </ul>
+
+      <h5 class="text-info">📦 Summary</h5>
+      <ul>
+        <li>Use <strong>HTTPS</strong> always — it's the secure version of HTTP.</li>
+        <li>HTTPS uses <strong>SSL/TLS certificates</strong> to encrypt data.</li>
+        <li>These certificates are issued by a trusted <strong>Certificate Authority</strong>.</li>
+        <li>You can get them for <strong>free (Let’s Encrypt)</strong> or pay for advanced options.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+
 
       <div class="accordion-item">
   <h2 class="accordion-header">
