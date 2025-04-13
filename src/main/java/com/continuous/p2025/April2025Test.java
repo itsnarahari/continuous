@@ -2,11 +2,11 @@ package com.continuous.p2025;
 
 public class April2025Test {
 
-    public static void main(String[] args) {
+    public static void main(String ...args) {
 //        1. Java program to Find Odd or Even number
         findOddOrEvenNumber(11);
         findPrimeOrNotNumber(0);
-
+        findFibonacciSeries(10);
     }
 
 //    1. Java program to Find Odd or Even number
@@ -50,6 +50,13 @@ public static boolean isPrime(int number){
 }
 
 //3. Java program to find Fibonacci series upto a  given number range
-
-
+public static void findFibonacciSeries(int n){
+        int first = 0, second=1, next;
+    for (int i = 0; i <= n; i++) {
+        System.out.print(first+" ");
+        next = first+second;
+        first = second;
+        second = next;
+    }
+}
 }
