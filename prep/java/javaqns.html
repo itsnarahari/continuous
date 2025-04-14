@@ -348,6 +348,814 @@ class NotificationSender {
       <div class="accordion-item">
         <h2 class="accordion-header">
           <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#httpoptions">
+            HTTP OPTIONS Method Explained
+          </button>
+        </h2>
+        <div id="httpoptions" class="accordion-collapse collapse">
+          <div class="accordion-body">
+
+            <h5 class="text-info">📌 1. What is HTTP OPTIONS Method?</h5>
+            <p>The <strong>OPTIONS</strong> method is an HTTP request used to describe the communication options
+              available for a target resource. It tells the client what HTTP methods are supported by the server for a
+              given endpoint.</p>
+
+            <h5 class="text-info">📌 2. Why is OPTIONS Important?</h5>
+            <ul>
+              <li>Used for <strong>preflight requests</strong> in CORS (Cross-Origin Resource Sharing).</li>
+              <li>Helps browsers determine whether the actual request is safe to send.</li>
+              <li>Allows API consumers to know what operations (GET, POST, PUT, etc.) are allowed.</li>
+            </ul>
+
+            <h5 class="text-info">📌 3. Who Initiates OPTIONS Requests?</h5>
+            <p>OPTIONS requests are typically initiated by the <strong>browser</strong> automatically when making
+              cross-origin requests (CORS), especially for methods like <code>PUT</code>, <code>DELETE</code>, or when
+              sending custom headers.</p>
+
+            <h5 class="text-info">📌 4. Example: Preflight CORS Request</h5>
+            <pre class="language-http"><code>
+OPTIONS /api/user HTTP/1.1
+Host: example.com
+Origin: https://myapp.com
+Access-Control-Request-Method: POST
+Access-Control-Request-Headers: Content-Type
+      </code></pre>
+            <p>This tells the server: "Hey, I want to send a POST request with JSON. Is that okay?"</p>
+
+            <h5 class="text-info">📌 5. Server Response to OPTIONS</h5>
+            <pre class="language-http"><code>
+HTTP/1.1 204 No Content
+Access-Control-Allow-Origin: https://myapp.com
+Access-Control-Allow-Methods: GET, POST, OPTIONS
+Access-Control-Allow-Headers: Content-Type
+      </code></pre>
+            <p>The server responds with allowed methods and headers, giving the browser a green light to proceed.</p>
+
+            <h5 class="text-info">📌 6. How to Handle in Spring Boot?</h5>
+            <pre class="language-java"><code>
+@RestController
+@RequestMapping("/api")
+public class MyController {
+
+    @RequestMapping(value = "/user", method = RequestMethod.OPTIONS)
+    public ResponseEntity<Void> options() {
+        return ResponseEntity.ok().build();
+    }
+}
+      </code></pre>
+            <p>Spring automatically handles OPTIONS for CORS if you have proper CORS configuration using
+              <code>@CrossOrigin</code> or global config.</p>
+
+            <h5 class="text-info">📌 7. Real Use Case - CORS Preflight</h5>
+            <p>If your frontend at <code>http://localhost:3000</code> makes a POST request to your backend at
+              <code>http://localhost:8080</code> with JSON data, the browser first sends an OPTIONS request to make sure
+              the server allows it.</p>
+
+            <h5 class="text-info">📌 Conclusion</h5>
+            <p>The <strong>OPTIONS method</strong> is a silent but essential player in modern web APIs, especially when
+              dealing with cross-origin communications. While it's often auto-triggered by browsers, understanding it
+              helps with troubleshooting and configuring APIs securely and correctly.</p>
+
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#filtervsinterceptor">
+            Spring Boot 3: Filter vs Interceptor – Differences & Use Cases
+          </button>
+        </h2>
+        <div id="filtervsinterceptor" class="accordion-collapse collapse">
+          <div class="accordion-body">
+
+            <h5 class="text-info">📌 1. What is a Filter?</h5>
+            <p>
+              A <strong>Filter</strong> is part of the <code>javax.servlet</code> API. It is executed <strong>before the
+                request reaches the DispatcherServlet</strong>.
+              Filters are typically used for low-level concerns like logging, authentication, CORS, or modifying
+              request/response headers.
+            </p>
+
+            <h5 class="text-info">📌 2. What is an Interceptor?</h5>
+            <p>
+              An <strong>Interceptor</strong> is part of the Spring MVC framework. It runs <strong>after the request
+                passes through the DispatcherServlet</strong> but
+              <strong>before the controller method is called</strong>. Useful for pre/post-processing controller logic.
+            </p>
+
+            <h5 class="text-info">📌 3. Execution Flow Comparison</h5>
+            <ul>
+              <li>🌀 Filter → DispatcherServlet → Interceptor → Controller → Interceptor (postHandle) → Response</li>
+              <li>🧩 Filter = Servlet-level</li>
+              <li>⚙️ Interceptor = Spring MVC-level</li>
+            </ul>
+
+            <h5 class="text-info">📌 4. Example: Creating a Filter</h5>
+            <pre class="language-java"><code>
+@Component
+public class MyFilter implements Filter {
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+      throws IOException, ServletException {
+        System.out.println("Filter: Request received");
+        chain.doFilter(request, response);
+        System.out.println("Filter: Response sent");
+    }
+}
+      </code></pre>
+
+            <h5 class="text-info">📌 5. Example: Creating an Interceptor</h5>
+            <pre class="language-java"><code>
+@Component
+public class MyInterceptor implements HandlerInterceptor {
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
+      throws Exception {
+        System.out.println("Interceptor: Before controller");
+        return true;
+    }
+
+    @Override
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
+        System.out.println("Interceptor: After controller");
+    }
+}
+      </code></pre>
+
+            <h5 class="text-info">📌 6. Registering the Interceptor</h5>
+            <pre class="language-java"><code>
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+    @Autowired
+    private MyInterceptor myInterceptor;
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(myInterceptor);
+    }
+}
+      </code></pre>
+
+            <h5 class="text-info">📌 7. When to Use Filter?</h5>
+            <ul>
+              <li>🔒 Security (e.g., JWT validation)</li>
+              <li>🧾 Logging all incoming HTTP requests globally</li>
+              <li>🌍 CORS configuration (manually)</li>
+              <li>📦 Compression, character encoding, and general preprocessing</li>
+            </ul>
+
+            <h5 class="text-info">📌 8. When to Use Interceptor?</h5>
+            <ul>
+              <li>🔎 Business logic before/after controller execution</li>
+              <li>🔐 Role-based access control checks</li>
+              <li>📊 Monitoring controller-specific metrics</li>
+              <li>🔁 Auto-populating request attributes</li>
+            </ul>
+
+            <h5 class="text-info">📌 9. Summary Table</h5>
+            <table class="table table-dark table-bordered">
+              <thead>
+                <tr>
+                  <th>Feature</th>
+                  <th>Filter</th>
+                  <th>Interceptor</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Layer</td>
+                  <td>Servlet</td>
+                  <td>Spring MVC</td>
+                </tr>
+                <tr>
+                  <td>Executed Before</td>
+                  <td>DispatcherServlet</td>
+                  <td>Controller</td>
+                </tr>
+                <tr>
+                  <td>Access to Request Body?</td>
+                  <td>Yes (raw access)</td>
+                  <td>Yes (via HttpServletRequest)</td>
+                </tr>
+                <tr>
+                  <td>Response Modification?</td>
+                  <td>Yes</td>
+                  <td>Yes (less commonly used)</td>
+                </tr>
+                <tr>
+                  <td>Use Case</td>
+                  <td>Cross-cutting concerns</td>
+                  <td>Controller-specific logic</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-info">📌 10. Conclusion</h5>
+            <p>
+              Use <strong>Filters</strong> when you need low-level, servlet-related processing across all requests.
+              Use <strong>Interceptors</strong> when you want to hook into Spring MVC flow, especially around controller
+              execution.
+            </p>
+
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#datasharding">
+            What is Data Sharding? – Definition, Example, Pros & Cons
+          </button>
+        </h2>
+        <div id="datasharding" class="accordion-collapse collapse">
+          <div class="accordion-body">
+
+            <h5 class="text-info">📌 1. What is Data Sharding?</h5>
+            <p>
+              <strong>Data Sharding</strong> is the process of splitting a large database into smaller, faster, more
+              manageable parts called
+              <code>shards</code>. Each shard is an independent database that holds a subset of the data.
+            </p>
+            <p>
+              Instead of storing all data in a single database, data is distributed across multiple databases based on
+              some <strong>sharding key</strong>
+              (e.g., user ID, region, date).
+            </p>
+
+            <h5 class="text-info">📌 2. Why Use Sharding?</h5>
+            <ul>
+              <li>⚡ Performance improvement (reduces load on a single DB)</li>
+              <li>🧩 Horizontal scalability</li>
+              <li>🌍 Geo-distribution of data for locality</li>
+            </ul>
+
+            <h5 class="text-info">📌 3. Simple Example</h5>
+            <p>
+              Let’s say we have a table <code>users</code> with 100 million records. Instead of putting all into one DB,
+              we split by user ID range:
+            </p>
+            <ul>
+              <li>📂 <code>shard_1</code> → user IDs from 1 to 10 million</li>
+              <li>📂 <code>shard_2</code> → user IDs from 10M to 20M</li>
+              <li>📂 <code>shard_3</code> → user IDs from 20M to 30M</li>
+            </ul>
+            <p>
+              A routing logic or middleware decides which shard to query based on user ID.
+            </p>
+
+            <h5 class="text-info">📌 4. Java Code Snippet: Simple Routing Example</h5>
+            <pre class="language-java"><code>
+public DataSource getDataSourceForUser(int userId) {
+    if (userId &lt; 10000000) return shard1DataSource;
+    else if (userId &lt; 20000000) return shard2DataSource;
+    else return shard3DataSource;
+}
+      </code></pre>
+
+            <h5 class="text-info">📌 5. Types of Sharding</h5>
+            <ul>
+              <li>🔢 <strong>Range-based Sharding</strong>: e.g., userId 1-1000 in one shard</li>
+              <li>🎲 <strong>Hash-based Sharding</strong>: userId % numberOfShards</li>
+              <li>📍 <strong>Geo-based Sharding</strong>: by country or region</li>
+            </ul>
+
+            <h5 class="text-info">📌 6. Real-world Examples</h5>
+            <ul>
+              <li>👤 User profiles split by region (e.g., US, EU, Asia)</li>
+              <li>🛒 Order history partitioned by year or customer ID</li>
+              <li>💬 Messaging apps where messages are sharded by chat ID</li>
+            </ul>
+
+            <h5 class="text-info">📌 7. Pros of Sharding</h5>
+            <ul>
+              <li>✅ Performance boosts due to reduced data in each shard</li>
+              <li>✅ Enables horizontal scaling (scale by adding nodes)</li>
+              <li>✅ Failure isolation (one shard down ≠ total failure)</li>
+            </ul>
+
+            <h5 class="text-info">📌 8. Cons of Sharding</h5>
+            <ul>
+              <li>❌ Complexity in query routing and management</li>
+              <li>❌ Cross-shard joins are hard or impossible</li>
+              <li>❌ Data rebalancing is tricky when adding shards</li>
+              <li>❌ Backup & consistency challenges</li>
+            </ul>
+
+            <h5 class="text-info">📌 9. Tools & Technologies</h5>
+            <ul>
+              <li>🔧 <strong>ShardingSphere</strong>, <strong>Citus</strong> (Postgres), <strong>Vitess</strong> (MySQL)
+              </li>
+              <li>☁️ Cloud DBs: AWS Aurora, Cosmos DB (auto-sharding)</li>
+              <li>⚙️ Spring Boot with routing DataSources manually or with libraries like
+                <code>Shardingsphere-JDBC</code></li>
+            </ul>
+
+            <h5 class="text-info">📌 10. Conclusion</h5>
+            <p>
+              Data Sharding is a powerful strategy for handling large-scale data by splitting it across multiple
+              databases. It provides
+              performance and scalability at the cost of complexity. Ideal for high-throughput applications like social
+              media,
+              e-commerce, banking, etc.
+            </p>
+
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#captheorem">
+            What is CAP Theorem? – Detailed Explanation with Example & Use Cases
+          </button>
+        </h2>
+        <div id="captheorem" class="accordion-collapse collapse">
+          <div class="accordion-body">
+
+            <h5 class="text-info">📌 1. What is CAP Theorem?</h5>
+            <p>
+              The <strong>CAP Theorem</strong>, also known as Brewer's Theorem, states that in any distributed data
+              system, it is
+              <strong>impossible to guarantee all three</strong> of the following at the same time:
+            </p>
+            <ul>
+              <li>🟢 <strong>Consistency (C)</strong> – Every read receives the most recent write or an error</li>
+              <li>🔴 <strong>Availability (A)</strong> – Every request receives a non-error response, without guarantee
+                of latest data</li>
+              <li>🟡 <strong>Partition Tolerance (P)</strong> – The system continues to work despite network partitions
+                (failures in communication)</li>
+            </ul>
+            <p>
+              You can pick <strong>only two out of the three</strong> at any moment in a partitioned system.
+            </p>
+
+            <h5 class="text-info">📌 2. Real-World Analogy</h5>
+            <p>
+              Imagine 2 ATMs (nodes) connected to a central server. If the server goes down (network partition), you can
+              either:
+            </p>
+            <ul>
+              <li>✅ Let users withdraw (Availability) but risk showing outdated balances (no Consistency)</li>
+              <li>✅ Block transactions (Consistency) until the server comes back (no Availability)</li>
+            </ul>
+
+            <h5 class="text-info">📌 3. CAP Combinations</h5>
+            <ul>
+              <li><strong>CA (Consistency + Availability)</strong> – Works only if no network partition occurs (ideal,
+                not possible in distributed systems)</li>
+              <li><strong>CP (Consistency + Partition Tolerance)</strong> – Prioritizes accurate data over fast
+                responses</li>
+              <li><strong>AP (Availability + Partition Tolerance)</strong> – Ensures responsiveness even if data is
+                slightly outdated</li>
+            </ul>
+
+            <h5 class="text-info">📌 4. Examples of Distributed Systems</h5>
+            <ul>
+              <li>🔵 <strong>CP – HBase, MongoDB (with strong consistency mode), etc.</strong></li>
+              <li>🟢 <strong>AP – Couchbase, Cassandra, DynamoDB</strong></li>
+              <li>🟡 <strong>CA – Traditional RDBMS (like MySQL) – but only in a non-distributed single-node
+                  setup</strong></li>
+            </ul>
+
+            <h5 class="text-info">📌 5. Example: Cassandra (AP System)</h5>
+            <p>
+              Cassandra prefers <strong>Availability + Partition Tolerance</strong>. If one node is down, it still
+              serves reads/writes from others,
+              even if some data may be slightly inconsistent. Consistency can be tuned with <code>QUORUM</code> or
+              <code>ALL</code>.
+            </p>
+
+            <h5 class="text-info">📌 6. Example: MongoDB (CP System)</h5>
+            <p>
+              In a MongoDB replica set, if the primary is unavailable, the system won’t accept writes until a new
+              primary is elected —
+              preserving <strong>Consistency</strong> at the cost of <strong>Availability</strong> temporarily.
+            </p>
+
+            <h5 class="text-info">📌 7. Use Case Mapping</h5>
+            <table class="table table-dark table-bordered table-striped">
+              <thead>
+                <tr>
+                  <th>Use Case</th>
+                  <th>CAP Preference</th>
+                  <th>Reason</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Bank Transactions</td>
+                  <td>CP</td>
+                  <td>Must be 100% accurate; can afford delays</td>
+                </tr>
+                <tr>
+                  <td>Social Media Feed</td>
+                  <td>AP</td>
+                  <td>Can show slightly old data, but must load quickly</td>
+                </tr>
+                <tr>
+                  <td>Online Shopping Cart</td>
+                  <td>CP (or AP with compensating logic)</td>
+                  <td>Needs consistency in stock and payment</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-info">📌 8. Summary</h5>
+            <ul>
+              <li>💡 You cannot achieve all 3: C, A, P simultaneously</li>
+              <li>🌐 Network partitions are inevitable in distributed systems → must choose between C and A</li>
+              <li>📊 Choose based on your application's domain (finance vs feed vs messaging)</li>
+            </ul>
+
+            <h5 class="text-info">📌 9. Developer Tip</h5>
+            <p>
+              In Spring Boot apps using distributed databases (e.g., Cassandra or MongoDB), understand which trade-off
+              you're making:
+              <code>@Transactional</code> may not guarantee global consistency if you're working with eventually
+              consistent stores.
+            </p>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#corsExplanation">
+            What is CORS (Cross-Origin Resource Sharing)?
+          </button>
+        </h2>
+        <div id="corsExplanation" class="accordion-collapse collapse">
+          <div class="accordion-body">
+
+            <h5 class="text-info">📌 1. What is CORS?</h5>
+            <p>
+              <strong>CORS (Cross-Origin Resource Sharing)</strong> is a browser security feature that restricts web
+              pages
+              from making requests to a different domain (origin) than the one that served the web page.
+            </p>
+            <p>
+              For example, if your React app runs at <code>http://localhost:3000</code> and your Spring Boot API runs at
+              <code>http://localhost:8080</code>, the browser considers this a <strong>cross-origin request</strong>.
+            </p>
+
+            <h5 class="text-info">📌 2. Real-World Analogy</h5>
+            <p>
+              Imagine you're in a building (origin A) and you want to access a locked room in another building (origin
+              B).
+              The security guard (browser) won’t let you in unless the other building (API server) gives explicit
+              permission
+              (CORS headers).
+            </p>
+
+            <h5 class="text-info">📌 3. How It Works</h5>
+            <ul>
+              <li>Browser sends a <code>preflight OPTIONS</code> request first to ask if it’s allowed to access the
+                resource.</li>
+              <li>If the server responds with appropriate CORS headers (like <code>Access-Control-Allow-Origin</code>),
+                the actual request proceeds.</li>
+              <li>If not, the browser blocks it with a CORS error (even if the backend responds with 200).</li>
+            </ul>
+
+            <h5 class="text-info">📌 4. CORS Headers</h5>
+            <pre><code>
+Access-Control-Allow-Origin: http://localhost:3000
+Access-Control-Allow-Methods: GET, POST, PUT, DELETE
+Access-Control-Allow-Headers: Content-Type, Authorization
+      </code></pre>
+            <p>These headers tell the browser that cross-origin requests from the specified origin are allowed.</p>
+
+            <h5 class="text-info">📌 5. Example in Spring Boot 3</h5>
+            <pre class="language-java"><code>
+@Configuration
+public class CorsConfig {
+
+  @Bean
+  public WebMvcConfigurer corsConfigurer() {
+    return new WebMvcConfigurer() {
+      @Override
+      public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/api/**")
+          .allowedOrigins("http://localhost:3000")
+          .allowedMethods("GET", "POST", "PUT", "DELETE")
+          .allowedHeaders("*");
+      }
+    };
+  }
+}
+      </code></pre>
+
+            <h5 class="text-info">📌 6. Enabling CORS for a Single Controller</h5>
+            <pre class="language-java"><code>
+@CrossOrigin(origins = "http://localhost:3000")
+@RestController
+public class UserController {
+    @GetMapping("/api/user")
+    public User getUser() {
+        return new User();
+    }
+}
+      </code></pre>
+
+            <h5 class="text-info">📌 7. Common Errors & Fixes</h5>
+            <ul>
+              <li>❌ <strong>No 'Access-Control-Allow-Origin' header present</strong> – You forgot to configure CORS</li>
+              <li>❌ <strong>Blocked by CORS policy</strong> – Your frontend origin is not allowed</li>
+              <li>✅ Use browser tools (like DevTools > Network > OPTIONS) to debug preflight requests</li>
+            </ul>
+
+            <h5 class="text-info">📌 8. Summary</h5>
+            <ul>
+              <li>🌐 CORS is essential for secure communication between frontend & backend across different origins</li>
+              <li>🛡️ It's enforced by browsers — backend must explicitly allow cross-origin access</li>
+              <li>⚙️ In Spring Boot, use `@CrossOrigin` or global CORS config to handle it</li>
+            </ul>
+
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#queuevskafka">
+            Queue vs. Kafka: When to Use and Drawbacks
+          </button>
+        </h2>
+        <div id="queuevskafka" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <h5 class="text-info">📌 1. Core Concept</h5>
+            <p>
+              <b>Queue:</b> A fundamental data structure (FIFO - First-In, First-Out) or a simple message queuing
+              system. It focuses on ordered processing of messages by consumers, typically with messages being removed
+              after consumption.
+            </p>
+            <p>
+              <b>Kafka:</b> A distributed streaming platform designed for building real-time data pipelines and
+              streaming applications. It uses a publish-subscribe model with durable, ordered message storage in topics
+              and partitions.
+            </p>
+
+            <h5 class="text-info">📌 2. When to Use - Queue (Simple Message Queues like RabbitMQ, Redis Queues,
+              in-memory Queues)</h5>
+            <ul>
+              <li><b>Simple Task Queues:</b> Offloading short-lived, independent background tasks from a main
+                application (e.g., sending emails, processing images).</li>
+              <li><b>Decoupling Services (Basic Level):</b> Providing a basic level of decoupling between producers and
+                consumers where immediate, guaranteed delivery to a single consumer is crucial.</li>
+              <li><b>Work Distribution (Single Consumer Group):</b> Distributing work among a pool of identical workers
+                where each message is processed by only one worker.</li>
+              <li><b>Rate Limiting:</b> Buffering incoming requests to prevent overwhelming downstream systems.</li>
+              <li><b>Ordered Processing (Within a Single Queue):</b> When the order of message processing is critical
+                for a specific sequence of operations.</li>
+            </ul>
+
+            <h5 class="text-info">📌 3. When to Use - Kafka</h5>
+            <ul>
+              <li><b>Real-time Data Pipelines:</b> Building robust and scalable pipelines for processing continuous
+                streams of data (e.g., website activity, sensor data, financial transactions).</li>
+              <li><b>Event Sourcing:</b> Storing a sequence of events that represent changes in the state of an
+                application.</li>
+              <li><b>Log Aggregation:</b> Centralizing and processing logs from multiple services in real-time.</li>
+              <li><b>Stream Processing Applications:</b> Building applications that perform computations and
+                transformations on real-time data streams (e.g., fraud detection, real-time analytics).</li>
+              <li><b>Pub/Sub Messaging at Scale:</b> Broadcasting messages to multiple independent consumer groups with
+                high throughput and fault tolerance.</li>
+              <li><b>Decoupling Services (Advanced Level):</b> Providing strong decoupling with independent scaling,
+                fault tolerance, and the ability for new consumers to join without impacting existing ones.</li>
+              <li><b>Data Replay and Historical Analysis:</b> Retaining messages for extended periods, allowing for
+                re-processing of historical data or onboarding new consumers.</li>
+            </ul>
+
+            <h5 class="text-info">📌 4. Drawbacks - Queue (Simple Message Queues)</h5>
+            <ul>
+              <li><b>Limited Scalability:</b> Horizontal scaling can be complex and may involve partitioning or sharding
+                the queues manually.</li>
+              <li><b>Single Consumption (Typically):</b> Once a message is consumed, it's often removed from the queue,
+                making it difficult for multiple independent consumers to process the same message.</li>
+              <li><b>Durability Concerns:</b> Message persistence might not be as robust as in distributed systems like
+                Kafka, potentially leading to data loss in case of failures.</li>
+              <li><b>Limited Replayability:</b> Replaying historical messages or processing data from a specific point
+                in time is often not a built-in feature.</li>
+              <li><b>Throughput Limitations:</b> May struggle with extremely high-throughput scenarios compared to
+                distributed platforms.</li>
+              <li><b>Complexity for Advanced Use Cases:</b> Implementing complex routing, filtering, or message
+                transformations might require significant custom logic.</li>
+            </ul>
+
+            <h5 class="text-info">📌 5. Drawbacks - Kafka</h5>
+            <ul>
+              <li><b>Higher Complexity:</b> Setting up and managing a Kafka cluster is more complex than managing a
+                single queue service. It involves managing brokers, ZooKeeper (in older versions), topics, partitions,
+                and replicas.</li>
+              <li><b>Higher Resource Consumption:</b> Kafka clusters typically require more resources (CPU, memory,
+                disk) compared to simpler queue systems.</li>
+              <li><b>Potential for Over-Engineering:</b> Using Kafka for very simple use cases might be an overkill.
+              </li>
+              <li><b>Learning Curve:</b> Understanding Kafka's concepts (topics, partitions, offsets, consumer groups)
+                can have a steeper learning curve.</li>
+              <li><b>Latency Considerations:</b> While designed for high throughput, achieving very low end-to-end
+                latency might require careful tuning.</li>
+              <li><b>Configuration Complexity:</b> Proper configuration is crucial for performance, reliability, and
+                data retention, and can be intricate.</li>
+            </ul>
+
+            <h5 class="text-info">📌 6. Key Differences Summarized</h5>
+            <p>
+              <b>Consumption Model:</b> Queues typically have a consuming-and-removing model (point-to-point), while
+              Kafka uses a publish-subscribe model with multiple independent consumer groups.
+            </p>
+            <p>
+              <b>Scalability and Throughput:</b> Kafka is designed for high scalability and throughput in distributed
+              environments, whereas simple queues might have limitations.
+            </p>
+            <p>
+              <b>Durability and Retention:</b> Kafka offers strong message durability and the ability to retain messages
+              for extended periods. Simple queues may have varying levels of durability.
+            </p>
+            <p>
+              <b>Complexity:</b> Kafka is a more complex system to set up and manage compared to basic message queues.
+            </p>
+            <p>
+              <b>Use Cases:</b> Queues are often used for simple task management and basic decoupling, while Kafka is
+              geared towards real-time data pipelines, event streaming, and scalable messaging.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#acidproperties">
+            ACID Properties
+          </button>
+        </h2>
+        <div id="acidproperties" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <h5 class="text-info">📌 1. Introduction to ACID</h5>
+            <p>
+              ACID is a set of properties of database transactions intended to guarantee data validity despite errors,
+              power outages, and other mishaps. The acronym ACID stands for:
+            </p>
+
+            <h5 class="text-info">📌 2. Atomicity</h5>
+            <p>
+              Atomicity requires that each transaction is "all or nothing": if one part of the transaction fails, the
+              entire transaction fails, and the database state is left unchanged. It's like an indivisible operation.
+            </p>
+            <p>
+              <b>Example:</b> In a bank transfer, either both the debit from the sender's account and the credit to the
+              receiver's account happen, or neither happens. If the system crashes in the middle, the database ensures
+              that no money is lost or created.
+            </p>
+
+            <h5 class="text-info">📌 3. Consistency</h5>
+            <p>
+              Consistency ensures that a transaction can only bring the database from one valid state to another. It
+              means that any data written to the database must be valid according to all rules, including constraints,
+              cascades, and triggers.
+            </p>
+            <p>
+              <b>Example:</b> If a database has a constraint that an account balance cannot be negative, a transaction
+              that tries to debit an account beyond its balance will be rolled back, maintaining consistency.
+            </p>
+
+            <h5 class="text-info">📌 4. Isolation</h5>
+            <p>
+              Isolation determines how and when changes made by one operation become visible to other concurrent
+              operations. It ensures that concurrent execution of transactions leaves the database in the same state
+              that would have been obtained if the transactions were executed sequentially.
+            </p>
+            <p>
+              <b>Example:</b> If two transactions are trying to update the same data at the same time, isolation ensures
+              that one transaction doesn't interfere with the other. For instance, one transaction reading data while
+              another is updating it will see either the old data or the new data, but not a corrupted mix of both.
+              Different isolation levels (e.g., read committed, repeatable read) offer different degrees of isolation.
+            </p>
+
+            <h5 class="text-info">📌 5. Durability</h5>
+            <p>
+              Durability guarantees that once a transaction has been committed, it will remain committed even in the
+              event of a system failure (e.g., power outage, crash). This is typically achieved through techniques like
+              write-ahead logging or replication.
+            </p>
+            <p>
+              <b>Example:</b> After a bank transfer transaction is completed, the changes (debit and credit) are
+              permanently stored. Even if the database server crashes immediately afterward, the system will recover and
+              the transaction will be reflected in the database.
+            </p>
+
+            <h5 class="text-info">📌 6. Importance of ACID</h5>
+            <p>
+              ACID properties are crucial for applications that require reliable data management, especially in
+              financial systems, e-commerce platforms, and any system where data integrity is paramount.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#corsExplanation">
+            What is CORS (Cross-Origin Resource Sharing)?
+          </button>
+        </h2>
+        <div id="corsExplanation" class="accordion-collapse collapse">
+          <div class="accordion-body">
+
+            <h5 class="text-info">📌 1. What is CORS?</h5>
+            <p>
+              <strong>CORS (Cross-Origin Resource Sharing)</strong> is a browser security feature that restricts web
+              pages
+              from making requests to a different domain (origin) than the one that served the web page.
+            </p>
+            <p>
+              For example, if your React app runs at <code>http://localhost:3000</code> and your Spring Boot API runs at
+              <code>http://localhost:8080</code>, the browser considers this a <strong>cross-origin request</strong>.
+            </p>
+
+            <h5 class="text-info">📌 2. Real-World Analogy</h5>
+            <p>
+              Imagine you're in a building (origin A) and you want to access a locked room in another building (origin
+              B).
+              The security guard (browser) won’t let you in unless the other building (API server) gives explicit
+              permission
+              (CORS headers).
+            </p>
+
+            <h5 class="text-info">📌 3. How It Works</h5>
+            <ul>
+              <li>Browser sends a <code>preflight OPTIONS</code> request first to ask if it’s allowed to access the
+                resource.</li>
+              <li>If the server responds with appropriate CORS headers (like <code>Access-Control-Allow-Origin</code>),
+                the actual request proceeds.</li>
+              <li>If not, the browser blocks it with a CORS error (even if the backend responds with 200).</li>
+            </ul>
+
+            <h5 class="text-info">📌 4. CORS Headers</h5>
+            <pre><code>
+Access-Control-Allow-Origin: http://localhost:3000
+Access-Control-Allow-Methods: GET, POST, PUT, DELETE
+Access-Control-Allow-Headers: Content-Type, Authorization
+      </code></pre>
+            <p>These headers tell the browser that cross-origin requests from the specified origin are allowed.</p>
+
+            <h5 class="text-info">📌 5. Example in Spring Boot 3</h5>
+            <pre class="language-java"><code>
+@Configuration
+public class CorsConfig {
+
+  @Bean
+  public WebMvcConfigurer corsConfigurer() {
+    return new WebMvcConfigurer() {
+      @Override
+      public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/api/**")
+          .allowedOrigins("http://localhost:3000")
+          .allowedMethods("GET", "POST", "PUT", "DELETE")
+          .allowedHeaders("*");
+      }
+    };
+  }
+}
+      </code></pre>
+
+            <h5 class="text-info">📌 6. Enabling CORS for a Single Controller</h5>
+            <pre class="language-java"><code>
+@CrossOrigin(origins = "http://localhost:3000")
+@RestController
+public class UserController {
+    @GetMapping("/api/user")
+    public User getUser() {
+        return new User();
+    }
+}
+      </code></pre>
+
+            <h5 class="text-info">📌 7. Common Errors & Fixes</h5>
+            <ul>
+              <li>❌ <strong>No 'Access-Control-Allow-Origin' header present</strong> – You forgot to configure CORS</li>
+              <li>❌ <strong>Blocked by CORS policy</strong> – Your frontend origin is not allowed</li>
+              <li>✅ Use browser tools (like DevTools > Network > OPTIONS) to debug preflight requests</li>
+            </ul>
+
+            <h5 class="text-info">📌 8. Summary</h5>
+            <ul>
+              <li>🌐 CORS is essential for secure communication between frontend & backend across different origins</li>
+              <li>🛡️ It's enforced by browsers — backend must explicitly allow cross-origin access</li>
+              <li>⚙️ In Spring Boot, use `@CrossOrigin` or global CORS config to handle it</li>
+            </ul>
+
+          </div>
+        </div>
+      </div>
+
+
+
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
             data-bs-target="#designPatternsQ1">
             What are Factory, Builder, and Abstract Factory Design Patterns with Examples?
           </button>
@@ -26058,31 +26866,32 @@ private static void main(String... args) {}
             </div>
           </div>
 
-<div class="accordion-item">
-  <h2 class="accordion-header">
-    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
-      data-bs-target="#auditLoggingSpringBoot">
-      📊 Audit Logging in Spring Boot – All Approaches & Best Practices
-    </button>
-  </h2>
-  <div id="auditLoggingSpringBoot" class="accordion-collapse collapse">
-    <div class="accordion-body">
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+                data-bs-target="#auditLoggingSpringBoot">
+                📊 Audit Logging in Spring Boot – All Approaches & Best Practices
+              </button>
+            </h2>
+            <div id="auditLoggingSpringBoot" class="accordion-collapse collapse">
+              <div class="accordion-body">
 
-      <h5 class="text-info">📌 What is Audit Logging?</h5>
-      <p>Audit logging tracks who did what and when in your application. It's crucial for compliance, debugging, and data integrity — especially in financial, healthcare, and enterprise systems.</p>
+                <h5 class="text-info">📌 What is Audit Logging?</h5>
+                <p>Audit logging tracks who did what and when in your application. It's crucial for compliance,
+                  debugging, and data integrity — especially in financial, healthcare, and enterprise systems.</p>
 
-      <h5 class="text-info">🛠️ Approaches to Implement Audit Logging</h5>
-      <ul>
-        <li><strong>1. Spring Data JPA Auditing</strong> (recommended for simple entity tracking)</li>
-        <li><strong>2. Custom AOP (Aspect-Oriented Programming)</strong> for method-level audit</li>
-        <li><strong>3. Event Listeners</strong> like Hibernate interceptors or ApplicationEvents</li>
-        <li><strong>4. External Logging Tools</strong> like ELK Stack, Splunk (for centralized logging)</li>
-      </ul>
+                <h5 class="text-info">🛠️ Approaches to Implement Audit Logging</h5>
+                <ul>
+                  <li><strong>1. Spring Data JPA Auditing</strong> (recommended for simple entity tracking)</li>
+                  <li><strong>2. Custom AOP (Aspect-Oriented Programming)</strong> for method-level audit</li>
+                  <li><strong>3. Event Listeners</strong> like Hibernate interceptors or ApplicationEvents</li>
+                  <li><strong>4. External Logging Tools</strong> like ELK Stack, Splunk (for centralized logging)</li>
+                </ul>
 
-      <h5 class="text-info">✅ 1. Spring Data JPA Auditing (Best for Entity Audit)</h5>
-      <p>Spring Boot supports automatic entity auditing using annotations and listeners.</p>
+                <h5 class="text-info">✅ 1. Spring Data JPA Auditing (Best for Entity Audit)</h5>
+                <p>Spring Boot supports automatic entity auditing using annotations and listeners.</p>
 
-      <pre class="language-java"><code>
+                <pre class="language-java"><code>
 @Entity
 @EntityListeners(AuditingEntityListener.class)
 public class User {
@@ -26104,8 +26913,8 @@ public class User {
 }
       </code></pre>
 
-      <p>Enable auditing in config:</p>
-      <pre class="language-java"><code>
+                <p>Enable auditing in config:</p>
+                <pre class="language-java"><code>
 @Configuration
 @EnableJpaAuditing
 public class JpaConfig {
@@ -26117,10 +26926,10 @@ public class JpaConfig {
 }
       </code></pre>
 
-      <h5 class="text-info">🧩 2. AOP-Based Custom Logging</h5>
-      <p>Use aspects to log method-level actions.</p>
+                <h5 class="text-info">🧩 2. AOP-Based Custom Logging</h5>
+                <p>Use aspects to log method-level actions.</p>
 
-      <pre class="language-java"><code>
+                <pre class="language-java"><code>
 @Aspect
 @Component
 public class AuditAspect {
@@ -26134,136 +26943,143 @@ public class AuditAspect {
 }
       </code></pre>
 
-      <h5 class="text-info">📦 3. Entity Event Listeners</h5>
-      <p>Use Hibernate events like <code>@PrePersist</code>, <code>@PostUpdate</code> etc.</p>
+                <h5 class="text-info">📦 3. Entity Event Listeners</h5>
+                <p>Use Hibernate events like <code>@PrePersist</code>, <code>@PostUpdate</code> etc.</p>
 
-      <pre class="language-java"><code>
+                <pre class="language-java"><code>
 @PrePersist
 public void beforeInsert(Object entity) {
     // Set createdBy, timestamps, etc.
 }
       </code></pre>
 
-      <h5 class="text-info">📡 4. Centralized Logging with Tools</h5>
-      <p>Use external tools for logging and visualization:</p>
-      <ul>
-        <li>ELK (Elasticsearch + Logstash + Kibana)</li>
-        <li>Splunk</li>
-        <li>Fluentd</li>
-      </ul>
-      <p>Integrate with Spring Boot logging (Log4j2 / Logback) for exporting structured audit logs to file or HTTP.</p>
+                <h5 class="text-info">📡 4. Centralized Logging with Tools</h5>
+                <p>Use external tools for logging and visualization:</p>
+                <ul>
+                  <li>ELK (Elasticsearch + Logstash + Kibana)</li>
+                  <li>Splunk</li>
+                  <li>Fluentd</li>
+                </ul>
+                <p>Integrate with Spring Boot logging (Log4j2 / Logback) for exporting structured audit logs to file or
+                  HTTP.</p>
 
-      <h5 class="text-info">✅ Which is the Best Approach?</h5>
-      <ul>
-        <li><strong>For DB-level entity tracking</strong> → Spring Data JPA Auditing</li>
-        <li><strong>For action-level method tracking</strong> → AOP + Custom Annotation</li>
-        <li><strong>For centralized monitoring</strong> → External logging stack (ELK, Splunk)</li>
-      </ul>
+                <h5 class="text-info">✅ Which is the Best Approach?</h5>
+                <ul>
+                  <li><strong>For DB-level entity tracking</strong> → Spring Data JPA Auditing</li>
+                  <li><strong>For action-level method tracking</strong> → AOP + Custom Annotation</li>
+                  <li><strong>For centralized monitoring</strong> → External logging stack (ELK, Splunk)</li>
+                </ul>
 
-      <h5 class="text-info">🆕 Spring Boot 3 / Hibernate 6 Tip</h5>
-      <p>Spring Boot 3 improves auditing with better <code>Instant</code> support and Hibernate's updated listeners. Always use `Instant` or `OffsetDateTime` over `Date` for consistency.</p>
+                <h5 class="text-info">🆕 Spring Boot 3 / Hibernate 6 Tip</h5>
+                <p>Spring Boot 3 improves auditing with better <code>Instant</code> support and Hibernate's updated
+                  listeners. Always use `Instant` or `OffsetDateTime` over `Date` for consistency.</p>
 
-      <h5 class="text-info">🛡️ Security Tip</h5>
-      <p>Audit logs must be:</p>
-      <ul>
-        <li>Immutable</li>
-        <li>Encrypted (if sensitive)</li>
-        <li>Stored with retention policy</li>
-      </ul>
+                <h5 class="text-info">🛡️ Security Tip</h5>
+                <p>Audit logs must be:</p>
+                <ul>
+                  <li>Immutable</li>
+                  <li>Encrypted (if sensitive)</li>
+                  <li>Stored with retention policy</li>
+                </ul>
 
-    </div>
-  </div>
-</div>
-<div class="accordion-item">
-  <h2 class="accordion-header">
-    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
-      data-bs-target="#ideDownloadSources">
-      🧠 How IDE Downloads Sources for Class Files (e.g., `ArrayList`, or External Libs)
-    </button>
-  </h2>
-  <div id="ideDownloadSources" class="accordion-collapse collapse">
-    <div class="accordion-body">
-
-      <h5 class="text-info">📌 What Does "Download Sources" Mean?</h5>
-      <p>When you view a compiled `.class` file (like <code>ArrayList.class</code> or any 3rd-party library), your IDE shows bytecode or decompiled code.</p>
-      <p>It then gives an option to <strong>"Download Sources"</strong> — this lets the IDE fetch the original `.java` source file from a remote location, so you can see real code with comments and method-level understanding.</p>
-
-      <h5 class="text-info">🔍 Where Does It Download From?</h5>
-      <ul>
-        <li>📦 **Maven Repositories** (like Maven Central, JCenter, or custom company repo)</li>
-        <li>IDE checks the `.pom` file or `.jar` metadata for a corresponding `-sources.jar` file</li>
-        <li>Downloads it into your local Maven/Gradle cache (like <code>~/.m2/repository</code>)</li>
-      </ul>
-
-      <h5 class="text-info">🧭 How Does IDE Know Where to Look?</h5>
-      <ul>
-        <li>Each library (JAR) you use is declared in <code>pom.xml</code> or <code>build.gradle</code></li>
-        <li>It contains metadata: groupId, artifactId, version</li>
-        <li>IDE queries Maven Central or your configured repo using this info</li>
-        <li>If it finds a matching <code>-sources.jar</code>, it downloads & attaches to the class</li>
-      </ul>
-
-      <h5 class="text-info">📁 Where Are Sources Stored Locally?</h5>
-      <p>For Maven: <code>~/.m2/repository/</code><br/>
-         For Gradle: <code>~/.gradle/caches/modules-2/files-2.1/</code></p>
-
-      <h5 class="text-info">✅ What Gets Downloaded?</h5>
-      <ul>
-        <li><strong>Class sources</strong> as a separate <code>-sources.jar</code></li>
-        <li>Sometimes <code>-javadoc.jar</code> too (for documentation)</li>
-      </ul>
-
-      <h5 class="text-info">🚀 What About JDK Classes (like String, ArrayList)?</h5>
-      <p>IDE downloads source code for the installed JDK (if it's not already bundled).<br/>
-         For example, OpenJDK or Oracle JDK comes with <code>src.zip</code>. IDE attaches it automatically.</p>
-
-      <h5 class="text-info">💡 Summary</h5>
-      <ul>
-        <li>IDE looks at the coordinates (groupId, artifactId, version)</li>
-        <li>Searches remote repo (e.g., Maven Central)</li>
-        <li>Downloads <code>-sources.jar</code> and attaches to your class</li>
-        <li>Gives you clean, readable Java source instead of decompiled code</li>
-      </ul>
-
-    </div>
-  </div>
-</div>
-        <div class="accordion-item">
-          <h2 class="accordion-header" id="heading130">
-            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-              data-bs-target="#collapse130" aria-expanded="false" aria-controls="collapse130">
-              Q130. What is the Java Memory Model (JMM)?
-            </button>
-          </h2>
-          <div id="collapse130" class="accordion-collapse collapse" aria-labelledby="heading130"
-            data-bs-parent="#javaQuestions">
-            <div class="accordion-body">
-              <p>
-                The Java Memory Model (JMM) defines how threads interact through memory and how changes made by one
-                thread become visible to others.
-              </p>
-              <p>
-                It provides rules for visibility, ordering, and atomicity of shared variables.
-              </p>
+              </div>
             </div>
           </div>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+                data-bs-target="#ideDownloadSources">
+                🧠 How IDE Downloads Sources for Class Files (e.g., `ArrayList`, or External Libs)
+              </button>
+            </h2>
+            <div id="ideDownloadSources" class="accordion-collapse collapse">
+              <div class="accordion-body">
+
+                <h5 class="text-info">📌 What Does "Download Sources" Mean?</h5>
+                <p>When you view a compiled `.class` file (like <code>ArrayList.class</code> or any 3rd-party library),
+                  your IDE shows bytecode or decompiled code.</p>
+                <p>It then gives an option to <strong>"Download Sources"</strong> — this lets the IDE fetch the original
+                  `.java` source file from a remote location, so you can see real code with comments and method-level
+                  understanding.</p>
+
+                <h5 class="text-info">🔍 Where Does It Download From?</h5>
+                <ul>
+                  <li>📦 **Maven Repositories** (like Maven Central, JCenter, or custom company repo)</li>
+                  <li>IDE checks the `.pom` file or `.jar` metadata for a corresponding `-sources.jar` file</li>
+                  <li>Downloads it into your local Maven/Gradle cache (like <code>~/.m2/repository</code>)</li>
+                </ul>
+
+                <h5 class="text-info">🧭 How Does IDE Know Where to Look?</h5>
+                <ul>
+                  <li>Each library (JAR) you use is declared in <code>pom.xml</code> or <code>build.gradle</code></li>
+                  <li>It contains metadata: groupId, artifactId, version</li>
+                  <li>IDE queries Maven Central or your configured repo using this info</li>
+                  <li>If it finds a matching <code>-sources.jar</code>, it downloads & attaches to the class</li>
+                </ul>
+
+                <h5 class="text-info">📁 Where Are Sources Stored Locally?</h5>
+                <p>For Maven: <code>~/.m2/repository/</code><br />
+                  For Gradle: <code>~/.gradle/caches/modules-2/files-2.1/</code></p>
+
+                <h5 class="text-info">✅ What Gets Downloaded?</h5>
+                <ul>
+                  <li><strong>Class sources</strong> as a separate <code>-sources.jar</code></li>
+                  <li>Sometimes <code>-javadoc.jar</code> too (for documentation)</li>
+                </ul>
+
+                <h5 class="text-info">🚀 What About JDK Classes (like String, ArrayList)?</h5>
+                <p>IDE downloads source code for the installed JDK (if it's not already bundled).<br />
+                  For example, OpenJDK or Oracle JDK comes with <code>src.zip</code>. IDE attaches it automatically.</p>
+
+                <h5 class="text-info">💡 Summary</h5>
+                <ul>
+                  <li>IDE looks at the coordinates (groupId, artifactId, version)</li>
+                  <li>Searches remote repo (e.g., Maven Central)</li>
+                  <li>Downloads <code>-sources.jar</code> and attaches to your class</li>
+                  <li>Gives you clean, readable Java source instead of decompiled code</li>
+                </ul>
+
+              </div>
+            </div>
           </div>
           <div class="accordion-item">
-  <h2 class="accordion-header">
-    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
-      data-bs-target="#logSqlJPA">
-      📝 How to Log SQL Queries in JPA (Spring Boot) – All Methods Explained
-    </button>
-  </h2>
-  <div id="logSqlJPA" class="accordion-collapse collapse">
-    <div class="accordion-body">
+            <h2 class="accordion-header" id="heading130">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                data-bs-target="#collapse130" aria-expanded="false" aria-controls="collapse130">
+                Q130. What is the Java Memory Model (JMM)?
+              </button>
+            </h2>
+            <div id="collapse130" class="accordion-collapse collapse" aria-labelledby="heading130"
+              data-bs-parent="#javaQuestions">
+              <div class="accordion-body">
+                <p>
+                  The Java Memory Model (JMM) defines how threads interact through memory and how changes made by one
+                  thread become visible to others.
+                </p>
+                <p>
+                  It provides rules for visibility, ordering, and atomicity of shared variables.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+                data-bs-target="#logSqlJPA">
+                📝 How to Log SQL Queries in JPA (Spring Boot) – All Methods Explained
+              </button>
+            </h2>
+            <div id="logSqlJPA" class="accordion-collapse collapse">
+              <div class="accordion-body">
 
-      <h5 class="text-info">📌 Why Log SQL Queries?</h5>
-      <p>Logging SQL queries helps in debugging, performance tuning, and understanding what's being executed at the DB layer behind your JPA/Hibernate code.</p>
+                <h5 class="text-info">📌 Why Log SQL Queries?</h5>
+                <p>Logging SQL queries helps in debugging, performance tuning, and understanding what's being executed
+                  at the DB layer behind your JPA/Hibernate code.</p>
 
-      <h5 class="text-info">🛠️ Method 1: Using Spring Boot Properties</h5>
-      <p>Add the following properties to your <code>application.properties</code> or <code>application.yml</code>:</p>
-      <pre class="language-properties"><code>
+                <h5 class="text-info">🛠️ Method 1: Using Spring Boot Properties</h5>
+                <p>Add the following properties to your <code>application.properties</code> or
+                  <code>application.yml</code>:</p>
+                <pre class="language-properties"><code>
 # Basic SQL logging
 spring.jpa.show-sql=true
 
@@ -26275,17 +27091,17 @@ logging.level.org.hibernate.SQL=DEBUG
 logging.level.org.hibernate.type.descriptor.sql=TRACE
       </code></pre>
 
-      <h5 class="text-info">📄 Output Example:</h5>
-      <pre><code>
+                <h5 class="text-info">📄 Output Example:</h5>
+                <pre><code>
 Hibernate: select user0_.id as id1_0_, user0_.name as name2_0_ from user user0_
 binding parameter [1] as [VARCHAR] - [John]
       </code></pre>
 
-      <h5 class="text-info">🛠️ Method 2: Using P6Spy (Better Output with Params)</h5>
-      <p>P6Spy is a JDBC proxy driver that logs all SQLs with actual parameter values.</p>
+                <h5 class="text-info">🛠️ Method 2: Using P6Spy (Better Output with Params)</h5>
+                <p>P6Spy is a JDBC proxy driver that logs all SQLs with actual parameter values.</p>
 
-      <p><strong>Step 1:</strong> Add the dependency:</p>
-      <pre class="language-xml"><code>
+                <p><strong>Step 1:</strong> Add the dependency:</p>
+                <pre class="language-xml"><code>
 &lt;dependency&gt;
   &lt;groupId&gt;p6spy&lt;/groupId&gt;
   &lt;artifactId&gt;p6spy&lt;/artifactId&gt;
@@ -26293,21 +27109,22 @@ binding parameter [1] as [VARCHAR] - [John]
 &lt;/dependency&gt;
       </code></pre>
 
-      <p><strong>Step 2:</strong> Add a file named <code>spy.properties</code> in <code>src/main/resources</code>:</p>
-      <pre class="language-properties"><code>
+                <p><strong>Step 2:</strong> Add a file named <code>spy.properties</code> in
+                  <code>src/main/resources</code>:</p>
+                <pre class="language-properties"><code>
 modulelist=log4j
 logMessageFormat=com.p6spy.engine.spy.appender.SingleLineFormat
 appender=com.p6spy.engine.spy.appender.Slf4JLogger
       </code></pre>
 
-      <p><strong>Step 3:</strong> Configure your DB driver in <code>application.properties</code>:</p>
-      <pre class="language-properties"><code>
+                <p><strong>Step 3:</strong> Configure your DB driver in <code>application.properties</code>:</p>
+                <pre class="language-properties"><code>
 spring.datasource.driver-class-name=com.p6spy.engine.spy.P6SpyDriver
       </code></pre>
 
-      <h5 class="text-info">🛠️ Method 3: Custom Hibernate Interceptor</h5>
-      <p>You can implement a custom interceptor to log SQL statements programmatically (advanced).</p>
-      <pre class="language-java"><code>
+                <h5 class="text-info">🛠️ Method 3: Custom Hibernate Interceptor</h5>
+                <p>You can implement a custom interceptor to log SQL statements programmatically (advanced).</p>
+                <pre class="language-java"><code>
 @Component
 public class SqlInterceptor extends EmptyInterceptor {
     @Override
@@ -26318,46 +27135,51 @@ public class SqlInterceptor extends EmptyInterceptor {
 }
       </code></pre>
 
-      <p>Then register this in your `LocalContainerEntityManagerFactoryBean` or via a custom config class.</p>
+                <p>Then register this in your `LocalContainerEntityManagerFactoryBean` or via a custom config class.</p>
 
-      <h5 class="text-info">📦 Summary: All Available Ways</h5>
-      <ul>
-        <li><strong>Spring Boot Properties</strong> – Simple, built-in support</li>
-        <li><strong>P6Spy</strong> – Logs full queries with values, most developer-friendly</li>
-        <li><strong>Hibernate Interceptor</strong> – Fine-grained, advanced usage</li>
-      </ul>
+                <h5 class="text-info">📦 Summary: All Available Ways</h5>
+                <ul>
+                  <li><strong>Spring Boot Properties</strong> – Simple, built-in support</li>
+                  <li><strong>P6Spy</strong> – Logs full queries with values, most developer-friendly</li>
+                  <li><strong>Hibernate Interceptor</strong> – Fine-grained, advanced usage</li>
+                </ul>
 
-      <h5 class="text-info">✅ Best Option?</h5>
-      <ul>
-        <li><strong>For Dev/Debug:</strong> P6Spy is most readable</li>
-        <li><strong>For Production:</strong> Use Hibernate's logging + ELK/Splunk (avoid printing to console)</li>
-      </ul>
+                <h5 class="text-info">✅ Best Option?</h5>
+                <ul>
+                  <li><strong>For Dev/Debug:</strong> P6Spy is most readable</li>
+                  <li><strong>For Production:</strong> Use Hibernate's logging + ELK/Splunk (avoid printing to console)
+                  </li>
+                </ul>
 
-    </div>
-  </div>
-</div>
-<div class="accordion-item">
-  <h2 class="accordion-header">
-    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
-      data-bs-target="#finalEntityHibernate">
-      🚫 Why You Shouldn't Make Hibernate Entities <code>final</code> – Explained
-    </button>
-  </h2>
-  <div id="finalEntityHibernate" class="accordion-collapse collapse">
-    <div class="accordion-body">
+              </div>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+                data-bs-target="#finalEntityHibernate">
+                🚫 Why You Shouldn't Make Hibernate Entities <code>final</code> – Explained
+              </button>
+            </h2>
+            <div id="finalEntityHibernate" class="accordion-collapse collapse">
+              <div class="accordion-body">
 
-      <h5 class="text-info">📌 What's the Issue?</h5>
-      <p>Marking a JPA/Hibernate entity class as <code>final</code> prevents Hibernate from creating proxy classes at runtime, which it heavily relies on for features like lazy loading, dirty checking, and other optimizations.</p>
+                <h5 class="text-info">📌 What's the Issue?</h5>
+                <p>Marking a JPA/Hibernate entity class as <code>final</code> prevents Hibernate from creating proxy
+                  classes at runtime, which it heavily relies on for features like lazy loading, dirty checking, and
+                  other optimizations.</p>
 
-      <h5 class="text-info">🛠️ How Hibernate Works Under the Hood</h5>
-      <ul>
-        <li>Hibernate creates a **proxy subclass** (using CGLIB or ByteBuddy) to intercept method calls.</li>
-        <li>This is especially used in **lazy loading** to delay loading of related entities until needed.</li>
-        <li>If an entity is <code>final</code>, Hibernate cannot extend it — breaking the proxy mechanism.</li>
-      </ul>
+                <h5 class="text-info">🛠️ How Hibernate Works Under the Hood</h5>
+                <ul>
+                  <li>Hibernate creates a **proxy subclass** (using CGLIB or ByteBuddy) to intercept method calls.</li>
+                  <li>This is especially used in **lazy loading** to delay loading of related entities until needed.
+                  </li>
+                  <li>If an entity is <code>final</code>, Hibernate cannot extend it — breaking the proxy mechanism.
+                  </li>
+                </ul>
 
-      <h5 class="text-info">🔥 Example of What Breaks</h5>
-      <pre class="language-java"><code>
+                <h5 class="text-info">🔥 Example of What Breaks</h5>
+                <pre class="language-java"><code>
 @Entity
 public final class User { // ❌ Final class
 
@@ -26369,52 +27191,57 @@ public final class User { // ❌ Final class
 }
       </code></pre>
 
-      <p>When you try to access <code>user.getOrders()</code>, Hibernate fails to create a proxy and may throw:</p>
-      <pre><code>
+                <p>When you try to access <code>user.getOrders()</code>, Hibernate fails to create a proxy and may
+                  throw:</p>
+                <pre><code>
 org.hibernate.HibernateException: Cannot enhance final class
       </code></pre>
 
-      <h5 class="text-info">📉 What You Lose If It's Final</h5>
-      <ul>
-        <li>❌ Lazy loading won't work (Hibernate can't delay fetch)</li>
-        <li>❌ Dirty checking may not work correctly</li>
-        <li>❌ Proxy-based enhancements fail</li>
-      </ul>
+                <h5 class="text-info">📉 What You Lose If It's Final</h5>
+                <ul>
+                  <li>❌ Lazy loading won't work (Hibernate can't delay fetch)</li>
+                  <li>❌ Dirty checking may not work correctly</li>
+                  <li>❌ Proxy-based enhancements fail</li>
+                </ul>
 
-      <h5 class="text-info">✅ Best Practices</h5>
-      <ul>
-        <li>Do <strong>not mark your entity classes as <code>final</code></strong></li>
-        <li>Avoid final methods in entities (Hibernate can’t override them)</li>
-        <li>Let Hibernate manage entity life cycle properly through subclassing</li>
-      </ul>
+                <h5 class="text-info">✅ Best Practices</h5>
+                <ul>
+                  <li>Do <strong>not mark your entity classes as <code>final</code></strong></li>
+                  <li>Avoid final methods in entities (Hibernate can’t override them)</li>
+                  <li>Let Hibernate manage entity life cycle properly through subclassing</li>
+                </ul>
 
-      <h5 class="text-info">🔍 When Is <code>final</code> OK?</h5>
-      <p>If you mark a class as final, it should not be an entity — but maybe a DTO or a utility class. DTOs don’t need Hibernate proxies, so they’re safe to mark as final.</p>
+                <h5 class="text-info">🔍 When Is <code>final</code> OK?</h5>
+                <p>If you mark a class as final, it should not be an entity — but maybe a DTO or a utility class. DTOs
+                  don’t need Hibernate proxies, so they’re safe to mark as final.</p>
 
-    </div>
-  </div>
-</div>
-<div class="accordion-item">
-  <h2 class="accordion-header">
-    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
-      data-bs-target="#hibernateProxyWhy">
-      🤖 Why Does Hibernate Create Proxy Objects? Benefits & Drawbacks Explained
-    </button>
-  </h2>
-  <div id="hibernateProxyWhy" class="accordion-collapse collapse">
-    <div class="accordion-body">
+              </div>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+                data-bs-target="#hibernateProxyWhy">
+                🤖 Why Does Hibernate Create Proxy Objects? Benefits & Drawbacks Explained
+              </button>
+            </h2>
+            <div id="hibernateProxyWhy" class="accordion-collapse collapse">
+              <div class="accordion-body">
 
-      <h5 class="text-info">📌 Why Hibernate Creates Proxies</h5>
-      <ul>
-        <li>Hibernate uses **proxy objects** to support <strong>lazy loading</strong>.</li>
-        <li>When you fetch an entity with related entities (like `@OneToMany` or `@ManyToOne`), Hibernate doesn’t load everything immediately to save performance.</li>
-        <li>Instead, it loads a <strong>proxy subclass</strong> that can later fetch the actual data when accessed.</li>
-      </ul>
+                <h5 class="text-info">📌 Why Hibernate Creates Proxies</h5>
+                <ul>
+                  <li>Hibernate uses **proxy objects** to support <strong>lazy loading</strong>.</li>
+                  <li>When you fetch an entity with related entities (like `@OneToMany` or `@ManyToOne`), Hibernate
+                    doesn’t load everything immediately to save performance.</li>
+                  <li>Instead, it loads a <strong>proxy subclass</strong> that can later fetch the actual data when
+                    accessed.</li>
+                </ul>
 
-      <h5 class="text-info">📦 What Is a Proxy Object?</h5>
-      <p>A proxy is a dynamically generated subclass (using CGLIB or ByteBuddy) of your entity class. This subclass intercepts method calls and fetches data only when needed.</p>
+                <h5 class="text-info">📦 What Is a Proxy Object?</h5>
+                <p>A proxy is a dynamically generated subclass (using CGLIB or ByteBuddy) of your entity class. This
+                  subclass intercepts method calls and fetches data only when needed.</p>
 
-      <pre class="language-java"><code>
+                <pre class="language-java"><code>
 // Original Entity
 class User {
     String name;
@@ -26433,74 +27260,85 @@ class User$$HibernateProxy extends User {
 }
       </code></pre>
 
-      <h5 class="text-info">✅ Benefits of Using Proxies</h5>
-      <ul>
-        <li><strong>Performance Optimization:</strong> Fetches only what’s required (lazy loading)</li>
-        <li><strong>Memory Efficiency:</strong> Prevents loading large object graphs unnecessarily</li>
-        <li><strong>Faster Initial Load:</strong> Main entity loads quickly; relations load only if needed</li>
-      </ul>
+                <h5 class="text-info">✅ Benefits of Using Proxies</h5>
+                <ul>
+                  <li><strong>Performance Optimization:</strong> Fetches only what’s required (lazy loading)</li>
+                  <li><strong>Memory Efficiency:</strong> Prevents loading large object graphs unnecessarily</li>
+                  <li><strong>Faster Initial Load:</strong> Main entity loads quickly; relations load only if needed
+                  </li>
+                </ul>
 
-      <h5 class="text-info">❌ Drawbacks of Using Proxies</h5>
-      <ul>
-        <li><strong>LazyInitializationException:</strong> If the proxy tries to load data after session is closed</li>
-        <li><strong>Debugging Complexity:</strong> Proxies can confuse developers during debugging/logging</li>
-        <li><strong>Final Classes/Methods:</strong> Can't be proxied, must be avoided</li>
-        <li><strong>Unwanted Behavior:</strong> `instanceof` checks or reflection may behave differently</li>
-      </ul>
+                <h5 class="text-info">❌ Drawbacks of Using Proxies</h5>
+                <ul>
+                  <li><strong>LazyInitializationException:</strong> If the proxy tries to load data after session is
+                    closed</li>
+                  <li><strong>Debugging Complexity:</strong> Proxies can confuse developers during debugging/logging
+                  </li>
+                  <li><strong>Final Classes/Methods:</strong> Can't be proxied, must be avoided</li>
+                  <li><strong>Unwanted Behavior:</strong> `instanceof` checks or reflection may behave differently</li>
+                </ul>
 
-      <h5 class="text-info">🤔 What If Hibernate Didn’t Use Proxies?</h5>
-      <ul>
-        <li>Every relation would have to be fetched immediately — **EAGER fetching everywhere**</li>
-        <li>This leads to poor performance and memory issues, especially for complex entity graphs</li>
-        <li>Less flexibility — can't decide when to load what</li>
-      </ul>
+                <h5 class="text-info">🤔 What If Hibernate Didn’t Use Proxies?</h5>
+                <ul>
+                  <li>Every relation would have to be fetched immediately — **EAGER fetching everywhere**</li>
+                  <li>This leads to poor performance and memory issues, especially for complex entity graphs</li>
+                  <li>Less flexibility — can't decide when to load what</li>
+                </ul>
 
-      <h5 class="text-info">📌 Final Thoughts</h5>
-      <ul>
-        <li>Hibernate proxies are essential for lazy loading</li>
-        <li>They improve performance but require careful session and transaction handling</li>
-        <li>Always design your entities with proxy-friendliness (non-final, default constructor, virtual methods)</li>
-      </ul>
+                <h5 class="text-info">📌 Final Thoughts</h5>
+                <ul>
+                  <li>Hibernate proxies are essential for lazy loading</li>
+                  <li>They improve performance but require careful session and transaction handling</li>
+                  <li>Always design your entities with proxy-friendliness (non-final, default constructor, virtual
+                    methods)</li>
+                </ul>
 
-    </div>
-  </div>
-</div>
-<div class="accordion-item">
-  <h2 class="accordion-header">
-    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
-      data-bs-target="#hibernateProxyLimitations">
-      🔍 Hibernate Proxy Limitations – Private & Static Methods?
-    </button>
-  </h2>
-  <div id="hibernateProxyLimitations" class="accordion-collapse collapse">
-    <div class="accordion-body">
+              </div>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+                data-bs-target="#hibernateProxyLimitations">
+                🔍 Hibernate Proxy Limitations – Private & Static Methods?
+              </button>
+            </h2>
+            <div id="hibernateProxyLimitations" class="accordion-collapse collapse">
+              <div class="accordion-body">
 
-      <h5 class="text-info">📌 Hibernate Proxies – How Do They Work?</h5>
-      <p>Hibernate uses libraries like <strong>CGLIB</strong> or <strong>ByteBuddy</strong> to create subclasses of your entity at runtime and override methods to intercept calls (e.g., for lazy loading).</p>
+                <h5 class="text-info">📌 Hibernate Proxies – How Do They Work?</h5>
+                <p>Hibernate uses libraries like <strong>CGLIB</strong> or <strong>ByteBuddy</strong> to create
+                  subclasses of your entity at runtime and override methods to intercept calls (e.g., for lazy loading).
+                </p>
 
-      <h5 class="text-info">🚫 Does It Work on Private Methods?</h5>
-      <ul>
-        <li><strong>No.</strong> Private methods are not visible to subclasses, and Hibernate proxies are essentially subclasses of your entity.</li>
-        <li>Private methods are compiled into bytecode that is <code>invokespecial</code> (not overrideable).</li>
-        <li>So Hibernate <strong>cannot override or intercept</strong> them.</li>
-      </ul>
+                <h5 class="text-info">🚫 Does It Work on Private Methods?</h5>
+                <ul>
+                  <li><strong>No.</strong> Private methods are not visible to subclasses, and Hibernate proxies are
+                    essentially subclasses of your entity.</li>
+                  <li>Private methods are compiled into bytecode that is <code>invokespecial</code> (not overrideable).
+                  </li>
+                  <li>So Hibernate <strong>cannot override or intercept</strong> them.</li>
+                </ul>
 
-      <h5 class="text-info">🚫 Does It Work on Static Methods?</h5>
-      <ul>
-        <li><strong>No.</strong> Static methods are bound to the class, not the instance.</li>
-        <li>They don't participate in method overriding or runtime polymorphism.</li>
-        <li>Proxies work by overriding instance methods — so <strong>static methods cannot be proxied</strong>.</li>
-      </ul>
+                <h5 class="text-info">🚫 Does It Work on Static Methods?</h5>
+                <ul>
+                  <li><strong>No.</strong> Static methods are bound to the class, not the instance.</li>
+                  <li>They don't participate in method overriding or runtime polymorphism.</li>
+                  <li>Proxies work by overriding instance methods — so <strong>static methods cannot be
+                      proxied</strong>.</li>
+                </ul>
 
-      <h5 class="text-info">✅ What Kind of Methods Can Be Proxied?</h5>
-      <ul>
-        <li>Only <strong>non-final, non-private, instance methods</strong></li>
-        <li>Recommended: Use <strong>protected</strong> or <strong>public</strong> methods in your entities</li>
-        <li><strong>Final methods</strong> also cannot be overridden, so avoid them for lazy-loaded properties</li>
-      </ul>
+                <h5 class="text-info">✅ What Kind of Methods Can Be Proxied?</h5>
+                <ul>
+                  <li>Only <strong>non-final, non-private, instance methods</strong></li>
+                  <li>Recommended: Use <strong>protected</strong> or <strong>public</strong> methods in your entities
+                  </li>
+                  <li><strong>Final methods</strong> also cannot be overridden, so avoid them for lazy-loaded properties
+                  </li>
+                </ul>
 
-      <h5 class="text-info">📌 Example</h5>
-      <pre class="language-java"><code>
+                <h5 class="text-info">📌 Example</h5>
+                <pre class="language-java"><code>
 @Entity
 public class User {
 
@@ -26526,103 +27364,111 @@ public class User {
 }
       </code></pre>
 
-      <h5 class="text-info">🧠 Summary</h5>
-      <ul>
-        <li>Hibernate proxies <strong>do NOT work</strong> on:</li>
-        <ul>
-          <li>❌ Private methods</li>
-          <li>❌ Static methods</li>
-          <li>❌ Final methods or final classes</li>
-        </ul>
-        <li>Design entities with <strong>public/protected virtual (non-final)</strong> instance methods for proxying and lazy loading</li>
-      </ul>
+                <h5 class="text-info">🧠 Summary</h5>
+                <ul>
+                  <li>Hibernate proxies <strong>do NOT work</strong> on:</li>
+                  <ul>
+                    <li>❌ Private methods</li>
+                    <li>❌ Static methods</li>
+                    <li>❌ Final methods or final classes</li>
+                  </ul>
+                  <li>Design entities with <strong>public/protected virtual (non-final)</strong> instance methods for
+                    proxying and lazy loading</li>
+                </ul>
 
-    </div>
-  </div>
-</div>
-<div class="accordion-item">
-  <h2 class="accordion-header">
-    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
-      data-bs-target="#twoPhaseCommitMicroservices">
-      🔄 What is 2-Phase Commit (2PC) in Microservices?
-    </button>
-  </h2>
-  <div id="twoPhaseCommitMicroservices" class="accordion-collapse collapse">
-    <div class="accordion-body">
+              </div>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+                data-bs-target="#twoPhaseCommitMicroservices">
+                🔄 What is 2-Phase Commit (2PC) in Microservices?
+              </button>
+            </h2>
+            <div id="twoPhaseCommitMicroservices" class="accordion-collapse collapse">
+              <div class="accordion-body">
 
-      <h5 class="text-info">📌 What is 2-Phase Commit?</h5>
-      <p>2-Phase Commit (2PC) is a **distributed transaction protocol** used to ensure **data consistency** across multiple services or databases in a distributed system — like microservices.</p>
+                <h5 class="text-info">📌 What is 2-Phase Commit?</h5>
+                <p>2-Phase Commit (2PC) is a **distributed transaction protocol** used to ensure **data consistency**
+                  across multiple services or databases in a distributed system — like microservices.</p>
 
-      <h5 class="text-info">🔄 Phase 1: Prepare (Voting Phase)</h5>
-      <ul>
-        <li>The **coordinator** asks each participating microservice (called <code>resource managers</code>) if they can commit.</li>
-        <li>Each service tries to prepare for the commit (e.g., locks resources, writes to temp log) and replies:</li>
-        <ul>
-          <li><strong>YES</strong> – Ready to commit</li>
-          <li><strong>NO</strong> – Cannot commit</li>
-        </ul>
-      </ul>
+                <h5 class="text-info">🔄 Phase 1: Prepare (Voting Phase)</h5>
+                <ul>
+                  <li>The **coordinator** asks each participating microservice (called <code>resource managers</code>)
+                    if they can commit.</li>
+                  <li>Each service tries to prepare for the commit (e.g., locks resources, writes to temp log) and
+                    replies:</li>
+                  <ul>
+                    <li><strong>YES</strong> – Ready to commit</li>
+                    <li><strong>NO</strong> – Cannot commit</li>
+                  </ul>
+                </ul>
 
-      <h5 class="text-info">✅ Phase 2: Commit / Rollback (Decision Phase)</h5>
-      <ul>
-        <li>If **all participants replied YES**, the coordinator sends a <code>COMMIT</code> command to everyone.</li>
-        <li>If **any participant replied NO**, it sends a <code>ROLLBACK</code> command to all participants.</li>
-        <li>This ensures **atomicity** – either everything commits or nothing does.</li>
-      </ul>
+                <h5 class="text-info">✅ Phase 2: Commit / Rollback (Decision Phase)</h5>
+                <ul>
+                  <li>If **all participants replied YES**, the coordinator sends a <code>COMMIT</code> command to
+                    everyone.</li>
+                  <li>If **any participant replied NO**, it sends a <code>ROLLBACK</code> command to all participants.
+                  </li>
+                  <li>This ensures **atomicity** – either everything commits or nothing does.</li>
+                </ul>
 
-      <h5 class="text-info">📦 Real-world Example</h5>
-      <p>Imagine a booking system:</p>
-      <ul>
-        <li>Microservice A – Flight Booking</li>
-        <li>Microservice B – Hotel Booking</li>
-        <li>Microservice C – Payment Processing</li>
-      </ul>
-      <p>2PC ensures that either all bookings and payment go through together or none of them do.</p>
+                <h5 class="text-info">📦 Real-world Example</h5>
+                <p>Imagine a booking system:</p>
+                <ul>
+                  <li>Microservice A – Flight Booking</li>
+                  <li>Microservice B – Hotel Booking</li>
+                  <li>Microservice C – Payment Processing</li>
+                </ul>
+                <p>2PC ensures that either all bookings and payment go through together or none of them do.</p>
 
-      <h5 class="text-info">✅ Benefits</h5>
-      <ul>
-        <li><strong>Strong consistency</strong> across services</li>
-        <li>Simple coordination pattern (classic ACID)</li>
-      </ul>
+                <h5 class="text-info">✅ Benefits</h5>
+                <ul>
+                  <li><strong>Strong consistency</strong> across services</li>
+                  <li>Simple coordination pattern (classic ACID)</li>
+                </ul>
 
-      <h5 class="text-info">❌ Drawbacks</h5>
-      <ul>
-        <li>📉 <strong>Slow performance</strong> – blocks resources during voting phase</li>
-        <li>🧱 <strong>Locks involved</strong> – can cause deadlocks or timeouts</li>
-        <li>⛔ <strong>Not fault-tolerant</strong> – if coordinator crashes mid-way, resources can get stuck</li>
-        <li>🚫 Breaks microservices' independence and scalability</li>
-      </ul>
+                <h5 class="text-info">❌ Drawbacks</h5>
+                <ul>
+                  <li>📉 <strong>Slow performance</strong> – blocks resources during voting phase</li>
+                  <li>🧱 <strong>Locks involved</strong> – can cause deadlocks or timeouts</li>
+                  <li>⛔ <strong>Not fault-tolerant</strong> – if coordinator crashes mid-way, resources can get stuck
+                  </li>
+                  <li>🚫 Breaks microservices' independence and scalability</li>
+                </ul>
 
-      <h5 class="text-info">🛠️ Alternative Approaches</h5>
-      <ul>
-        <li><strong>Saga Pattern</strong> (preferred in modern microservices)</li>
-        <li><strong>Eventual consistency</strong> with compensation logic</li>
-        <li><strong>Outbox pattern</strong> + Message broker</li>
-      </ul>
+                <h5 class="text-info">🛠️ Alternative Approaches</h5>
+                <ul>
+                  <li><strong>Saga Pattern</strong> (preferred in modern microservices)</li>
+                  <li><strong>Eventual consistency</strong> with compensation logic</li>
+                  <li><strong>Outbox pattern</strong> + Message broker</li>
+                </ul>
 
-      <h5 class="text-info">💡 Final Tip</h5>
-      <p>2PC is suitable for tightly coupled systems or legacy architectures. In modern microservice systems, it's generally replaced by **Saga pattern** due to better fault tolerance and scalability.</p>
+                <h5 class="text-info">💡 Final Tip</h5>
+                <p>2PC is suitable for tightly coupled systems or legacy architectures. In modern microservice systems,
+                  it's generally replaced by **Saga pattern** due to better fault tolerance and scalability.</p>
 
-    </div>
-  </div>
-</div>
-<div class="accordion-item">
-  <h2 class="accordion-header">
-    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
-      data-bs-target="#volatileVsSynchronized">
-      ⚔️ volatile vs synchronized vs Atomic – Differences & Use-Cases
-    </button>
-  </h2>
-  <div id="volatileVsSynchronized" class="accordion-collapse collapse">
-    <div class="accordion-body">
+              </div>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+                data-bs-target="#volatileVsSynchronized">
+                ⚔️ volatile vs synchronized vs Atomic – Differences & Use-Cases
+              </button>
+            </h2>
+            <div id="volatileVsSynchronized" class="accordion-collapse collapse">
+              <div class="accordion-body">
 
-      <h5 class="text-info">🧠 1. What is <code>volatile</code>?</h5>
-      <ul>
-        <li>Ensures **visibility** of changes to variables across threads.</li>
-        <li>Does NOT guarantee **atomicity** (no locking).</li>
-        <li>Used when one thread writes and others read, but there's no compound action.</li>
-      </ul>
-      <pre class="language-java"><code>
+                <h5 class="text-info">🧠 1. What is <code>volatile</code>?</h5>
+                <ul>
+                  <li>Ensures **visibility** of changes to variables across threads.</li>
+                  <li>Does NOT guarantee **atomicity** (no locking).</li>
+                  <li>Used when one thread writes and others read, but there's no compound action.</li>
+                </ul>
+                <pre class="language-java"><code>
 volatile boolean flag = false;
 
 public void setTrue() {
@@ -26630,18 +27476,19 @@ public void setTrue() {
 }
       </code></pre>
 
-      <h5 class="text-danger">🚫 Problem with volatile</h5>
-      <ul>
-        <li>It does not prevent **race conditions**.</li>
-        <li>Example: <code>volatile int count++</code> is not atomic – leads to inconsistent results in multi-threading.</li>
-      </ul>
+                <h5 class="text-danger">🚫 Problem with volatile</h5>
+                <ul>
+                  <li>It does not prevent **race conditions**.</li>
+                  <li>Example: <code>volatile int count++</code> is not atomic – leads to inconsistent results in
+                    multi-threading.</li>
+                </ul>
 
-      <h5 class="text-info">🔐 2. What is <code>synchronized</code>?</h5>
-      <ul>
-        <li>Ensures **mutual exclusion** + **visibility**.</li>
-        <li>One thread at a time can execute inside a synchronized block/method.</li>
-      </ul>
-      <pre class="language-java"><code>
+                <h5 class="text-info">🔐 2. What is <code>synchronized</code>?</h5>
+                <ul>
+                  <li>Ensures **mutual exclusion** + **visibility**.</li>
+                  <li>One thread at a time can execute inside a synchronized block/method.</li>
+                </ul>
+                <pre class="language-java"><code>
 private int count = 0;
 
 public synchronized void increment() {
@@ -26649,19 +27496,19 @@ public synchronized void increment() {
 }
       </code></pre>
 
-      <h5 class="text-warning">⚠️ Trade-offs of synchronized</h5>
-      <ul>
-        <li>Can cause performance bottlenecks due to **thread blocking**.</li>
-        <li>More **overhead** than volatile or atomic variables.</li>
-      </ul>
+                <h5 class="text-warning">⚠️ Trade-offs of synchronized</h5>
+                <ul>
+                  <li>Can cause performance bottlenecks due to **thread blocking**.</li>
+                  <li>More **overhead** than volatile or atomic variables.</li>
+                </ul>
 
-      <h5 class="text-info">⚛️ 3. What is an <code>Atomic Variable</code>?</h5>
-      <ul>
-        <li>Classes in <code>java.util.concurrent.atomic</code> (e.g., <code>AtomicInteger</code>)</li>
-        <li>Uses **lock-free**, hardware-level atomic operations (CAS - Compare And Swap)</li>
-        <li>Faster and non-blocking compared to synchronized</li>
-      </ul>
-      <pre class="language-java"><code>
+                <h5 class="text-info">⚛️ 3. What is an <code>Atomic Variable</code>?</h5>
+                <ul>
+                  <li>Classes in <code>java.util.concurrent.atomic</code> (e.g., <code>AtomicInteger</code>)</li>
+                  <li>Uses **lock-free**, hardware-level atomic operations (CAS - Compare And Swap)</li>
+                  <li>Faster and non-blocking compared to synchronized</li>
+                </ul>
+                <pre class="language-java"><code>
 AtomicInteger counter = new AtomicInteger();
 
 public void increment() {
@@ -26669,82 +27516,83 @@ public void increment() {
 }
       </code></pre>
 
-      <h5 class="text-success">✅ When to use what?</h5>
-      <ul>
-        <li><strong>Use <code>volatile</code></strong> – for simple flags or signals (no compound ops).</li>
-        <li><strong>Use <code>synchronized</code></strong> – for complex logic or compound operations.</li>
-        <li><strong>Use <code>Atomic variables</code></strong> – for lock-free counters or accumulators.</li>
-      </ul>
+                <h5 class="text-success">✅ When to use what?</h5>
+                <ul>
+                  <li><strong>Use <code>volatile</code></strong> – for simple flags or signals (no compound ops).</li>
+                  <li><strong>Use <code>synchronized</code></strong> – for complex logic or compound operations.</li>
+                  <li><strong>Use <code>Atomic variables</code></strong> – for lock-free counters or accumulators.</li>
+                </ul>
 
-      <h5 class="text-info">🧪 Summary Table</h5>
-      <table class="table table-dark table-bordered">
-        <thead>
-          <tr>
-            <th>Feature</th>
-            <th>volatile</th>
-            <th>synchronized</th>
-            <th>Atomic</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Visibility</td>
-            <td>✅</td>
-            <td>✅</td>
-            <td>✅</td>
-          </tr>
-          <tr>
-            <td>Atomicity</td>
-            <td>❌</td>
-            <td>✅</td>
-            <td>✅</td>
-          </tr>
-          <tr>
-            <td>Blocking</td>
-            <td>❌</td>
-            <td>✅</td>
-            <td>❌</td>
-          </tr>
-          <tr>
-            <td>Performance</td>
-            <td>⚡️ High</td>
-            <td>🐢 Slower</td>
-            <td>⚡️ High</td>
-          </tr>
-          <tr>
-            <td>Best Use</td>
-            <td>Flags</td>
-            <td>Critical sections</td>
-            <td>Counters, metrics</td>
-          </tr>
-        </tbody>
-      </table>
+                <h5 class="text-info">🧪 Summary Table</h5>
+                <table class="table table-dark table-bordered">
+                  <thead>
+                    <tr>
+                      <th>Feature</th>
+                      <th>volatile</th>
+                      <th>synchronized</th>
+                      <th>Atomic</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Visibility</td>
+                      <td>✅</td>
+                      <td>✅</td>
+                      <td>✅</td>
+                    </tr>
+                    <tr>
+                      <td>Atomicity</td>
+                      <td>❌</td>
+                      <td>✅</td>
+                      <td>✅</td>
+                    </tr>
+                    <tr>
+                      <td>Blocking</td>
+                      <td>❌</td>
+                      <td>✅</td>
+                      <td>❌</td>
+                    </tr>
+                    <tr>
+                      <td>Performance</td>
+                      <td>⚡️ High</td>
+                      <td>🐢 Slower</td>
+                      <td>⚡️ High</td>
+                    </tr>
+                    <tr>
+                      <td>Best Use</td>
+                      <td>Flags</td>
+                      <td>Critical sections</td>
+                      <td>Counters, metrics</td>
+                    </tr>
+                  </tbody>
+                </table>
 
-    </div>
-  </div>
-</div>
-<div class="accordion-item">
-  <h2 class="accordion-header">
-    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
-      data-bs-target="#sequentialPrinter">
-      🔁 Sequential Number Printing using Inter-Thread Communication (1 to 20)
-    </button>
-  </h2>
-  <div id="sequentialPrinter" class="accordion-collapse collapse">
-    <div class="accordion-body">
+              </div>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+                data-bs-target="#sequentialPrinter">
+                🔁 Sequential Number Printing using Inter-Thread Communication (1 to 20)
+              </button>
+            </h2>
+            <div id="sequentialPrinter" class="accordion-collapse collapse">
+              <div class="accordion-body">
 
-      <h5 class="text-info">📌 Goal</h5>
-      <p>Print numbers from <strong>1 to 20</strong> in order using two threads where:</p>
-      <ul>
-        <li>Thread-1 prints odd numbers</li>
-        <li>Thread-2 prints even numbers</li>
-      </ul>
+                <h5 class="text-info">📌 Goal</h5>
+                <p>Print numbers from <strong>1 to 20</strong> in order using two threads where:</p>
+                <ul>
+                  <li>Thread-1 prints odd numbers</li>
+                  <li>Thread-2 prints even numbers</li>
+                </ul>
 
-      <h5 class="text-info">🔄 Inter-thread Communication</h5>
-      <p>We use Java's <code>synchronized</code>, <code>wait()</code>, and <code>notify()</code> to coordinate between threads, so they print alternately.</p>
+                <h5 class="text-info">🔄 Inter-thread Communication</h5>
+                <p>We use Java's <code>synchronized</code>, <code>wait()</code>, and <code>notify()</code> to coordinate
+                  between threads, so they print alternately.</p>
 
-      <h5 class="text-info">🧵 Full Java Code</h5>
-      <pre class="language-java"><code>
+                <h5 class="text-info">🧵 Full Java Code</h5>
+                <pre class="language-java"><code>
 public class SequentialPrinter {
 
     private int counter = 1;
@@ -26801,8 +27649,8 @@ public class SequentialPrinter {
 }
       </code></pre>
 
-      <h5 class="text-info">📈 Output Example</h5>
-      <pre><code>
+                <h5 class="text-info">📈 Output Example</h5>
+                <pre><code>
 Thread-1: 1
 Thread-2: 2
 Thread-1: 3
@@ -26811,34 +27659,35 @@ Thread-2: 4
 Thread-2: 20
       </code></pre>
 
-      <h5 class="text-success">✅ Key Points</h5>
-      <ul>
-        <li><strong>Shared lock object</strong> ensures mutual exclusion.</li>
-        <li><strong><code>wait()</code></strong> pauses the thread if it's not its turn.</li>
-        <li><strong><code>notify()</code></strong> wakes up the waiting thread to continue.</li>
-        <li>Always call <code>wait()</code> and <code>notify()</code> inside a <code>synchronized</code> block.</li>
-      </ul>
+                <h5 class="text-success">✅ Key Points</h5>
+                <ul>
+                  <li><strong>Shared lock object</strong> ensures mutual exclusion.</li>
+                  <li><strong><code>wait()</code></strong> pauses the thread if it's not its turn.</li>
+                  <li><strong><code>notify()</code></strong> wakes up the waiting thread to continue.</li>
+                  <li>Always call <code>wait()</code> and <code>notify()</code> inside a <code>synchronized</code>
+                    block.</li>
+                </ul>
 
-    </div>
-  </div>
-</div>
-<div class="accordion-item">
-  <h2 class="accordion-header">
-    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
-      data-bs-target="#forkJoinVsExecutor">
-      🧵 ForkJoinPool vs ExecutorService Framework
-    </button>
-  </h2>
-  <div id="forkJoinVsExecutor" class="accordion-collapse collapse">
-    <div class="accordion-body">
+              </div>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+                data-bs-target="#forkJoinVsExecutor">
+                🧵 ForkJoinPool vs ExecutorService Framework
+              </button>
+            </h2>
+            <div id="forkJoinVsExecutor" class="accordion-collapse collapse">
+              <div class="accordion-body">
 
-      <h5 class="text-info">🔄 ExecutorService</h5>
-      <ul>
-        <li>A standard Java concurrency framework introduced in Java 5.</li>
-        <li>Good for **independent tasks** that do not need to be split recursively.</li>
-        <li>Uses a fixed number of worker threads from a thread pool.</li>
-      </ul>
-      <pre class="language-java"><code>
+                <h5 class="text-info">🔄 ExecutorService</h5>
+                <ul>
+                  <li>A standard Java concurrency framework introduced in Java 5.</li>
+                  <li>Good for **independent tasks** that do not need to be split recursively.</li>
+                  <li>Uses a fixed number of worker threads from a thread pool.</li>
+                </ul>
+                <pre class="language-java"><code>
 ExecutorService executor = Executors.newFixedThreadPool(4);
 executor.submit(() -> {
     System.out.println("Task running in thread: " + Thread.currentThread().getName());
@@ -26846,97 +27695,101 @@ executor.submit(() -> {
 executor.shutdown();
       </code></pre>
 
-      <h5 class="text-info">🌲 ForkJoinPool</h5>
-      <ul>
-        <li>Introduced in Java 7 as part of the **Fork/Join Framework**.</li>
-        <li>Designed for **recursive parallelism** — tasks that can be split into subtasks.</li>
-        <li>Uses **work-stealing** algorithm: idle threads "steal" work from busy threads.</li>
-      </ul>
-      <pre class="language-java"><code>
+                <h5 class="text-info">🌲 ForkJoinPool</h5>
+                <ul>
+                  <li>Introduced in Java 7 as part of the **Fork/Join Framework**.</li>
+                  <li>Designed for **recursive parallelism** — tasks that can be split into subtasks.</li>
+                  <li>Uses **work-stealing** algorithm: idle threads "steal" work from busy threads.</li>
+                </ul>
+                <pre class="language-java"><code>
 ForkJoinPool pool = new ForkJoinPool();
 pool.invoke(new RecursiveTaskExample(0, 100));
       </code></pre>
 
-      <h5 class="text-warning">📉 Key Differences</h5>
-      <table class="table table-dark table-bordered">
-        <thead>
-          <tr>
-            <th>Feature</th>
-            <th>ExecutorService</th>
-            <th>ForkJoinPool</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Introduced</td>
-            <td>Java 5</td>
-            <td>Java 7</td>
-          </tr>
-          <tr>
-            <td>Ideal Use Case</td>
-            <td>Independent tasks</td>
-            <td>Recursive, splittable tasks</td>
-          </tr>
-          <tr>
-            <td>Work Stealing</td>
-            <td>❌</td>
-            <td>✅</td>
-          </tr>
-          <tr>
-            <td>API</td>
-            <td>Runnable, Callable</td>
-            <td>RecursiveTask, RecursiveAction</td>
-          </tr>
-          <tr>
-            <td>Thread Management</td>
-            <td>Fixed / Cached Thread Pools</td>
-            <td>Fork/Join worker threads</td>
-          </tr>
-        </tbody>
-      </table>
+                <h5 class="text-warning">📉 Key Differences</h5>
+                <table class="table table-dark table-bordered">
+                  <thead>
+                    <tr>
+                      <th>Feature</th>
+                      <th>ExecutorService</th>
+                      <th>ForkJoinPool</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Introduced</td>
+                      <td>Java 5</td>
+                      <td>Java 7</td>
+                    </tr>
+                    <tr>
+                      <td>Ideal Use Case</td>
+                      <td>Independent tasks</td>
+                      <td>Recursive, splittable tasks</td>
+                    </tr>
+                    <tr>
+                      <td>Work Stealing</td>
+                      <td>❌</td>
+                      <td>✅</td>
+                    </tr>
+                    <tr>
+                      <td>API</td>
+                      <td>Runnable, Callable</td>
+                      <td>RecursiveTask, RecursiveAction</td>
+                    </tr>
+                    <tr>
+                      <td>Thread Management</td>
+                      <td>Fixed / Cached Thread Pools</td>
+                      <td>Fork/Join worker threads</td>
+                    </tr>
+                  </tbody>
+                </table>
 
-      <h5 class="text-success">📌 When to Use What?</h5>
-      <ul>
-        <li><strong>Use ExecutorService</strong> for web tasks, file IO, DB calls, etc.</li>
-        <li><strong>Use ForkJoinPool</strong> for divide-and-conquer problems like:
-          <ul>
-            <li>Parallel array processing</li>
-            <li>Tree traversals</li>
-            <li>Recursive search algorithms</li>
-          </ul>
-        </li>
-      </ul>
+                <h5 class="text-success">📌 When to Use What?</h5>
+                <ul>
+                  <li><strong>Use ExecutorService</strong> for web tasks, file IO, DB calls, etc.</li>
+                  <li><strong>Use ForkJoinPool</strong> for divide-and-conquer problems like:
+                    <ul>
+                      <li>Parallel array processing</li>
+                      <li>Tree traversals</li>
+                      <li>Recursive search algorithms</li>
+                    </ul>
+                  </li>
+                </ul>
 
-      <h5 class="text-info">🧠 Bonus Tip</h5>
-      <p>ForkJoinPool is the default pool behind Java's <code>parallelStream()</code> API.</p>
+                <h5 class="text-info">🧠 Bonus Tip</h5>
+                <p>ForkJoinPool is the default pool behind Java's <code>parallelStream()</code> API.</p>
 
-    </div>
-  </div>
-</div>
-<div class="accordion-item">
-  <h2 class="accordion-header">
-    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
-      data-bs-target="#customThreadPool">
-      🔧 Custom Thread Pool for `parallelStream()`
-    </button>
-  </h2>
-  <div id="customThreadPool" class="accordion-collapse collapse">
-    <div class="accordion-body">
+              </div>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+                data-bs-target="#customThreadPool">
+                🔧 Custom Thread Pool for `parallelStream()`
+              </button>
+            </h2>
+            <div id="customThreadPool" class="accordion-collapse collapse">
+              <div class="accordion-body">
 
-      <h5 class="text-info">📌 Why Use a Custom Thread Pool?</h5>
-      <p>By default, <code>parallelStream()</code> uses the **common ForkJoinPool**, which is shared across the JVM.
-        However, you may want to provide a custom thread pool to have better control over the execution, isolate workloads,
-        or handle high-concurrency tasks efficiently.</p>
+                <h5 class="text-info">📌 Why Use a Custom Thread Pool?</h5>
+                <p>By default, <code>parallelStream()</code> uses the **common ForkJoinPool**, which is shared across
+                  the JVM.
+                  However, you may want to provide a custom thread pool to have better control over the execution,
+                  isolate workloads,
+                  or handle high-concurrency tasks efficiently.</p>
 
-      <h5 class="text-warning">⚠️ Limitations of the Default Pool</h5>
-      <ul>
-        <li>It uses a **single shared pool** across the entire application, which might not be ideal for all use cases.</li>
-        <li>It's not customizable for different workloads and might cause contention if misused.</li>
-      </ul>
+                <h5 class="text-warning">⚠️ Limitations of the Default Pool</h5>
+                <ul>
+                  <li>It uses a **single shared pool** across the entire application, which might not be ideal for all
+                    use cases.</li>
+                  <li>It's not customizable for different workloads and might cause contention if misused.</li>
+                </ul>
 
-      <h5 class="text-info">🔄 How to Use a Custom Thread Pool with `parallelStream()`</h5>
-      <p>You can use <code>ForkJoinPool</code> to control the thread pool that executes your <code>parallelStream()</code>:</p>
-      <pre class="language-java"><code>
+                <h5 class="text-info">🔄 How to Use a Custom Thread Pool with `parallelStream()`</h5>
+                <p>You can use <code>ForkJoinPool</code> to control the thread pool that executes your
+                  <code>parallelStream()</code>:</p>
+                <pre class="language-java"><code>
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -26959,40 +27812,43 @@ public class CustomParallelStream {
 }
       </code></pre>
 
-      <h5 class="text-success">✅ Key Points</h5>
-      <ul>
-        <li>You use <code>ForkJoinPool.submit(...)</code> to submit the <code>parallelStream()</code> task.</li>
-        <li>You can control the number of threads in the pool by passing a custom size, e.g., <code>new ForkJoinPool(4)</code>.</li>
-        <li>The <code>shutdown()</code> method ensures that your custom pool is properly cleaned up after use.</li>
-      </ul>
+                <h5 class="text-success">✅ Key Points</h5>
+                <ul>
+                  <li>You use <code>ForkJoinPool.submit(...)</code> to submit the <code>parallelStream()</code> task.
+                  </li>
+                  <li>You can control the number of threads in the pool by passing a custom size, e.g.,
+                    <code>new ForkJoinPool(4)</code>.</li>
+                  <li>The <code>shutdown()</code> method ensures that your custom pool is properly cleaned up after use.
+                  </li>
+                </ul>
 
-      <h5 class="text-danger">⚠️ When to Use a Custom Pool?</h5>
-      <table class="table table-dark table-bordered">
-        <thead>
-          <tr>
-            <th>Use Case</th>
-            <th>Use Custom Pool?</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Small apps or scripts</td>
-            <td>❌ Use default pool</td>
-          </tr>
-          <tr>
-            <td>CPU-intensive or large-scale workloads</td>
-            <td>✅ Use custom pool</td>
-          </tr>
-          <tr>
-            <td>Thread isolation for performance tuning</td>
-            <td>✅ Use custom pool</td>
-          </tr>
-        </tbody>
-      </table>
+                <h5 class="text-danger">⚠️ When to Use a Custom Pool?</h5>
+                <table class="table table-dark table-bordered">
+                  <thead>
+                    <tr>
+                      <th>Use Case</th>
+                      <th>Use Custom Pool?</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Small apps or scripts</td>
+                      <td>❌ Use default pool</td>
+                    </tr>
+                    <tr>
+                      <td>CPU-intensive or large-scale workloads</td>
+                      <td>✅ Use custom pool</td>
+                    </tr>
+                    <tr>
+                      <td>Thread isolation for performance tuning</td>
+                      <td>✅ Use custom pool</td>
+                    </tr>
+                  </tbody>
+                </table>
 
-    </div>
-  </div>
-</div>
+              </div>
+            </div>
+          </div>
 
 
 
