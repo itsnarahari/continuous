@@ -26057,7 +26057,943 @@ private static void main(String... args) {}
               </div>
             </div>
           </div>
-          
+
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#auditLoggingSpringBoot">
+      📊 Audit Logging in Spring Boot – All Approaches & Best Practices
+    </button>
+  </h2>
+  <div id="auditLoggingSpringBoot" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What is Audit Logging?</h5>
+      <p>Audit logging tracks who did what and when in your application. It's crucial for compliance, debugging, and data integrity — especially in financial, healthcare, and enterprise systems.</p>
+
+      <h5 class="text-info">🛠️ Approaches to Implement Audit Logging</h5>
+      <ul>
+        <li><strong>1. Spring Data JPA Auditing</strong> (recommended for simple entity tracking)</li>
+        <li><strong>2. Custom AOP (Aspect-Oriented Programming)</strong> for method-level audit</li>
+        <li><strong>3. Event Listeners</strong> like Hibernate interceptors or ApplicationEvents</li>
+        <li><strong>4. External Logging Tools</strong> like ELK Stack, Splunk (for centralized logging)</li>
+      </ul>
+
+      <h5 class="text-info">✅ 1. Spring Data JPA Auditing (Best for Entity Audit)</h5>
+      <p>Spring Boot supports automatic entity auditing using annotations and listeners.</p>
+
+      <pre class="language-java"><code>
+@Entity
+@EntityListeners(AuditingEntityListener.class)
+public class User {
+    
+    @Id
+    private Long id;
+
+    @CreatedBy
+    private String createdBy;
+
+    @CreatedDate
+    private Instant createdDate;
+
+    @LastModifiedBy
+    private String updatedBy;
+
+    @LastModifiedDate
+    private Instant updatedDate;
+}
+      </code></pre>
+
+      <p>Enable auditing in config:</p>
+      <pre class="language-java"><code>
+@Configuration
+@EnableJpaAuditing
+public class JpaConfig {
+
+    @Bean
+    public AuditorAware&lt;String&gt; auditorProvider() {
+        return () -> Optional.of(SecurityContextHolder.getContext().getAuthentication().getName());
+    }
+}
+      </code></pre>
+
+      <h5 class="text-info">🧩 2. AOP-Based Custom Logging</h5>
+      <p>Use aspects to log method-level actions.</p>
+
+      <pre class="language-java"><code>
+@Aspect
+@Component
+public class AuditAspect {
+
+    @Before("@annotation(Auditable)")
+    public void logAction(JoinPoint joinPoint) {
+        String method = joinPoint.getSignature().getName();
+        String user = SecurityContextHolder.getContext().getAuthentication().getName();
+        log.info("User {} called method {}", user, method);
+    }
+}
+      </code></pre>
+
+      <h5 class="text-info">📦 3. Entity Event Listeners</h5>
+      <p>Use Hibernate events like <code>@PrePersist</code>, <code>@PostUpdate</code> etc.</p>
+
+      <pre class="language-java"><code>
+@PrePersist
+public void beforeInsert(Object entity) {
+    // Set createdBy, timestamps, etc.
+}
+      </code></pre>
+
+      <h5 class="text-info">📡 4. Centralized Logging with Tools</h5>
+      <p>Use external tools for logging and visualization:</p>
+      <ul>
+        <li>ELK (Elasticsearch + Logstash + Kibana)</li>
+        <li>Splunk</li>
+        <li>Fluentd</li>
+      </ul>
+      <p>Integrate with Spring Boot logging (Log4j2 / Logback) for exporting structured audit logs to file or HTTP.</p>
+
+      <h5 class="text-info">✅ Which is the Best Approach?</h5>
+      <ul>
+        <li><strong>For DB-level entity tracking</strong> → Spring Data JPA Auditing</li>
+        <li><strong>For action-level method tracking</strong> → AOP + Custom Annotation</li>
+        <li><strong>For centralized monitoring</strong> → External logging stack (ELK, Splunk)</li>
+      </ul>
+
+      <h5 class="text-info">🆕 Spring Boot 3 / Hibernate 6 Tip</h5>
+      <p>Spring Boot 3 improves auditing with better <code>Instant</code> support and Hibernate's updated listeners. Always use `Instant` or `OffsetDateTime` over `Date` for consistency.</p>
+
+      <h5 class="text-info">🛡️ Security Tip</h5>
+      <p>Audit logs must be:</p>
+      <ul>
+        <li>Immutable</li>
+        <li>Encrypted (if sensitive)</li>
+        <li>Stored with retention policy</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#ideDownloadSources">
+      🧠 How IDE Downloads Sources for Class Files (e.g., `ArrayList`, or External Libs)
+    </button>
+  </h2>
+  <div id="ideDownloadSources" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What Does "Download Sources" Mean?</h5>
+      <p>When you view a compiled `.class` file (like <code>ArrayList.class</code> or any 3rd-party library), your IDE shows bytecode or decompiled code.</p>
+      <p>It then gives an option to <strong>"Download Sources"</strong> — this lets the IDE fetch the original `.java` source file from a remote location, so you can see real code with comments and method-level understanding.</p>
+
+      <h5 class="text-info">🔍 Where Does It Download From?</h5>
+      <ul>
+        <li>📦 **Maven Repositories** (like Maven Central, JCenter, or custom company repo)</li>
+        <li>IDE checks the `.pom` file or `.jar` metadata for a corresponding `-sources.jar` file</li>
+        <li>Downloads it into your local Maven/Gradle cache (like <code>~/.m2/repository</code>)</li>
+      </ul>
+
+      <h5 class="text-info">🧭 How Does IDE Know Where to Look?</h5>
+      <ul>
+        <li>Each library (JAR) you use is declared in <code>pom.xml</code> or <code>build.gradle</code></li>
+        <li>It contains metadata: groupId, artifactId, version</li>
+        <li>IDE queries Maven Central or your configured repo using this info</li>
+        <li>If it finds a matching <code>-sources.jar</code>, it downloads & attaches to the class</li>
+      </ul>
+
+      <h5 class="text-info">📁 Where Are Sources Stored Locally?</h5>
+      <p>For Maven: <code>~/.m2/repository/</code><br/>
+         For Gradle: <code>~/.gradle/caches/modules-2/files-2.1/</code></p>
+
+      <h5 class="text-info">✅ What Gets Downloaded?</h5>
+      <ul>
+        <li><strong>Class sources</strong> as a separate <code>-sources.jar</code></li>
+        <li>Sometimes <code>-javadoc.jar</code> too (for documentation)</li>
+      </ul>
+
+      <h5 class="text-info">🚀 What About JDK Classes (like String, ArrayList)?</h5>
+      <p>IDE downloads source code for the installed JDK (if it's not already bundled).<br/>
+         For example, OpenJDK or Oracle JDK comes with <code>src.zip</code>. IDE attaches it automatically.</p>
+
+      <h5 class="text-info">💡 Summary</h5>
+      <ul>
+        <li>IDE looks at the coordinates (groupId, artifactId, version)</li>
+        <li>Searches remote repo (e.g., Maven Central)</li>
+        <li>Downloads <code>-sources.jar</code> and attaches to your class</li>
+        <li>Gives you clean, readable Java source instead of decompiled code</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="heading130">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+              data-bs-target="#collapse130" aria-expanded="false" aria-controls="collapse130">
+              Q130. What is the Java Memory Model (JMM)?
+            </button>
+          </h2>
+          <div id="collapse130" class="accordion-collapse collapse" aria-labelledby="heading130"
+            data-bs-parent="#javaQuestions">
+            <div class="accordion-body">
+              <p>
+                The Java Memory Model (JMM) defines how threads interact through memory and how changes made by one
+                thread become visible to others.
+              </p>
+              <p>
+                It provides rules for visibility, ordering, and atomicity of shared variables.
+              </p>
+            </div>
+          </div>
+          </div>
+          <div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#logSqlJPA">
+      📝 How to Log SQL Queries in JPA (Spring Boot) – All Methods Explained
+    </button>
+  </h2>
+  <div id="logSqlJPA" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Why Log SQL Queries?</h5>
+      <p>Logging SQL queries helps in debugging, performance tuning, and understanding what's being executed at the DB layer behind your JPA/Hibernate code.</p>
+
+      <h5 class="text-info">🛠️ Method 1: Using Spring Boot Properties</h5>
+      <p>Add the following properties to your <code>application.properties</code> or <code>application.yml</code>:</p>
+      <pre class="language-properties"><code>
+# Basic SQL logging
+spring.jpa.show-sql=true
+
+# Format SQL (more readable)
+spring.jpa.properties.hibernate.format_sql=true
+
+# Enable logging of SQL with parameter values
+logging.level.org.hibernate.SQL=DEBUG
+logging.level.org.hibernate.type.descriptor.sql=TRACE
+      </code></pre>
+
+      <h5 class="text-info">📄 Output Example:</h5>
+      <pre><code>
+Hibernate: select user0_.id as id1_0_, user0_.name as name2_0_ from user user0_
+binding parameter [1] as [VARCHAR] - [John]
+      </code></pre>
+
+      <h5 class="text-info">🛠️ Method 2: Using P6Spy (Better Output with Params)</h5>
+      <p>P6Spy is a JDBC proxy driver that logs all SQLs with actual parameter values.</p>
+
+      <p><strong>Step 1:</strong> Add the dependency:</p>
+      <pre class="language-xml"><code>
+&lt;dependency&gt;
+  &lt;groupId&gt;p6spy&lt;/groupId&gt;
+  &lt;artifactId&gt;p6spy&lt;/artifactId&gt;
+  &lt;version&gt;3.9.1&lt;/version&gt;
+&lt;/dependency&gt;
+      </code></pre>
+
+      <p><strong>Step 2:</strong> Add a file named <code>spy.properties</code> in <code>src/main/resources</code>:</p>
+      <pre class="language-properties"><code>
+modulelist=log4j
+logMessageFormat=com.p6spy.engine.spy.appender.SingleLineFormat
+appender=com.p6spy.engine.spy.appender.Slf4JLogger
+      </code></pre>
+
+      <p><strong>Step 3:</strong> Configure your DB driver in <code>application.properties</code>:</p>
+      <pre class="language-properties"><code>
+spring.datasource.driver-class-name=com.p6spy.engine.spy.P6SpyDriver
+      </code></pre>
+
+      <h5 class="text-info">🛠️ Method 3: Custom Hibernate Interceptor</h5>
+      <p>You can implement a custom interceptor to log SQL statements programmatically (advanced).</p>
+      <pre class="language-java"><code>
+@Component
+public class SqlInterceptor extends EmptyInterceptor {
+    @Override
+    public String onPrepareStatement(String sql) {
+        System.out.println("SQL Executed: " + sql);
+        return super.onPrepareStatement(sql);
+    }
+}
+      </code></pre>
+
+      <p>Then register this in your `LocalContainerEntityManagerFactoryBean` or via a custom config class.</p>
+
+      <h5 class="text-info">📦 Summary: All Available Ways</h5>
+      <ul>
+        <li><strong>Spring Boot Properties</strong> – Simple, built-in support</li>
+        <li><strong>P6Spy</strong> – Logs full queries with values, most developer-friendly</li>
+        <li><strong>Hibernate Interceptor</strong> – Fine-grained, advanced usage</li>
+      </ul>
+
+      <h5 class="text-info">✅ Best Option?</h5>
+      <ul>
+        <li><strong>For Dev/Debug:</strong> P6Spy is most readable</li>
+        <li><strong>For Production:</strong> Use Hibernate's logging + ELK/Splunk (avoid printing to console)</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#finalEntityHibernate">
+      🚫 Why You Shouldn't Make Hibernate Entities <code>final</code> – Explained
+    </button>
+  </h2>
+  <div id="finalEntityHibernate" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What's the Issue?</h5>
+      <p>Marking a JPA/Hibernate entity class as <code>final</code> prevents Hibernate from creating proxy classes at runtime, which it heavily relies on for features like lazy loading, dirty checking, and other optimizations.</p>
+
+      <h5 class="text-info">🛠️ How Hibernate Works Under the Hood</h5>
+      <ul>
+        <li>Hibernate creates a **proxy subclass** (using CGLIB or ByteBuddy) to intercept method calls.</li>
+        <li>This is especially used in **lazy loading** to delay loading of related entities until needed.</li>
+        <li>If an entity is <code>final</code>, Hibernate cannot extend it — breaking the proxy mechanism.</li>
+      </ul>
+
+      <h5 class="text-info">🔥 Example of What Breaks</h5>
+      <pre class="language-java"><code>
+@Entity
+public final class User { // ❌ Final class
+
+    @Id
+    private Long id;
+
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    private List<Order> orders;
+}
+      </code></pre>
+
+      <p>When you try to access <code>user.getOrders()</code>, Hibernate fails to create a proxy and may throw:</p>
+      <pre><code>
+org.hibernate.HibernateException: Cannot enhance final class
+      </code></pre>
+
+      <h5 class="text-info">📉 What You Lose If It's Final</h5>
+      <ul>
+        <li>❌ Lazy loading won't work (Hibernate can't delay fetch)</li>
+        <li>❌ Dirty checking may not work correctly</li>
+        <li>❌ Proxy-based enhancements fail</li>
+      </ul>
+
+      <h5 class="text-info">✅ Best Practices</h5>
+      <ul>
+        <li>Do <strong>not mark your entity classes as <code>final</code></strong></li>
+        <li>Avoid final methods in entities (Hibernate can’t override them)</li>
+        <li>Let Hibernate manage entity life cycle properly through subclassing</li>
+      </ul>
+
+      <h5 class="text-info">🔍 When Is <code>final</code> OK?</h5>
+      <p>If you mark a class as final, it should not be an entity — but maybe a DTO or a utility class. DTOs don’t need Hibernate proxies, so they’re safe to mark as final.</p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#hibernateProxyWhy">
+      🤖 Why Does Hibernate Create Proxy Objects? Benefits & Drawbacks Explained
+    </button>
+  </h2>
+  <div id="hibernateProxyWhy" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Why Hibernate Creates Proxies</h5>
+      <ul>
+        <li>Hibernate uses **proxy objects** to support <strong>lazy loading</strong>.</li>
+        <li>When you fetch an entity with related entities (like `@OneToMany` or `@ManyToOne`), Hibernate doesn’t load everything immediately to save performance.</li>
+        <li>Instead, it loads a <strong>proxy subclass</strong> that can later fetch the actual data when accessed.</li>
+      </ul>
+
+      <h5 class="text-info">📦 What Is a Proxy Object?</h5>
+      <p>A proxy is a dynamically generated subclass (using CGLIB or ByteBuddy) of your entity class. This subclass intercepts method calls and fetches data only when needed.</p>
+
+      <pre class="language-java"><code>
+// Original Entity
+class User {
+    String name;
+    List<Order> orders; // Lazy loaded
+}
+
+// Proxy at runtime (simplified)
+class User$$HibernateProxy extends User {
+    @Override
+    public List<Order> getOrders() {
+        if (orders not loaded) {
+            loadFromDB();
+        }
+        return super.getOrders();
+    }
+}
+      </code></pre>
+
+      <h5 class="text-info">✅ Benefits of Using Proxies</h5>
+      <ul>
+        <li><strong>Performance Optimization:</strong> Fetches only what’s required (lazy loading)</li>
+        <li><strong>Memory Efficiency:</strong> Prevents loading large object graphs unnecessarily</li>
+        <li><strong>Faster Initial Load:</strong> Main entity loads quickly; relations load only if needed</li>
+      </ul>
+
+      <h5 class="text-info">❌ Drawbacks of Using Proxies</h5>
+      <ul>
+        <li><strong>LazyInitializationException:</strong> If the proxy tries to load data after session is closed</li>
+        <li><strong>Debugging Complexity:</strong> Proxies can confuse developers during debugging/logging</li>
+        <li><strong>Final Classes/Methods:</strong> Can't be proxied, must be avoided</li>
+        <li><strong>Unwanted Behavior:</strong> `instanceof` checks or reflection may behave differently</li>
+      </ul>
+
+      <h5 class="text-info">🤔 What If Hibernate Didn’t Use Proxies?</h5>
+      <ul>
+        <li>Every relation would have to be fetched immediately — **EAGER fetching everywhere**</li>
+        <li>This leads to poor performance and memory issues, especially for complex entity graphs</li>
+        <li>Less flexibility — can't decide when to load what</li>
+      </ul>
+
+      <h5 class="text-info">📌 Final Thoughts</h5>
+      <ul>
+        <li>Hibernate proxies are essential for lazy loading</li>
+        <li>They improve performance but require careful session and transaction handling</li>
+        <li>Always design your entities with proxy-friendliness (non-final, default constructor, virtual methods)</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#hibernateProxyLimitations">
+      🔍 Hibernate Proxy Limitations – Private & Static Methods?
+    </button>
+  </h2>
+  <div id="hibernateProxyLimitations" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Hibernate Proxies – How Do They Work?</h5>
+      <p>Hibernate uses libraries like <strong>CGLIB</strong> or <strong>ByteBuddy</strong> to create subclasses of your entity at runtime and override methods to intercept calls (e.g., for lazy loading).</p>
+
+      <h5 class="text-info">🚫 Does It Work on Private Methods?</h5>
+      <ul>
+        <li><strong>No.</strong> Private methods are not visible to subclasses, and Hibernate proxies are essentially subclasses of your entity.</li>
+        <li>Private methods are compiled into bytecode that is <code>invokespecial</code> (not overrideable).</li>
+        <li>So Hibernate <strong>cannot override or intercept</strong> them.</li>
+      </ul>
+
+      <h5 class="text-info">🚫 Does It Work on Static Methods?</h5>
+      <ul>
+        <li><strong>No.</strong> Static methods are bound to the class, not the instance.</li>
+        <li>They don't participate in method overriding or runtime polymorphism.</li>
+        <li>Proxies work by overriding instance methods — so <strong>static methods cannot be proxied</strong>.</li>
+      </ul>
+
+      <h5 class="text-info">✅ What Kind of Methods Can Be Proxied?</h5>
+      <ul>
+        <li>Only <strong>non-final, non-private, instance methods</strong></li>
+        <li>Recommended: Use <strong>protected</strong> or <strong>public</strong> methods in your entities</li>
+        <li><strong>Final methods</strong> also cannot be overridden, so avoid them for lazy-loaded properties</li>
+      </ul>
+
+      <h5 class="text-info">📌 Example</h5>
+      <pre class="language-java"><code>
+@Entity
+public class User {
+
+    @Id
+    private Long id;
+
+    private String name;
+
+    // ❌ Will NOT be intercepted by proxy
+    private String getSecretData() {
+        return "hidden";
+    }
+
+    // ❌ Static methods are ignored
+    public static String getGlobalInfo() {
+        return "static";
+    }
+
+    // ✅ This can be intercepted by proxy
+    public String getName() {
+        return name;
+    }
+}
+      </code></pre>
+
+      <h5 class="text-info">🧠 Summary</h5>
+      <ul>
+        <li>Hibernate proxies <strong>do NOT work</strong> on:</li>
+        <ul>
+          <li>❌ Private methods</li>
+          <li>❌ Static methods</li>
+          <li>❌ Final methods or final classes</li>
+        </ul>
+        <li>Design entities with <strong>public/protected virtual (non-final)</strong> instance methods for proxying and lazy loading</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#twoPhaseCommitMicroservices">
+      🔄 What is 2-Phase Commit (2PC) in Microservices?
+    </button>
+  </h2>
+  <div id="twoPhaseCommitMicroservices" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What is 2-Phase Commit?</h5>
+      <p>2-Phase Commit (2PC) is a **distributed transaction protocol** used to ensure **data consistency** across multiple services or databases in a distributed system — like microservices.</p>
+
+      <h5 class="text-info">🔄 Phase 1: Prepare (Voting Phase)</h5>
+      <ul>
+        <li>The **coordinator** asks each participating microservice (called <code>resource managers</code>) if they can commit.</li>
+        <li>Each service tries to prepare for the commit (e.g., locks resources, writes to temp log) and replies:</li>
+        <ul>
+          <li><strong>YES</strong> – Ready to commit</li>
+          <li><strong>NO</strong> – Cannot commit</li>
+        </ul>
+      </ul>
+
+      <h5 class="text-info">✅ Phase 2: Commit / Rollback (Decision Phase)</h5>
+      <ul>
+        <li>If **all participants replied YES**, the coordinator sends a <code>COMMIT</code> command to everyone.</li>
+        <li>If **any participant replied NO**, it sends a <code>ROLLBACK</code> command to all participants.</li>
+        <li>This ensures **atomicity** – either everything commits or nothing does.</li>
+      </ul>
+
+      <h5 class="text-info">📦 Real-world Example</h5>
+      <p>Imagine a booking system:</p>
+      <ul>
+        <li>Microservice A – Flight Booking</li>
+        <li>Microservice B – Hotel Booking</li>
+        <li>Microservice C – Payment Processing</li>
+      </ul>
+      <p>2PC ensures that either all bookings and payment go through together or none of them do.</p>
+
+      <h5 class="text-info">✅ Benefits</h5>
+      <ul>
+        <li><strong>Strong consistency</strong> across services</li>
+        <li>Simple coordination pattern (classic ACID)</li>
+      </ul>
+
+      <h5 class="text-info">❌ Drawbacks</h5>
+      <ul>
+        <li>📉 <strong>Slow performance</strong> – blocks resources during voting phase</li>
+        <li>🧱 <strong>Locks involved</strong> – can cause deadlocks or timeouts</li>
+        <li>⛔ <strong>Not fault-tolerant</strong> – if coordinator crashes mid-way, resources can get stuck</li>
+        <li>🚫 Breaks microservices' independence and scalability</li>
+      </ul>
+
+      <h5 class="text-info">🛠️ Alternative Approaches</h5>
+      <ul>
+        <li><strong>Saga Pattern</strong> (preferred in modern microservices)</li>
+        <li><strong>Eventual consistency</strong> with compensation logic</li>
+        <li><strong>Outbox pattern</strong> + Message broker</li>
+      </ul>
+
+      <h5 class="text-info">💡 Final Tip</h5>
+      <p>2PC is suitable for tightly coupled systems or legacy architectures. In modern microservice systems, it's generally replaced by **Saga pattern** due to better fault tolerance and scalability.</p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#volatileVsSynchronized">
+      ⚔️ volatile vs synchronized vs Atomic – Differences & Use-Cases
+    </button>
+  </h2>
+  <div id="volatileVsSynchronized" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">🧠 1. What is <code>volatile</code>?</h5>
+      <ul>
+        <li>Ensures **visibility** of changes to variables across threads.</li>
+        <li>Does NOT guarantee **atomicity** (no locking).</li>
+        <li>Used when one thread writes and others read, but there's no compound action.</li>
+      </ul>
+      <pre class="language-java"><code>
+volatile boolean flag = false;
+
+public void setTrue() {
+    flag = true; // All threads will see the updated value immediately
+}
+      </code></pre>
+
+      <h5 class="text-danger">🚫 Problem with volatile</h5>
+      <ul>
+        <li>It does not prevent **race conditions**.</li>
+        <li>Example: <code>volatile int count++</code> is not atomic – leads to inconsistent results in multi-threading.</li>
+      </ul>
+
+      <h5 class="text-info">🔐 2. What is <code>synchronized</code>?</h5>
+      <ul>
+        <li>Ensures **mutual exclusion** + **visibility**.</li>
+        <li>One thread at a time can execute inside a synchronized block/method.</li>
+      </ul>
+      <pre class="language-java"><code>
+private int count = 0;
+
+public synchronized void increment() {
+    count++; // Now atomic and thread-safe
+}
+      </code></pre>
+
+      <h5 class="text-warning">⚠️ Trade-offs of synchronized</h5>
+      <ul>
+        <li>Can cause performance bottlenecks due to **thread blocking**.</li>
+        <li>More **overhead** than volatile or atomic variables.</li>
+      </ul>
+
+      <h5 class="text-info">⚛️ 3. What is an <code>Atomic Variable</code>?</h5>
+      <ul>
+        <li>Classes in <code>java.util.concurrent.atomic</code> (e.g., <code>AtomicInteger</code>)</li>
+        <li>Uses **lock-free**, hardware-level atomic operations (CAS - Compare And Swap)</li>
+        <li>Faster and non-blocking compared to synchronized</li>
+      </ul>
+      <pre class="language-java"><code>
+AtomicInteger counter = new AtomicInteger();
+
+public void increment() {
+    counter.incrementAndGet(); // Thread-safe and fast
+}
+      </code></pre>
+
+      <h5 class="text-success">✅ When to use what?</h5>
+      <ul>
+        <li><strong>Use <code>volatile</code></strong> – for simple flags or signals (no compound ops).</li>
+        <li><strong>Use <code>synchronized</code></strong> – for complex logic or compound operations.</li>
+        <li><strong>Use <code>Atomic variables</code></strong> – for lock-free counters or accumulators.</li>
+      </ul>
+
+      <h5 class="text-info">🧪 Summary Table</h5>
+      <table class="table table-dark table-bordered">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>volatile</th>
+            <th>synchronized</th>
+            <th>Atomic</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Visibility</td>
+            <td>✅</td>
+            <td>✅</td>
+            <td>✅</td>
+          </tr>
+          <tr>
+            <td>Atomicity</td>
+            <td>❌</td>
+            <td>✅</td>
+            <td>✅</td>
+          </tr>
+          <tr>
+            <td>Blocking</td>
+            <td>❌</td>
+            <td>✅</td>
+            <td>❌</td>
+          </tr>
+          <tr>
+            <td>Performance</td>
+            <td>⚡️ High</td>
+            <td>🐢 Slower</td>
+            <td>⚡️ High</td>
+          </tr>
+          <tr>
+            <td>Best Use</td>
+            <td>Flags</td>
+            <td>Critical sections</td>
+            <td>Counters, metrics</td>
+          </tr>
+        </tbody>
+      </table>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#sequentialPrinter">
+      🔁 Sequential Number Printing using Inter-Thread Communication (1 to 20)
+    </button>
+  </h2>
+  <div id="sequentialPrinter" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Goal</h5>
+      <p>Print numbers from <strong>1 to 20</strong> in order using two threads where:</p>
+      <ul>
+        <li>Thread-1 prints odd numbers</li>
+        <li>Thread-2 prints even numbers</li>
+      </ul>
+
+      <h5 class="text-info">🔄 Inter-thread Communication</h5>
+      <p>We use Java's <code>synchronized</code>, <code>wait()</code>, and <code>notify()</code> to coordinate between threads, so they print alternately.</p>
+
+      <h5 class="text-info">🧵 Full Java Code</h5>
+      <pre class="language-java"><code>
+public class SequentialPrinter {
+
+    private int counter = 1;
+    private final int MAX = 20;
+    private final Object lock = new Object();
+
+    public static void main(String[] args) {
+        SequentialPrinter printer = new SequentialPrinter();
+        printer.startPrinting();
+    }
+
+    public void startPrinting() {
+        Thread t1 = new Thread(() -> printOdd(), "Thread-1");
+        Thread t2 = new Thread(() -> printEven(), "Thread-2");
+        t1.start();
+        t2.start();
+    }
+
+    public void printOdd() {
+        synchronized (lock) {
+            while (counter <= MAX) {
+                if (counter % 2 == 1) {
+                    System.out.println(Thread.currentThread().getName() + ": " + counter);
+                    counter++;
+                    lock.notify(); // wake up even printer
+                } else {
+                    try {
+                        lock.wait(); // wait for even printer to finish
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+    }
+
+    public void printEven() {
+        synchronized (lock) {
+            while (counter <= MAX) {
+                if (counter % 2 == 0) {
+                    System.out.println(Thread.currentThread().getName() + ": " + counter);
+                    counter++;
+                    lock.notify(); // wake up odd printer
+                } else {
+                    try {
+                        lock.wait(); // wait for odd printer to finish
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+    }
+}
+      </code></pre>
+
+      <h5 class="text-info">📈 Output Example</h5>
+      <pre><code>
+Thread-1: 1
+Thread-2: 2
+Thread-1: 3
+Thread-2: 4
+...
+Thread-2: 20
+      </code></pre>
+
+      <h5 class="text-success">✅ Key Points</h5>
+      <ul>
+        <li><strong>Shared lock object</strong> ensures mutual exclusion.</li>
+        <li><strong><code>wait()</code></strong> pauses the thread if it's not its turn.</li>
+        <li><strong><code>notify()</code></strong> wakes up the waiting thread to continue.</li>
+        <li>Always call <code>wait()</code> and <code>notify()</code> inside a <code>synchronized</code> block.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#forkJoinVsExecutor">
+      🧵 ForkJoinPool vs ExecutorService Framework
+    </button>
+  </h2>
+  <div id="forkJoinVsExecutor" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">🔄 ExecutorService</h5>
+      <ul>
+        <li>A standard Java concurrency framework introduced in Java 5.</li>
+        <li>Good for **independent tasks** that do not need to be split recursively.</li>
+        <li>Uses a fixed number of worker threads from a thread pool.</li>
+      </ul>
+      <pre class="language-java"><code>
+ExecutorService executor = Executors.newFixedThreadPool(4);
+executor.submit(() -> {
+    System.out.println("Task running in thread: " + Thread.currentThread().getName());
+});
+executor.shutdown();
+      </code></pre>
+
+      <h5 class="text-info">🌲 ForkJoinPool</h5>
+      <ul>
+        <li>Introduced in Java 7 as part of the **Fork/Join Framework**.</li>
+        <li>Designed for **recursive parallelism** — tasks that can be split into subtasks.</li>
+        <li>Uses **work-stealing** algorithm: idle threads "steal" work from busy threads.</li>
+      </ul>
+      <pre class="language-java"><code>
+ForkJoinPool pool = new ForkJoinPool();
+pool.invoke(new RecursiveTaskExample(0, 100));
+      </code></pre>
+
+      <h5 class="text-warning">📉 Key Differences</h5>
+      <table class="table table-dark table-bordered">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>ExecutorService</th>
+            <th>ForkJoinPool</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Introduced</td>
+            <td>Java 5</td>
+            <td>Java 7</td>
+          </tr>
+          <tr>
+            <td>Ideal Use Case</td>
+            <td>Independent tasks</td>
+            <td>Recursive, splittable tasks</td>
+          </tr>
+          <tr>
+            <td>Work Stealing</td>
+            <td>❌</td>
+            <td>✅</td>
+          </tr>
+          <tr>
+            <td>API</td>
+            <td>Runnable, Callable</td>
+            <td>RecursiveTask, RecursiveAction</td>
+          </tr>
+          <tr>
+            <td>Thread Management</td>
+            <td>Fixed / Cached Thread Pools</td>
+            <td>Fork/Join worker threads</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h5 class="text-success">📌 When to Use What?</h5>
+      <ul>
+        <li><strong>Use ExecutorService</strong> for web tasks, file IO, DB calls, etc.</li>
+        <li><strong>Use ForkJoinPool</strong> for divide-and-conquer problems like:
+          <ul>
+            <li>Parallel array processing</li>
+            <li>Tree traversals</li>
+            <li>Recursive search algorithms</li>
+          </ul>
+        </li>
+      </ul>
+
+      <h5 class="text-info">🧠 Bonus Tip</h5>
+      <p>ForkJoinPool is the default pool behind Java's <code>parallelStream()</code> API.</p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#customThreadPool">
+      🔧 Custom Thread Pool for `parallelStream()`
+    </button>
+  </h2>
+  <div id="customThreadPool" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Why Use a Custom Thread Pool?</h5>
+      <p>By default, <code>parallelStream()</code> uses the **common ForkJoinPool**, which is shared across the JVM.
+        However, you may want to provide a custom thread pool to have better control over the execution, isolate workloads,
+        or handle high-concurrency tasks efficiently.</p>
+
+      <h5 class="text-warning">⚠️ Limitations of the Default Pool</h5>
+      <ul>
+        <li>It uses a **single shared pool** across the entire application, which might not be ideal for all use cases.</li>
+        <li>It's not customizable for different workloads and might cause contention if misused.</li>
+      </ul>
+
+      <h5 class="text-info">🔄 How to Use a Custom Thread Pool with `parallelStream()`</h5>
+      <p>You can use <code>ForkJoinPool</code> to control the thread pool that executes your <code>parallelStream()</code>:</p>
+      <pre class="language-java"><code>
+import java.util.*;
+import java.util.concurrent.*;
+
+public class CustomParallelStream {
+
+    public static void main(String[] args) throws InterruptedException, ExecutionException {
+        List<Integer> numbers = Arrays.asList(1, 2, 3, 4, 5);
+
+        ForkJoinPool customPool = new ForkJoinPool(4); // Custom thread pool
+
+        Future<?> future = customPool.submit(() -> {
+            numbers.parallelStream().forEach(n -> {
+                System.out.println("Processing: " + n + " in " + Thread.currentThread().getName());
+            });
+        });
+
+        future.get(); // Wait for the task to complete
+        customPool.shutdown();
+    }
+}
+      </code></pre>
+
+      <h5 class="text-success">✅ Key Points</h5>
+      <ul>
+        <li>You use <code>ForkJoinPool.submit(...)</code> to submit the <code>parallelStream()</code> task.</li>
+        <li>You can control the number of threads in the pool by passing a custom size, e.g., <code>new ForkJoinPool(4)</code>.</li>
+        <li>The <code>shutdown()</code> method ensures that your custom pool is properly cleaned up after use.</li>
+      </ul>
+
+      <h5 class="text-danger">⚠️ When to Use a Custom Pool?</h5>
+      <table class="table table-dark table-bordered">
+        <thead>
+          <tr>
+            <th>Use Case</th>
+            <th>Use Custom Pool?</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Small apps or scripts</td>
+            <td>❌ Use default pool</td>
+          </tr>
+          <tr>
+            <td>CPU-intensive or large-scale workloads</td>
+            <td>✅ Use custom pool</td>
+          </tr>
+          <tr>
+            <td>Thread isolation for performance tuning</td>
+            <td>✅ Use custom pool</td>
+          </tr>
+        </tbody>
+      </table>
+
+    </div>
+  </div>
+</div>
+
 
 
 
