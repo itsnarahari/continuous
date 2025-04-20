@@ -82,6 +82,7 @@
 <body class="bg-dark text-light mb-4">
   <div class="container">
     <div class="header fw-bold text-center mb-4">Java Q&A</div>
+            <p id="questionCount" class="text-center">0 Questions</p>
 
 
     <!-- Search Box in a Bootstrap Container -->
@@ -217,6 +218,449 @@ jpackage --input target/ --name myapp --main-jar myapp.jar --type deb
           </div>
         </div>
       </div>
+      <div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#jvmMemory">
+      JVM Memory: Default Allocation, Metaspace & Heap
+    </button>
+  </h2>
+  <div id="jvmMemory" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <h5 class="text-info">📌 1. What is the Default Memory Assigned to JVM?</h5>
+      <p>
+        The default heap size assigned to the JVM varies depending on the architecture and JVM implementation.
+      </p>
+      <ul>
+        <li>Initial Heap Size (<code>-Xms</code>): ~256MB</li>
+        <li>Maximum Heap Size (<code>-Xmx</code>): ~1GB or ~1/4th of the physical RAM (varies by system)</li>
+      </ul>
+      <p>
+        These can be overridden using JVM options:
+        <code>-Xms512m -Xmx2048m</code>
+      </p>
+
+      <h5 class="text-info">📌 2. Who Decides JVM Memory Settings?</h5>
+      <p>
+        The JVM decides the default memory settings based on:
+        <ul>
+          <li>Available system memory</li>
+          <li>Architecture (32-bit or 64-bit)</li>
+          <li>JVM vendor (HotSpot, OpenJ9, etc.)</li>
+        </ul>
+        However, for production applications, **developers or DevOps engineers** usually define custom memory settings for better performance.
+      </p>
+
+      <h5 class="text-info">📌 3. What is Metaspace in JVM?</h5>
+      <p>
+        Metaspace is the memory area used to store **class metadata** (i.e., class definitions and related info). It replaced **PermGen** from Java 8 onwards.
+      </p>
+      <p><b>Key Point:</b> Metaspace is <u>not part of the Java heap</u>.</p>
+
+      <h5 class="text-info">📌 4. How Does Metaspace Work?</h5>
+      <p>
+        - Stored in native memory (outside of heap)<br />
+        - Grows automatically as needed (up to a max limit)<br />
+        - JVM options to control it:
+        <ul>
+          <li><code>-XX:MaxMetaspaceSize=256m</code></li>
+          <li><code>-XX:MetaspaceSize=128m</code> (initial size)</li>
+        </ul>
+      </p>
+
+      <h5 class="text-info">📌 5. Does Metaspace Increase Heap Size?</h5>
+      <p>
+        ❌ No, it does not increase heap size.<br />
+        ✅ Metaspace is a **separate memory space** from the heap.
+      </p>
+      <p>
+        This separation helps reduce memory leaks caused by class loader retention and gives more flexibility in class metadata management.
+      </p>
+
+      <h5 class="text-info">📌 6. How Does Metaspace Help?</h5>
+      <p>
+        - Prevents <code>OutOfMemoryError: PermGen space</code><br />
+        - More scalable and flexible for dynamic class loading<br />
+        - Can grow as needed, reducing GC pressure
+      </p>
+
+      <h5 class="text-info">📌 Summary</h5>
+      <p>
+        JVM memory includes heap, stack, metaspace, and more. Metaspace specifically holds class metadata and is separate from heap memory. You should size JVM memory based on your application's load, GC behavior, and monitoring insights.
+      </p>
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#xmsXmxHeap">
+      What Does <code>-Xms512m -Xmx2048m</code> Mean in JVM?
+    </button>
+  </h2>
+  <div id="xmsXmxHeap" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <h5 class="text-info">📌 1. What is <code>-Xms</code>?</h5>
+      <p>
+        <b><code>-Xms</code></b> sets the <b>initial heap size</b> for the JVM.<br />
+        In <code>-Xms512m</code>, it means the JVM will start with <b>512 megabytes</b> of heap memory.
+      </p>
+
+      <h5 class="text-info">📌 2. What is <code>-Xmx</code>?</h5>
+      <p>
+        <b><code>-Xmx</code></b> sets the <b>maximum heap size</b> the JVM is allowed to use.<br />
+        In <code>-Xmx2048m</code>, it means the JVM can grow up to <b>2048 megabytes (2 GB)</b> of heap memory.
+      </p>
+
+      <h5 class="text-info">📌 3. What is the "Heap" in JVM?</h5>
+      <p>
+        The heap is the memory area used to store:
+        <ul>
+          <li>All Java objects (instances)</li>
+          <li>Arrays</li>
+          <li>Class instance variables</li>
+        </ul>
+        The heap is managed by the JVM Garbage Collector.
+      </p>
+
+      <h5 class="text-info">📌 4. So What Does <code>-Xms512m -Xmx2048m</code> Do?</h5>
+      <p>
+        This configuration tells the JVM:
+        <ul>
+          <li>Start with <b>512 MB</b> heap memory</li>
+          <li>Allow heap to grow up to <b>2 GB</b> if needed</li>
+        </ul>
+        It's useful for performance tuning and avoiding unexpected memory usage spikes.
+      </p>
+
+      <h5 class="text-info">📌 5. Is This Related to Metaspace?</h5>
+      <p>
+        ❌ No. These options (<code>-Xms</code>, <code>-Xmx</code>) are **only for heap memory**.<br />
+        ✅ Metaspace is controlled separately using:
+        <ul>
+          <li><code>-XX:MetaspaceSize=128m</code></li>
+          <li><code>-XX:MaxMetaspaceSize=256m</code></li>
+        </ul>
+      </p>
+
+      <h5 class="text-info">📌 Summary</h5>
+      <p>
+        <code>-Xms</code> and <code>-Xmx</code> configure heap memory (used for object allocation). Tuning these helps JVM perform better under load, and they are separate from Metaspace.
+      </p>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#jvmOtherMemoryOptions">
+      Can We Increase Stack Size or Tune Memory Other Than Heap in JVM?
+    </button>
+  </h2>
+  <div id="jvmOtherMemoryOptions" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <h5 class="text-info">📌 1. Can We Increase Stack Size?</h5>
+      <p>
+        ✅ Yes, the stack size per thread can be increased using the option:
+        <code>-Xss<size></code><br />
+        Example: <code>-Xss512k</code> or <code>-Xss2m</code><br />
+        This controls the **stack memory used for method calls**, local variables, etc.
+      </p>
+
+      <h5 class="text-info">📌 2. When Should You Increase Stack Size?</h5>
+      <p>
+        If you are hitting <code>StackOverflowError</code> (e.g., deep recursion or many threads), increasing
+        <code>-Xss</code> can help.
+      </p>
+
+      <h5 class="text-info">📌 3. Other Memory Areas You Can Tune</h5>
+      <ul>
+        <li><b>Metaspace:</b> Stores class metadata (JVM internals about your classes).
+          <br />Options: 
+          <code>-XX:MetaspaceSize=128m</code>, 
+          <code>-XX:MaxMetaspaceSize=256m</code>
+        </li>
+        <li><b>Code Cache:</b> Used for JIT compiled code.
+          <br />Options: 
+          <code>-XX:InitialCodeCacheSize</code>, 
+          <code>-XX:ReservedCodeCacheSize</code>
+        </li>
+        <li><b>Thread Stack:</b> Per-thread stack size using <code>-Xss</code>
+        </li>
+      </ul>
+
+      <h5 class="text-info">📌 4. Summary</h5>
+      <p>
+        You can control multiple memory areas in JVM, not just heap:
+        <ul>
+          <li><b>Heap:</b> <code>-Xms</code> / <code>-Xmx</code></li>
+          <li><b>Stack:</b> <code>-Xss</code></li>
+          <li><b>Metaspace:</b> <code>-XX:MetaspaceSize</code></li>
+          <li><b>Code Cache:</b> <code>-XX:ReservedCodeCacheSize</code></li>
+        </ul>
+        Each plays a role in performance tuning and memory optimization.
+      </p>
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#jvmMemoryFromSystem">
+      Does JVM Use RAM or ROM for Its Memory (Heap, Stack, Metaspace)?
+    </button>
+  </h2>
+  <div id="jvmMemoryFromSystem" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <h5 class="text-info">📌 JVM Allocates Memory from RAM</h5>
+      <p>
+        ✅ All runtime memory that the JVM uses — including:
+        <ul>
+          <li><b>Heap Memory</b> (for objects)</li>
+          <li><b>Stack Memory</b> (for method calls, local variables)</li>
+          <li><b>Metaspace</b> (for class metadata)</li>
+          <li><b>Code Cache</b> (for compiled native code)</li>
+        </ul>
+        — is allocated from the system's <b>RAM</b>.
+      </p>
+
+      <h5 class="text-info">📌 What About ROM?</h5>
+      <p>
+        ❌ ROM (Read-Only Memory) is not used by the JVM at runtime. It's used only for storing:
+        <ul>
+          <li>Firmware like BIOS</li>
+          <li>Bootloaders</li>
+        </ul>
+        JVM does not interact with ROM for memory usage or allocation.
+      </p>
+
+      <h5 class="text-info">📌 Summary</h5>
+      <p>
+        JVM memory is a subset of your computer’s <b>RAM</b>. So, if your machine has 8 GB RAM, and your JVM is 
+        configured with <code>-Xmx2G</code>, it can use up to 2 GB of that 8 GB RAM for heap.
+      </p>
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#metaspaceMemory">
+      Does Metaspace Allocate Memory from ROM or RAM?
+    </button>
+  </h2>
+  <div id="metaspaceMemory" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <h5 class="text-info">📌 What is Metaspace?</h5>
+      <p>
+        Metaspace is a memory area in the JVM introduced in Java 8 that stores class metadata (info about loaded classes, methods, etc.). It replaced the older <code>PermGen</code> memory.
+      </p>
+
+      <h5 class="text-info">📌 Where is Metaspace Allocated?</h5>
+      <p>
+        ✅ <b>RAM</b>, not ROM. Metaspace is part of the native memory (outside the Java heap) and is allocated from your system’s main memory (RAM).
+      </p>
+
+      <h5 class="text-info">📌 Why Not ROM?</h5>
+      <p>
+        ❌ ROM is read-only and used only for permanent firmware like BIOS. The JVM needs to dynamically load/unload classes, which requires <b>read-write</b> memory — something ROM can't provide.
+      </p>
+
+      <h5 class="text-info">📌 Bonus Tip</h5>
+      <p>
+        Metaspace size can grow dynamically (by default), but you can limit it using:
+        <pre><code>-XX:MaxMetaspaceSize=256m</code></pre>
+      </p>
+
+      <h5 class="text-info">📌 Summary</h5>
+      <p>
+        💡 Metaspace is RAM-based native memory used by the JVM for class metadata. It is <b>not</b> part of the heap but still fully lives in your system’s <b>RAM</b>.
+      </p>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#classMetadata">
+      What is Class Metadata Stored in Metaspace? With Example
+    </button>
+  </h2>
+  <div id="classMetadata" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <h5 class="text-info">📌 What is Class Metadata?</h5>
+      <p>
+        Class Metadata is the information the JVM stores about every loaded class, such as:
+        <ul>
+          <li>Class name & package</li>
+          <li>Fields and their types</li>
+          <li>Methods and signatures</li>
+          <li>Superclasses & interfaces</li>
+          <li>Modifiers (public, private, static, final, etc.)</li>
+          <li>Annotations</li>
+          <li>Bytecode and method bytecode index</li>
+        </ul>
+      </p>
+
+      <h5 class="text-info">📌 Example</h5>
+      <pre><code class="language-java">
+public class Student {
+    private String name;
+    private int age;
+
+    public void sayHello() {
+        System.out.println("Hello, I'm " + name);
+    }
+}
+      </code></pre>
+
+      <p>
+        When the above <code>Student</code> class is loaded, JVM stores the following metadata in <b>Metaspace</b>:
+        <ul>
+          <li>Class name: <code>Student</code></li>
+          <li>Package: default (if not specified)</li>
+          <li>Field list: <code>name</code> (String), <code>age</code> (int)</li>
+          <li>Method: <code>sayHello()</code> with body</li>
+          <li>Modifiers: <code>public</code>, <code>private</code></li>
+          <li>Superclass: <code>java.lang.Object</code></li>
+        </ul>
+        This information is needed for reflection, method calls, memory layout, and bytecode execution.
+      </p>
+
+      <h5 class="text-info">📌 Why Does JVM Need This?</h5>
+      <p>
+        JVM uses class metadata to:
+        <ul>
+          <li>Verify classes</li>
+          <li>Call methods properly</li>
+          <li>Resolve inheritance and interfaces</li>
+          <li>Support reflection APIs (like <code>Class.forName()</code>)</li>
+        </ul>
+      </p>
+
+      <h5 class="text-info">📌 Summary</h5>
+      <p>
+        💡 Class metadata is the blueprint information for each class that JVM stores in Metaspace. Without it, the JVM can't execute Java programs properly.
+      </p>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#nativeMemoryMeaning">
+      What is Native Memory? Is it RAM or ROM?
+    </button>
+  </h2>
+  <div id="nativeMemoryMeaning" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <h5 class="text-info">📌 What is Native Memory?</h5>
+      <p>
+        Native memory is the memory allocated outside of the Java heap but within the system’s physical memory. It is used by:
+        <ul>
+          <li>JVM internals (like Metaspace, Thread Stacks)</li>
+          <li>JNI (Java Native Interface) code</li>
+          <li>Direct ByteBuffers</li>
+          <li>Garbage collector allocations</li>
+        </ul>
+      </p>
+
+      <h5 class="text-info">📌 Native Memory = RAM</h5>
+      <p>
+        ✅ <b>Native memory is RAM</b> (Random Access Memory).  
+        ❌ It is <b>not</b> ROM (Read-Only Memory), because:
+        <ul>
+          <li>RAM is fast, volatile memory used for runtime execution.</li>
+          <li>ROM is permanent and used for firmware—not for application memory.</li>
+        </ul>
+      </p>
+
+      <h5 class="text-info">📌 Where is Native Memory Used in JVM?</h5>
+      <p>
+        Some components that use native memory:
+        <ul>
+          <li><b>Metaspace</b> – for class metadata</li>
+          <li><b>Thread Stacks</b> – each thread consumes native memory for call stacks</li>
+          <li><b>DirectByteBuffers</b> – off-heap buffers for I/O operations</li>
+          <li><b>Garbage Collector</b> – internal structures and algorithms</li>
+        </ul>
+      </p>
+
+      <h5 class="text-info">📌 Summary</h5>
+      <p>
+        💡 Native memory means <b>off-heap memory used by the JVM</b> from the system’s physical <b>RAM</b>. It plays a major role in performance and resource usage, especially in large-scale or low-latency applications.
+      </p>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#mainMemoryThreads">
+      What is Main Memory in Java Multi-threading? How Do `volatile` and `synchronized` Update RAM?
+    </button>
+  </h2>
+  <div id="mainMemoryThreads" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What is Main Memory?</h5>
+      <p>
+        In Java Memory Model (JMM), <b>main memory</b> refers to the <b>RAM</b> of your system — where all shared variables are stored.
+        Every Java thread has:
+        <ul>
+          <li>Its own **working memory** (like a cache)</li>
+          <li>Shared access to the **main memory** (RAM)</li>
+        </ul>
+      </p>
+
+      <h5 class="text-info">📌 Thread Working Memory vs Main Memory</h5>
+      <p>
+        - Threads may read/write variables into their local working memory (cache) for faster access.<br/>
+        - But those changes are <b>not immediately visible</b> to other threads unless synchronized properly.<br/>
+        - Hence, Java provides tools like <code>volatile</code> and <code>synchronized</code> to ensure changes are written to and read from main memory (RAM).
+      </p>
+
+      <h5 class="text-info">📌 What Does `volatile` Do?</h5>
+      <p>
+        - Declaring a variable as <code>volatile</code> tells Java: <br/>
+        👉 "Always read/write this variable directly from/to <b>main memory</b> (RAM) and not from thread cache." <br/>
+        - It ensures **visibility** across threads but <b>does not guarantee atomicity</b>.
+      </p>
+
+      <h5 class="text-info">📌 What Does `synchronized` Do?</h5>
+      <p>
+        - It locks a method or block so that only one thread can access it at a time. <br/>
+        - Before entering a `synchronized` block:
+        <ul>
+          <li>Thread flushes its working memory</li>
+          <li>Reloads values from <b>main memory</b></li>
+        </ul>
+        - After exiting the block, updates are written back to RAM so other threads see them.
+      </p>
+
+      <h5 class="text-info">📌 So What Is Being Updated in RAM?</h5>
+      <p>
+        🔁 When threads use `volatile` or `synchronized`, any updates they make to variables are:
+        <ul>
+          <li>Written directly to the system's <b>RAM (main memory)</b></li>
+          <li>Visible to all other threads</li>
+        </ul>
+        This ensures **data consistency** across threads.
+      </p>
+
+      <h5 class="text-info">📌 Summary</h5>
+      <p>
+        ✅ `volatile` ensures a variable is always read/written from RAM.<br/>
+        ✅ `synchronized` ensures mutual exclusion + visibility through RAM.<br/>
+        ✅ **Main memory = RAM**, used to coordinate shared data across threads.
+      </p>
+    </div>
+  </div>
+</div>
+
 
 
       <div class="accordion-item">
@@ -11483,82 +11927,7 @@ public void printList(List&lt;?&gt; list) {
           </div>
         </div>
       </div>
-      <div class="accordion-item">
-        <h2 class="accordion-header" id="headingCovariantReturn">
-          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-            data-bs-target="#collapseCovariantReturn" aria-expanded="false" aria-controls="collapseCovariantReturn">
-            🔄 What are Covariant Return Types in Java?
-          </button>
-        </h2>
-        <div id="collapseCovariantReturn" class="accordion-collapse collapse" aria-labelledby="headingCovariantReturn"
-          data-bs-parent="#accordionExample">
-          <div class="accordion-body">
 
-            <strong>🔹 Definition:</strong><br>
-            Covariant return types allow an overridden method to return a subtype of the return type declared in the
-            original method of the superclass.
-
-            <hr>
-
-            <strong>✅ When is it used?</strong>
-            <ul>
-              <li>Used during method overriding</li>
-              <li>Makes code more readable and flexible</li>
-              <li>Introduced in Java 5</li>
-            </ul>
-
-            <hr>
-
-            <strong>🔧 Example:</strong>
-            <pre><code>
-class Animal {
-    String sound() {
-        return "Some sound";
-    }
-}
-
-class Dog extends Animal {
-    @Override
-    String sound() {
-        return "Bark";
-    }
-}
-
-// Covariant return type example
-class AnimalFactory {
-    Animal getAnimal() {
-        return new Animal();
-    }
-}
-
-class DogFactory extends AnimalFactory {
-    @Override
-    Dog getAnimal() {
-        return new Dog(); // Valid: Dog is a subtype of Animal
-    }
-}
-      </code></pre>
-
-            <hr>
-
-            <strong>⚠️ Without Covariant Return (Before Java 5)</strong>
-            <ul>
-              <li>Return types must match exactly during overriding</li>
-              <li>No subtype return allowed</li>
-            </ul>
-
-            <hr>
-
-            <strong>📌 Summary:</strong>
-            <ul>
-              <li>Supports polymorphism in a more type-safe way</li>
-              <li>Allows overridden methods to be more specific</li>
-              <li>Improves API design by reducing the need for casting</li>
-            </ul>
-
-          </div>
-        </div>
-      </div>
       <div class="accordion-item">
         <h2 class="accordion-header" id="headingSortNames">
           <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
@@ -27867,6 +28236,10 @@ public class CustomParallelStream {
   <!-- Bootstrap & Search Script -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
+                        document.addEventListener("DOMContentLoaded", function () {
+                    let questionCount = document.querySelectorAll(".accordion-item").length;
+                    document.getElementById("questionCount").innerHTML = `<strong>Total Questions: ${questionCount}</strong>`;
+                });   
     document.addEventListener("DOMContentLoaded", function () {
       let items = document.querySelectorAll(".accordion-item");
 
@@ -27878,21 +28251,24 @@ public class CustomParallelStream {
       });
     });
 
-    function searchQuestions() {
-      let input = document.getElementById("searchBox").value.toLowerCase();
-      let items = document.querySelectorAll(".search-item");
+function searchQuestions() {
+  const input = document.getElementById("searchBox").value.toLowerCase();
+  const items = document.querySelectorAll(".accordion-item");
 
-      items.forEach((item) => {
-        let text = item.textContent.toLowerCase();
-        let parent = item.closest(".accordion-item");
+  items.forEach((item) => {
+    const buttonText = item.querySelector(".accordion-button")?.textContent.toLowerCase() || "";
+    const bodyText = item.querySelector(".accordion-body")?.textContent.toLowerCase() || "";
 
-        if (text.includes(input)) {
-          parent.style.display = "";
-        } else {
-          parent.style.display = "none";
-        }
-      });
+    const combinedText = buttonText + " " + bodyText;
+
+    if (combinedText.includes(input)) {
+      item.style.display = "";
+    } else {
+      item.style.display = "none";
     }
+  });
+}
+
     function copyToClipboard(text) {
       navigator.clipboard
         .writeText(text)
