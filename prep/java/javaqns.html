@@ -82,7 +82,7 @@
 <body class="bg-dark text-light mb-4">
   <div class="container">
     <div class="header fw-bold text-center mb-4">Java Q&A</div>
-            <p id="questionCount" class="text-center">0 Questions</p>
+    <p id="questionCount" class="text-center">0 Questions</p>
 
 
     <!-- Search Box in a Bootstrap Container -->
@@ -219,294 +219,1083 @@ jpackage --input target/ --name myapp --main-jar myapp.jar --type deb
         </div>
       </div>
       <div class="accordion-item">
-  <h2 class="accordion-header">
-    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
-      data-bs-target="#jvmMemory">
-      JVM Memory: Default Allocation, Metaspace & Heap
-    </button>
-  </h2>
-  <div id="jvmMemory" class="accordion-collapse collapse">
-    <div class="accordion-body">
-      <h5 class="text-info">📌 1. What is the Default Memory Assigned to JVM?</h5>
-      <p>
-        The default heap size assigned to the JVM varies depending on the architecture and JVM implementation.
-      </p>
-      <ul>
-        <li>Initial Heap Size (<code>-Xms</code>): ~256MB</li>
-        <li>Maximum Heap Size (<code>-Xmx</code>): ~1GB or ~1/4th of the physical RAM (varies by system)</li>
-      </ul>
-      <p>
-        These can be overridden using JVM options:
-        <code>-Xms512m -Xmx2048m</code>
-      </p>
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#jvmMemory">
+            JVM Memory: Default Allocation, Metaspace & Heap
+          </button>
+        </h2>
+        <div id="jvmMemory" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <h5 class="text-info">📌 1. What is the Default Memory Assigned to JVM?</h5>
+            <p>
+              The default heap size assigned to the JVM varies depending on the architecture and JVM implementation.
+            </p>
+            <ul>
+              <li>Initial Heap Size (<code>-Xms</code>): ~256MB</li>
+              <li>Maximum Heap Size (<code>-Xmx</code>): ~1GB or ~1/4th of the physical RAM (varies by system)</li>
+            </ul>
+            <p>
+              These can be overridden using JVM options:
+              <code>-Xms512m -Xmx2048m</code>
+            </p>
 
-      <h5 class="text-info">📌 2. Who Decides JVM Memory Settings?</h5>
-      <p>
-        The JVM decides the default memory settings based on:
-        <ul>
-          <li>Available system memory</li>
-          <li>Architecture (32-bit or 64-bit)</li>
-          <li>JVM vendor (HotSpot, OpenJ9, etc.)</li>
-        </ul>
-        However, for production applications, **developers or DevOps engineers** usually define custom memory settings for better performance.
-      </p>
+            <h5 class="text-info">📌 2. Who Decides JVM Memory Settings?</h5>
+            <p>
+              The JVM decides the default memory settings based on:
+            <ul>
+              <li>Available system memory</li>
+              <li>Architecture (32-bit or 64-bit)</li>
+              <li>JVM vendor (HotSpot, OpenJ9, etc.)</li>
+            </ul>
+            However, for production applications, **developers or DevOps engineers** usually define custom memory
+            settings for better performance.
+            </p>
 
-      <h5 class="text-info">📌 3. What is Metaspace in JVM?</h5>
-      <p>
-        Metaspace is the memory area used to store **class metadata** (i.e., class definitions and related info). It replaced **PermGen** from Java 8 onwards.
-      </p>
-      <p><b>Key Point:</b> Metaspace is <u>not part of the Java heap</u>.</p>
+            <h5 class="text-info">📌 3. What is Metaspace in JVM?</h5>
+            <p>
+              Metaspace is the memory area used to store **class metadata** (i.e., class definitions and related info).
+              It replaced **PermGen** from Java 8 onwards.
+            </p>
+            <p><b>Key Point:</b> Metaspace is <u>not part of the Java heap</u>.</p>
 
-      <h5 class="text-info">📌 4. How Does Metaspace Work?</h5>
-      <p>
-        - Stored in native memory (outside of heap)<br />
-        - Grows automatically as needed (up to a max limit)<br />
-        - JVM options to control it:
-        <ul>
-          <li><code>-XX:MaxMetaspaceSize=256m</code></li>
-          <li><code>-XX:MetaspaceSize=128m</code> (initial size)</li>
-        </ul>
-      </p>
+            <h5 class="text-info">📌 4. How Does Metaspace Work?</h5>
+            <p>
+              - Stored in native memory (outside of heap)<br />
+              - Grows automatically as needed (up to a max limit)<br />
+              - JVM options to control it:
+            <ul>
+              <li><code>-XX:MaxMetaspaceSize=256m</code></li>
+              <li><code>-XX:MetaspaceSize=128m</code> (initial size)</li>
+            </ul>
+            </p>
 
-      <h5 class="text-info">📌 5. Does Metaspace Increase Heap Size?</h5>
-      <p>
-        ❌ No, it does not increase heap size.<br />
-        ✅ Metaspace is a **separate memory space** from the heap.
-      </p>
-      <p>
-        This separation helps reduce memory leaks caused by class loader retention and gives more flexibility in class metadata management.
-      </p>
+            <h5 class="text-info">📌 5. Does Metaspace Increase Heap Size?</h5>
+            <p>
+              ❌ No, it does not increase heap size.<br />
+              ✅ Metaspace is a **separate memory space** from the heap.
+            </p>
+            <p>
+              This separation helps reduce memory leaks caused by class loader retention and gives more flexibility in
+              class metadata management.
+            </p>
 
-      <h5 class="text-info">📌 6. How Does Metaspace Help?</h5>
-      <p>
-        - Prevents <code>OutOfMemoryError: PermGen space</code><br />
-        - More scalable and flexible for dynamic class loading<br />
-        - Can grow as needed, reducing GC pressure
-      </p>
+            <h5 class="text-info">📌 6. How Does Metaspace Help?</h5>
+            <p>
+              - Prevents <code>OutOfMemoryError: PermGen space</code><br />
+              - More scalable and flexible for dynamic class loading<br />
+              - Can grow as needed, reducing GC pressure
+            </p>
 
-      <h5 class="text-info">📌 Summary</h5>
-      <p>
-        JVM memory includes heap, stack, metaspace, and more. Metaspace specifically holds class metadata and is separate from heap memory. You should size JVM memory based on your application's load, GC behavior, and monitoring insights.
-      </p>
-    </div>
-  </div>
-</div>
+            <h5 class="text-info">📌 Summary</h5>
+            <p>
+              JVM memory includes heap, stack, metaspace, and more. Metaspace specifically holds class metadata and is
+              separate from heap memory. You should size JVM memory based on your application's load, GC behavior, and
+              monitoring insights.
+            </p>
+          </div>
+        </div>
+      </div>
 
-<div class="accordion-item">
-  <h2 class="accordion-header">
-    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
-      data-bs-target="#xmsXmxHeap">
-      What Does <code>-Xms512m -Xmx2048m</code> Mean in JVM?
-    </button>
-  </h2>
-  <div id="xmsXmxHeap" class="accordion-collapse collapse">
-    <div class="accordion-body">
-      <h5 class="text-info">📌 1. What is <code>-Xms</code>?</h5>
-      <p>
-        <b><code>-Xms</code></b> sets the <b>initial heap size</b> for the JVM.<br />
-        In <code>-Xms512m</code>, it means the JVM will start with <b>512 megabytes</b> of heap memory.
-      </p>
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#stringSCPHeap">
+            Is `new String("Narahari")` created in Heap? What about the String Constant Pool?
+          </button>
+        </h2>
+        <div id="stringSCPHeap" class="accordion-collapse collapse">
+          <div class="accordion-body">
 
-      <h5 class="text-info">📌 2. What is <code>-Xmx</code>?</h5>
-      <p>
-        <b><code>-Xmx</code></b> sets the <b>maximum heap size</b> the JVM is allowed to use.<br />
-        In <code>-Xmx2048m</code>, it means the JVM can grow up to <b>2048 megabytes (2 GB)</b> of heap memory.
-      </p>
+            <h5 class="text-info">📌 String str1 = "Narahari"; // String Constant Pool (SCP)</h5>
+            <p>
+              - This string is stored in the <b>String Constant Pool</b>, a part of the JVM's method area (or metaspace
+              in newer versions).<br />
+              - If "Narahari" is already present in the pool, <code>str1</code> will just point to that reference.
+            </p>
 
-      <h5 class="text-info">📌 3. What is the "Heap" in JVM?</h5>
-      <p>
-        The heap is the memory area used to store:
-        <ul>
-          <li>All Java objects (instances)</li>
-          <li>Arrays</li>
-          <li>Class instance variables</li>
-        </ul>
-        The heap is managed by the JVM Garbage Collector.
-      </p>
+            <h5 class="text-info">📌 String str2 = new String("Narahari"); // Heap</h5>
+            <p>
+              - This creates <b>two objects</b>:
+            <ul>
+              <li>One in the <b>String Constant Pool</b> (if not already present)</li>
+              <li>One in the <b>Heap memory</b> — created using <code>new</code></li>
+            </ul>
+            - So yes, <code>str2</code> refers to the heap object.
+            </p>
 
-      <h5 class="text-info">📌 4. So What Does <code>-Xms512m -Xmx2048m</code> Do?</h5>
-      <p>
-        This configuration tells the JVM:
-        <ul>
-          <li>Start with <b>512 MB</b> heap memory</li>
-          <li>Allow heap to grow up to <b>2 GB</b> if needed</li>
-        </ul>
-        It's useful for performance tuning and avoiding unexpected memory usage spikes.
-      </p>
+            <h5 class="text-info">📌 Illustration</h5>
+            <pre class="language-java"><code>
+String str1 = "Narahari";        // SCP: "Narahari"
+String str2 = new String("Narahari");  // Heap: new object with value "Narahari"
+      </code></pre>
+            <p>
+              Even though the string content is the same, <code>str1 == str2</code> will return <b>false</b> because
+              they are different objects (one in SCP, one in Heap).
+            </p>
 
-      <h5 class="text-info">📌 5. Is This Related to Metaspace?</h5>
-      <p>
-        ❌ No. These options (<code>-Xms</code>, <code>-Xmx</code>) are **only for heap memory**.<br />
-        ✅ Metaspace is controlled separately using:
-        <ul>
-          <li><code>-XX:MetaspaceSize=128m</code></li>
-          <li><code>-XX:MaxMetaspaceSize=256m</code></li>
-        </ul>
-      </p>
+            <h5 class="text-info">📌 Want to make them point to same object?</h5>
+            <p>
+              You can use <code>intern()</code> to get the SCP version:
+            <pre class="language-java"><code>
+String str2 = new String("Narahari");
+String str3 = str2.intern();
+System.out.println(str1 == str3); // true
+        </code></pre>
+            Now both point to the same SCP object.
+            </p>
 
-      <h5 class="text-info">📌 Summary</h5>
-      <p>
-        <code>-Xms</code> and <code>-Xmx</code> configure heap memory (used for object allocation). Tuning these helps JVM perform better under load, and they are separate from Metaspace.
-      </p>
-    </div>
-  </div>
-</div>
-<div class="accordion-item">
-  <h2 class="accordion-header">
-    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
-      data-bs-target="#jvmOtherMemoryOptions">
-      Can We Increase Stack Size or Tune Memory Other Than Heap in JVM?
-    </button>
-  </h2>
-  <div id="jvmOtherMemoryOptions" class="accordion-collapse collapse">
-    <div class="accordion-body">
-      <h5 class="text-info">📌 1. Can We Increase Stack Size?</h5>
-      <p>
-        ✅ Yes, the stack size per thread can be increased using the option:
-        <code>-Xss<size></code><br />
-        Example: <code>-Xss512k</code> or <code>-Xss2m</code><br />
-        This controls the **stack memory used for method calls**, local variables, etc.
-      </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#stringReassignment">
+            What happens when we reassign `str2 = "hari"` after creating it with `new String("Narahari")`?
+          </button>
+        </h2>
+        <div id="stringReassignment" class="accordion-collapse collapse">
+          <div class="accordion-body">
 
-      <h5 class="text-info">📌 2. When Should You Increase Stack Size?</h5>
-      <p>
-        If you are hitting <code>StackOverflowError</code> (e.g., deep recursion or many threads), increasing
-        <code>-Xss</code> can help.
-      </p>
+            <h5 class="text-info">📌 Initial Setup</h5>
+            <pre class="language-java"><code>
+String str1 = "Narahari";             // SCP → "Narahari"
+String str2 = new String("Narahari"); // Heap → new object "Narahari"
+      </code></pre>
+            <p>
+              - <code>str1</code> points to SCP.<br />
+              - <code>str2</code> points to a <b>Heap object</b> that contains "Narahari", but SCP also contains
+              "Narahari".
+            </p>
 
-      <h5 class="text-info">📌 3. Other Memory Areas You Can Tune</h5>
-      <ul>
-        <li><b>Metaspace:</b> Stores class metadata (JVM internals about your classes).
-          <br />Options: 
-          <code>-XX:MetaspaceSize=128m</code>, 
-          <code>-XX:MaxMetaspaceSize=256m</code>
-        </li>
-        <li><b>Code Cache:</b> Used for JIT compiled code.
-          <br />Options: 
-          <code>-XX:InitialCodeCacheSize</code>, 
-          <code>-XX:ReservedCodeCacheSize</code>
-        </li>
-        <li><b>Thread Stack:</b> Per-thread stack size using <code>-Xss</code>
-        </li>
-      </ul>
+            <h5 class="text-info">📌 Now You Do: <code>str2 = "hari";</code></h5>
+            <p>
+              - This reassigns <code>str2</code> to a new String literal.<br />
+              - The literal <code>"hari"</code> is stored in the <b>String Constant Pool</b> (if not already
+              there).<br />
+              - The reference in <code>str2</code> now points to the SCP object <code>"hari"</code>.
+            </p>
 
-      <h5 class="text-info">📌 4. Summary</h5>
-      <p>
-        You can control multiple memory areas in JVM, not just heap:
-        <ul>
-          <li><b>Heap:</b> <code>-Xms</code> / <code>-Xmx</code></li>
-          <li><b>Stack:</b> <code>-Xss</code></li>
-          <li><b>Metaspace:</b> <code>-XX:MetaspaceSize</code></li>
-          <li><b>Code Cache:</b> <code>-XX:ReservedCodeCacheSize</code></li>
-        </ul>
-        Each plays a role in performance tuning and memory optimization.
-      </p>
-    </div>
-  </div>
-</div>
+            <h5 class="text-info">📌 What About the Old Heap Object?</h5>
+            <p>
+              - The heap object that was created with <code>new String("Narahari")</code> is now
+              <b>unreferenced</b>.<br />
+              - It becomes eligible for <b>Garbage Collection</b> if no other references exist.
+            </p>
 
-<div class="accordion-item">
-  <h2 class="accordion-header">
-    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
-      data-bs-target="#jvmMemoryFromSystem">
-      Does JVM Use RAM or ROM for Its Memory (Heap, Stack, Metaspace)?
-    </button>
-  </h2>
-  <div id="jvmMemoryFromSystem" class="accordion-collapse collapse">
-    <div class="accordion-body">
-      <h5 class="text-info">📌 JVM Allocates Memory from RAM</h5>
-      <p>
-        ✅ All runtime memory that the JVM uses — including:
-        <ul>
-          <li><b>Heap Memory</b> (for objects)</li>
-          <li><b>Stack Memory</b> (for method calls, local variables)</li>
-          <li><b>Metaspace</b> (for class metadata)</li>
-          <li><b>Code Cache</b> (for compiled native code)</li>
-        </ul>
-        — is allocated from the system's <b>RAM</b>.
-      </p>
+            <h5 class="text-info">📌 Final Memory State</h5>
+            <ul>
+              <li><code>str1</code> → SCP → "Narahari"</li>
+              <li><code>str2</code> → SCP → "hari"</li>
+              <li>Old Heap → "Narahari" (garbage collectable)</li>
+            </ul>
 
-      <h5 class="text-info">📌 What About ROM?</h5>
-      <p>
-        ❌ ROM (Read-Only Memory) is not used by the JVM at runtime. It's used only for storing:
-        <ul>
-          <li>Firmware like BIOS</li>
-          <li>Bootloaders</li>
-        </ul>
-        JVM does not interact with ROM for memory usage or allocation.
-      </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#internMethod">
+            What is the use of <code>intern()</code> in Java and why do we use it?
+          </button>
+        </h2>
+        <div id="internMethod" class="accordion-collapse collapse">
+          <div class="accordion-body">
 
-      <h5 class="text-info">📌 Summary</h5>
-      <p>
-        JVM memory is a subset of your computer’s <b>RAM</b>. So, if your machine has 8 GB RAM, and your JVM is 
-        configured with <code>-Xmx2G</code>, it can use up to 2 GB of that 8 GB RAM for heap.
-      </p>
-    </div>
-  </div>
-</div>
+            <h5 class="text-info">📌 What is <code>intern()</code>?</h5>
+            <p>
+              The <code>intern()</code> method in Java is used to move a <b>String object to the String Constant Pool
+                (SCP)</b>.<br />
+              If the SCP already contains a string equal to the invoking object, it returns the reference from the
+              SCP.<br />
+              Otherwise, it adds it to the pool and returns the reference.
+            </p>
 
-<div class="accordion-item">
-  <h2 class="accordion-header">
-    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
-      data-bs-target="#metaspaceMemory">
-      Does Metaspace Allocate Memory from ROM or RAM?
-    </button>
-  </h2>
-  <div id="metaspaceMemory" class="accordion-collapse collapse">
-    <div class="accordion-body">
-      <h5 class="text-info">📌 What is Metaspace?</h5>
-      <p>
-        Metaspace is a memory area in the JVM introduced in Java 8 that stores class metadata (info about loaded classes, methods, etc.). It replaced the older <code>PermGen</code> memory.
-      </p>
+            <h5 class="text-info">📌 Example</h5>
+            <pre class="language-java"><code>
+String s1 = new String("Narahari");
+String s2 = s1.intern();
 
-      <h5 class="text-info">📌 Where is Metaspace Allocated?</h5>
-      <p>
-        ✅ <b>RAM</b>, not ROM. Metaspace is part of the native memory (outside the Java heap) and is allocated from your system’s main memory (RAM).
-      </p>
+String s3 = "Narahari";
 
-      <h5 class="text-info">📌 Why Not ROM?</h5>
-      <p>
-        ❌ ROM is read-only and used only for permanent firmware like BIOS. The JVM needs to dynamically load/unload classes, which requires <b>read-write</b> memory — something ROM can't provide.
-      </p>
+System.out.println(s2 == s3); // true
+System.out.println(s1 == s3); // false
+      </code></pre>
+            <p>
+              - <code>s1</code> is created in Heap.<br />
+              - <code>s2</code> points to SCP after using <code>intern()</code>.<br />
+              - <code>s3</code> is already in SCP.<br />
+              So <code>s2 == s3</code> is true, but <code>s1 == s3</code> is false.
+            </p>
 
-      <h5 class="text-info">📌 Bonus Tip</h5>
-      <p>
-        Metaspace size can grow dynamically (by default), but you can limit it using:
-        <pre><code>-XX:MaxMetaspaceSize=256m</code></pre>
-      </p>
+            <h5 class="text-info">📌 Why use <code>intern()</code>?</h5>
+            <ul>
+              <li>🔄 **Avoid Duplicate Strings** in memory.</li>
+              <li>🚀 **Improve Performance** for comparisons using <code>==</code> when you want to check references,
+                not content.</li>
+              <li>💾 Helps **save memory** by reusing immutable strings from the pool.</li>
+            </ul>
 
-      <h5 class="text-info">📌 Summary</h5>
-      <p>
-        💡 Metaspace is RAM-based native memory used by the JVM for class metadata. It is <b>not</b> part of the heap but still fully lives in your system’s <b>RAM</b>.
-      </p>
-    </div>
-  </div>
-</div>
-<div class="accordion-item">
-  <h2 class="accordion-header">
-    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
-      data-bs-target="#classMetadata">
-      What is Class Metadata Stored in Metaspace? With Example
-    </button>
-  </h2>
-  <div id="classMetadata" class="accordion-collapse collapse">
-    <div class="accordion-body">
-      <h5 class="text-info">📌 What is Class Metadata?</h5>
-      <p>
-        Class Metadata is the information the JVM stores about every loaded class, such as:
-        <ul>
-          <li>Class name & package</li>
-          <li>Fields and their types</li>
-          <li>Methods and signatures</li>
-          <li>Superclasses & interfaces</li>
-          <li>Modifiers (public, private, static, final, etc.)</li>
-          <li>Annotations</li>
-          <li>Bytecode and method bytecode index</li>
-        </ul>
-      </p>
+            <h5 class="text-info">📌 When to Use?</h5>
+            <ul>
+              <li>✅ When you're creating lots of duplicate string values from external sources (e.g., file, DB, input).
+              </li>
+              <li>⚠️ Avoid overusing — too many interned strings can fill the SCP and impact performance.</li>
+            </ul>
 
-      <h5 class="text-info">📌 Example</h5>
-      <pre><code class="language-java">
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#latestGC">
+            What is the Latest Garbage Collector Algorithm in Java?
+          </button>
+        </h2>
+        <div id="latestGC" class="accordion-collapse collapse">
+          <div class="accordion-body">
+
+            <h5 class="text-info">📌 Latest Garbage Collector: ZGC (Z Garbage Collector)</h5>
+            <p>
+              <strong>ZGC</strong> is one of the latest and most advanced garbage collectors introduced by Java. As of
+              Java 15+, it is considered stable and production-ready.
+            </p>
+
+            <h5 class="text-info">📌 Key Features of ZGC</h5>
+            <ul>
+              <li>⚡ <b>Low Latency:</b> Pause times are usually < 1ms, even for large heaps.</li>
+              <li>🔄 <b>Concurrent:</b> Most of the garbage collection work is done while the application is still
+                running.</li>
+              <li>📈 <b>Scalability:</b> Supports heaps ranging from a few MBs to several TBs.</li>
+              <li>♻️ <b>Compacts the Heap:</b> Avoids fragmentation.</li>
+            </ul>
+
+            <h5 class="text-info">📌 Other Modern Garbage Collectors</h5>
+            <ul>
+              <li><b>G1 GC (Garbage First):</b> Default from Java 9 onwards, balances throughput and latency.</li>
+              <li><b>Shenandoah GC:</b> Red Hat’s low-pause-time GC, similar to ZGC in approach.</li>
+              <li><b>Serial and Parallel GC:</b> Older but still available for small-scale applications.</li>
+            </ul>
+
+            <h5 class="text-info">📌 How to Enable ZGC?</h5>
+            <pre class="language-bash"><code>
+java -XX:+UseZGC -Xmx2g -Xms2g -jar yourapp.jar
+      </code></pre>
+            <p>
+              Just add <code>-XX:+UseZGC</code> to your JVM options.
+            </p>
+
+            <h5 class="text-info">📌 Conclusion</h5>
+            <p>
+              ZGC is the latest and most modern GC in Java for ultra-low latency needs. It's ideal for high-performance,
+              memory-intensive apps.
+            </p>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#gcJava7to21">
+            📦 Garbage Collectors in Java 7 to Java 21
+          </button>
+        </h2>
+        <div id="gcJava7to21" class="accordion-collapse collapse">
+          <div class="accordion-body">
+
+            <h5 class="text-info">🧹 Java 7</h5>
+            <ul>
+              <li><b>Serial GC:</b> Simple, single-threaded, best for small applications.</li>
+              <li><b>Parallel GC (Throughput GC):</b> Multi-threaded, focuses on high throughput.</li>
+              <li><b>CMS (Concurrent Mark-Sweep):</b> Low pause time collector, concurrent GC phases.</li>
+            </ul>
+
+            <h5 class="text-info">🧹 Java 8</h5>
+            <ul>
+              <li>Same as Java 7 +</li>
+              <li><b>G1 GC (Garbage First):</b> Introduced as an alternative to CMS, low-pause collector.</li>
+            </ul>
+
+            <h5 class="text-info">🧹 Java 9</h5>
+            <ul>
+              <li><b>G1 GC becomes the default GC</b>.</li>
+              <li>Continued support for Serial, Parallel, and CMS (though CMS was deprecated).</li>
+            </ul>
+
+            <h5 class="text-info">🧹 Java 10</h5>
+            <ul>
+              <li>Improvements to G1 GC for better parallelism and performance.</li>
+            </ul>
+
+            <h5 class="text-info">🧹 Java 11</h5>
+            <ul>
+              <li><b>Experimental ZGC (Z Garbage Collector)</b> introduced – very low pause times.</li>
+              <li>G1 still default.</li>
+            </ul>
+
+            <h5 class="text-info">🧹 Java 12</h5>
+            <ul>
+              <li><b>Shenandoah GC</b> (from Red Hat) introduced as experimental (low pause collector).</li>
+              <li>Improvements to G1 and ZGC.</li>
+            </ul>
+
+            <h5 class="text-info">🧹 Java 14</h5>
+            <ul>
+              <li><b>CMS GC removed</b> officially (was deprecated earlier).</li>
+              <li>ZGC and Shenandoah improvements.</li>
+            </ul>
+
+            <h5 class="text-info">🧹 Java 15</h5>
+            <ul>
+              <li><b>ZGC becomes production-ready.</b></li>
+            </ul>
+
+            <h5 class="text-info">🧹 Java 17 (LTS)</h5>
+            <ul>
+              <li>ZGC and Shenandoah are now stable and supported.</li>
+              <li>G1 GC remains default.</li>
+            </ul>
+
+            <h5 class="text-info">🧹 Java 19</h5>
+            <ul>
+              <li>Improved performance for ZGC and Shenandoah.</li>
+            </ul>
+
+            <h5 class="text-info">🧹 Java 21 (LTS)</h5>
+            <ul>
+              <li><b>ZGC is highly optimized for low-latency scenarios.</b></li>
+              <li>G1 GC still default for balanced use cases.</li>
+              <li>Continued enhancements to Parallel, ZGC, and Shenandoah.</li>
+            </ul>
+
+            <h5 class="text-info">📌 Summary Table</h5>
+            <pre class="language-markdown"><code>
+| Java Version | Default GC | New/Improved Collectors             |
+|--------------|------------|------------------------------------|
+| Java 7       | Parallel   | CMS                                |
+| Java 8       | Parallel   | G1 (new)                           |
+| Java 9       | G1         |                                    |
+| Java 11      | G1         | ZGC (experimental)                |
+| Java 12      | G1         | Shenandoah (experimental)         |
+| Java 14      | G1         | CMS removed                       |
+| Java 15      | G1         | ZGC production-ready              |
+| Java 17      | G1         | ZGC, Shenandoah stable            |
+| Java 21      | G1         | Highly optimized ZGC & Shenandoah |
+      </code></pre>
+
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#stringImmutability">
+            🔍 What happens when we reassign a String like this? Is String still immutable?
+          </button>
+        </h2>
+        <div id="stringImmutability" class="accordion-collapse collapse">
+          <div class="accordion-body">
+
+            <h5 class="text-info">📌 Code Example</h5>
+            <pre class="language-java"><code>
+String s1 = new String("Narahari");  // s1 points to a new String object in heap
+s1 = "hari";                         // s1 now points to a different String object in SCP
+      </code></pre>
+
+            <h5 class="text-info">🧠 What Happens Internally?</h5>
+            <ul>
+              <li><b>Step 1:</b> <code>new String("Narahari")</code> creates a new object in the <b>heap</b> and the
+                literal "Narahari" is in the <b>String Constant Pool (SCP)</b>.</li>
+              <li><b>Step 2:</b> <code>s1 = "hari"</code> makes <code>s1</code> now point to the literal "hari" in the
+                SCP.</li>
+              <li>The original object ("Narahari" in heap) is <b>not modified</b> — it's simply no longer referenced by
+                <code>s1</code>.</li>
+            </ul>
+
+            <h5 class="text-info">🔒 Then Why Is String Immutable?</h5>
+            <p>String is called <b>immutable</b> because <u>you can’t change the contents of a String object once it's
+                created</u>.</p>
+
+            <ul>
+              <li>When you do <code>s1 = "hari"</code>, you're not changing the existing object — you're <b>changing the
+                  reference</b>.</li>
+              <li>The original object ("Narahari") stays unchanged in memory (until garbage collected).</li>
+            </ul>
+
+            <h5 class="text-info">✅ Real Immutability Test</h5>
+            <p>Look at this:</p>
+            <pre class="language-java"><code>
+String original = "Java";
+original.concat(" Rocks!");
+System.out.println(original);  // Output: Java
+      </code></pre>
+            <p><b>Why?</b> Because <code>concat()</code> returns a new string; it doesn't modify the original.</p>
+
+            <h5 class="text-info">📌 Conclusion</h5>
+            <ul>
+              <li>Reassigning a reference doesn't break immutability.</li>
+              <li>Immutability means the <b>object’s content</b> can’t be changed, not that references can’t point to
+                new objects.</li>
+              <li>That’s why Strings are thread-safe, can be cached, used as keys in HashMaps, etc.</li>
+            </ul>
+
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#stringCreationMemory">
+            🔍 Is <code>new String("Narahari")</code> creating objects in Heap and SCP?
+          </button>
+        </h2>
+        <div id="stringCreationMemory" class="accordion-collapse collapse">
+          <div class="accordion-body">
+
+            <h5 class="text-info">📌 Yes, it's absolutely correct — but here's the full story</h5>
+            <p>When you write:</p>
+
+            <pre class="language-java"><code>
+String s = new String("Narahari");
+      </code></pre>
+
+            <h5 class="text-info">🧠 Memory Allocation Details</h5>
+            <ul>
+              <li><b>Step 1:</b> The <code>"Narahari"</code> literal is stored in the <b>String Constant Pool (SCP)</b>,
+                if it's not already there.</li>
+              <li><b>Step 2:</b> The <code>new String(...)</code> expression creates a <b>new object in the heap</b> —
+                even though it has the same content.</li>
+              <li>So you end up with <b>two String objects:</b> one in SCP, one in Heap.</li>
+            </ul>
+
+            <h5 class="text-info">🔁 Visualization</h5>
+            <pre>
+SCP (String Pool):           Heap:
++------------------+        +------------------------+
+| "Narahari"       | <----  | new String("Narahari") |
++------------------+        +------------------------+
+                            (points to SCP value internally)
+      </pre>
+
+            <h5 class="text-info">📌 Why Does Java Do This?</h5>
+            <ul>
+              <li>The <code>String literal</code> is interned for memory efficiency.</li>
+              <li>But <code>new String(...)</code> always creates a new object in heap to allow flexibility (like
+                creating different references).</li>
+            </ul>
+
+            <h5 class="text-info">📌 Want Only One Object?</h5>
+            <p>If you want only the SCP object, don’t use <code>new</code>. Just do:</p>
+            <pre class="language-java"><code>
+String s = "Narahari"; // Only in SCP
+      </code></pre>
+
+            <h5 class="text-info">📌 Want to convert heap to SCP?</h5>
+            <pre class="language-java"><code>
+String s1 = new String("Narahari");
+String s2 = s1.intern(); // s2 will point to SCP version
+      </code></pre>
+
+            <h5 class="text-info">✅ Summary</h5>
+            <ul>
+              <li><code>"Narahari"</code> → goes to SCP</li>
+              <li><code>new String("Narahari")</code> → new object in Heap (but value comes from SCP)</li>
+              <li><b>Yes, both are created unless the literal already exists.</b></li>
+            </ul>
+
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#proveSCPUsage">
+            🔍 How to prove that <code>new String("Narahari")</code> still uses SCP?
+          </button>
+        </h2>
+        <div id="proveSCPUsage" class="accordion-collapse collapse">
+          <div class="accordion-body">
+
+            <h5 class="text-info">📌 Goal</h5>
+            <p>We want to show that even though a new string is created using <code>new String("Narahari")</code>, the
+              literal itself <b>still lives in the String Constant Pool (SCP)</b>.</p>
+
+            <h5 class="text-info">🧪 Code to Test</h5>
+            <pre class="language-java"><code>
+public class StringPoolTest {
+    public static void main(String[] args) {
+        String s1 = "Narahari"; // SCP
+        String s2 = new String("Narahari"); // Heap object pointing to same content
+        String s3 = s2.intern(); // Now s3 points to SCP
+
+        System.out.println(s1 == s2); // false - different objects
+        System.out.println(s1 == s3); // true - both refer to SCP object
+    }
+}
+      </code></pre>
+
+            <h5 class="text-info">🧠 Explanation</h5>
+            <ul>
+              <li><code>s1</code> is the literal → stored in SCP.</li>
+              <li><code>s2</code> is a new object in Heap → <b>but initialized with the same SCP literal</b>.</li>
+              <li><code>s2.intern()</code> returns the SCP reference → <b>same as s1</b>.</li>
+              <li><code>s1 == s3</code> returns <code>true</code> → proves that literal was in SCP all along.</li>
+            </ul>
+
+            <h5 class="text-info">✅ Output</h5>
+            <pre>
+false
+true
+      </pre>
+
+            <h5 class="text-info">📌 Conclusion</h5>
+            <p>This shows that even if you create a new string using <code>new</code>, the literal itself is fetched
+              from the SCP unless you're dynamically creating a string (e.g., from user input).</p>
+
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+            data-bs-target="#stringMemory">
+            Understanding String Memory and Interning in Java
+          </button>
+        </h2>
+        <div id="stringMemory" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <h5 class="text-info">📌 String Memory and Hashcode</h5>
+            <p>In Java, <code>hashCode()</code> for <code>String</code> is calculated based on the string's content, not
+              its memory location. This value is primarily used for hashing in collections like <code>HashMap</code>,
+              <code>HashSet</code>, etc.</p>
+
+            <pre class="language-java"><code>
+String str1 = "Narahari";      // In String Constant Pool (SCP)
+String str2 = new String("Narahari");  // Created in the Heap
+System.out.println(str1.hashCode());   // Based on content
+System.out.println(str2.intern().hashCode());  // Same as str1, because they both point to the same content "Narahari"
+      </code></pre>
+
+            <p>The <code>hashCode()</code> will be the same for <code>str1</code> and <code>str2.intern()</code> because
+              both have the same content "Narahari", but they are stored in different places (SCP and Heap
+              respectively).</p>
+
+            <h5 class="text-info">📌 String Interning</h5>
+            <p>The <code>intern()</code> method in Java ensures that only one copy of a string with the same value
+              exists in the String Constant Pool (SCP). If a string is already present in the SCP, <code>intern()</code>
+              returns the reference to that existing string. If not, it adds the string to the SCP and returns the
+              reference.</p>
+
+            <pre class="language-java"><code>
+String str3 = str2.intern();   // Returns reference to the SCP object, no new object created
+System.out.println(str3 == str1); // true, both point to the same "Narahari" in SCP
+      </code></pre>
+
+            <p><code>intern()</code> ensures efficient memory usage by avoiding duplicate strings in memory. It doesn’t
+              create a new string object in the heap, but rather points to the existing SCP entry.</p>
+
+            <h5 class="text-info">📌 Understanding String Immutability</h5>
+            <p>Strings in Java are immutable, meaning that once created, their content cannot be modified. However, the
+              reference to the string object can be changed. For example:</p>
+
+            <pre class="language-java"><code>
+String s1 = "Narahari";
+s1 = "Hari"; // s1 now points to "Hari", the original string "Narahari" remains unchanged in memory
+      </code></pre>
+
+            <p>When you reassign <code>s1</code>, the original string "Narahari" still exists in the String Constant
+              Pool (SCP), and the reference <code>s1</code> now points to a new string "Hari". This behavior proves that
+              strings are immutable, but the reference can change.</p>
+
+            <h5 class="text-info">📌 String Hashcodes and Memory</h5>
+            <p>To understand memory and references more clearly, you can use <code>System.identityHashCode()</code> to
+              get the identity hash code, which represents the unique identity of the object in the JVM's heap:</p>
+
+            <pre class="language-java"><code>
+System.out.println(System.identityHashCode(str1)); // JVM's reference identity
+System.out.println(System.identityHashCode(str2)); // Different identity
+      </code></pre>
+
+            <p>This identity hash code gives you a unique value for the memory location, unlike <code>hashCode()</code>,
+              which is based on string content.</p>
+
+            <h5 class="text-info">📌 Summary</h5>
+            <ul>
+              <li>String <code>hashCode()</code> is content-based, not memory-based.</li>
+              <li>String <code>intern()</code> ensures strings with the same value point to the same reference in SCP.
+              </li>
+              <li>Strings are immutable, but you can reassign the reference to point to a new object.</li>
+              <li><code>System.identityHashCode()</code> provides the actual JVM identity of an object, which differs
+                from <code>hashCode()</code>.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+            data-bs-target="#stringExplanation">
+            String and Memory Allocation: Heap and SCP
+          </button>
+        </h2>
+        <div id="stringExplanation" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <p>When you execute the following code:</p>
+            <pre><code>String str1 = "Narahari";</code></pre>
+            <pre><code>String str2 = new String("Narahari");</code></pre>
+
+            <p>Here’s what happens:</p>
+            <ul>
+              <li><strong>String Literal in SCP</strong>: The string <code>"Narahari"</code> is stored in the
+                <strong>String Constant Pool (SCP)</strong> (if it doesn't already exist).</li>
+              <li><strong>New String Object in Heap</strong>: <code>new String("Narahari")</code> creates a new
+                <strong>String object in the heap</strong>. This object is a separate object from the string literal in
+                the SCP. Even though the object is in the heap, it still references the string value
+                <code>"Narahari"</code> in the SCP.</li>
+              <li><strong>str1 points to SCP</strong>: The reference <code>str1</code> points to the string literal
+                <code>"Narahari"</code> in the SCP.</li>
+              <li><strong>str2 points to heap object</strong>: The reference <code>str2</code> points to the new
+                <code>String</code> object created in the heap, which holds the same value <code>"Narahari"</code>, but
+                it is a different object from the one in the SCP.</li>
+            </ul>
+
+            <p>If you check if both references point to the same object:</p>
+            <pre><code>System.out.println(str1 == str2);</code></pre>
+            <p>The output will be <code>false</code>, because <code>str1</code> points to the SCP reference, and
+              <code>str2</code> points to the new object in the heap.</p>
+
+            <p>However, if you intern <code>str2</code>:</p>
+            <pre><code>String str3 = str2.intern();</code></pre>
+            <p>Now, <code>str3</code> points to the same reference as <code>str1</code>, because the interned string
+              refers to the string literal in the SCP:</p>
+            <pre><code>System.out.println(str1 == str3); // true</code></pre>
+
+            <p><strong>Key Points:</strong></p>
+            <ul>
+              <li>String literals like <code>"Narahari"</code> are interned in the String Constant Pool (SCP).</li>
+              <li><code>new String("Narahari")</code> creates a new object in the heap, but it does not add
+                <code>"Narahari"</code> to the SCP. It only refers to the same literal from the SCP.</li>
+              <li>Interning a string ensures that the reference points to the same object in the SCP.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+            data-bs-target="#cpuCacheExplanation">
+            Understanding the Role of CPU Cache with Volatile and Synchronized
+          </button>
+        </h2>
+        <div id="cpuCacheExplanation" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <p>When you use <code>volatile</code> or <code>synchronized</code> keywords in Java, they ensure that the
+              changes made by one thread to a variable are immediately visible to all other threads. But you are right
+              in thinking about CPU caches, which also play a crucial role in memory access and performance.</p>
+
+            <h5>Key Points to Understand:</h5>
+            <ul>
+              <li><strong>CPU Caches:</strong> Modern CPUs have cache memory (L1, L2, L3 caches) located on each CPU
+                core. These caches store frequently accessed data to speed up operations, reducing the need to fetch
+                data from the slower main RAM. Each core has its local cache to work with.</li>
+              <li><strong>Thread and Cache:</strong> When threads run on different CPU cores, they may use their
+                respective CPU caches for faster data access. However, this can create issues where one thread updates a
+                variable in its local cache, and other threads are unaware of this change if they are using their cache.
+              </li>
+              <li><strong>RAM vs CPU Cache:</strong> Main memory (RAM) holds the global state of the variables that
+                threads are working on, while the CPU caches hold copies of frequently accessed data for performance
+                reasons. Without proper synchronization (using <code>volatile</code> or <code>synchronized</code>), the
+                CPU caches can lead to inconsistent views of the data across different threads.</li>
+              <li><strong>Effect of `volatile` and `synchronized`:</strong>
+                <ul>
+                  <li><code>volatile</code>: Guarantees that a thread reads the most recent value from RAM rather than
+                    from the cache. It also ensures that any updates made by one thread are immediately visible to all
+                    other threads.</li>
+                  <li><code>synchronized</code>: When a thread enters a synchronized block, it releases the lock and
+                    flushes changes from the CPU cache to main memory (RAM). This ensures that the updated data is
+                    visible to other threads accessing the same memory.</li>
+                </ul>
+              </li>
+            </ul>
+
+            <h5>What Happens in Practice?</h5>
+            <ul>
+              <li>Without <code>volatile</code> or <code>synchronized</code>, the CPU caches might contain stale or
+                outdated copies of variables, and different threads could be working with inconsistent data.</li>
+              <li>With <code>volatile</code> or <code>synchronized</code>, updates to variables are immediately flushed
+                to main memory (RAM), ensuring that all threads see the most up-to-date values, even if they have cached
+                copies.</li>
+            </ul>
+
+            <h5>Conclusion:</h5>
+            <p>CPU caches optimize performance by reducing the need to access slower RAM. However, without
+              synchronization mechanisms like <code>volatile</code> and <code>synchronized</code>, these caches can lead
+              to inconsistent data between threads. By using these mechanisms, Java ensures that data updates are
+              immediately reflected in RAM, making them visible to all threads regardless of their CPU cache contents.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+            data-bs-target="#httpXmlExchange">
+            HTTP XML Exchange in Spring Boot 3
+          </button>
+        </h2>
+        <div id="httpXmlExchange" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <h5>📌 What is HTTP XML Exchange?</h5>
+            <p>It refers to sending or receiving XML data over HTTP requests and responses using Spring Boot REST
+              controllers.</p>
+
+            <h5>✅ Steps to Enable XML Exchange</h5>
+            <ol>
+              <li>Include JAXB (if using custom POJOs).</li>
+              <li>Use <code>@RequestBody</code> and <code>@ResponseBody</code> with XML media types.</li>
+              <li>Configure message converters if needed.</li>
+            </ol>
+
+            <h5>📦 Dependencies</h5>
+            <pre><code class="language-xml">&lt;dependency&gt;
+  &lt;groupId&gt;com.fasterxml.jackson.dataformat&lt;/groupId&gt;
+  &lt;artifactId&gt;jackson-dataformat-xml&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+
+            <h5>💡 Sample XML Payload</h5>
+            <pre><code class="language-xml">&lt;User&gt;
+  &lt;id&gt;1&lt;/id&gt;
+  &lt;name&gt;Narahari&lt;/name&gt;
+&lt;/User&gt;</code></pre>
+
+            <h5>🧩 Sample Model (User.java)</h5>
+            <pre><code class="language-java">@XmlRootElement
+public class User {
+    private Long id;
+    private String name;
+
+    // getters and setters
+}</code></pre>
+
+            <h5>🌐 Controller to Accept/Return XML</h5>
+            <pre><code class="language-java">@PostMapping(value = "/xml", consumes = MediaType.APPLICATION_XML_VALUE)
+public ResponseEntity&lt;User&gt; receiveXml(@RequestBody User user) {
+    // logic here
+    return ResponseEntity.ok(user);
+}
+
+@GetMapping(value = "/xml", produces = MediaType.APPLICATION_XML_VALUE)
+public User sendXml() {
+    return new User(1L, "Narahari");
+}</code></pre>
+
+            <h5>⚙️ Notes</h5>
+            <ul>
+              <li>Spring Boot auto-registers Jackson XML converter if dependency is present.</li>
+              <li>To support JAXB annotations, make sure JAXB is on the classpath (especially for Java 11+).</li>
+            </ul>
+
+            <h5>📬 Testing with Postman</h5>
+            <ul>
+              <li>Set <strong>Content-Type</strong> to <code>application/xml</code>.</li>
+              <li>Use XML formatted body in requests.</li>
+            </ul>
+
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#circuitBreakerPattern">
+            Microservices Circuit Breaker Pattern (Closed, Open, Half-Open)
+          </button>
+        </h2>
+        <div id="circuitBreakerPattern" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <h5 class="text-info">💡 What is Circuit Breaker Pattern?</h5>
+            <p>The Circuit Breaker Pattern is used in microservices to handle failures gracefully when one service is
+              not responding, avoiding cascading failures across the system.</p>
+
+            <h5 class="text-warning">🔒 1. <strong>Closed State</strong></h5>
+            <p>All requests go to the downstream service normally. If failures exceed a threshold, it moves to
+              <strong>Open</strong> state.</p>
+            <pre class="language-java"><code>
+// All calls are passed through
+if (callFails) {
+    failureCount++;
+    if (failureCount > threshold) {
+        circuitBreaker.open();
+    }
+}
+      </code></pre>
+
+            <h5 class="text-danger">🔌 2. <strong>Open State</strong></h5>
+            <p>The circuit is open. Requests are not forwarded to the downstream service. A fallback mechanism may be
+              used (e.g., cached response or error message).</p>
+            <pre class="language-java"><code>
+// Skip call, return fallback
+return fallbackResponse();
+      </code></pre>
+            <p>After a defined timeout, it goes to <strong>Half-Open</strong> state to test if the service is healthy
+              again.</p>
+
+            <h5 class="text-success">🌓 3. <strong>Half-Open State</strong></h5>
+            <p>Allows a limited number of test requests to pass through. If successful, it returns to
+              <strong>Closed</strong>. If failures still occur, it goes back to <strong>Open</strong>.</p>
+            <pre class="language-java"><code>
+if (testCallSucceeds) {
+    circuitBreaker.close();
+} else {
+    circuitBreaker.open();
+}
+      </code></pre>
+
+            <h5 class="text-primary">⚙️ Implementation Libraries</h5>
+            <ul>
+              <li><strong>Resilience4j</strong> – Light-weight, functional</li>
+              <li><strong>Hystrix</strong> – Netflix library (now in maintenance)</li>
+              <li><strong>Spring Cloud Circuit Breaker</strong> – Wrapper around above</li>
+            </ul>
+
+            <h5 class="text-info">🎯 Benefits</h5>
+            <ul>
+              <li>Prevents cascading failures</li>
+              <li>Improves resilience and availability</li>
+              <li>Quick fallback options during outages</li>
+            </ul>
+
+            <h5 class="text-warning">📌 Conclusion</h5>
+            <p>The Circuit Breaker pattern adds a safety net in distributed systems by preventing constant calls to a
+              failing service and helps restore the system gradually using the <strong>Half-Open</strong> state.</p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#xmsXmxHeap">
+            What Does <code>-Xms512m -Xmx2048m</code> Mean in JVM?
+          </button>
+        </h2>
+        <div id="xmsXmxHeap" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <h5 class="text-info">📌 1. What is <code>-Xms</code>?</h5>
+            <p>
+              <b><code>-Xms</code></b> sets the <b>initial heap size</b> for the JVM.<br />
+              In <code>-Xms512m</code>, it means the JVM will start with <b>512 megabytes</b> of heap memory.
+            </p>
+
+            <h5 class="text-info">📌 2. What is <code>-Xmx</code>?</h5>
+            <p>
+              <b><code>-Xmx</code></b> sets the <b>maximum heap size</b> the JVM is allowed to use.<br />
+              In <code>-Xmx2048m</code>, it means the JVM can grow up to <b>2048 megabytes (2 GB)</b> of heap memory.
+            </p>
+
+            <h5 class="text-info">📌 3. What is the "Heap" in JVM?</h5>
+            <p>
+              The heap is the memory area used to store:
+            <ul>
+              <li>All Java objects (instances)</li>
+              <li>Arrays</li>
+              <li>Class instance variables</li>
+            </ul>
+            The heap is managed by the JVM Garbage Collector.
+            </p>
+
+            <h5 class="text-info">📌 4. So What Does <code>-Xms512m -Xmx2048m</code> Do?</h5>
+            <p>
+              This configuration tells the JVM:
+            <ul>
+              <li>Start with <b>512 MB</b> heap memory</li>
+              <li>Allow heap to grow up to <b>2 GB</b> if needed</li>
+            </ul>
+            It's useful for performance tuning and avoiding unexpected memory usage spikes.
+            </p>
+
+            <h5 class="text-info">📌 5. Is This Related to Metaspace?</h5>
+            <p>
+              ❌ No. These options (<code>-Xms</code>, <code>-Xmx</code>) are **only for heap memory**.<br />
+              ✅ Metaspace is controlled separately using:
+            <ul>
+              <li><code>-XX:MetaspaceSize=128m</code></li>
+              <li><code>-XX:MaxMetaspaceSize=256m</code></li>
+            </ul>
+            </p>
+
+            <h5 class="text-info">📌 Summary</h5>
+            <p>
+              <code>-Xms</code> and <code>-Xmx</code> configure heap memory (used for object allocation). Tuning these
+              helps JVM perform better under load, and they are separate from Metaspace.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#jvmOtherMemoryOptions">
+            Can We Increase Stack Size or Tune Memory Other Than Heap in JVM?
+          </button>
+        </h2>
+        <div id="jvmOtherMemoryOptions" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <h5 class="text-info">📌 1. Can We Increase Stack Size?</h5>
+            <p>
+              ✅ Yes, the stack size per thread can be increased using the option:
+              <code>-Xss<size></code><br />
+              Example: <code>-Xss512k</code> or <code>-Xss2m</code><br />
+              This controls the **stack memory used for method calls**, local variables, etc.
+            </p>
+
+            <h5 class="text-info">📌 2. When Should You Increase Stack Size?</h5>
+            <p>
+              If you are hitting <code>StackOverflowError</code> (e.g., deep recursion or many threads), increasing
+              <code>-Xss</code> can help.
+            </p>
+
+            <h5 class="text-info">📌 3. Other Memory Areas You Can Tune</h5>
+            <ul>
+              <li><b>Metaspace:</b> Stores class metadata (JVM internals about your classes).
+                <br />Options:
+                <code>-XX:MetaspaceSize=128m</code>,
+                <code>-XX:MaxMetaspaceSize=256m</code>
+              </li>
+              <li><b>Code Cache:</b> Used for JIT compiled code.
+                <br />Options:
+                <code>-XX:InitialCodeCacheSize</code>,
+                <code>-XX:ReservedCodeCacheSize</code>
+              </li>
+              <li><b>Thread Stack:</b> Per-thread stack size using <code>-Xss</code>
+              </li>
+            </ul>
+
+            <h5 class="text-info">📌 4. Summary</h5>
+            <p>
+              You can control multiple memory areas in JVM, not just heap:
+            <ul>
+              <li><b>Heap:</b> <code>-Xms</code> / <code>-Xmx</code></li>
+              <li><b>Stack:</b> <code>-Xss</code></li>
+              <li><b>Metaspace:</b> <code>-XX:MetaspaceSize</code></li>
+              <li><b>Code Cache:</b> <code>-XX:ReservedCodeCacheSize</code></li>
+            </ul>
+            Each plays a role in performance tuning and memory optimization.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#jvmMemoryFromSystem">
+            Does JVM Use RAM or ROM for Its Memory (Heap, Stack, Metaspace)?
+          </button>
+        </h2>
+        <div id="jvmMemoryFromSystem" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <h5 class="text-info">📌 JVM Allocates Memory from RAM</h5>
+            <p>
+              ✅ All runtime memory that the JVM uses — including:
+            <ul>
+              <li><b>Heap Memory</b> (for objects)</li>
+              <li><b>Stack Memory</b> (for method calls, local variables)</li>
+              <li><b>Metaspace</b> (for class metadata)</li>
+              <li><b>Code Cache</b> (for compiled native code)</li>
+            </ul>
+            — is allocated from the system's <b>RAM</b>.
+            </p>
+
+            <h5 class="text-info">📌 What About ROM?</h5>
+            <p>
+              ❌ ROM (Read-Only Memory) is not used by the JVM at runtime. It's used only for storing:
+            <ul>
+              <li>Firmware like BIOS</li>
+              <li>Bootloaders</li>
+            </ul>
+            JVM does not interact with ROM for memory usage or allocation.
+            </p>
+
+            <h5 class="text-info">📌 Summary</h5>
+            <p>
+              JVM memory is a subset of your computer’s <b>RAM</b>. So, if your machine has 8 GB RAM, and your JVM is
+              configured with <code>-Xmx2G</code>, it can use up to 2 GB of that 8 GB RAM for heap.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#metaspaceMemory">
+            Does Metaspace Allocate Memory from ROM or RAM?
+          </button>
+        </h2>
+        <div id="metaspaceMemory" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <h5 class="text-info">📌 What is Metaspace?</h5>
+            <p>
+              Metaspace is a memory area in the JVM introduced in Java 8 that stores class metadata (info about loaded
+              classes, methods, etc.). It replaced the older <code>PermGen</code> memory.
+            </p>
+
+            <h5 class="text-info">📌 Where is Metaspace Allocated?</h5>
+            <p>
+              ✅ <b>RAM</b>, not ROM. Metaspace is part of the native memory (outside the Java heap) and is allocated
+              from your system’s main memory (RAM).
+            </p>
+
+            <h5 class="text-info">📌 Why Not ROM?</h5>
+            <p>
+              ❌ ROM is read-only and used only for permanent firmware like BIOS. The JVM needs to dynamically
+              load/unload classes, which requires <b>read-write</b> memory — something ROM can't provide.
+            </p>
+
+            <h5 class="text-info">📌 Bonus Tip</h5>
+            <p>
+              Metaspace size can grow dynamically (by default), but you can limit it using:
+            <pre><code>-XX:MaxMetaspaceSize=256m</code></pre>
+            </p>
+
+            <h5 class="text-info">📌 Summary</h5>
+            <p>
+              💡 Metaspace is RAM-based native memory used by the JVM for class metadata. It is <b>not</b> part of the
+              heap but still fully lives in your system’s <b>RAM</b>.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#classMetadata">
+            What is Class Metadata Stored in Metaspace? With Example
+          </button>
+        </h2>
+        <div id="classMetadata" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <h5 class="text-info">📌 What is Class Metadata?</h5>
+            <p>
+              Class Metadata is the information the JVM stores about every loaded class, such as:
+            <ul>
+              <li>Class name & package</li>
+              <li>Fields and their types</li>
+              <li>Methods and signatures</li>
+              <li>Superclasses & interfaces</li>
+              <li>Modifiers (public, private, static, final, etc.)</li>
+              <li>Annotations</li>
+              <li>Bytecode and method bytecode index</li>
+            </ul>
+            </p>
+
+            <h5 class="text-info">📌 Example</h5>
+            <pre><code class="language-java">
 public class Student {
     private String name;
     private int age;
@@ -517,151 +1306,158 @@ public class Student {
 }
       </code></pre>
 
-      <p>
-        When the above <code>Student</code> class is loaded, JVM stores the following metadata in <b>Metaspace</b>:
-        <ul>
-          <li>Class name: <code>Student</code></li>
-          <li>Package: default (if not specified)</li>
-          <li>Field list: <code>name</code> (String), <code>age</code> (int)</li>
-          <li>Method: <code>sayHello()</code> with body</li>
-          <li>Modifiers: <code>public</code>, <code>private</code></li>
-          <li>Superclass: <code>java.lang.Object</code></li>
-        </ul>
-        This information is needed for reflection, method calls, memory layout, and bytecode execution.
-      </p>
+            <p>
+              When the above <code>Student</code> class is loaded, JVM stores the following metadata in
+              <b>Metaspace</b>:
+            <ul>
+              <li>Class name: <code>Student</code></li>
+              <li>Package: default (if not specified)</li>
+              <li>Field list: <code>name</code> (String), <code>age</code> (int)</li>
+              <li>Method: <code>sayHello()</code> with body</li>
+              <li>Modifiers: <code>public</code>, <code>private</code></li>
+              <li>Superclass: <code>java.lang.Object</code></li>
+            </ul>
+            This information is needed for reflection, method calls, memory layout, and bytecode execution.
+            </p>
 
-      <h5 class="text-info">📌 Why Does JVM Need This?</h5>
-      <p>
-        JVM uses class metadata to:
-        <ul>
-          <li>Verify classes</li>
-          <li>Call methods properly</li>
-          <li>Resolve inheritance and interfaces</li>
-          <li>Support reflection APIs (like <code>Class.forName()</code>)</li>
-        </ul>
-      </p>
+            <h5 class="text-info">📌 Why Does JVM Need This?</h5>
+            <p>
+              JVM uses class metadata to:
+            <ul>
+              <li>Verify classes</li>
+              <li>Call methods properly</li>
+              <li>Resolve inheritance and interfaces</li>
+              <li>Support reflection APIs (like <code>Class.forName()</code>)</li>
+            </ul>
+            </p>
 
-      <h5 class="text-info">📌 Summary</h5>
-      <p>
-        💡 Class metadata is the blueprint information for each class that JVM stores in Metaspace. Without it, the JVM can't execute Java programs properly.
-      </p>
-    </div>
-  </div>
-</div>
-<div class="accordion-item">
-  <h2 class="accordion-header">
-    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
-      data-bs-target="#nativeMemoryMeaning">
-      What is Native Memory? Is it RAM or ROM?
-    </button>
-  </h2>
-  <div id="nativeMemoryMeaning" class="accordion-collapse collapse">
-    <div class="accordion-body">
-      <h5 class="text-info">📌 What is Native Memory?</h5>
-      <p>
-        Native memory is the memory allocated outside of the Java heap but within the system’s physical memory. It is used by:
-        <ul>
-          <li>JVM internals (like Metaspace, Thread Stacks)</li>
-          <li>JNI (Java Native Interface) code</li>
-          <li>Direct ByteBuffers</li>
-          <li>Garbage collector allocations</li>
-        </ul>
-      </p>
+            <h5 class="text-info">📌 Summary</h5>
+            <p>
+              💡 Class metadata is the blueprint information for each class that JVM stores in Metaspace. Without it,
+              the JVM can't execute Java programs properly.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#nativeMemoryMeaning">
+            What is Native Memory? Is it RAM or ROM?
+          </button>
+        </h2>
+        <div id="nativeMemoryMeaning" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <h5 class="text-info">📌 What is Native Memory?</h5>
+            <p>
+              Native memory is the memory allocated outside of the Java heap but within the system’s physical memory. It
+              is used by:
+            <ul>
+              <li>JVM internals (like Metaspace, Thread Stacks)</li>
+              <li>JNI (Java Native Interface) code</li>
+              <li>Direct ByteBuffers</li>
+              <li>Garbage collector allocations</li>
+            </ul>
+            </p>
 
-      <h5 class="text-info">📌 Native Memory = RAM</h5>
-      <p>
-        ✅ <b>Native memory is RAM</b> (Random Access Memory).  
-        ❌ It is <b>not</b> ROM (Read-Only Memory), because:
-        <ul>
-          <li>RAM is fast, volatile memory used for runtime execution.</li>
-          <li>ROM is permanent and used for firmware—not for application memory.</li>
-        </ul>
-      </p>
+            <h5 class="text-info">📌 Native Memory = RAM</h5>
+            <p>
+              ✅ <b>Native memory is RAM</b> (Random Access Memory).
+              ❌ It is <b>not</b> ROM (Read-Only Memory), because:
+            <ul>
+              <li>RAM is fast, volatile memory used for runtime execution.</li>
+              <li>ROM is permanent and used for firmware—not for application memory.</li>
+            </ul>
+            </p>
 
-      <h5 class="text-info">📌 Where is Native Memory Used in JVM?</h5>
-      <p>
-        Some components that use native memory:
-        <ul>
-          <li><b>Metaspace</b> – for class metadata</li>
-          <li><b>Thread Stacks</b> – each thread consumes native memory for call stacks</li>
-          <li><b>DirectByteBuffers</b> – off-heap buffers for I/O operations</li>
-          <li><b>Garbage Collector</b> – internal structures and algorithms</li>
-        </ul>
-      </p>
+            <h5 class="text-info">📌 Where is Native Memory Used in JVM?</h5>
+            <p>
+              Some components that use native memory:
+            <ul>
+              <li><b>Metaspace</b> – for class metadata</li>
+              <li><b>Thread Stacks</b> – each thread consumes native memory for call stacks</li>
+              <li><b>DirectByteBuffers</b> – off-heap buffers for I/O operations</li>
+              <li><b>Garbage Collector</b> – internal structures and algorithms</li>
+            </ul>
+            </p>
 
-      <h5 class="text-info">📌 Summary</h5>
-      <p>
-        💡 Native memory means <b>off-heap memory used by the JVM</b> from the system’s physical <b>RAM</b>. It plays a major role in performance and resource usage, especially in large-scale or low-latency applications.
-      </p>
-    </div>
-  </div>
-</div>
-<div class="accordion-item">
-  <h2 class="accordion-header">
-    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
-      data-bs-target="#mainMemoryThreads">
-      What is Main Memory in Java Multi-threading? How Do `volatile` and `synchronized` Update RAM?
-    </button>
-  </h2>
-  <div id="mainMemoryThreads" class="accordion-collapse collapse">
-    <div class="accordion-body">
+            <h5 class="text-info">📌 Summary</h5>
+            <p>
+              💡 Native memory means <b>off-heap memory used by the JVM</b> from the system’s physical <b>RAM</b>. It
+              plays a major role in performance and resource usage, especially in large-scale or low-latency
+              applications.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#mainMemoryThreads">
+            What is Main Memory in Java Multi-threading? How Do `volatile` and `synchronized` Update RAM?
+          </button>
+        </h2>
+        <div id="mainMemoryThreads" class="accordion-collapse collapse">
+          <div class="accordion-body">
 
-      <h5 class="text-info">📌 What is Main Memory?</h5>
-      <p>
-        In Java Memory Model (JMM), <b>main memory</b> refers to the <b>RAM</b> of your system — where all shared variables are stored.
-        Every Java thread has:
-        <ul>
-          <li>Its own **working memory** (like a cache)</li>
-          <li>Shared access to the **main memory** (RAM)</li>
-        </ul>
-      </p>
+            <h5 class="text-info">📌 What is Main Memory?</h5>
+            <p>
+              In Java Memory Model (JMM), <b>main memory</b> refers to the <b>RAM</b> of your system — where all shared
+              variables are stored.
+              Every Java thread has:
+            <ul>
+              <li>Its own **working memory** (like a cache)</li>
+              <li>Shared access to the **main memory** (RAM)</li>
+            </ul>
+            </p>
 
-      <h5 class="text-info">📌 Thread Working Memory vs Main Memory</h5>
-      <p>
-        - Threads may read/write variables into their local working memory (cache) for faster access.<br/>
-        - But those changes are <b>not immediately visible</b> to other threads unless synchronized properly.<br/>
-        - Hence, Java provides tools like <code>volatile</code> and <code>synchronized</code> to ensure changes are written to and read from main memory (RAM).
-      </p>
+            <h5 class="text-info">📌 Thread Working Memory vs Main Memory</h5>
+            <p>
+              - Threads may read/write variables into their local working memory (cache) for faster access.<br />
+              - But those changes are <b>not immediately visible</b> to other threads unless synchronized
+              properly.<br />
+              - Hence, Java provides tools like <code>volatile</code> and <code>synchronized</code> to ensure changes
+              are written to and read from main memory (RAM).
+            </p>
 
-      <h5 class="text-info">📌 What Does `volatile` Do?</h5>
-      <p>
-        - Declaring a variable as <code>volatile</code> tells Java: <br/>
-        👉 "Always read/write this variable directly from/to <b>main memory</b> (RAM) and not from thread cache." <br/>
-        - It ensures **visibility** across threads but <b>does not guarantee atomicity</b>.
-      </p>
+            <h5 class="text-info">📌 What Does `volatile` Do?</h5>
+            <p>
+              - Declaring a variable as <code>volatile</code> tells Java: <br />
+              👉 "Always read/write this variable directly from/to <b>main memory</b> (RAM) and not from thread cache."
+              <br />
+              - It ensures **visibility** across threads but <b>does not guarantee atomicity</b>.
+            </p>
 
-      <h5 class="text-info">📌 What Does `synchronized` Do?</h5>
-      <p>
-        - It locks a method or block so that only one thread can access it at a time. <br/>
-        - Before entering a `synchronized` block:
-        <ul>
-          <li>Thread flushes its working memory</li>
-          <li>Reloads values from <b>main memory</b></li>
-        </ul>
-        - After exiting the block, updates are written back to RAM so other threads see them.
-      </p>
+            <h5 class="text-info">📌 What Does `synchronized` Do?</h5>
+            <p>
+              - It locks a method or block so that only one thread can access it at a time. <br />
+              - Before entering a `synchronized` block:
+            <ul>
+              <li>Thread flushes its working memory</li>
+              <li>Reloads values from <b>main memory</b></li>
+            </ul>
+            - After exiting the block, updates are written back to RAM so other threads see them.
+            </p>
 
-      <h5 class="text-info">📌 So What Is Being Updated in RAM?</h5>
-      <p>
-        🔁 When threads use `volatile` or `synchronized`, any updates they make to variables are:
-        <ul>
-          <li>Written directly to the system's <b>RAM (main memory)</b></li>
-          <li>Visible to all other threads</li>
-        </ul>
-        This ensures **data consistency** across threads.
-      </p>
+            <h5 class="text-info">📌 So What Is Being Updated in RAM?</h5>
+            <p>
+              🔁 When threads use `volatile` or `synchronized`, any updates they make to variables are:
+            <ul>
+              <li>Written directly to the system's <b>RAM (main memory)</b></li>
+              <li>Visible to all other threads</li>
+            </ul>
+            This ensures **data consistency** across threads.
+            </p>
 
-      <h5 class="text-info">📌 Summary</h5>
-      <p>
-        ✅ `volatile` ensures a variable is always read/written from RAM.<br/>
-        ✅ `synchronized` ensures mutual exclusion + visibility through RAM.<br/>
-        ✅ **Main memory = RAM**, used to coordinate shared data across threads.
-      </p>
-    </div>
-  </div>
-</div>
-
-
+            <h5 class="text-info">📌 Summary</h5>
+            <p>
+              ✅ `volatile` ensures a variable is always read/written from RAM.<br />
+              ✅ `synchronized` ensures mutual exclusion + visibility through RAM.<br />
+              ✅ **Main memory = RAM**, used to coordinate shared data across threads.
+            </p>
+          </div>
+        </div>
+      </div>
 
       <div class="accordion-item">
         <h2 class="accordion-header">
@@ -848,12 +1644,14 @@ public class MyController {
 }
       </code></pre>
             <p>Spring automatically handles OPTIONS for CORS if you have proper CORS configuration using
-              <code>@CrossOrigin</code> or global config.</p>
+              <code>@CrossOrigin</code> or global config.
+            </p>
 
             <h5 class="text-info">📌 7. Real Use Case - CORS Preflight</h5>
             <p>If your frontend at <code>http://localhost:3000</code> makes a POST request to your backend at
               <code>http://localhost:8080</code> with JSON data, the browser first sends an OPTIONS request to make sure
-              the server allows it.</p>
+              the server allows it.
+            </p>
 
             <h5 class="text-info">📌 Conclusion</h5>
             <p>The <strong>OPTIONS method</strong> is a silent but essential player in modern web APIs, especially when
@@ -1092,7 +1890,8 @@ public DataSource getDataSourceForUser(int userId) {
               </li>
               <li>☁️ Cloud DBs: AWS Aurora, Cosmos DB (auto-sharding)</li>
               <li>⚙️ Spring Boot with routing DataSources manually or with libraries like
-                <code>Shardingsphere-JDBC</code></li>
+                <code>Shardingsphere-JDBC</code>
+              </li>
             </ul>
 
             <h5 class="text-info">📌 10. Conclusion</h5>
@@ -2561,6 +3360,480 @@ Thread.startVirtualThread(() -> {
           </div>
         </div>
       </div>
+
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#awsJavaInterview">
+            ☁️ AWS Developer Associate – Java Developer Interview Questions & Services
+          </button>
+        </h2>
+        <div id="awsJavaInterview" class="accordion-collapse collapse">
+          <div class="accordion-body">
+
+            <h5 class="text-warning">📌 1. What is AWS Lambda and how do you use it with Java?</h5>
+            <p>AWS Lambda is a serverless compute service. Java developers can use it to run code without provisioning
+              servers.</p>
+            <span class="text-success">Services Used:</span> Lambda, CloudWatch, IAM
+            <pre class="language-java"><code>
+public class MyLambdaHandler implements RequestHandler&lt;APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent&gt; {
+    public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent input, Context context) {
+        return new APIGatewayProxyResponseEvent().withStatusCode(200).withBody("Hello from Lambda!");
+    }
+}
+      </code></pre>
+
+            <h5 class="text-warning">📌 2. How do you use Amazon S3 from a Spring Boot Java application?</h5>
+            <p>S3 is used to store files like images, documents, and backups. In Spring Boot, use AWS SDK for Java.</p>
+            <span class="text-success">Services Used:</span> S3, IAM
+            <pre class="language-java"><code>
+AmazonS3 s3 = AmazonS3ClientBuilder.standard().build();
+s3.putObject("my-bucket", "my-file.txt", new File("file.txt"));
+      </code></pre>
+
+            <h5 class="text-warning">📌 3. Explain how to use DynamoDB with Java.</h5>
+            <p>DynamoDB is a NoSQL database. You can use the AWS SDK or Spring Data DynamoDB.</p>
+            <span class="text-success">Services Used:</span> DynamoDB, IAM
+            <pre class="language-java"><code>
+DynamoDBMapper mapper = new DynamoDBMapper(amazonDynamoDB);
+mapper.save(new MyEntity("id1", "value1"));
+      </code></pre>
+
+            <h5 class="text-warning">📌 4. What is IAM and how do you secure your Java application using it?</h5>
+            <p>IAM (Identity and Access Management) controls access to AWS resources. Use roles/policies to securely
+              authenticate Java apps.</p>
+            <span class="text-success">Services Used:</span> IAM
+            <p>Attach IAM roles to EC2 or Lambda for permissions, instead of hardcoding credentials.</p>
+
+            <h5 class="text-warning">📌 5. How does Amazon SQS integrate with a Java microservice?</h5>
+            <p>SQS is used for decoupling and queuing requests. Use AWS SDK in Java to send/receive messages.</p>
+            <span class="text-success">Services Used:</span> SQS
+            <pre class="language-java"><code>
+SendMessageRequest send_msg_request = new SendMessageRequest()
+    .withQueueUrl(queueUrl)
+    .withMessageBody("hello world");
+sqs.sendMessage(send_msg_request);
+      </code></pre>
+
+            <h5 class="text-warning">📌 6. How do you deploy a Java Spring Boot app on AWS?</h5>
+            <p>You can deploy using Elastic Beanstalk, EC2, or containerize with ECS/EKS.</p>
+            <span class="text-success">Services Used:</span> Elastic Beanstalk, EC2, ECS, EKS
+            <p>Elastic Beanstalk makes deployment easier for Java WAR/JAR packages.</p>
+
+            <h5 class="text-warning">📌 7. How do you monitor Java applications on AWS?</h5>
+            <p>Use CloudWatch to monitor logs, metrics, and set alarms.</p>
+            <span class="text-success">Services Used:</span> CloudWatch, X-Ray, CloudTrail
+            <p>Use CloudWatch Agent or AWS SDK to push custom metrics/logs from Java apps.</p>
+
+            <h5 class="text-warning">📌 8. How can Java microservices communicate securely on AWS?</h5>
+            <p>Use API Gateway with private endpoints or HTTPS-based service discovery.</p>
+            <span class="text-success">Services Used:</span> API Gateway, AWS Certificate Manager, IAM
+
+            <h5 class="text-warning">📌 9. What is the use of Parameter Store or Secrets Manager?</h5>
+            <p>These are used to store secrets/configurations securely. Use SDK to access from Java.</p>
+            <span class="text-success">Services Used:</span> AWS Systems Manager (SSM), Secrets Manager
+            <pre class="language-java"><code>
+GetParameterRequest request = new GetParameterRequest().withName("dbPassword").withWithDecryption(true);
+GetParameterResult result = ssm.getParameter(request);
+String password = result.getParameter().getValue();
+      </code></pre>
+
+            <h5 class="text-warning">📌 10. Common AWS CLI & SDK Questions</h5>
+            <ul>
+              <li>How to configure CLI?</li>
+              <li>How to authenticate AWS SDK for Java?</li>
+              <li>Difference between region and availability zone?</li>
+            </ul>
+
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#awsCliConfig">
+      ⚙️ How to Configure AWS CLI?
+    </button>
+  </h2>
+  <div id="awsCliConfig" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Step 1: Install AWS CLI</h5>
+      <p>Download and install the AWS CLI from the official site: <a href="https://aws.amazon.com/cli/" target="_blank">https://aws.amazon.com/cli/</a></p>
+      <pre class="language-bash"><code>
+# On Ubuntu/Debian
+sudo apt install awscli
+
+# On macOS
+brew install awscli
+
+# On Windows
+Use the MSI installer
+      </code></pre>
+
+      <h5 class="text-info">📌 Step 2: Configure the CLI</h5>
+      <p>Use the following command to configure your credentials:</p>
+      <pre class="language-bash"><code>
+aws configure
+      </code></pre>
+      <p class="text-success">You'll be prompted for:</p>
+      <ul>
+        <li><b>AWS Access Key ID:</b> from your IAM user</li>
+        <li><b>AWS Secret Access Key:</b> secret key</li>
+        <li><b>Default region name:</b> e.g., <code>us-east-1</code></li>
+        <li><b>Default output format:</b> json, yaml, text</li>
+      </ul>
+
+      <h5 class="text-info">📌 Step 3: Test It</h5>
+      <p>Run a simple command to verify:</p>
+      <pre class="language-bash"><code>
+aws s3 ls
+      </code></pre>
+
+      <h5 class="text-info">📌 Configuration File Location</h5>
+      <ul>
+        <li>Credentials file: <code>~/.aws/credentials</code></li>
+        <li>Config file: <code>~/.aws/config</code></li>
+      </ul>
+
+      <h5 class="text-info">📌 Pro Tip 🔐</h5>
+      <p class="text-warning">Avoid hardcoding credentials in code. Use IAM roles or environment variables for production!</p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#awsJavaAuth">
+      🔐 How to Authenticate AWS SDK for Java?
+    </button>
+  </h2>
+  <div id="awsJavaAuth" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 1. Default Credential Provider Chain (Recommended)</h5>
+      <p>The SDK automatically searches for credentials in the following order:</p>
+      <ol>
+        <li>Environment variables</li>
+        <li><code>~/.aws/credentials</code> (from <code>aws configure</code>)</li>
+        <li>EC2 instance metadata (if running in EC2)</li>
+      </ol>
+      <pre class="language-java"><code>
+S3Client s3 = S3Client.builder()
+                     .region(Region.US_EAST_1)
+                     .build();
+      </code></pre>
+      <p class="text-success">✅ Best for most use cases, secure and easy.</p>
+
+      <h5 class="text-info">📌 2. Using Environment Variables</h5>
+      <p>Set your credentials in terminal or environment:</p>
+      <pre class="language-bash"><code>
+export AWS_ACCESS_KEY_ID=your_access_key
+export AWS_SECRET_ACCESS_KEY=your_secret_key
+      </code></pre>
+      <p>Then use the SDK normally — it will pick these automatically.</p>
+
+      <h5 class="text-info">📌 3. Using Profile from ~/.aws/credentials</h5>
+      <p>You can specify a profile name configured using <code>aws configure --profile myProfile</code>.</p>
+      <pre class="language-java"><code>
+ProfileCredentialsProvider credentialsProvider = ProfileCredentialsProvider.create("myProfile");
+
+S3Client s3 = S3Client.builder()
+                      .credentialsProvider(credentialsProvider)
+                      .region(Region.US_EAST_1)
+                      .build();
+      </code></pre>
+
+      <h5 class="text-info">📌 4. IAM Role (for EC2, ECS, Lambda)</h5>
+      <p>When deployed on AWS services, assign an IAM role to the instance/container. SDK will use it automatically.</p>
+      <p class="text-success">✅ No need to manage credentials yourself — very secure.</p>
+
+      <h5 class="text-info">📌 5. Manually Passing Static Credentials</h5>
+      <p>For testing only. Not recommended for production.</p>
+      <pre class="language-java"><code>
+AwsBasicCredentials awsCreds = AwsBasicCredentials.create("yourAccessKey", "yourSecretKey");
+
+S3Client s3 = S3Client.builder()
+                      .credentialsProvider(StaticCredentialsProvider.create(awsCreds))
+                      .region(Region.US_EAST_1)
+                      .build();
+      </code></pre>
+      <p class="text-warning">⚠️ Avoid hardcoding credentials in code!</p>
+
+      <h5 class="text-info">📌 6. Web Identity Tokens (OIDC, Cognito, etc.)</h5>
+      <p>Useful in containerized environments (e.g., EKS) or federated logins.</p>
+      <pre class="language-java"><code>
+WebIdentityTokenFileCredentialsProvider provider =
+  WebIdentityTokenFileCredentialsProvider.create();
+
+S3Client s3 = S3Client.builder()
+                      .credentialsProvider(provider)
+                      .build();
+      </code></pre>
+
+      <h5 class="text-info">📌 Summary</h5>
+      <ul>
+        <li><span class="text-success">✅ Use Default Provider Chain</span> — secure & flexible</li>
+        <li><span class="text-warning">⚠️ Avoid hardcoding</span> credentials</li>
+        <li><span class="text-info">🔒 IAM Roles</span> — best for AWS environments</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#regionVsAz">
+      🌍 Difference Between Region and Availability Zone (AZ)
+    </button>
+  </h2>
+  <div id="regionVsAz" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 1. What is a Region?</h5>
+      <p>
+        A Region is a <strong>geographical area</strong> where AWS has data centers. Each Region is completely isolated
+        from others to provide the highest possible fault tolerance and stability.
+      </p>
+      <ul>
+        <li class="text-success">Example: <code>us-east-1</code> (N. Virginia), <code>ap-south-1</code> (Mumbai)</li>
+        <li class="text-warning">Each region has multiple Availability Zones (AZs)</li>
+      </ul>
+
+      <h5 class="text-info">📌 2. What is an Availability Zone (AZ)?</h5>
+      <p>
+        An Availability Zone is a <strong>physically isolated data center</strong> within a region. They are connected with high-speed
+        private links to allow fault-tolerant designs.
+      </p>
+      <ul>
+        <li class="text-success">Example: <code>us-east-1a</code>, <code>us-east-1b</code>, <code>us-east-1c</code></li>
+        <li class="text-info">Each AZ is in a separate building with power, cooling, and networking</li>
+      </ul>
+
+      <h5 class="text-info">📌 3. Key Differences</h5>
+      <table class="table table-dark table-bordered table-striped">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>Region</th>
+            <th>Availability Zone</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Definition</td>
+            <td>Geographical area (e.g., Asia Pacific)</td>
+            <td>One or more isolated data centers in a region</td>
+          </tr>
+          <tr>
+            <td>Purpose</td>
+            <td>Global distribution</td>
+            <td>High availability within the region</td>
+          </tr>
+          <tr>
+            <td>Isolation Level</td>
+            <td>Completely isolated</td>
+            <td>Isolated but connected to other AZs in same region</td>
+          </tr>
+          <tr>
+            <td>Code</td>
+            <td><code>us-west-2</code></td>
+            <td><code>us-west-2a</code>, <code>us-west-2b</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h5 class="text-info">📌 4. Why It Matters</h5>
+      <ul>
+        <li><span class="text-success">AZs enable high availability</span> by spreading workloads</li>
+        <li><span class="text-info">Regions allow global application deployment</span></li>
+        <li><span class="text-warning">Choosing the right region impacts latency and cost</span></li>
+      </ul>
+
+      <h5 class="text-info">📌 5. Example Diagram</h5>
+      <p class="text-secondary">Imagine Region <code>us-east-1</code> contains:</p>
+      <ul>
+        <li>Availability Zone 1: <code>us-east-1a</code></li>
+        <li>Availability Zone 2: <code>us-east-1b</code></li>
+        <li>Availability Zone 3: <code>us-east-1c</code></li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#awsDevQuestions">
+      📝 AWS Developer Associate Interview Questions
+    </button>
+  </h2>
+  <div id="awsDevQuestions" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 1. What is the difference between Amazon EC2 and AWS Lambda?</h5>
+      <p>EC2 is a compute service where you have to manage the operating system and server, while Lambda allows you to run code without provisioning or managing servers (serverless).</p>
+
+      <h5 class="text-info">📌 2. How do you ensure security in AWS Lambda?</h5>
+      <p>Security in AWS Lambda can be ensured using IAM roles and policies, VPC settings, environment variable encryption, and restricting API Gateway access.</p>
+
+      <h5 class="text-info">📌 3. What is Amazon S3 and how do you use it in your applications?</h5>
+      <p>Amazon S3 is an object storage service. It is commonly used for storing static assets like images, files, backups, and logs. It can be integrated with services like EC2 and Lambda for dynamic content.</p>
+
+      <h5 class="text-info">📌 4. Explain the use of IAM Roles in AWS.</h5>
+      <p>IAM Roles allow you to define permissions for AWS services. Roles can be assigned to EC2 instances, Lambda functions, etc., to grant specific access to resources.</p>
+
+      <h5 class="text-info">📌 5. What is the difference between SNS and SQS?</h5>
+      <p>Amazon SNS is a messaging service for sending notifications, while SQS is a queue-based messaging service for decoupling microservices and applications.</p>
+
+      <h5 class="text-info">📌 6. How does AWS CloudWatch help in application monitoring?</h5>
+      <p>AWS CloudWatch allows you to monitor logs, metrics, and set up alarms to track the health and performance of AWS resources like EC2, Lambda, and RDS.</p>
+
+      <h5 class="text-info">📌 7. What are AWS Security Groups and Network ACLs? What is the difference?</h5>
+      <p>Security Groups act as virtual firewalls to control inbound and outbound traffic for instances, while Network ACLs are used to control traffic to and from subnets in VPC. Security Groups are stateful, whereas ACLs are stateless.</p>
+
+      <h5 class="text-info">📌 8. What is Amazon DynamoDB and when would you use it?</h5>
+      <p>Amazon DynamoDB is a managed NoSQL database service. It is highly scalable and low-latency, ideal for use cases like gaming, IoT, mobile apps, and real-time analytics.</p>
+
+      <h5 class="text-info">📌 9. Explain the concept of Auto Scaling in AWS.</h5>
+      <p>Auto Scaling automatically adjusts the number of EC2 instances in response to changes in load. It ensures application availability and optimal cost efficiency.</p>
+
+      <h5 class="text-info">📌 10. What is AWS CloudFormation and how does it help in deployment?</h5>
+      <p>AWS CloudFormation allows you to define infrastructure as code (IaC) using templates. It helps automate the deployment and management of AWS resources consistently and reliably.</p>
+
+      <h5 class="text-info">📌 11. How do you use AWS Elastic Beanstalk for deploying Java applications?</h5>
+      <p>AWS Elastic Beanstalk provides an environment to easily deploy and manage Java applications. You can upload your Java WAR or JAR file, and Elastic Beanstalk will automatically handle the provisioning, load balancing, scaling, and monitoring.</p>
+
+      <h5 class="text-info">📌 12. What is Amazon RDS and how do you back it up?</h5>
+      <p>Amazon RDS (Relational Database Service) is a managed database service. You can back up RDS instances using automated backups, manual snapshots, and cross-region backups for disaster recovery.</p>
+
+      <h5 class="text-info">📌 13. What is the AWS SDK and how do you use it with Java?</h5>
+      <p>The AWS SDK for Java provides libraries for integrating AWS services in Java applications. It helps in managing resources like S3, EC2, Lambda, DynamoDB, etc., using programmatic APIs.</p>
+
+      <h5 class="text-info">📌 14. What is the AWS Elastic Load Balancer (ELB) and how do you configure it?</h5>
+      <p>ELB distributes incoming application traffic across multiple targets (EC2 instances). You can configure ELB to handle HTTPS, HTTP, and TCP traffic, providing high availability and fault tolerance for your applications.</p>
+
+      <h5 class="text-info">📌 15. What are AWS VPC Peering and Transit Gateway?</h5>
+      <p>VPC Peering allows you to connect two VPCs for routing traffic, while Transit Gateway acts as a hub to connect multiple VPCs, simplifying network management across accounts and regions.</p>
+
+      <h5 class="text-info">📌 16. How do you manage secrets and environment variables in AWS?</h5>
+      <p>Secrets can be managed using AWS Secrets Manager or Systems Manager Parameter Store. These services help securely store and retrieve sensitive information like API keys, database credentials, etc.</p>
+
+      <h5 class="text-info">📌 17. What are Amazon Route 53 and its primary features?</h5>
+      <p>Amazon Route 53 is a scalable Domain Name System (DNS) web service. It helps in routing traffic to resources like EC2, S3, and CloudFront. It supports DNS failover, traffic routing policies, and domain registration.</p>
+
+      <h5 class="text-info">📌 18. How do you enable logging in AWS Lambda?</h5>
+      <p>AWS Lambda can be configured to automatically log function invocations, errors, and other details to CloudWatch Logs for monitoring and debugging.</p>
+
+      <h5 class="text-info">📌 19. What are Amazon CloudFront and its use cases?</h5>
+      <p>Amazon CloudFront is a content delivery network (CDN) that caches content closer to end users to reduce latency. It is used for delivering static content, media streaming, and accelerating dynamic websites.</p>
+
+      <h5 class="text-info">📌 20. How would you secure an API in AWS?</h5>
+      <p>You can secure APIs using API Gateway with IAM roles, API keys, or Lambda authorizers. Additionally, you can enable SSL/TLS encryption and throttle requests to protect your API.</p>
+
+    </div>
+  </div>
+</div>
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#awsDevOps">
+            🛠️ AWS DevOps Interview Questions
+          </button>
+        </h2>
+        <div id="awsDevOps" class="accordion-collapse collapse">
+          <div class="accordion-body">
+
+            <h5 class="text-info">📌 1. What is AWS CodePipeline?</h5>
+            <p>AWS CodePipeline is a continuous integration and continuous delivery (CI/CD) service for automating the build, test, and deployment phases of your release process.</p>
+
+            <h5 class="text-info">📌 2. How do you implement Infrastructure as Code (IaC) in AWS?</h5>
+            <p>You can implement IaC using AWS CloudFormation or Terraform to define and provision AWS infrastructure using code.</p>
+
+            <h5 class="text-info">📌 3. What is Amazon EKS and how does it work?</h5>
+            <p>Amazon EKS is a managed Kubernetes service that simplifies running Kubernetes on AWS without needing to install and operate your own control plane or nodes.</p>
+
+            <h5 class="text-info">📌 4. How do you monitor applications in AWS?</h5>
+            <p>You can monitor applications using Amazon CloudWatch for logs, metrics, and alarms, along with AWS X-Ray for tracing requests through your application.</p>
+
+            <h5 class="text-info">📌 5. What is AWS CloudTrail?</h5>
+            <p>AWS CloudTrail is a service that enables governance, compliance, and operational and risk auditing of your AWS account by logging API calls made on your account.</p>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#awsDevOpsTools">
+            🛠️ AWS DevOps Tools
+          </button>
+        </h2>
+        <div id="awsDevOpsTools" class="accordion-collapse collapse">
+          <div class="accordion-body">
+
+            <h5 class="text-info">📌 1. What is AWS CodeBuild?</h5>
+            <p>AWS CodeBuild is a fully managed build service that compiles source code, runs tests, and produces software packages ready to deploy.</p>
+
+            <h5 class="text-info">📌 2. How do you use Amazon CloudWatch for monitoring?</h5>
+            <p>Amazon CloudWatch provides monitoring for AWS resources and applications, allowing you to collect and track metrics, set alarms, and automatically react to changes in your AWS resources.</p>
+
+            <h5 class="text-info">📌 3. What is AWS OpsWorks?</h5>
+            <p>AWS OpsWorks is a configuration management service that provides managed instances of Chef and Puppet, allowing you to automate how servers are configured, deployed, and managed across your Amazon EC2 instances.</p>
+
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#awsDevOpsBestPractices">
+            🛠️ AWS DevOps Best Practices
+          </button>
+        </h2>
+        <div id="awsDevOpsBestPractices" class="accordion-collapse collapse">
+          <div class="accordion-body">
+
+            <h5 class="text-info">📌 1. What are some best practices for AWS DevOps?</h5>
+            <ul>
+              <li>Use Infrastructure as Code (IaC) for provisioning resources.</li>
+              <li>Implement CI/CD pipelines for automated deployments.</li>
+              <li>Monitor applications using CloudWatch and X-Ray.</li>
+              <li>Use version control systems like Git for code management.</li>
+              <li>Automate testing and security checks in the pipeline.</li>
+            </ul>
+
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#awsDevOpsTools">
+            🛠️ AWS DevOps Tools
+          </button>
+        </h2>
+        <div id="awsDevOpsTools" class="accordion-collapse collapse">
+          <div class="accordion-body">
+
+            <h5 class="text-info">📌 1. What is AWS CodeBuild?</h5>
+            <p>AWS CodeBuild is a fully managed build service that compiles source code, runs tests, and produces software packages ready to deploy.</p>
+
+            <h5 class="text-info">📌 2. How do you use Amazon CloudWatch for monitoring?</h5>
+            <p>Amazon CloudWatch provides monitoring for AWS resources and applications, allowing you to collect and track metrics, set alarms, and automatically react to changes in your AWS resources.</p>
+
+            <h5 class="text-info">📌 3. What is AWS OpsWorks?</h5>
+            <p>AWS OpsWorks is a configuration management service that provides managed instances of Chef and Puppet, allowing you to automate how servers are configured, deployed, and managed across your Amazon EC2 instances.</p>
+
+          </div>
+        </div>
+      </div>
+      
+
+
 
 
       <div class="accordion-item">
@@ -27447,7 +28720,8 @@ public void beforeInsert(Object entity) {
 
                 <h5 class="text-info">🛠️ Method 1: Using Spring Boot Properties</h5>
                 <p>Add the following properties to your <code>application.properties</code> or
-                  <code>application.yml</code>:</p>
+                  <code>application.yml</code>:
+                </p>
                 <pre class="language-properties"><code>
 # Basic SQL logging
 spring.jpa.show-sql=true
@@ -27479,7 +28753,8 @@ binding parameter [1] as [VARCHAR] - [John]
       </code></pre>
 
                 <p><strong>Step 2:</strong> Add a file named <code>spy.properties</code> in
-                  <code>src/main/resources</code>:</p>
+                  <code>src/main/resources</code>:
+                </p>
                 <pre class="language-properties"><code>
 modulelist=log4j
 logMessageFormat=com.p6spy.engine.spy.appender.SingleLineFormat
@@ -28157,7 +29432,8 @@ pool.invoke(new RecursiveTaskExample(0, 100));
 
                 <h5 class="text-info">🔄 How to Use a Custom Thread Pool with `parallelStream()`</h5>
                 <p>You can use <code>ForkJoinPool</code> to control the thread pool that executes your
-                  <code>parallelStream()</code>:</p>
+                  <code>parallelStream()</code>:
+                </p>
                 <pre class="language-java"><code>
 import java.util.*;
 import java.util.concurrent.*;
@@ -28186,7 +29462,8 @@ public class CustomParallelStream {
                   <li>You use <code>ForkJoinPool.submit(...)</code> to submit the <code>parallelStream()</code> task.
                   </li>
                   <li>You can control the number of threads in the pool by passing a custom size, e.g.,
-                    <code>new ForkJoinPool(4)</code>.</li>
+                    <code>new ForkJoinPool(4)</code>.
+                  </li>
                   <li>The <code>shutdown()</code> method ensures that your custom pool is properly cleaned up after use.
                   </li>
                 </ul>
@@ -28236,10 +29513,10 @@ public class CustomParallelStream {
   <!-- Bootstrap & Search Script -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-                        document.addEventListener("DOMContentLoaded", function () {
-                    let questionCount = document.querySelectorAll(".accordion-item").length;
-                    document.getElementById("questionCount").innerHTML = `<strong>Total Questions: ${questionCount}</strong>`;
-                });   
+    document.addEventListener("DOMContentLoaded", function () {
+      let questionCount = document.querySelectorAll(".accordion-item").length;
+      document.getElementById("questionCount").innerHTML = `<strong>Total Questions: ${questionCount}</strong>`;
+    });
     document.addEventListener("DOMContentLoaded", function () {
       let items = document.querySelectorAll(".accordion-item");
 
@@ -28251,23 +29528,23 @@ public class CustomParallelStream {
       });
     });
 
-function searchQuestions() {
-  const input = document.getElementById("searchBox").value.toLowerCase();
-  const items = document.querySelectorAll(".accordion-item");
+    function searchQuestions() {
+      const input = document.getElementById("searchBox").value.toLowerCase();
+      const items = document.querySelectorAll(".accordion-item");
 
-  items.forEach((item) => {
-    const buttonText = item.querySelector(".accordion-button")?.textContent.toLowerCase() || "";
-    const bodyText = item.querySelector(".accordion-body")?.textContent.toLowerCase() || "";
+      items.forEach((item) => {
+        const buttonText = item.querySelector(".accordion-button")?.textContent.toLowerCase() || "";
+        const bodyText = item.querySelector(".accordion-body")?.textContent.toLowerCase() || "";
 
-    const combinedText = buttonText + " " + bodyText;
+        const combinedText = buttonText + " " + bodyText;
 
-    if (combinedText.includes(input)) {
-      item.style.display = "";
-    } else {
-      item.style.display = "none";
+        if (combinedText.includes(input)) {
+          item.style.display = "";
+        } else {
+          item.style.display = "none";
+        }
+      });
     }
-  });
-}
 
     function copyToClipboard(text) {
       navigator.clipboard
