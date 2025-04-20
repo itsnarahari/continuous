@@ -82,7 +82,7 @@ public class StreamsApiTest {
 
         System.out.println("14. Find Employees with Second Highest Salary in Each Department (Expert Level)");
 
-        // Group by department and find second highest salary employee in each
+        // Find Employees with Second Highest Salary in Each Department (Expert Level)
         Map<String, Optional<Employee>> secondHighestByDept = employees.stream()
                 .collect(Collectors.groupingBy(
                         Employee::getDepartment,
