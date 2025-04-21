@@ -24,6 +24,11 @@ public class Employee{
     private String modeOfContact;
     private List<String> hobbies;
 
+    public Employee(String name, List<String> hobbies) {
+        this.name=name;
+        this.hobbies = hobbies;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;

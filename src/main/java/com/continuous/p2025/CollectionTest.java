@@ -222,5 +222,25 @@ public class CollectionTest {
                 .collect(Collectors.groupingBy(Employee::getDepartment, Collectors.counting()));
         System.out.println(collect9);
 //        30. Sort By using java 8 forward and reversed
+//        31. Group Each Employee By Hobbies
+        // Sample employee list with multiple hobbies
+        List<Employee> employeeList = Arrays.asList(
+                new Employee("Alice", Arrays.asList("Reading", "Gaming")),
+                new Employee("Bob", Arrays.asList("Gaming", "Swimming")),
+                new Employee("Charlie", Arrays.asList("Reading", "Cooking")),
+                new Employee("David", Arrays.asList("Swimming", "Cooking")),
+                new Employee("Eve", Arrays.asList("Gaming", "Reading"))
+        );
+
+        Map<String, List<String>> groupedByHobby = employeeList.stream()
+                .flatMap(emp -> emp.getHobbies()
+                        .stream()
+                        .map(hobby -> Map.entry(hobby, emp.getName())))
+                .collect(Collectors.groupingBy(Map.Entry::getKey,
+                        Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
+
+
+        System.out.println(groupedByHobby);
+
     }
 }

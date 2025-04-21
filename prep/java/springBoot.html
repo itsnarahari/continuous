@@ -7970,17 +7970,19 @@ hibernate.default_batch_fetch_size=10
     });
 
     function searchQuestions() {
-      let input = document.getElementById("searchBox").value.toLowerCase();
-      let items = document.querySelectorAll(".search-item");
+      const input = document.getElementById("searchBox").value.toLowerCase();
+      const items = document.querySelectorAll(".accordion-item");
 
       items.forEach((item) => {
-        let text = item.textContent.toLowerCase();
-        let parent = item.closest(".accordion-item");
+        const buttonText = item.querySelector(".accordion-button")?.textContent.toLowerCase() || "";
+        const bodyText = item.querySelector(".accordion-body")?.textContent.toLowerCase() || "";
 
-        if (text.includes(input)) {
-          parent.style.display = "";
+        const combinedText = buttonText + " " + bodyText;
+
+        if (combinedText.includes(input)) {
+          item.style.display = "";
         } else {
-          parent.style.display = "none";
+          item.style.display = "none";
         }
       });
     }
