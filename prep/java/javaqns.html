@@ -219,6 +219,201 @@ jpackage --input target/ --name myapp --main-jar myapp.jar --type deb
         </div>
       </div>
       <div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#sealedClassReflection">
+      Does Reflection work with Sealed Classes in Java?
+    </button>
+  </h2>
+  <div id="sealedClassReflection" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <h5 class="text-info">📌 Yes, Reflection works with sealed classes</h5>
+      <p>Even though sealed classes restrict which classes can extend them at compile-time, the <strong>Reflection API</strong> can still read metadata about them.</p>
+
+      <p>For example, you can use <code>isSealed()</code> to check if a class is sealed, and <code>getPermittedSubclasses()</code> to retrieve the list of permitted subclasses.</p>
+
+      <pre class="language-java"><code>
+sealed class Shape permits Circle, Rectangle { }
+
+final class Circle extends Shape { }
+final class Rectangle extends Shape { }
+      </code></pre>
+
+      <p>Now, using Reflection:</p>
+
+      <pre class="language-java"><code>
+Class&lt;Shape&gt; clazz = Shape.class;
+
+if (clazz.isSealed()) {
+    System.out.println("Shape is a sealed class.");
+    Class&lt;?&gt;[] permittedSubclasses = clazz.getPermittedSubclasses();
+    for (Class&lt;?&gt; permitted : permittedSubclasses) {
+        System.out.println("Permitted subclass: " + permitted.getName());
+    }
+}
+      </code></pre>
+
+      <h5 class="text-success">✅ Output</h5>
+      <pre class="bg-dark text-white p-3 rounded"><code>Shape is a sealed class.
+Permitted subclass: Circle
+Permitted subclass: Rectangle</code></pre>
+
+      <p>This proves that Reflection can access sealed class metadata, but it <strong>cannot violate the compile-time restrictions</strong> enforced by the sealed hierarchy.</p>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#whatIsReflection">
+      What is Reflection in Java?
+    </button>
+  </h2>
+  <div id="whatIsReflection" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <h5 class="text-info">📌 Reflection Overview</h5>
+      <p>Reflection is a feature in Java that allows inspection and modification of classes, fields, methods, and constructors at runtime — even if they are private.</p>
+
+      <h5 class="text-info">📌 Why use Reflection?</h5>
+      <ul>
+        <li>To inspect class structure at runtime</li>
+        <li>To invoke private methods or access private fields</li>
+        <li>To create instances even when constructors are private</li>
+      </ul>
+
+      <p>Common use cases include frameworks like Spring, Hibernate, and testing tools like JUnit.</p>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#breakSingletonReflection">
+      Can Reflection break Singleton and act like Prototype?
+    </button>
+  </h2>
+  <div id="breakSingletonReflection" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <h5 class="text-info">📌 Yes, Reflection can break Singleton</h5>
+      <p>Even if a Singleton class has a private constructor, you can use Reflection to access it and create multiple instances — violating the Singleton pattern.</p>
+
+      <h5 class="text-info">📌 Example Singleton class</h5>
+      <pre class="language-java"><code>
+public class Singleton {
+    private static final Singleton instance = new Singleton();
+
+    private Singleton() {
+        System.out.println("Constructor called");
+    }
+
+    public static Singleton getInstance() {
+        return instance;
+    }
+}
+      </code></pre>
+
+      <h5 class="text-info">📌 Breaking Singleton using Reflection</h5>
+      <pre class="language-java"><code>
+import java.lang.reflect.Constructor;
+
+public class BreakSingleton {
+    public static void main(String[] args) throws Exception {
+        Singleton s1 = Singleton.getInstance();
+
+        Constructor&lt;Singleton&gt; constructor = Singleton.class.getDeclaredConstructor();
+        constructor.setAccessible(true); // Bypass private access
+
+        Singleton s2 = constructor.newInstance(); // New instance
+        Singleton s3 = constructor.newInstance(); // Another new instance
+
+        System.out.println(s1.hashCode());
+        System.out.println(s2.hashCode());
+        System.out.println(s3.hashCode());
+    }
+}
+      </code></pre>
+
+      <h5 class="text-success">✅ Output</h5>
+      <pre class="bg-dark text-white p-3 rounded"><code>
+Constructor called
+Constructor called
+Constructor called
+12345678
+87654321
+11223344
+      </code></pre>
+
+      <p><strong>Result:</strong> Multiple instances are created using Reflection — so the Singleton behaves like Prototype.</p>
+
+      <h5 class="text-warning">⚠️ How to prevent this?</h5>
+      <p>You can prevent this by throwing an exception inside the constructor if an instance already exists:</p>
+
+      <pre class="language-java"><code>
+private static boolean instanceCreated = false;
+
+private Singleton() {
+    if (instanceCreated) {
+        throw new RuntimeException("Use getInstance() method only");
+    }
+    instanceCreated = true;
+}
+      </code></pre>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#syncSingleton">
+      What if we wrap Singleton's getInstance() method with synchronization?
+    </button>
+  </h2>
+  <div id="syncSingleton" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <h5 class="text-info">📌 Synchronization adds Thread-Safety</h5>
+      <p>Wrapping the <code>getInstance()</code> method with <code>synchronized</code> ensures that only one thread at a time can execute it. This prevents multiple threads from creating separate instances in a multi-threaded environment.</p>
+
+      <h5 class="text-info">📌 Example with synchronized method</h5>
+      <pre class="language-java"><code>
+public class Singleton {
+    private static Singleton instance;
+
+    private Singleton() {
+        System.out.println("Constructor called");
+    }
+
+    public static synchronized Singleton getInstance() {
+        if (instance == null) {
+            instance = new Singleton();
+        }
+        return instance;
+    }
+}
+      </code></pre>
+
+      <h5 class="text-success">✅ Benefit:</h5>
+      <p>This prevents multi-threaded race conditions.</p>
+
+      <h5 class="text-danger">❌ But… It does NOT stop Reflection</h5>
+      <p>Even with a synchronized <code>getInstance()</code>, Reflection can directly access the private constructor and create new instances, ignoring your factory method.</p>
+
+      <h5 class="text-warning">⚠️ Conclusion</h5>
+      <ul>
+        <li><strong>synchronized</strong> → Solves <em>multi-threading</em> problems only</li>
+        <li><strong>Reflection</strong> → Can still break Singleton by calling the constructor directly</li>
+      </ul>
+
+      <h5 class="text-info">📌 Best Practice to Prevent Reflection Attack:</h5>
+      <ul>
+        <li>Add a check inside the constructor to block multiple instantiations</li>
+        <li>Or use <strong>enum</strong> Singleton, which is Reflection-safe</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+      
+      <div class="accordion-item">
         <h2 class="accordion-header">
           <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
             data-bs-target="#jvmMemory">

@@ -241,6 +241,13 @@ public class CollectionTest {
 
 
         System.out.println(groupedByHobby);
+//        32. Find the second Highest number in a list.
+        Integer i1 = numbers.stream().sorted(Comparator.reverseOrder()).skip(1).findFirst().orElse(-1);
+        System.out.println("second Highest number %d".formatted(i1));
+
+//        33. Count the occurences of each word in a list
+        s.chars().mapToObj(value -> (char) value).collect(Collectors.)
+
 
     }
 }
