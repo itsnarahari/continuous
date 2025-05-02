@@ -221,6 +221,85 @@ jpackage --input target/ --name myapp --main-jar myapp.jar --type deb
       <div class="accordion-item">
   <h2 class="accordion-header">
     <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#javaAnnotations">
+      What are Annotations in Java? Full Explanation with Example
+    </button>
+  </h2>
+  <div id="javaAnnotations" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What are Annotations?</h5>
+      <p>Annotations are special <b>metadata</b> that provide information to the Java compiler or runtime. They don't directly affect the code execution but can control how the program is treated by tools, frameworks, or compilers.</p>
+      <p>In simple words: <b>Annotations = Special Labels for your Code!</b></p>
+
+      <h5 class="text-success">✅ Example of built-in Annotations</h5>
+      <pre class="language-java"><code>
+@Override
+public String toString() {
+    return "Hello";
+}
+      </code></pre>
+      <p>Here, <code>@Override</code> tells the compiler that we are overriding a method from the parent class.</p>
+
+      <h5 class="text-info">📌 Where can we use Annotations?</h5>
+      <ul>
+        <li>✅ Compile-Time Checking (like <code>@Override</code>, <code>@Deprecated</code>)</li>
+        <li>✅ Dependency Injection (like <code>@Autowired</code> in Spring)</li>
+        <li>✅ ORM Mapping (like <code>@Entity</code> in Hibernate)</li>
+        <li>✅ Testing (like <code>@Test</code> in JUnit)</li>
+        <li>✅ Web Development (like <code>@RequestMapping</code> in Spring MVC)</li>
+      </ul>
+
+      <h5 class="text-success">✅ How to Create a Custom Annotation?</h5>
+      <pre class="language-java"><code>
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Retention(RetentionPolicy.RUNTIME)  // Available at Runtime
+@Target(ElementType.METHOD)           // Can be applied only on Methods
+public @interface MyCustomAnnotation {
+    String value() default "Default Message";
+}
+      </code></pre>
+
+      <h5 class="text-info">📌 How to use the Custom Annotation?</h5>
+      <pre class="language-java"><code>
+public class Test {
+    @MyCustomAnnotation(value = "Hello Annotation!")
+    public void sayHello() {
+        System.out.println("Hello World");
+    }
+}
+      </code></pre>
+
+      <h5 class="text-warning">🔔 Important Terms in Annotations</h5>
+      <ul>
+        <li><b>@Retention</b>: Controls whether annotation is available at Compile-time or Runtime.</li>
+        <li><b>@Target</b>: Controls where the annotation can be applied (Class, Method, Field, etc.).</li>
+        <li><b>@Documented</b>: Tells whether to include in Javadoc.</li>
+        <li><b>@Inherited</b>: Annotation can be inherited by subclasses or not.</li>
+      </ul>
+
+      <h5 class="text-success">✅ Main Purpose of Using Annotations</h5>
+      <ul>
+        <li>👉 To give instructions to the compiler or frameworks</li>
+        <li>👉 To reduce boilerplate code</li>
+        <li>👉 To enable powerful features like Dependency Injection, Validation, Transaction Management</li>
+        <li>👉 To support modern Java frameworks like Spring, Hibernate, JUnit, etc.</li>
+      </ul>
+
+      <h5 class="text-warning">📢 Summary</h5>
+      <p>Annotations are like powerful stickers in your code that help Java tools and frameworks to work smarter. Custom annotations allow you to define your own behaviors easily!</p>
+
+    </div>
+  </div>
+</div>
+
+      <div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
       data-bs-target="#sealedClassReflection">
       Does Reflection work with Sealed Classes in Java?
     </button>
@@ -411,6 +490,194 @@ public class Singleton {
     </div>
   </div>
 </div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#breakSingletonWays">
+      How many ways can Singleton be broken in Java?
+    </button>
+  </h2>
+  <div id="breakSingletonWays" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <h5 class="text-info">📌 1. Using Reflection</h5>
+      <p>Reflection can access the private constructor and create new instances, bypassing the Singleton rules.</p>
+      <pre class="language-java"><code>
+Constructor&lt;Singleton&gt; constructor = Singleton.class.getDeclaredConstructor();
+constructor.setAccessible(true);
+Singleton newInstance = constructor.newInstance();
+      </code></pre>
+
+      <h5 class="text-info">📌 2. Using Serialization & Deserialization</h5>
+      <p>If Singleton implements <code>Serializable</code>, then deserializing the object will create a new instance, breaking Singleton.</p>
+      <pre class="language-java"><code>
+// Serialize
+ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("file.obj"));
+out.writeObject(singleton);
+
+// Deserialize
+ObjectInputStream in = new ObjectInputStream(new FileInputStream("file.obj"));
+Singleton newInstance = (Singleton) in.readObject();
+      </code></pre>
+      <p><strong>Fix:</strong> Implement <code>readResolve()</code> method inside Singleton class to return the same instance.</p>
+
+      <h5 class="text-info">📌 3. Using Cloning</h5>
+      <p>If Singleton class implements <code>Cloneable</code> and overrides <code>clone()</code>, then calling clone() can create a copy (new object) of Singleton.</p>
+      <pre class="language-java"><code>
+Singleton clonedInstance = (Singleton) singleton.clone();
+      </code></pre>
+      <p><strong>Fix:</strong> Override <code>clone()</code> method to throw an exception.</p>
+
+      <h5 class="text-info">📌 4. Using Multiple Class Loaders</h5>
+      <p>If Singleton class is loaded by different ClassLoaders (example: in different modules or plugins), then multiple instances can be created because each ClassLoader treats classes separately.</p>
+      <p><strong>Fix:</strong> This is hard to prevent fully. Application architecture should limit classloader issues carefully.</p>
+
+      <h5 class="text-success">✅ How to fully secure a Singleton?</h5>
+      <ul>
+        <li>Use <strong>Enum Singleton</strong> — it's Reflection-safe, Serialization-safe, and inherently secure.</li>
+        <li>Handle Serialization using <code>readResolve()</code> method.</li>
+        <li>Override <code>clone()</code> to prevent cloning.</li>
+        <li>Add constructor checks to prevent Reflection instantiation.</li>
+      </ul>
+
+      <h5 class="text-warning">🔔 Note:</h5>
+      <p>Even if you synchronize <code>getInstance()</code>, it only prevents multi-thread issues — but not Reflection, Cloning, or Serialization attacks!</p>
+    
+            <h5 class="text-info">📌 How to protect Singleton from Reflection, Cloning, and Serialization?</h5>
+
+      <h6 class="text-success">✅ 1. Protection from Reflection</h6>
+      <p>Add a check in the constructor to prevent multiple instances:</p>
+      <pre class="language-java"><code>
+public class Singleton {
+    private static final Singleton instance = new Singleton();
+
+    private Singleton() {
+        if (instance != null) {
+            throw new RuntimeException("Use getInstance() method");
+        }
+    }
+
+    public static Singleton getInstance() {
+        return instance;
+    }
+}
+      </code></pre>
+
+      <h6 class="text-success">✅ 2. Protection from Serialization</h6>
+      <p>Implement <code>readResolve()</code> method to return the same instance:</p>
+      <pre class="language-java"><code>
+protected Object readResolve() {
+    return getInstance();
+}
+      </code></pre>
+
+      <h6 class="text-success">✅ 3. Protection from Cloning</h6>
+      <p>Override <code>clone()</code> and throw exception:</p>
+      <pre class="language-java"><code>
+@Override
+protected Object clone() throws CloneNotSupportedException {
+    throw new CloneNotSupportedException("Cloning not allowed");
+}
+      </code></pre>
+
+      <h6 class="text-success">✅ 4. Best Option: Enum Singleton (Recommended)</h6>
+      <p>Enums are naturally safe from Reflection, Serialization, and Cloning attacks:</p>
+      <pre class="language-java"><code>
+public enum Singleton {
+    INSTANCE;
+
+    public void doSomething() {
+        System.out.println("Doing something");
+    }
+}
+      </code></pre>
+
+      <p class="text-success">Use it like: <code>Singleton.INSTANCE.doSomething();</code></p>
+
+      <h5 class="text-warning">📌 Summary</h5>
+      <ul>
+        <li>✅ Constructor Guard → Stops Reflection</li>
+        <li>✅ readResolve() → Stops Serialization</li>
+        <li>✅ Override clone() → Stops Cloning</li>
+        <li>✅ Enum → Safest Singleton Pattern</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#enumSingleton">
+      What is Enum Singleton in Java? (Example with Explanation)
+    </button>
+  </h2>
+  <div id="enumSingleton" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Enum Singleton Example</h5>
+      <p>Enum Singleton is the easiest, most effective, and safest way to implement Singleton design pattern in Java.</p>
+
+      <pre class="language-java"><code>
+public enum Singleton {
+    INSTANCE; // Only one instance is created
+
+    public void showMessage() {
+        System.out.println("Hello from Enum Singleton!");
+    }
+}
+      </code></pre>
+
+      <h5 class="text-success">✅ How to use Enum Singleton?</h5>
+      <pre class="language-java"><code>
+public class Main {
+    public static void main(String[] args) {
+        Singleton singleton = Singleton.INSTANCE;
+        singleton.showMessage();
+    }
+}
+      </code></pre>
+
+      <h5 class="text-info">📌 Why Enum Singleton is Special?</h5>
+      <table class="table table-dark table-bordered">
+        <thead>
+          <tr>
+            <th>Problem</th>
+            <th>Is it Solved?</th>
+            <th>How?</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Reflection Attack</td>
+            <td>✅ Safe</td>
+            <td>Java prevents creating Enum instances through Reflection.</td>
+          </tr>
+          <tr>
+            <td>Serialization Attack</td>
+            <td>✅ Safe</td>
+            <td>Serialization preserves Enum Singleton automatically.</td>
+          </tr>
+          <tr>
+            <td>Cloning Attack</td>
+            <td>✅ Safe</td>
+            <td>Enums cannot be cloned.</td>
+          </tr>
+          <tr>
+            <td>Thread Safety</td>
+            <td>✅ Safe</td>
+            <td>JVM guarantees Enum is loaded only once in a thread-safe manner.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h5 class="text-warning">🔔 Important Note</h5>
+      <p>Always prefer Enum Singleton if you want a completely safe Singleton without writing extra code for Reflection, Cloning, or Serialization protection.</p>
+
+    </div>
+  </div>
+</div>
+
 
       
       <div class="accordion-item">
