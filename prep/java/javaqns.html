@@ -6295,7 +6295,7 @@ String str = obj.toString(); // Throws NullPointerException
       </code></pre>
 
             <h5 class="text-primary">✅ Key Differences</h5>
-            <table class="table table-bordered text-light">
+            <table class="table table-bordered text-dark">
               <thead>
                 <tr>
                   <th>Feature</th>
@@ -18026,120 +18026,6 @@ public class MyClassTest {
                 <code>@VisibleForTesting</code> to avoid breaking encapsulation.
               </li>
               <li>Avoid using reflection too frequently as it makes the code harder to maintain and understand.</li>
-            </ul>
-
-          </div>
-        </div>
-      </div>
-      <div class="accordion-item">
-        <h2 class="accordion-header" id="headingSagaPattern">
-          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-            data-bs-target="#collapseSagaPattern" aria-expanded="false" aria-controls="collapseSagaPattern">
-            ⚡ Saga Design Pattern and Its Types
-          </button>
-        </h2>
-        <div id="collapseSagaPattern" class="accordion-collapse collapse" aria-labelledby="headingSagaPattern"
-          data-bs-parent="#accordionExample">
-          <div class="accordion-body">
-
-            <h5>🔄 Overview of Saga Design Pattern</h5>
-            <p>The Saga design pattern is a pattern for managing distributed transactions and ensuring data consistency
-              across microservices or distributed systems. It breaks down a large, complex transaction into smaller,
-              isolated, and manageable transactions that can be executed independently.</p>
-
-            <h5>🎯 Key Characteristics of the Saga Pattern</h5>
-            <ul>
-              <li>Sagas allow you to manage long-running transactions in a microservices environment where each service
-                has its own database.</li>
-              <li>Each service in a saga manages its own data, and each step of the transaction updates its local data
-                store.</li>
-              <li>If one of the steps fails, compensating actions (rollback) are triggered to undo the changes made by
-                previous steps.</li>
-              <li>Sagas can either be managed using a central orchestrator or through event-driven choreography.</li>
-            </ul>
-
-            <h5>⚡ Types of Sagas</h5>
-            <ul>
-              <li><strong>1. Orchestration-based Saga</strong>:
-                <p>In an orchestration-based saga, there is a central orchestrator (also called a coordinator) that
-                  controls the entire saga. The orchestrator sends commands to the participating services and monitors
-                  their status. If one of the services fails, the orchestrator can trigger compensating transactions to
-                  revert the changes.</p>
-              </li>
-              <li><strong>2. Choreography-based Saga</strong>:
-                <p>In a choreography-based saga, there is no central orchestrator. Instead, each service knows what to
-                  do next and how to react to events that occur in the system. Services communicate with each other
-                  through events. When a service completes a step, it publishes an event that other services listen to
-                  in order to proceed or trigger compensating actions.</p>
-              </li>
-            </ul>
-
-            <h5>📚 Example of Orchestration-based Saga</h5>
-            <pre><code class="language-java">
-public class OrderService {
-
-    private final PaymentService paymentService;
-    private final InventoryService inventoryService;
-    
-    public void placeOrder(Order order) {
-        try {
-            paymentService.processPayment(order);
-            inventoryService.updateInventory(order);
-        } catch (Exception e) {
-            // Compensation or rollback actions
-            inventoryService.rollbackInventory(order);
-            paymentService.refundPayment(order);
-        }
-    }
-}
-      </code></pre>
-
-            <h5>📚 Example of Choreography-based Saga</h5>
-            <pre><code class="language-java">
-public class OrderService {
-
-    public void handleOrderPlacedEvent(Order order) {
-        // Process payment and publish next event
-        paymentService.processPayment(order);
-        eventPublisher.publish("InventoryService.OrderPaid", order);
-    }
-
-    public void handlePaymentFailedEvent(Order order) {
-        // Compensate for failure and rollback previous actions
-        inventoryService.rollbackInventory(order);
-    }
-}
-      </code></pre>
-
-            <h5>⚖️ Advantages of Saga Pattern</h5>
-            <ul>
-              <li>Improves the reliability and resilience of distributed systems by allowing for compensation of
-                failures and better fault tolerance.</li>
-              <li>It does not require a distributed transaction manager, which helps avoid the performance and
-                complexity overhead associated with traditional distributed transactions.</li>
-              <li>It is highly scalable as it does not rely on a single point of failure and can be executed
-                asynchronously.</li>
-              <li>Sagas allow for long-running transactions, enabling the system to handle complex workflows that span
-                multiple services.</li>
-            </ul>
-
-            <h5>🚦 When to Use Saga Pattern</h5>
-            <ul>
-              <li>When dealing with long-running business processes that span multiple microservices or systems.</li>
-              <li>When you need to manage distributed transactions in a system where services are decoupled and have
-                their own local data stores.</li>
-              <li>When it's critical to ensure eventual consistency in your system, but you can tolerate temporary
-                inconsistencies during the transaction processing.</li>
-            </ul>
-
-            <h5>🛠️ Challenges with Saga Pattern</h5>
-            <ul>
-              <li>Ensuring that compensation transactions (rollback) are properly implemented for all services involved
-                in the saga.</li>
-              <li>Managing complex communication between services, especially in the choreography-based saga.</li>
-              <li>Handling timeouts and retries in distributed systems, which can add complexity.</li>
-              <li>Maintaining the eventual consistency model, where there can be temporary data inconsistencies during
-                transaction execution.</li>
             </ul>
 
           </div>
@@ -30596,6 +30482,1764 @@ Map&lt;String, Object&gt; result = call.execute(Map.of("email", "test@example.co
     </div>
   </div>
 </div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#springBootAnnotations">
+      What are Annotations in Spring Boot 3? Full Explanation with Example
+    </button>
+  </h2>
+  <div id="springBootAnnotations" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What are Annotations in Spring Boot?</h5>
+      <p>In Spring Boot, annotations are used to configure beans, define request mappings, inject dependencies, and much more. They help reduce XML configuration and enable a cleaner, declarative programming model.</p>
+      <p>Think of them as <b>instructions for the Spring Framework</b> to wire and manage your application components.</p>
+
+      <h5 class="text-success">✅ Common Annotations in Spring Boot</h5>
+      <ul>
+        <li><code>@SpringBootApplication</code> – Bootstraps the application</li>
+        <li><code>@RestController</code> – Creates a RESTful controller</li>
+        <li><code>@Autowired</code> – Injects dependencies</li>
+        <li><code>@RequestMapping</code> – Maps HTTP requests to methods</li>
+        <li><code>@Component</code>, <code>@Service</code>, <code>@Repository</code> – Mark Spring-managed classes</li>
+      </ul>
+
+      <h5 class="text-info">📌 Why Create a Custom Annotation?</h5>
+      <p>Sometimes, you want to group common behavior into a single, reusable annotation. For example, combining multiple Spring annotations or marking special business logic methods.</p>
+
+      <h5 class="text-success">✅ How to Create a Custom Annotation in Spring Boot</h5>
+      <pre class="language-java"><code>
+import java.lang.annotation.*;
+
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+public @interface LogExecutionTime {
+}
+      </code></pre>
+      <p>Here, we created a custom annotation called <code>@LogExecutionTime</code> that can be applied to methods.</p>
+
+      <h5 class="text-info">📌 How to Use the Custom Annotation with Aspect (AOP)</h5>
+      <p>Now let's use <b>Spring AOP</b> to define behavior when this annotation is used:</p>
+      <pre class="language-java"><code>
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.springframework.stereotype.Component;
+
+@Aspect
+@Component
+public class LogExecutionAspect {
+
+    @Around("@annotation(LogExecutionTime)")
+    public Object logExecutionTime(ProceedingJoinPoint joinPoint) throws Throwable {
+        long start = System.currentTimeMillis();
+        Object proceed = joinPoint.proceed();
+        long duration = System.currentTimeMillis() - start;
+        System.out.println(joinPoint.getSignature() + " executed in " + duration + "ms");
+        return proceed;
+    }
+}
+      </code></pre>
+
+      <h5 class="text-success">✅ Using the Custom Annotation in a Service</h5>
+      <pre class="language-java"><code>
+import org.springframework.stereotype.Service;
+
+@Service
+public class MyService {
+
+    @LogExecutionTime
+    public void serve() throws InterruptedException {
+        Thread.sleep(1000);
+        System.out.println("Service Method Executed");
+    }
+}
+      </code></pre>
+
+      <h5 class="text-info">📌 Full Spring Boot App Example</h5>
+      <pre class="language-java"><code>
+// Main Application
+@SpringBootApplication
+public class DemoApplication {
+
+    public static void main(String[] args) {
+        ConfigurableApplicationContext context = SpringApplication.run(DemoApplication.class, args);
+        MyService myService = context.getBean(MyService.class);
+        myService.serve();
+    }
+}
+      </code></pre>
+
+      <h5 class="text-warning">🔔 Notes</h5>
+      <ul>
+        <li><b>AOP (Aspect-Oriented Programming)</b> allows cross-cutting concerns like logging or transactions.</li>
+        <li>Spring handles the annotation scanning and applies behavior at runtime.</li>
+        <li>Custom annotations + AOP = Powerful abstraction for repeated logic.</li>
+      </ul>
+
+      <h5 class="text-success">✅ Benefits of Custom Annotations</h5>
+      <ul>
+        <li>👉 Cleaner and reusable code</li>
+        <li>👉 Group multiple behaviors into one label</li>
+        <li>👉 Encourage declarative programming style</li>
+        <li>👉 Makes your codebase more expressive and self-documented</li>
+      </ul>
+
+      <h5 class="text-warning">📢 Summary</h5>
+      <p>Custom annotations in Spring Boot 3 let you create expressive, reusable, and declarative components. Combined with Spring AOP, they help implement behaviors like logging, validation, or security checks cleanly and consistently.</p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#customScopeSpring">
+      How to Create a Custom Bean Scope in Spring Boot 3? Full Example
+    </button>
+  </h2>
+  <div id="customScopeSpring" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What is a Bean Scope in Spring?</h5>
+      <p>Bean scope defines the lifecycle and visibility of a bean in Spring. Common scopes include:</p>
+      <ul>
+        <li><code>singleton</code> – one instance for the entire application context</li>
+        <li><code>prototype</code> – a new instance every time it’s requested</li>
+        <li><code>request/session</code> – tied to web request/session</li>
+      </ul>
+      <p><b>Custom scopes</b> are useful when you want more control – like one bean per thread, task, etc.</p>
+
+      <h5 class="text-success">✅ Step 1: Create the Custom Scope</h5>
+      <p>We’ll create a <b>ThreadScope</b> which gives each thread its own bean instance.</p>
+      <pre class="language-java"><code>
+import org.springframework.beans.factory.ObjectFactory;
+import org.springframework.beans.factory.config.Scope;
+import java.util.HashMap;
+import java.util.Map;
+
+public class ThreadScope implements Scope {
+
+    private final ThreadLocal&lt;Map&lt;String, Object&gt;&gt; threadScope = ThreadLocal.withInitial(HashMap::new);
+
+    @Override
+    public Object get(String name, ObjectFactory&lt;?&gt; objectFactory) {
+        return threadScope.get().computeIfAbsent(name, k -> objectFactory.getObject());
+    }
+
+    @Override
+    public Object remove(String name) {
+        return threadScope.get().remove(name);
+    }
+
+    @Override
+    public void registerDestructionCallback(String name, Runnable callback) {
+        // Not required for thread scope
+    }
+
+    @Override
+    public Object resolveContextualObject(String key) {
+        return null;
+    }
+
+    @Override
+    public String getConversationId() {
+        return Thread.currentThread().getName();
+    }
+}
+      </code></pre>
+
+      <h5 class="text-info">📌 Step 2: Register the Custom Scope</h5>
+      <pre class="language-java"><code>
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class ScopeConfig {
+
+    @Bean
+    public static org.springframework.beans.factory.config.CustomScopeConfigurer customScopeConfigurer() {
+        org.springframework.beans.factory.config.CustomScopeConfigurer configurer = new org.springframework.beans.factory.config.CustomScopeConfigurer();
+        configurer.addScope("thread", new ThreadScope());
+        return configurer;
+    }
+}
+      </code></pre>
+
+      <h5 class="text-success">✅ Step 3: Create a Bean with the Custom Scope</h5>
+      <pre class="language-java"><code>
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
+
+@Component
+@Scope("thread")
+public class ThreadScopedBean {
+    public ThreadScopedBean() {
+        System.out.println("ThreadScopedBean created for " + Thread.currentThread().getName());
+    }
+}
+      </code></pre>
+
+      <h5 class="text-info">📌 Step 4: Use the Scoped Bean</h5>
+      <pre class="language-java"><code>
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.stereotype.Component;
+
+@Component
+public class DemoRunner implements CommandLineRunner {
+
+    @Autowired
+    private org.springframework.context.ApplicationContext context;
+
+    @Override
+    public void run(String... args) {
+        Runnable task = () -> {
+            ThreadScopedBean bean1 = context.getBean(ThreadScopedBean.class);
+            ThreadScopedBean bean2 = context.getBean(ThreadScopedBean.class);
+            System.out.println("Same instance in same thread? " + (bean1 == bean2));
+        };
+
+        Thread t1 = new Thread(task, "Thread-A");
+        Thread t2 = new Thread(task, "Thread-B");
+
+        t1.start();
+        t2.start();
+    }
+}
+      </code></pre>
+
+      <h5 class="text-warning">🔔 Output</h5>
+      <pre><code>
+ThreadScopedBean created for Thread-A
+ThreadScopedBean created for Thread-B
+Same instance in same thread? true
+Same instance in same thread? true
+      </code></pre>
+
+      <h5 class="text-success">✅ Summary</h5>
+      <ul>
+        <li>👉 You can define your own bean lifecycle with a custom scope.</li>
+        <li>👉 Useful for thread-bound beans, jobs, or temporary states.</li>
+        <li>👉 Spring makes it easy to register and use via `CustomScopeConfigurer`.</li>
+      </ul>
+      <p><b>Conclusion:</b> Custom scopes allow powerful, flexible control over bean management in Spring Boot 3 applications!</p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#springCacheRedis">
+      How does Caching Work in Spring Boot 3? Full Example with Redis Integration
+    </button>
+  </h2>
+  <div id="springCacheRedis" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What is Caching?</h5>
+      <p>Caching is a technique to store frequently used data in memory so it can be retrieved faster. Spring Boot makes it easy to add caching with just annotations!</p>
+      <p><b>Use Case:</b> Avoid hitting database or API repeatedly for the same data.</p>
+
+      <h5 class="text-success">✅ Common Cache Annotations in Spring</h5>
+      <ul>
+        <li><code>@EnableCaching</code> – Enables Spring's cache abstraction</li>
+        <li><code>@Cacheable</code> – Marks a method whose result should be cached</li>
+        <li><code>@CacheEvict</code> – Marks a method that should clear cache</li>
+        <li><code>@CachePut</code> – Updates the cache without skipping method execution</li>
+      </ul>
+
+      <h5 class="text-info">📌 Step 1: Add Redis Dependencies (Maven)</h5>
+      <pre class="language-xml"><code>
+&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-boot-starter-data-redis&lt;/artifactId&gt;
+&lt;/dependency&gt;
+
+&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-boot-starter-cache&lt;/artifactId&gt;
+&lt;/dependency&gt;
+      </code></pre>
+
+      <h5 class="text-success">✅ Step 2: Add Redis Configuration (application.yml)</h5>
+      <pre class="language-yaml"><code>
+spring:
+  cache:
+    type: redis
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 6000
+      password: yourRedisPassword # Optional if no auth
+      client-type: lettuce
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+      </code></pre>
+
+      <h5 class="text-info">📌 Step 3: Enable Caching in Main Class</h5>
+      <pre class="language-java"><code>
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cache.annotation.EnableCaching;
+
+@SpringBootApplication
+@EnableCaching
+public class DemoApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(DemoApplication.class, args);
+    }
+}
+      </code></pre>
+
+      <h5 class="text-success">✅ Step 4: Create a Caching Service</h5>
+      <pre class="language-java"><code>
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.stereotype.Service;
+
+@Service
+public class ProductService {
+
+    @Cacheable(value = "products", key = "#id")
+    public String getProductById(String id) {
+        System.out.println("Fetching from DB for ID: " + id);
+        return "Product-" + id;
+    }
+}
+      </code></pre>
+
+      <h5 class="text-info">📌 Step 5: Test the Cache (Controller)</h5>
+      <pre class="language-java"><code>
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/products")
+public class ProductController {
+
+    private final ProductService productService;
+
+    public ProductController(ProductService productService) {
+        this.productService = productService;
+    }
+
+    @GetMapping("/{id}")
+    public String getProduct(@PathVariable String id) {
+        return productService.getProductById(id);
+    }
+}
+      </code></pre>
+
+      <h5 class="text-warning">🔁 What Happens on Repeated Calls?</h5>
+      <p>The first call to <code>/products/123</code> will fetch from DB (simulated), and the second call will return instantly from Redis cache.</p>
+
+      <h5 class="text-success">✅ Cache Eviction Example</h5>
+      <pre class="language-java"><code>
+@CacheEvict(value = "products", key = "#id")
+public void clearCache(String id) {
+    System.out.println("Cache cleared for product: " + id);
+}
+      </code></pre>
+
+      <h5 class="text-warning">🔔 Redis Running?</h5>
+      <ul>
+        <li>👉 Make sure Redis is running on your machine or use Docker</li>
+        <li>👉 Docker Command: <code>docker run -p 6379:6379 redis</code></li>
+        <li>👉 RedisInsight GUI can help you view cached keys</li>
+      </ul>
+
+      <h5 class="text-success">✅ Summary</h5>
+      <ul>
+        <li>👉 Add Redis dependency & config</li>
+        <li>👉 Enable caching with <code>@EnableCaching</code></li>
+        <li>👉 Annotate methods with <code>@Cacheable</code></li>
+        <li>👉 Cache data externally in Redis for scalability</li>
+      </ul>
+      <p><b>Conclusion:</b> Externalizing cache with Redis in Spring Boot 3 is simple, powerful, and production-ready!</p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#microserviceCommunication">
+      How Does Inter-Microservice Communication Work? Types, Pros & Cons Explained
+    </button>
+  </h2>
+  <div id="microserviceCommunication" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What is Inter-Microservice Communication?</h5>
+      <p>In a microservice architecture, multiple services must communicate to fulfill a business request. This communication can happen in two main ways: <b>synchronously</b> or <b>asynchronously</b>.</p>
+
+      <h5 class="text-success">✅ 1. Synchronous Communication (HTTP/REST, gRPC, Feign)</h5>
+      <ul>
+        <li>👉 The client waits for a response from the server</li>
+        <li>👉 Works like traditional request-response pattern</li>
+      </ul>
+
+      <h6 class="text-primary">🔹 a) REST using `RestTemplate` / `WebClient`</h6>
+      <pre class="language-java"><code>
+@RestController
+public class OrderController {
+    @Autowired
+    private RestTemplate restTemplate;
+
+    @GetMapping("/order")
+    public String placeOrder() {
+        String product = restTemplate.getForObject("http://product-service/product/123", String.class);
+        return "Order placed for " + product;
+    }
+}
+      </code></pre>
+
+      <h6 class="text-primary">🔹 b) Feign Client (Declarative HTTP Client)</h6>
+      <pre class="language-java"><code>
+@FeignClient(name = "product-service")
+public interface ProductClient {
+    @GetMapping("/product/{id}")
+    String getProduct(@PathVariable String id);
+}
+      </code></pre>
+
+      <h6 class="text-primary">🔹 c) gRPC (Binary-based, Faster Communication)</h6>
+      <p>Used for high-performance communication with Protobuf. More efficient than REST but adds complexity.</p>
+
+      <h6 class="text-warning">⚖️ Advantages of Synchronous</h6>
+      <ul>
+        <li>✅ Simple to implement and debug</li>
+        <li>✅ Easy error handling and retries</li>
+        <li>✅ Suitable for direct dependencies</li>
+      </ul>
+
+      <h6 class="text-danger">❌ Disadvantages of Synchronous</h6>
+      <ul>
+        <li>❌ Tight coupling between services</li>
+        <li>❌ Latency increases with each chained call</li>
+        <li>❌ Hard to scale under load (blocking I/O)</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-success">✅ 2. Asynchronous Communication (Message Queues, Kafka, RabbitMQ)</h5>
+      <ul>
+        <li>👉 Services communicate via events/messages</li>
+        <li>👉 The sender doesn't wait for a response</li>
+      </ul>
+
+      <h6 class="text-primary">🔹 a) RabbitMQ Example (Spring Boot)</h6>
+      <pre class="language-java"><code>
+// Producer
+rabbitTemplate.convertAndSend("order.exchange", "order.created", order);
+
+// Consumer
+@RabbitListener(queues = "order.queue")
+public void processOrder(Order order) {
+    System.out.println("Order received: " + order);
+}
+      </code></pre>
+
+      <h6 class="text-primary">🔹 b) Kafka Example</h6>
+      <pre class="language-java"><code>
+// Kafka Producer
+kafkaTemplate.send("order-topic", orderId, orderDetails);
+
+// Kafka Listener
+@KafkaListener(topics = "order-topic")
+public void handleOrder(String order) {
+    System.out.println("Received order via Kafka: " + order);
+}
+      </code></pre>
+
+      <h6 class="text-warning">⚖️ Advantages of Asynchronous</h6>
+      <ul>
+        <li>✅ Loose coupling between services</li>
+        <li>✅ Highly scalable and resilient</li>
+        <li>✅ Handles high traffic well (non-blocking)</li>
+      </ul>
+
+      <h6 class="text-danger">❌ Disadvantages of Asynchronous</h6>
+      <ul>
+        <li>❌ More complex to implement and monitor</li>
+        <li>❌ Harder to debug and trace issues</li>
+        <li>❌ Eventual consistency (not immediate)</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-warning">📌 Which One Should You Use?</h5>
+      <ul>
+        <li>👉 Use <b>REST/gRPC</b> for quick, real-time responses and simpler services</li>
+        <li>👉 Use <b>Kafka/RabbitMQ</b> when performance, decoupling, and resilience are top priorities</li>
+        <li>👉 A combination of both is common in modern systems (hybrid model)</li>
+      </ul>
+
+      <h5 class="text-success">✅ Summary</h5>
+      <ul>
+        <li>🔄 <b>Synchronous:</b> REST, gRPC, Feign – good for request-response, but tightly coupled</li>
+        <li>📩 <b>Asynchronous:</b> Kafka, RabbitMQ – better for decoupling, scaling, and resilience</li>
+        <li>⚙️ Choose based on use case: real-time needs vs. throughput & flexibility</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#customAutoConfig">
+      How Can We Customize Auto-Configuration in Spring Boot 3? Full Explanation with Example
+    </button>
+  </h2>
+  <div id="customAutoConfig" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What is Auto-Configuration in Spring Boot?</h5>
+      <p>Spring Boot auto-configures many things for you based on the classpath and configuration files. This is done using the <code>@SpringBootApplication</code> and underlying <code>@EnableAutoConfiguration</code>.</p>
+      <p>Auto-configurations are provided via <code>spring-boot-autoconfigure</code> module using conditions like <code>@ConditionalOnClass</code>, <code>@ConditionalOnProperty</code>, etc.</p>
+
+      <h5 class="text-success">✅ Why Customize Auto-Configuration?</h5>
+      <ul>
+        <li>👉 You want to override or replace a default bean</li>
+        <li>👉 You want to enable or disable features conditionally</li>
+        <li>👉 You want full control over how something is configured</li>
+      </ul>
+
+      <h5 class="text-info">📌 1. Override Default Auto-Configured Beans</h5>
+      <pre class="language-java"><code>
+@Configuration
+public class CustomDataSourceConfig {
+
+    @Bean
+    @Primary
+    public DataSource customDataSource() {
+        return DataSourceBuilder.create()
+                .url("jdbc:mysql://localhost:3306/customdb")
+                .username("root")
+                .password("root")
+                .build();
+    }
+}
+      </code></pre>
+      <p>✅ Spring will use this instead of the default DataSource due to <code>@Primary</code>.</p>
+
+      <h5 class="text-success">✅ 2. Use Conditional Configuration</h5>
+      <pre class="language-java"><code>
+@Configuration
+@ConditionalOnProperty(name = "app.custom.enabled", havingValue = "true")
+public class MyCustomFeature {
+
+    @Bean
+    public MyService myService() {
+        return new MyService();
+    }
+}
+      </code></pre>
+      <p>✅ This bean will only be loaded if <code>app.custom.enabled=true</code> is set in <code>application.properties</code>.</p>
+
+      <h5 class="text-info">📌 3. Disable a Specific Auto-Configuration</h5>
+      <pre class="language-java"><code>
+@SpringBootApplication(exclude = { DataSourceAutoConfiguration.class })
+public class MyApp { ... }
+      </code></pre>
+      <p>✅ Use <code>exclude</code> or <code>excludeName</code> to block certain auto-configs.</p>
+
+      <h5 class="text-success">✅ 4. Create Your Own Auto-Configuration</h5>
+      <pre class="language-java"><code>
+// MyLibraryAutoConfiguration.java
+@Configuration
+@ConditionalOnClass(MyLibrary.class)
+public class MyLibraryAutoConfiguration {
+
+    @Bean
+    public MyLibrary myLibrary() {
+        return new MyLibrary();
+    }
+}
+      </code></pre>
+      <pre class="language-properties"><code>
+# META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports
+com.example.config.MyLibraryAutoConfiguration
+      </code></pre>
+      <p>✅ This registers your config as a valid auto-configuration class in Spring Boot 3 (replaces older <code>spring.factories</code>).</p>
+
+      <h5 class="text-warning">🔍 Use Auto-Configuration Report for Debugging</h5>
+      <p>Set this in <code>application.properties</code>:</p>
+      <pre class="language-properties"><code>
+debug=true
+      </code></pre>
+      <p>✅ This prints which auto-configs were applied or not, and why.</p>
+
+      <h5 class="text-success">✅ Summary</h5>
+      <ul>
+        <li>🔧 Customize by overriding beans or using conditions</li>
+        <li>🛠️ Disable auto-config classes you don’t want</li>
+        <li>📦 You can also create and share your own auto-config modules</li>
+        <li>📊 Use <code>debug=true</code> for full config insights</li>
+      </ul>
+      <p><b>Conclusion:</b> Spring Boot gives you powerful ways to override or plug into the auto-configuration system with minimal effort and full control.</p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#serviceRegistryDiscovery">
+      What is the Difference Between Service Registry and Service Discovery? Full Explanation
+    </button>
+  </h2>
+  <div id="serviceRegistryDiscovery" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What is a Service Registry?</h5>
+      <p>A <b>Service Registry</b> is a **central database** or server that keeps track of all **available services** in a microservice ecosystem.</p>
+      <p>When a new microservice starts up, it registers its information (host, port, metadata) to the registry.</p>
+
+      <h6 class="text-success">✅ Example: Eureka Server</h6>
+      <pre class="language-yaml"><code>
+# application.yml of service
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+      </code></pre>
+      <p>Here, each service registers itself with the central Eureka registry.</p>
+
+      <h6 class="text-warning">🎯 Purpose:</h6>
+      <ul>
+        <li>👉 Keep track of all services in the system</li>
+        <li>👉 Maintain metadata like name, IP, port, health status</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-info">📌 What is Service Discovery?</h5>
+      <p><b>Service Discovery</b> is the **process of locating the address of a service** using the service registry.</p>
+      <p>Instead of hardcoding service URLs, services can dynamically discover others via the registry.</p>
+
+      <h6 class="text-success">✅ Example: Using Eureka Discovery Client</h6>
+      <pre class="language-java"><code>
+@Autowired
+private DiscoveryClient discoveryClient;
+
+public String callAnotherService() {
+    List<ServiceInstance> instances = 
+        discoveryClient.getInstances("user-service");
+    URI uri = instances.get(0).getUri();
+    return restTemplate.getForObject(uri + "/api/users", String.class);
+}
+      </code></pre>
+      <p>✅ This code dynamically discovers a running instance of <code>user-service</code>.</p>
+
+      <h6 class="text-warning">🎯 Purpose:</h6>
+      <ul>
+        <li>👉 Locate services dynamically at runtime</li>
+        <li>👉 Enable client-side or server-side load balancing</li>
+        <li>👉 Remove the need for hardcoded URLs</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-info">📌 Real-World Analogy</h5>
+      <ul>
+        <li>🗂️ <b>Service Registry</b> = Phone Directory</li>
+        <li>📞 <b>Service Discovery</b> = Looking up a friend’s phone number before calling</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-success">✅ Key Differences</h5>
+      <table class="table table-bordered table-dark">
+        <thead>
+          <tr>
+            <th>Aspect</th>
+            <th>Service Registry</th>
+            <th>Service Discovery</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Definition</td>
+            <td>Central storage of service metadata</td>
+            <td>Mechanism to look up available services</td>
+          </tr>
+          <tr>
+            <td>Responsibility</td>
+            <td>Maintain list of running service instances</td>
+            <td>Find and connect to services using that list</td>
+          </tr>
+          <tr>
+            <td>Examples</td>
+            <td>Eureka Server, Consul, Zookeeper</td>
+            <td>DiscoveryClient, Feign + Eureka, Ribbon, Consul client</td>
+          </tr>
+          <tr>
+            <td>Who Uses It?</td>
+            <td>All services register themselves to it</td>
+            <td>Clients/services query it to find other services</td>
+          </tr>
+          <tr>
+            <td>Analogy</td>
+            <td>Phonebook</td>
+            <td>Looking up a number in phonebook</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <hr>
+
+      <h5 class="text-info">📌 Types of Service Discovery</h5>
+      <ul>
+        <li>🔹 <b>Client-side Discovery</b> (e.g., Eureka + Ribbon): Client queries registry and chooses instance</li>
+        <li>🔹 <b>Server-side Discovery</b> (e.g., AWS ELB, Kubernetes): Load balancer queries registry and routes traffic</li>
+      </ul>
+
+      <h5 class="text-success">✅ Summary</h5>
+      <ul>
+        <li>🛠️ Service Registry is the **data source** of service locations</li>
+        <li>🔍 Service Discovery is the **mechanism** of finding services from that source</li>
+        <li>🔗 Both are essential in **dynamic and scalable microservice architectures**</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#sagaPattern">
+      What is Saga Design Pattern in Microservices? Full Explanation with Types & Example
+    </button>
+  </h2>
+  <div id="sagaPattern" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What is Saga Design Pattern?</h5>
+      <p>The <b>Saga pattern</b> is a **distributed transaction pattern** used in microservices to manage **data consistency** across multiple services **without using a distributed transaction coordinator**.</p>
+      <p>It breaks a transaction into a sequence of **local transactions**, each updating one microservice and publishing an event or invoking the next step.</p>
+
+      <h6 class="text-success">🔄 Key Idea:</h6>
+      <ul>
+        <li>Each service **executes its transaction** and then triggers the next via events or direct calls.</li>
+        <li>If something fails, Saga pattern triggers **compensating transactions** to undo changes.</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-warning">📚 Real-world Example: Order Placement</h5>
+      <ul>
+        <li>1️⃣ <code>Order Service</code>: Creates the order</li>
+        <li>2️⃣ <code>Payment Service</code>: Deducts the payment</li>
+        <li>3️⃣ <code>Inventory Service</code>: Reduces stock</li>
+        <li>4️⃣ <code>Shipping Service</code>: Initiates delivery</li>
+      </ul>
+      <p>If <code>Inventory</code> fails, Saga will rollback <code>Payment</code> and <code>Order</code>.</p>
+
+      <hr>
+
+      <h5 class="text-info">📌 Types of Saga</h5>
+
+      <h6 class="text-success">1. Choreography-based Saga</h6>
+      <p>There is **no central orchestrator**. Each service listens for events and responds accordingly.</p>
+      <pre class="language-text"><code>
+OrderService → emits OrderCreatedEvent
+↓
+PaymentService → listens to OrderCreatedEvent, processes payment, emits PaymentCompletedEvent
+↓
+InventoryService → listens to PaymentCompletedEvent, updates stock, emits StockUpdatedEvent
+↓
+ShippingService → listens to StockUpdatedEvent, ships item
+      </code></pre>
+      <p>🚫 If one fails, the failing service emits a compensating event like <code>PaymentFailedEvent</code>.</p>
+
+      <h6 class="text-warning">✅ Pros:</h6>
+      <ul>
+        <li>✅ No single point of failure</li>
+        <li>✅ Decoupled services via events</li>
+      </ul>
+      <h6 class="text-danger">⚠️ Cons:</h6>
+      <ul>
+        <li>⚠️ Harder to monitor and debug</li>
+        <li>⚠️ Complex failure handling logic</li>
+      </ul>
+
+      <hr>
+
+      <h6 class="text-success">2. Orchestration-based Saga</h6>
+      <p>A central **Saga orchestrator** (like a workflow engine) tells each service what to do and coordinates the saga.</p>
+      <pre class="language-java"><code>
+public class OrderSagaOrchestrator {
+
+  public void startSaga(Order order) {
+    orderService.create(order);
+    paymentService.pay(order.getId());
+    inventoryService.reserve(order.getId());
+    shippingService.ship(order.getId());
+  }
+
+  public void compensate(Order order) {
+    shippingService.cancel(order.getId());
+    inventoryService.release(order.getId());
+    paymentService.refund(order.getId());
+    orderService.cancel(order.getId());
+  }
+}
+      </code></pre>
+
+      <h6 class="text-warning">✅ Pros:</h6>
+      <ul>
+        <li>✅ Centralized flow control</li>
+        <li>✅ Easier to monitor and debug</li>
+      </ul>
+      <h6 class="text-danger">⚠️ Cons:</h6>
+      <ul>
+        <li>⚠️ Orchestrator is a single point of failure</li>
+        <li>⚠️ Can become tightly coupled</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-info">📌 Compensating Transactions</h5>
+      <p>These are reverse operations to undo what a failed step did. For example:</p>
+      <ul>
+        <li>✅ Refund payment</li>
+        <li>✅ Restock inventory</li>
+        <li>✅ Cancel order</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-warning">📢 Saga Implementation Tools</h5>
+      <ul>
+        <li>🛠️ <b>Choreography</b>: Spring Boot + Kafka / RabbitMQ</li>
+        <li>🛠️ <b>Orchestration</b>: Camunda, Netflix Conductor, Axon Framework, Temporal</li>
+      </ul>
+
+      <h5 class="text-success">✅ Summary</h5>
+      <ul>
+        <li>🧩 Saga ensures **eventual consistency** in distributed systems</li>
+        <li>🔄 Supports **rollback via compensating actions**</li>
+        <li>⚙️ Two styles: **Choreography** (event-driven) and **Orchestration** (central controller)</li>
+        <li>✅ Ideal for business transactions spanning multiple microservices</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#idempotency">
+      What is Idempotency in Microservices? Full Explanation with Examples
+    </button>
+  </h2>
+  <div id="idempotency" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What is Idempotency?</h5>
+      <p><b>Idempotency</b> is the property of an operation where **executing it multiple times** has the **same effect** as executing it once.</p>
+      <p>This means: <code>f(f(x)) = f(x)</code>. It’s critical in **distributed systems** to ensure **reliability** and **safe retries**.</p>
+
+      <h5 class="text-success">✅ Why is Idempotency Important?</h5>
+      <ul>
+        <li>🔁 Retries due to network failures or timeouts</li>
+        <li>📨 Duplicate API requests from client/browser</li>
+        <li>⚙️ Safe operations during load balancing or failover</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-warning">📚 Real-world Analogy</h5>
+      <ul>
+        <li>🧾 Pushing an elevator button multiple times → only one action: the elevator arrives (idempotent)</li>
+        <li>💳 Making the same bank transfer twice → should not happen (non-idempotent unless protected)</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-info">📌 Idempotent vs Non-Idempotent HTTP Methods</h5>
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>HTTP Method</th>
+            <th>Idempotent?</th>
+            <th>Reason</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>GET</td>
+            <td>✅ Yes</td>
+            <td>Read-only, no side effects</td>
+          </tr>
+          <tr>
+            <td>PUT</td>
+            <td>✅ Yes</td>
+            <td>Same resource state is set repeatedly</td>
+          </tr>
+          <tr>
+            <td>DELETE</td>
+            <td>✅ Yes</td>
+            <td>Multiple deletes are still safe</td>
+          </tr>
+          <tr>
+            <td>POST</td>
+            <td>❌ No</td>
+            <td>Creates new resources (can cause duplicates)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <hr>
+
+      <h5 class="text-success">✅ How to Implement Idempotency in Microservices?</h5>
+      <ul>
+        <li>🔑 Use <b>Idempotency-Key</b> header from clients (UUID per request)</li>
+        <li>🧠 Store this key in a DB/cache with response</li>
+        <li>🔁 If same key is received again, return stored response instead of executing again</li>
+      </ul>
+
+      <h6 class="text-info">🔧 Example (Spring Boot)</h6>
+      <pre class="language-java"><code>
+@PostMapping("/payments")
+public ResponseEntity<?> makePayment(@RequestHeader("Idempotency-Key") String key) {
+    if (paymentService.existsByKey(key)) {
+        return paymentService.getResponseByKey(key);
+    }
+    PaymentResponse response = paymentService.processPayment();
+    paymentService.storeKeyAndResponse(key, response);
+    return ResponseEntity.ok(response);
+}
+      </code></pre>
+
+      <hr>
+
+      <h5 class="text-warning">📢 Best Practices</h5>
+      <ul>
+        <li>✅ Enforce idempotency for all <b>POST</b> requests that mutate state</li>
+        <li>✅ Use database or Redis for idempotency key storage</li>
+        <li>⚠️ Set expiration time for keys to avoid memory issues</li>
+      </ul>
+
+      <h5 class="text-success">✅ Summary</h5>
+      <ul>
+        <li>🔁 Idempotency ensures **safe retries** of operations in distributed systems</li>
+        <li>🔐 Helps in avoiding duplicate actions like double payments or repeated orders</li>
+        <li>🛠️ Can be implemented using **unique request keys** and **response caching**</li>
+        <li>✅ A critical pattern for **reliable microservices** and **REST APIs**</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#idempotencyExample">
+      What is Idempotency? Explanation with Example
+    </button>
+  </h2>
+  <div id="idempotencyExample" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What is Idempotency?</h5>
+      <p><b>Idempotency</b> is a property of an operation where **executing it multiple times** has the **same effect** as executing it once. This means: <code>f(f(x)) = f(x)</code>. It is an important concept in distributed systems to ensure **safe retries** and **reliable operations**.</p>
+
+      <h6 class="text-success">✅ Key Points:</h6>
+      <ul>
+        <li>🔁 **No side effects** on repeated execution</li>
+        <li>📈 Ensures that multiple invocations result in **the same outcome**</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-warning">📚 Real-World Analogy</h5>
+      <ul>
+        <li>🚪 **Pressing a doorbell** multiple times results in the same action: bell rings (no change in outcome).</li>
+        <li>💳 **Making a bank transfer** multiple times may lead to multiple charges (not idempotent unless handled).</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-info">📌 Idempotent HTTP Methods</h5>
+      <p>Certain HTTP methods are **idempotent** by nature:</p>
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>HTTP Method</th>
+            <th>Idempotent?</th>
+            <th>Reason</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>GET</td>
+            <td>✅ Yes</td>
+            <td>Fetching data doesn’t change the resource</td>
+          </tr>
+          <tr>
+            <td>PUT</td>
+            <td>✅ Yes</td>
+            <td>Re-setting a resource’s value results in the same value</td>
+          </tr>
+          <tr>
+            <td>DELETE</td>
+            <td>✅ Yes</td>
+            <td>Deleting a resource multiple times has the same effect (resource is gone)</td>
+          </tr>
+          <tr>
+            <td>POST</td>
+            <td>❌ No</td>
+            <td>Creating resources (multiple POST requests may create duplicates)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <hr>
+
+      <h5 class="text-success">✅ Example of Idempotency in APIs</h5>
+      <pre class="language-java"><code>
+@PostMapping("/payments")
+public ResponseEntity<?> makePayment(@RequestHeader("Idempotency-Key") String key) {
+    if (paymentService.existsByKey(key)) {
+        return paymentService.getResponseByKey(key);
+    }
+    PaymentResponse response = paymentService.processPayment();
+    paymentService.storeKeyAndResponse(key, response);
+    return ResponseEntity.ok(response);
+}
+      </code></pre>
+
+      <h6 class="text-warning">🔑 Key Idea:</h6>
+      <ul>
+        <li>Each request has a unique **Idempotency-Key** (UUID) to identify it.</li>
+        <li>If the same key is sent again, the same response is returned without re-executing the transaction.</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-success">✅ Benefits of Idempotency</h5>
+      <ul>
+        <li>🔒 **Avoid duplicate transactions** (like double payments or orders)</li>
+        <li>⚙️ **Safe retries** in distributed systems (e.g., network failure)</li>
+        <li>💡 Helps in building **reliable and fault-tolerant** APIs</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-warning">📢 Summary</h5>
+      <ul>
+        <li>🔄 **Idempotent operations** produce the same outcome even if invoked multiple times.</li>
+        <li>✅ Ensures that **distributed systems** are robust and prevent unintended side effects.</li>
+        <li>💡 Can be implemented using unique **Idempotency keys** to track requests.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#superClassOfAll">
+      What is the Superclass of All Java Classes? Explanation
+    </button>
+  </h2>
+  <div id="superClassOfAll" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 The Superclass of All Java Classes</h5>
+      <p>The superclass of every Java class is the <code>Object</code> class. It is the **root** class in Java's class hierarchy.</p>
+      <p>Every class in Java, whether explicitly or implicitly, inherits from the <code>Object</code> class.</p>
+
+      <h5 class="text-success">✅ Why is Object the Superclass?</h5>
+      <ul>
+        <li>🔑 It provides fundamental methods to all Java objects, such as <code>toString()</code>, <code>equals()</code>, and <code>hashCode()</code>.</li>
+        <li>📚 All Java classes, by default, inherit from this class, even if you don’t explicitly extend it.</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-info">📌 Methods Provided by Object Class</h5>
+      <ul>
+        <li><b>toString()</b>: Returns a string representation of the object.</li>
+        <li><b>equals()</b>: Compares the current object with another object for equality.</li>
+        <li><b>hashCode()</b>: Returns a hash code value for the object.</li>
+        <li><b>getClass()</b>: Returns the runtime class of the object.</li>
+        <li><b>clone()</b>: Creates and returns a copy of the object (if the class implements <code>Cloneable</code>).</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-warning">📚 Example</h5>
+      <pre class="language-java"><code>
+public class MyClass {
+    public static void main(String[] args) {
+        MyClass myObject = new MyClass();
+        
+        // All objects in Java inherit methods from Object class
+        System.out.println(myObject.toString());  // Calls Object's toString method
+        System.out.println(myObject.getClass());  // Calls Object's getClass method
+    }
+}
+      </code></pre>
+
+      <h6 class="text-success">Output:</h6>
+      <pre class="language-text"><code>
+MyClass@5e2b9f3b
+class MyClass
+      </code></pre>
+
+      <hr>
+
+      <h5 class="text-success">✅ Key Takeaway</h5>
+      <ul>
+        <li>🔄 Every class in Java inherits from the <code>Object</code> class, even if not explicitly extended.</li>
+        <li>⚙️ The <code>Object</code> class provides essential methods like <code>toString()</code> and <code>equals()</code>, making them available to all Java objects.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#oopPrinciplesInClass">
+      How to Prove a Class Follows Polymorphism, Inheritance, Abstraction, and Encapsulation?
+    </button>
+  </h2>
+  <div id="oopPrinciplesInClass" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Overview of OOP Principles</h5>
+      <p>In Java, the key **Object-Oriented Programming (OOP)** principles are:</p>
+      <ul>
+        <li>**Polymorphism**</li>
+        <li>**Inheritance**</li>
+        <li>**Abstraction**</li>
+        <li>**Encapsulation**</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-success">✅ 1. **Polymorphism**</h5>
+      <p><b>Polymorphism</b> allows objects to be treated as instances of their parent class, enabling one interface to represent different underlying forms (methods).</p>
+      <p>In simple terms: The same method can behave differently based on the object that calls it.</p>
+
+      <h6 class="text-warning">Example:</h6>
+      <pre class="language-java"><code>
+class Animal {
+    void makeSound() {
+        System.out.println("Animal sound");
+    }
+}
+
+class Dog extends Animal {
+    @Override
+    void makeSound() {
+        System.out.println("Bark");
+    }
+}
+
+public class Test {
+    public static void main(String[] args) {
+        Animal myDog = new Dog(); // Polymorphism
+        myDog.makeSound();  // Output: Bark
+    }
+}
+      </code></pre>
+      <p>Here, **Polymorphism** is demonstrated because the method <code>makeSound()</code> behaves differently for <code>Dog</code> and <code>Animal</code>.</p>
+
+      <hr>
+
+      <h5 class="text-success">✅ 2. **Inheritance**</h5>
+      <p><b>Inheritance</b> allows one class (child class) to inherit fields and methods from another class (parent class). This promotes code reuse.</p>
+
+      <h6 class="text-warning">Example:</h6>
+      <pre class="language-java"><code>
+class Animal {
+    void eat() {
+        System.out.println("Eating");
+    }
+}
+
+class Dog extends Animal {
+    void bark() {
+        System.out.println("Barking");
+    }
+}
+
+public class Test {
+    public static void main(String[] args) {
+        Dog dog = new Dog();
+        dog.eat();  // Inherited from Animal
+        dog.bark(); // Defined in Dog
+    }
+}
+      </code></pre>
+      <p>Here, the **Dog** class inherits the <code>eat()</code> method from the **Animal** class, demonstrating **Inheritance**.</p>
+
+      <hr>
+
+      <h5 class="text-success">✅ 3. **Abstraction**</h5>
+      <p><b>Abstraction</b> hides the complex implementation details and shows only the essential features of an object. In Java, abstraction is achieved using **abstract classes** and **interfaces**.</p>
+
+      <h6 class="text-warning">Example (Abstract Class):</h6>
+      <pre class="language-java"><code>
+abstract class Animal {
+    abstract void makeSound();  // Abstract method
+}
+
+class Dog extends Animal {
+    @Override
+    void makeSound() {
+        System.out.println("Bark");
+    }
+}
+
+public class Test {
+    public static void main(String[] args) {
+        Animal myDog = new Dog();
+        myDog.makeSound(); // Output: Bark
+    }
+}
+      </code></pre>
+      <p>Here, **Abstraction** is demonstrated because the <code>makeSound()</code> method is abstract in the **Animal** class and implemented in the **Dog** class.</p>
+
+      <hr>
+
+      <h5 class="text-success">✅ 4. **Encapsulation**</h5>
+      <p><b>Encapsulation</b> is the bundling of data (variables) and methods (functions) that operate on the data into a single unit or class. It also restricts direct access to some of an object's components, which is why it’s used to hide the internal object state.</p>
+
+      <h6 class="text-warning">Example:</h6>
+      <pre class="language-java"><code>
+class Person {
+    private String name;  // Private field
+
+    public String getName() { // Getter
+        return name;
+    }
+
+    public void setName(String name) { // Setter
+        this.name = name;
+    }
+}
+
+public class Test {
+    public static void main(String[] args) {
+        Person person = new Person();
+        person.setName("John");  // Encapsulation: Using setter
+        System.out.println(person.getName());  // Encapsulation: Using getter
+    }
+}
+      </code></pre>
+      <p>Here, **Encapsulation** is demonstrated because the <code>name</code> field is private and can only be accessed or modified using public getter and setter methods.</p>
+
+      <hr>
+
+      <h5 class="text-warning">📢 Summary of All OOP Principles:</h5>
+      <ul>
+        <li>🔄 **Polymorphism**: Same method, different behavior.</li>
+        <li>🔗 **Inheritance**: Child class inherits features from the parent class.</li>
+        <li>🧑‍💻 **Abstraction**: Hides complexity, only shows essential features.</li>
+        <li>🔒 **Encapsulation**: Hides internal state, and only allows access through methods.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#removeDuplicates">
+      How to Remove Duplicates and Maintain Insertion Order from an Array in Java?
+    </button>
+  </h2>
+  <div id="removeDuplicates" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Problem Overview</h5>
+      <p>You have an array with duplicate elements, and you need to remove the duplicates while preserving the order of elements as they originally appeared.</p>
+
+      <h5 class="text-success">✅ Approach</h5>
+      <p>In Java, we can use a **LinkedHashSet** because it allows us to maintain the insertion order while removing duplicates. A **HashSet** would remove duplicates but not maintain order.</p>
+
+      <h5 class="text-warning">🔑 Key Concept: LinkedHashSet</h5>
+      <ul>
+        <li>🔗 **LinkedHashSet** is a collection that combines the functionality of a HashSet (removes duplicates) and a linked list (preserves insertion order).</li>
+        <li>📜 The order of elements is maintained by a **LinkedHashSet**.</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-info">📌 Example Code</h5>
+      <pre class="language-java"><code>
+import java.util.LinkedHashSet;
+import java.util.Arrays;
+
+public class RemoveDuplicates {
+    public static void main(String[] args) {
+        // Input array with duplicates
+        Integer[] arr = {1, 2, 2, 3, 4, 5, 1, 6, 4};
+        
+        // Using LinkedHashSet to remove duplicates and maintain insertion order
+        LinkedHashSet<Integer> set = new LinkedHashSet<>(Arrays.asList(arr));
+        
+        // Converting the set back to an array
+        Integer[] result = set.toArray(new Integer[0]);
+        
+        // Output the result
+        System.out.println(Arrays.toString(result));  // Output: [1, 2, 3, 4, 5, 6]
+    }
+}
+      </code></pre>
+
+      <h5 class="text-success">✅ Explanation of Code</h5>
+      <ul>
+        <li>💻 We initialize a **LinkedHashSet** with the array elements to remove duplicates.</li>
+        <li>🔄 The elements of the set are automatically ordered based on their first occurrence.</li>
+        <li>📜 We then convert the set back to an array using <code>toArray()</code> to maintain the order.</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-warning">📢 Output</h5>
+      <pre class="language-text"><code>
+[1, 2, 3, 4, 5, 6]
+      </code></pre>
+      <p>The duplicates have been removed, and the order of the elements is preserved from the original array.</p>
+
+      <hr>
+
+      <h5 class="text-success">✅ Key Takeaways</h5>
+      <ul>
+        <li>🔄 **LinkedHashSet** is used to remove duplicates and maintain the insertion order.</li>
+        <li>⚡ The time complexity for this operation is approximately O(n), where n is the number of elements in the array.</li>
+        <li>🔄 This method is simple and efficient for removing duplicates in an array while preserving the order.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#transientKeyword">
+      What is the `transient` Keyword in Java? Behavior with Wrapper Classes and Literals
+    </button>
+  </h2>
+  <div id="transientKeyword" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What is the `transient` Keyword?</h5>
+      <p>The <b>`transient`</b> keyword in Java is used to indicate that a field should not be serialized. Serialization is the process of converting an object into a byte stream for saving or transferring it. When a field is marked as <code>transient</code>, it will not be included in the serialization process.</p>
+
+      <h5 class="text-success">✅ Use Case of `transient` Keyword</h5>
+      <ul>
+        <li>🔒 **Security**: Sensitive data (like passwords) should be marked as <code>transient</code> to avoid being serialized.</li>
+        <li>💾 **Performance**: Some fields might be temporary and not needed for persistence, so they can be marked <code>transient</code>.</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-info">📌 Default Value of Transient Fields</h5>
+      <p>When a field is marked as <code>transient</code>, its default value will depend on the type of the field.</p>
+
+      <h5 class="text-warning">📜 Default Values:</h5>
+      <ul>
+        <li>For primitive types: The default value will be the default value of the primitive type (e.g., 0 for <code>int</code>, <code>false</code> for <code>boolean</code>).</li>
+        <li>For wrapper classes (like <code>Integer</code>, <code>Double</code>): The default value will be <code>null</code>.</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-success">✅ Example: `transient` with Primitives and Wrapper Classes</h5>
+      <pre class="language-java"><code>
+import java.io.*;
+
+class Person implements Serializable {
+    String name;
+    transient int age;  // 'age' will not be serialized
+    transient Integer id;  // 'id' will not be serialized
+    
+    public Person(String name, int age, Integer id) {
+        this.name = name;
+        this.age = age;
+        this.id = id;
+    }
+}
+
+public class TestTransient {
+    public static void main(String[] args) throws IOException, ClassNotFoundException {
+        // Creating an object
+        Person person = new Person("John", 30, 12345);
+
+        // Serialize the object to a file
+        FileOutputStream fileOut = new FileOutputStream("person.ser");
+        ObjectOutputStream out = new ObjectOutputStream(fileOut);
+        out.writeObject(person);
+        out.close();
+
+        // Deserialize the object from the file
+        FileInputStream fileIn = new FileInputStream("person.ser");
+        ObjectInputStream in = new ObjectInputStream(fileIn);
+        Person deserializedPerson = (Person) in.readObject();
+        in.close();
+
+        // Display the object fields after deserialization
+        System.out.println("Name: " + deserializedPerson.name);  // Output: John
+        System.out.println("Age: " + deserializedPerson.age);    // Output: 0 (default for int)
+        System.out.println("ID: " + deserializedPerson.id);      // Output: null (default for Integer)
+    }
+}
+      </code></pre>
+
+      <h5 class="text-info">📌 Explanation of Example</h5>
+      <ul>
+        <li>📁 **Serialization**: The <code>Person</code> object is serialized to a file.</li>
+        <li>⚡ **Deserialization**: After deserialization, the <code>age</code> and <code>id</code> fields are restored to their default values. Since they are marked as <code>transient</code>, they are not serialized and hence have their default values:</li>
+        <ul>
+          <li>**`age`** (primitive <code>int</code>): 0 (default value for <code>int</code>)</li>
+          <li>**`id`** (wrapper <code>Integer</code>): <code>null</code> (default value for reference types)</li>
+        </ul>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-warning">📢 Key Takeaways</h5>
+      <ul>
+        <li>🛑 The <code>transient</code> keyword prevents a field from being serialized.</li>
+        <li>🔄 After deserialization, fields marked as <code>transient</code> will have their default values, depending on whether they are primitive or wrapper types.</li>
+        <li>⚡ For primitive fields like <code>int</code>, the default is 0, and for wrapper classes like <code>Integer</code>, the default is <code>null</code>.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#stringBuilderVsStringBuffer">
+      Difference Between `StringBuilder` and `StringBuffer` in Java
+    </button>
+  </h2>
+  <div id="stringBuilderVsStringBuffer" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What Are `StringBuilder` and `StringBuffer`?</h5>
+      <p>Both <code>StringBuilder</code> and <code>StringBuffer</code> are used to create mutable strings in Java. Unlike the <code>String</code> class, which is immutable, these classes allow modification of the string without creating a new object each time.</p>
+
+      <hr>
+
+      <h5 class="text-success">✅ Key Differences</h5>
+      <ul>
+        <li>🔒 **Thread Safety**:
+          <ul>
+            <li><code>StringBuffer</code> is **synchronized** and thread-safe. Multiple threads can safely modify a <code>StringBuffer</code> object.</li>
+            <li><code>StringBuilder</code> is **not synchronized** and not thread-safe. It is faster than <code>StringBuffer</code> in a single-threaded environment.</li>
+          </ul>
+        </li>
+        
+        <li>⚡ **Performance**:
+          <ul>
+            <li><code>StringBuilder</code> is faster than <code>StringBuffer</code> because it doesn't have the overhead of synchronization.</li>
+            <li><code>StringBuffer</code> has slower performance due to synchronization, which adds a cost when used in multi-threaded environments.</li>
+          </ul>
+        </li>
+
+        <li>🔄 **Synchronization**:
+          <ul>
+            <li><code>StringBuffer</code> guarantees thread-safety by synchronizing methods, making it suitable for concurrent modifications.</li>
+            <li><code>StringBuilder</code> does not synchronize methods, and thus it is not thread-safe, but it is ideal for single-threaded scenarios.</li>
+          </ul>
+        </li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-warning">🔑 When to Use Each?</h5>
+      <ul>
+        <li>💡 Use **<code>StringBuilder</code>** when thread safety is not required (i.e., in single-threaded applications), as it offers better performance.</li>
+        <li>🔒 Use **<code>StringBuffer</code>** when thread safety is required (i.e., in multi-threaded applications), but keep in mind the performance overhead.</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-info">📌 Example Code</h5>
+      <pre class="language-java"><code>
+public class StringBuilderVsStringBuffer {
+    public static void main(String[] args) {
+        // Using StringBuffer (thread-safe)
+        StringBuffer buffer = new StringBuffer("Hello");
+        buffer.append(" World");
+        System.out.println("StringBuffer: " + buffer);  // Output: Hello World
+
+        // Using StringBuilder (not thread-safe)
+        StringBuilder builder = new StringBuilder("Hello");
+        builder.append(" World");
+        System.out.println("StringBuilder: " + builder);  // Output: Hello World
+    }
+}
+      </code></pre>
+
+      <hr>
+
+      <h5 class="text-success">✅ Output</h5>
+      <pre class="language-text"><code>
+StringBuffer: Hello World
+StringBuilder: Hello World
+      </code></pre>
+      <p>Both <code>StringBuffer</code> and <code>StringBuilder</code> work similarly for string manipulation, but the difference lies in thread-safety and performance.</p>
+
+      <hr>
+
+      <h5 class="text-warning">📢 Key Takeaways</h5>
+      <ul>
+        <li>🔄 **StringBuilder** is faster and suitable for single-threaded environments.</li>
+        <li>🔒 **StringBuffer** is thread-safe but slower due to synchronization, making it ideal for multi-threaded environments.</li>
+        <li>⚡ Choose the class based on your application's need for thread safety and performance requirements.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#equalsVsDoubleEquals">
+      Difference Between `==` and `equals()` in Java
+    </button>
+  </h2>
+  <div id="equalsVsDoubleEquals" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What is `==` in Java?</h5>
+      <p>The <code>==</code> operator is used to compare **memory references** (or object addresses) of two objects. For primitive types, it compares the actual values. It checks if two variables point to the same memory location.</p>
+
+      <h5 class="text-success">✅ What is `equals()` in Java?</h5>
+      <p>The <code>equals()</code> method is used to compare **values** of two objects. It is defined in the <code>Object</code> class, and can be overridden to compare object contents rather than their memory references.</p>
+
+      <hr>
+
+      <h5 class="text-warning">🔑 Key Differences Between `==` and `equals()`</h5>
+      <ul>
+        <li>💡 **`==`**: 
+          <ul>
+            <li>Compares memory reference (for objects) or actual values (for primitives).</li>
+            <li>For objects, it checks if both variables point to the same memory location.</li>
+            <li>For primitives, it compares the values directly.</li>
+          </ul>
+        </li>
+        <li>💡 **`equals()`**:
+          <ul>
+            <li>Compares the **contents** or values of the objects.</li>
+            <li>It can be overridden to define custom equality logic for specific classes.</li>
+            <li>By default, it behaves like <code>==</code> (in <code>Object</code> class), but it is often overridden in custom classes to compare values.</li>
+          </ul>
+        </li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-info">📌 Behavior for Wrapper and Literal Classes</h5>
+      <p>The behavior of <code>==</code> and <code>equals()</code> differs for wrapper classes (like <code>Integer</code>, <code>Double</code>) and literal strings due to **Java caching mechanisms** and **autoboxing**.</p>
+
+      <h5 class="text-success">✅ Example with Wrapper Classes</h5>
+      <pre class="language-java"><code>
+public class EqualsVsDoubleEquals {
+    public static void main(String[] args) {
+        Integer x = 100;
+        Integer y = 100;
+        Integer z = 200;
+        Integer w = 200;
+
+        // Using ==
+        System.out.println(x == y);  // true (because of caching for values between -128 and 127)
+        System.out.println(z == w);  // false (new objects are created)
+
+        // Using equals()
+        System.out.println(x.equals(y));  // true (values are the same)
+        System.out.println(z.equals(w));  // true (values are the same)
+    }
+}
+      </code></pre>
+
+      <h5 class="text-warning">📜 Explanation for Wrapper Classes</h5>
+      <ul>
+        <li>For **Integer** values in the range of -128 to 127, Java **caches** them. So, for <code>100</code>, both <code>x</code> and <code>y</code> point to the same object in memory. Thus, <code>x == y</code> is <code>true</code>.</li>
+        <li>For **Integer** values outside the range of -128 to 127 (like <code>200</code>), <code>==</code> compares memory references, and thus returns <code>false</code> because new objects are created for <code>z</code> and <code>w</code>.</li>
+        <li>However, <code>equals()</code> compares the values of the wrapper objects, so <code>x.equals(y)</code> and <code>z.equals(w)</code> return <code>true</code> because their values are the same.</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-success">✅ Example with String Literals</h5>
+      <pre class="language-java"><code>
+public class StringLiteralExample {
+    public static void main(String[] args) {
+        String str1 = "Hello";
+        String str2 = "Hello";
+        String str3 = new String("Hello");
+
+        // Using ==
+        System.out.println(str1 == str2);  // true (both refer to the same memory location)
+        System.out.println(str1 == str3);  // false (str3 is a new object)
+
+        // Using equals()
+        System.out.println(str1.equals(str2));  // true (values are the same)
+        System.out.println(str1.equals(str3));  // true (values are the same)
+    }
+}
+      </code></pre>
+
+      <h5 class="text-warning">📜 Explanation for String Literals</h5>
+      <ul>
+        <li>For **String literals**, Java maintains a **String pool** where it stores only one copy of each unique string literal. So, both <code>str1</code> and <code>str2</code> refer to the same memory location, and <code>str1 == str2</code> is <code>true</code>.</li>
+        <li>However, when using the <code>new</code> keyword, like <code>new String("Hello")</code>, a new object is created on the heap. Therefore, <code>str1 == str3</code> is <code>false</code>, even though the content is the same.</li>
+        <li><code>equals()</code> compares the content of strings, so <code>str1.equals(str2)</code> and <code>str1.equals(str3)</code> both return <code>true</code>, as the values are the same.</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-info">📌 Key Takeaways</h5>
+      <ul>
+        <li>🔄 **`==`** compares memory references (for objects) or actual values (for primitives).</li>
+        <li>🔄 **`equals()`** compares the values of objects and can be overridden in custom classes.</li>
+        <li>⚡ For **wrapper classes** (like <code>Integer</code>), <code>==</code> compares memory locations, and values within the range of -128 to 127 are cached.</li>
+        <li>⚡ For **String literals**, <code>==</code> works because of the **String pool** and string interning, but <code>new String()</code> creates a new object.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#sqlIndexes">
+      Understanding Indexes in SQL: Creation and Working
+    </button>
+  </h2>
+  <div id="sqlIndexes" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What is an Index in SQL?</h5>
+      <p>An **index** in SQL is a database object that **improves the speed** of data retrieval operations on a table at the cost of additional space and time for insertions, updates, and deletions.</p>
+      <p>Indexes are created on one or more columns of a table to speed up the search operations. They are similar to the index in a book where you can quickly look up a term instead of reading through the entire book.</p>
+
+      <hr>
+
+      <h5 class="text-success">✅ How Does an Index Work?</h5>
+      <p>When an index is created on a table, it builds a data structure, typically a **B-tree** (or variations like **hash index**, **bitmap index** depending on the DBMS), that allows for fast retrieval of rows based on the indexed column(s).</p>
+      <ul>
+        <li>The index stores the values from the column(s) in a sorted order, along with pointers to the corresponding rows in the table.</li>
+        <li>This sorting allows the database to quickly perform **binary search** or similar fast lookup algorithms on the index structure, instead of scanning the entire table.</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-warning">🔑 Advantages of Using Indexes</h5>
+      <ul>
+        <li>⚡ **Faster Queries**: Especially for SELECT queries with WHERE, JOIN, or ORDER BY clauses.</li>
+        <li>⚡ **Improved Sorting**: Indexes allow the database to quickly sort data.</li>
+        <li>⚡ **Efficient Joins**: Indexes improve performance in join operations by quickly finding matching rows.</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-danger">❗ Disadvantages of Using Indexes</h5>
+      <ul>
+        <li>⚠️ **Slower Insert, Update, and Delete**: When data is modified, the index also needs to be updated, which adds overhead.</li>
+        <li>⚠️ **Increased Storage**: Indexes consume additional disk space, especially if created on multiple columns.</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-info">📌 Creating an Index in SQL</h5>
+      <p>You can create an index using the <code>CREATE INDEX</code> statement. Below is an example:</p>
+      
+      <pre class="language-sql"><code>
+-- Syntax to create an index
+CREATE INDEX index_name
+ON table_name (column1, column2, ...);
+      
+-- Example: Creating an index on the "name" column of the "employees" table
+CREATE INDEX idx_name ON employees (name);
+      </code></pre>
+
+      <h5 class="text-success">✅ Example: Creating an Index for Faster Querying</h5>
+      <pre class="language-sql"><code>
+-- Example table: employees
+CREATE TABLE employees (
+    employee_id INT PRIMARY KEY,
+    first_name VARCHAR(100),
+    last_name VARCHAR(100),
+    department VARCHAR(100)
+);
+
+-- Creating an index on "department" column to speed up querying by department
+CREATE INDEX idx_department ON employees (department);
+      </code></pre>
+
+      <hr>
+
+      <h5 class="text-warning">🔑 How Indexes Affect Query Performance</h5>
+      <ul>
+        <li>🔍 When you query the "employees" table and filter by the "department" column, the index allows the database to quickly look up the rows with the desired department instead of scanning the entire table.</li>
+        <li>🛑 Without the index, the database would need to perform a **full table scan**, which is slower on large tables.</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-success">✅ Removing an Index</h5>
+      <p>To remove an index, use the <code>DROP INDEX</code> statement:</p>
+
+      <pre class="language-sql"><code>
+-- Syntax to drop an index
+DROP INDEX index_name;
+
+-- Example: Dropping the index created above
+DROP INDEX idx_department;
+      </code></pre>
+
+      <hr>
+
+      <h5 class="text-info">📌 Types of Indexes in SQL</h5>
+      <ul>
+        <li><b>B-tree Index</b>: The most common index type, based on a balanced tree structure, which allows for fast searching and sorting.</li>
+        <li><b>Unique Index</b>: Ensures that all values in the indexed column(s) are unique. Automatically created for primary keys and unique constraints.</li>
+        <li><b>Full-text Index</b>: Used for text-based searching on large text columns (e.g., searching for words in a document).</li>
+        <li><b>Bitmap Index</b>: Best for columns with a low cardinality (e.g., gender, status), where there are only a few distinct values.</li>
+        <li><b>Hash Index</b>: Uses a hash table for fast lookups, ideal for equality comparisons.</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-info">📌 Key Takeaways</h5>
+      <ul>
+        <li>💡 Indexes speed up query performance, especially for read-heavy operations.</li>
+        <li>⚡ Use indexes on columns that are frequently searched, filtered, or used in JOIN operations.</li>
+        <li>⚠️ Over-indexing can harm write performance due to the additional cost of maintaining indexes.</li>
+        <li>🔧 Remove unused or unnecessary indexes to save space and improve performance.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+
+
+
 
 
 
