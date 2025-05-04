@@ -37206,6 +37206,1433 @@ WHERE rank = 2;
   </div>
 </div>
 
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#IAMInAWS">
+      🔒 IAM in AWS: What is it and How it Works
+    </button>
+  </h2>
+  <div id="IAMInAWS" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-success">📌 What is IAM?</h5>
+      <p><b>IAM</b> (Identity and Access Management) is a web service that helps you securely control access to AWS resources. It allows you to create and manage AWS users, groups, and permissions.</p>
+
+      <h5 class="text-info">📋 Key Components of IAM:</h5>
+      <ul>
+        <li><b>Users</b>: Represents an individual or application that interacts with AWS resources.</li>
+        <li><b>Groups</b>: A collection of IAM users. By assigning permissions to a group, you can grant those permissions to all members of the group.</li>
+        <li><b>Roles</b>: A set of permissions that can be assumed by AWS services, applications, or IAM users. Roles can be assumed temporarily.</li>
+        <li><b>Policies</b>: Permissions attached to users, groups, or roles that define which actions are allowed or denied on specific resources.</li>
+      </ul>
+
+      <h5 class="text-warning">✅ IAM Features:</h5>
+      <ul>
+        <li><b>Granular Permissions</b>: You can define specific actions that users or services can perform on each resource.</li>
+        <li><b>Temporary Credentials</b>: IAM roles can be used to issue temporary security credentials for users or applications.</li>
+        <li><b>Multi-factor Authentication (MFA)</b>: Enhance the security by requiring a second form of identification (e.g., mobile app) along with passwords.</li>
+        <li><b>Centralized Access Control</b>: IAM enables centralized control over access to AWS services and resources.</li>
+      </ul>
+
+      <h5 class="text-info">📊 How IAM Works?</h5>
+      <ul>
+        <li>IAM controls access by attaching policies to users, groups, and roles.</li>
+        <li>Each policy defines the allowed or denied actions on AWS resources (e.g., S3, EC2, DynamoDB).</li>
+        <li>When a user requests access, AWS checks the attached policies to decide whether to allow or deny the request.</li>
+      </ul>
+
+      <h5 class="text-success">✅ Example of IAM Policy</h5>
+      <pre class="language-json"><code>
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "s3:ListBucket",
+      "Resource": "arn:aws:s3:::my-bucket"
+    }
+  ]
+}
+      </code></pre>
+
+      <h5 class="text-info">📢 Best Practices for IAM:</h5>
+      <ul>
+        <li><b>Use least privilege</b>: Only grant the permissions necessary for a user or role to perform its tasks.</li>
+        <li><b>Use IAM roles for applications</b>: Rather than using hard-coded credentials, use IAM roles to grant permissions to AWS resources.</li>
+        <li><b>Enable MFA for root user</b>: Secure the root account by enabling multi-factor authentication (MFA).</li>
+        <li><b>Rotate credentials regularly</b>: Regularly rotate IAM user and role credentials for added security.</li>
+      </ul>
+
+      <h5 class="text-warning">📢 Summary</h5>
+      <p>IAM is crucial for managing access control in AWS. It ensures that the right individuals and services have the right access to AWS resources securely and efficiently.</p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#EC2Features">
+      🚀 Features of EC2 Instances in AWS
+    </button>
+  </h2>
+  <div id="EC2Features" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-success">📌 What is EC2?</h5>
+      <p>Amazon Elastic Compute Cloud (Amazon EC2) provides resizable compute capacity in the cloud. It's a web service that enables users to run virtual servers (called instances) on-demand.</p>
+
+      <h5 class="text-info">🔑 Key Features of EC2 Instances</h5>
+      <ul>
+        <li><b>Scalability</b>: EC2 instances can be easily scaled up or down based on application needs using Auto Scaling Groups. It helps you adjust resources dynamically based on traffic demands.</li>
+        <li><b>Customizable Instance Types</b>: EC2 offers a wide variety of instance types with different combinations of CPU, memory, storage, and networking capacity, which can be optimized for specific applications.</li>
+        <li><b>Pay-as-you-go Pricing</b>: You only pay for the compute capacity that you use. Pricing is based on hourly or per-second usage (depending on the instance type).</li>
+        <li><b>Elastic IP Addresses</b>: EC2 instances can be associated with Elastic IP addresses, allowing for persistent static IP addresses for your instances.</li>
+        <li><b>Virtualization</b>: EC2 instances run on virtualized hardware, allowing you to run multiple instances with different configurations on the same physical host.</li>
+        <li><b>Amazon Machine Images (AMI)</b>: You can launch EC2 instances using pre-configured AMIs, which provide the operating system and software configurations to run applications.</li>
+        <li><b>Security Features</b>: EC2 provides enhanced security with Virtual Private Cloud (VPC), Security Groups, and Key Pairs to control access to instances. It also integrates with IAM for user and permission management.</li>
+        <li><b>Flexible Storage Options</b>: EC2 supports various types of storage such as instance store (ephemeral storage) and Elastic Block Store (EBS) for persistent data storage, as well as S3 for object storage.</li>
+        <li><b>Integration with Other AWS Services</b>: EC2 integrates seamlessly with other AWS services like RDS, S3, CloudWatch, IAM, and more, providing a fully integrated cloud environment for your application.</li>
+        <li><b>Elastic Load Balancing (ELB)</b>: EC2 instances can be paired with Elastic Load Balancers to distribute incoming traffic across multiple instances to ensure high availability and fault tolerance.</li>
+        <li><b>High Availability & Fault Tolerance</b>: EC2 instances can be launched in multiple Availability Zones to achieve high availability. You can also use Auto Scaling for fault tolerance.</li>
+      </ul>
+
+      <h5 class="text-warning">📊 Instance Families and Types</h5>
+      <p>EC2 instances are divided into families based on the use case. Some common families include:</p>
+      <ul>
+        <li><b>General Purpose</b>: T2, T3, M5 (balanced compute, memory, and network resources).</li>
+        <li><b>Compute Optimized</b>: C5 (optimized for compute-intensive applications).</li>
+        <li><b>Memory Optimized</b>: R5 (optimized for memory-intensive applications like databases).</li>
+        <li><b>Storage Optimized</b>: I3, D2 (optimized for applications that require high throughput and low latency storage).</li>
+        <li><b>Accelerated Computing</b>: P3, G4 (optimized for machine learning and GPU-based applications).</li>
+      </ul>
+
+      <h5 class="text-success">✅ Benefits of Using EC2</h5>
+      <ul>
+        <li><b>Flexibility</b>: You can choose the exact instance type and size to match your application’s needs.</li>
+        <li><b>Cost-effective</b>: EC2 allows you to scale your infrastructure and only pay for the resources you need, reducing unnecessary costs.</li>
+        <li><b>High Availability</b>: EC2 instances can be run in multiple Availability Zones for enhanced fault tolerance and availability.</li>
+        <li><b>Global Reach</b>: You can deploy EC2 instances across different geographic regions and Availability Zones worldwide.</li>
+        <li><b>Rapid Deployment</b>: EC2 instances can be launched quickly, allowing you to start applications without the need for extensive hardware procurement or setup.</li>
+      </ul>
+
+      <h5 class="text-info">📢 Best Practices</h5>
+      <ul>
+        <li>Ensure your EC2 instances are launched in the appropriate VPC and Security Groups to control inbound and outbound traffic securely.</li>
+        <li>Use CloudWatch for monitoring the performance and health of EC2 instances.</li>
+        <li>Implement Auto Scaling to ensure your applications scale dynamically with demand.</li>
+        <li>Leverage EC2 Spot Instances for cost savings on unused capacity.</li>
+        <li>Regularly update and patch your EC2 instances to maintain security compliance.</li>
+      </ul>
+
+      <h5 class="text-warning">📌 Summary</h5>
+      <p>EC2 instances are the backbone of cloud computing in AWS. They offer flexible compute resources that you can scale, configure, and manage based on your application’s requirements. Whether for web hosting, high-performance computing, or big data processing, EC2 provides a range of features to support diverse workloads.</p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#SpotInstances">
+      🛠️ What are Spot Instances in AWS?
+    </button>
+  </h2>
+  <div id="SpotInstances" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-success">📌 Introduction to Spot Instances</h5>
+      <p>Spot Instances are a cost-effective way to run Amazon EC2 instances in AWS. They allow you to bid for unused EC2 capacity at significantly lower prices compared to On-Demand Instances. However, the availability of Spot Instances is not guaranteed, as AWS may reclaim them when the capacity is needed for other tasks.</p>
+
+      <h5 class="text-info">🔑 How Spot Instances Work?</h5>
+      <ul>
+        <li><b>Spot Pricing</b>: Spot Instances are sold at a price set by AWS based on supply and demand in the AWS region. The price fluctuates and can change throughout the day. You can specify a maximum price you're willing to pay, and the instance will run until the price exceeds your bid or capacity is no longer available.</li>
+        <li><b>Interruptions</b>: AWS may terminate a Spot Instance with only two minutes of warning if they need the capacity for other tasks (e.g., when On-Demand Instances are requested). It is important to design your application to handle these interruptions gracefully.</li>
+        <li><b>Flexibility</b>: Spot Instances are ideal for fault-tolerant applications that can handle interruptions, such as data processing, batch jobs, and large-scale simulations. You can use Spot Instances alongside On-Demand or Reserved Instances for a hybrid approach to maintain availability.</li>
+      </ul>
+
+      <h5 class="text-success">✅ Benefits of Spot Instances</h5>
+      <ul>
+        <li><b>Cost Savings</b>: Spot Instances can be up to 90% cheaper than On-Demand Instances, making them an excellent choice for cost-sensitive workloads.</li>
+        <li><b>Scalable</b>: You can launch a large number of Spot Instances to scale your infrastructure without the high costs of On-Demand Instances.</li>
+        <li><b>Flexible Workloads</b>: Spot Instances work well for batch processing, machine learning training, rendering, and other workloads that can tolerate interruptions.</li>
+        <li><b>Integration with Auto Scaling</b>: Spot Instances can be automatically integrated with Auto Scaling to scale up or down based on demand. This allows you to manage instances dynamically without worrying about availability.</li>
+      </ul>
+
+      <h5 class="text-warning">📊 Use Cases for Spot Instances</h5>
+      <ul>
+        <li>⚙️ <b>Big Data and Analytics</b>: Running large data analysis tasks, batch processing, or machine learning model training, where the interruption of the instance does not cause data loss.</li>
+        <li>🎮 <b>Rendering and Simulations</b>: For tasks like video rendering or complex simulations that are non-critical, Spot Instances offer a cost-effective solution.</li>
+        <li>💻 <b>Web Crawling</b>: For projects requiring periodic web crawling, Spot Instances can be used without any concern for instance termination.</li>
+        <li>🎯 <b>High-Performance Computing (HPC)</b>: Tasks that require high compute power but can withstand interruptions, such as scientific simulations or research jobs.</li>
+      </ul>
+
+      <h5 class="text-info">📌 How to Bid for Spot Instances?</h5>
+      <ul>
+        <li>You can specify the maximum price you're willing to pay per hour for a Spot Instance.</li>
+        <li>If your bid is higher than the current Spot Price and capacity is available, your instance will be provisioned.</li>
+        <li>If the Spot Price increases beyond your bid, your instance may be interrupted, so you should have a backup plan or use Auto Scaling.</li>
+        <li>It’s also possible to set a “maximum bid” and have AWS automatically manage your Spot Instance lifecycle based on current market pricing.</li>
+      </ul>
+
+      <h5 class="text-success">✅ How to Mitigate Spot Instance Interruptions?</h5>
+      <ul>
+        <li><b>Checkpointing</b>: Save your progress periodically so that if the instance is interrupted, you can resume from the last checkpoint rather than starting from scratch.</li>
+        <li><b>Use EC2 Auto Scaling Groups</b>: This can automatically launch On-Demand or Spot Instances based on the required capacity, giving you high availability and better fault tolerance.</li>
+        <li><b>Implement AWS Spot Instance Interruptions Notices</b>: AWS provides a two-minute warning before an instance is interrupted. You can use this to gracefully shut down or save your work.</li>
+        <li><b>Hybrid Approach</b>: Combine On-Demand Instances with Spot Instances. On-Demand Instances can be used for critical workloads, while Spot Instances handle non-critical tasks.</li>
+      </ul>
+
+      <h5 class="text-warning">📢 Key Considerations for Using Spot Instances</h5>
+      <ul>
+        <li><b>Interruptions</b>: Spot Instances are not suitable for critical workloads that cannot tolerate disruptions.</li>
+        <li><b>Availability</b>: There’s no guarantee that Spot Instances will always be available when needed, so plan for interruptions.</li>
+        <li><b>Limited Duration</b>: You don’t know how long your Spot Instances will run. Make sure your workload is designed to handle this uncertainty.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Summary</h5>
+      <p>Spot Instances offer a cost-effective alternative for non-critical and interruptible workloads in AWS. By bidding for unused EC2 capacity, Spot Instances provide significant savings over On-Demand instances but come with the risk of termination if capacity is needed. These instances are best suited for workloads that can tolerate interruptions, such as batch processing, big data analysis, and scientific simulations.</p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#S3">
+      🛠️ What is Amazon S3? Types & Classes Explained
+    </button>
+  </h2>
+  <div id="S3" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-success">📌 What is Amazon S3?</h5>
+      <p>Amazon Simple Storage Service (Amazon S3) is a scalable, durable, and low-latency cloud storage service offered by Amazon Web Services (AWS). It allows you to store and retrieve any amount of data at any time. S3 is used to store files such as images, videos, backups, and static assets for websites, among many other use cases.</p>
+
+      <h5 class="text-info">🔑 Key Features of Amazon S3</h5>
+      <ul>
+        <li>✅ Scalability: Can store virtually unlimited amounts of data.</li>
+        <li>✅ Durability: Data stored in S3 is designed for 99.999999999% durability (11 9s).</li>
+        <li>✅ Security: S3 supports data encryption at rest and in transit, access control policies, and logging features.</li>
+        <li>✅ Accessibility: Data can be accessed through HTTP/HTTPS, and AWS provides SDKs for easy integration with applications.</li>
+        <li>✅ Flexibility: Supports different types of storage classes for varied access patterns.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Types of S3 Storage Classes</h5>
+      <ul>
+        <li><b>Standard</b>: General-purpose storage for frequently accessed data. It is ideal for storing data that is accessed often.</li>
+        <li><b>Intelligent-Tiering</b>: Automatically moves data between two access tiers (frequent and infrequent) to optimize cost without performance impact.</li>
+        <li><b>One Zone-IA (Infrequent Access)</b>: Low-cost storage for infrequently accessed data, but without the resilience of multiple Availability Zones.</li>
+        <li><b>Glacier</b>: Low-cost archive storage for data that is rarely accessed and can tolerate retrieval times of several hours.</li>
+        <li><b>Glacier Deep Archive</b>: The lowest-cost storage class for data that is rarely accessed and can tolerate retrieval times of up to 12 hours.</li>
+        <li><b>Reduced Redundancy Storage (RRS)</b>: A lower-cost option that stores data with fewer redundancies. It is not recommended for critical data.</li>
+      </ul>
+
+      <h5 class="text-info">📌 S3 Bucket Classes</h5>
+      <p>S3 organizes data into containers called **buckets**. Here are some key classes/features related to S3 buckets:</p>
+      <ul>
+        <li><b>Bucket</b>: A container for storing objects in S3. Each bucket is globally unique and can hold an unlimited number of objects.</li>
+        <li><b>Object</b>: The data you store in a bucket. It can be any type of data, like images, documents, or backups.</li>
+        <li><b>Versioning</b>: A feature in S3 that allows you to keep multiple versions of an object in the same bucket. This is useful for backup and recovery.</li>
+        <li><b>Lifecycle Policies</b>: Automate the process of transitioning objects to different storage classes or deleting them after a specified period.</li>
+        <li><b>Access Control Lists (ACLs)</b>: Control access to objects and buckets. ACLs grant permissions to different users or groups.</li>
+      </ul>
+
+      <h5 class="text-success">✅ Key S3 Operations</h5>
+      <ul>
+        <li><b>PutObject</b>: Upload an object to a bucket in S3.</li>
+        <li><b>GetObject</b>: Retrieve an object from a bucket in S3.</li>
+        <li><b>DeleteObject</b>: Delete an object from a bucket in S3.</li>
+        <li><b>ListObjects</b>: List all objects in a given bucket.</li>
+        <li><b>CopyObject</b>: Copy an object from one location to another in S3.</li>
+      </ul>
+
+      <h5 class="text-warning">📌 How Does Amazon S3 Work?</h5>
+      <p>S3 is based on a key-value store. Each object is identified by a unique key, and each bucket resides in a specific AWS region. Once you upload an object to an S3 bucket, it is assigned a globally unique key within that bucket. You can access the object by providing the bucket name and key.</p>
+
+      <h5 class="text-info">📌 S3 Security Features</h5>
+      <ul>
+        <li><b>Encryption</b>: S3 provides server-side encryption (SSE) options to encrypt your data. You can choose between SSE-S3, SSE-KMS (using AWS Key Management Service), or SSE-C (customer-provided keys).</li>
+        <li><b>Access Control</b>: You can control access to your S3 resources using IAM policies, bucket policies, ACLs, or S3 Block Public Access settings.</li>
+        <li><b>Versioning</b>: Enables you to keep multiple versions of an object to prevent accidental deletions or overwrites.</li>
+        <li><b>Logging</b>: You can enable logging for access requests to your bucket, which helps in auditing and monitoring data access patterns.</li>
+      </ul>
+
+      <h5 class="text-success">✅ Use Cases for S3</h5>
+      <ul>
+        <li>📦 <b>Backup and Restore</b>: S3 is commonly used for storing backups of critical data due to its durability and cost-effectiveness.</li>
+        <li>🌐 <b>Website Hosting</b>: Static websites (HTML, CSS, JavaScript) can be hosted directly from S3 without the need for a web server.</li>
+        <li>📸 <b>Media Storage</b>: Store and serve images, videos, and audio files for websites and mobile applications.</li>
+        <li>🔒 <b>Archiving</b>: S3 Glacier and Glacier Deep Archive are ideal for long-term data archiving at low costs.</li>
+      </ul>
+
+      <h5 class="text-warning">📢 Limitations of S3</h5>
+      <ul>
+        <li>❌ <b>Large Object Sizes</b>: Each individual object uploaded to S3 must be between 0 and 5TB in size, but uploading large objects might be slower without parallel uploads.</li>
+        <li>❌ <b>Request Rate Limits</b>: There are request rate limits for operations (e.g., PUT, GET) on S3 buckets, so high-traffic applications need to manage these limits.</li>
+        <li>❌ <b>No Database Functionality</b>: S3 is object storage, not a relational database, so it’s not ideal for transactional data or complex queries.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Conclusion</h5>
+      <p>Amazon S3 is a versatile, highly scalable storage service with various use cases, from storing backups to hosting static websites. By choosing the appropriate S3 storage class, lifecycle policies, and security measures, you can optimize costs and performance based on your application needs.</p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#S3Rules">
+      🛠️ Rules on S3 Buckets
+    </button>
+  </h2>
+  <div id="S3Rules" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-success">📌 What are Rules on S3 Buckets?</h5>
+      <p>In Amazon S3, "rules" generally refer to the **Bucket Policies**, **Access Control Lists (ACLs)**, and **Lifecycle Rules** that govern access and storage management for the objects stored in a bucket. These rules allow you to define who can access the bucket and its contents, under what conditions, and for how long.</p>
+
+      <h5 class="text-info">📌 Types of Rules on S3 Buckets</h5>
+      <ul>
+        <li><b>Bucket Policy</b>: A JSON-based access control mechanism to grant or deny access to all or part of the S3 bucket. It allows you to manage permissions at the bucket level.</li>
+        <li><b>Access Control List (ACL)</b>: A legacy access control mechanism that allows you to define individual permissions for each object or bucket for specific AWS accounts or groups.</li>
+        <li><b>Bucket Lifecycle Policy</b>: Used to define rules that manage the storage lifecycle of objects, such as automatic transitions to different storage classes or deletion after a specific period.</li>
+        <li><b>CORS (Cross-Origin Resource Sharing) Rules</b>: Defines rules for cross-origin requests (accessing resources in S3 from another domain). It is typically used when you're hosting web content on S3 and want to allow scripts on other domains to interact with your S3 content.</li>
+        <li><b>Versioning Rules</b>: Ensures that all versions of an object are preserved. Once versioning is enabled, older versions of the object are retained, and you can recover or restore them if needed.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Bucket Policies</h5>
+      <p>Bucket Policies are used to grant or restrict access to S3 buckets. They are defined in JSON format and are attached directly to the bucket. Policies consist of one or more statements that grant or deny permissions based on conditions such as IP addresses, users, or time of access.</p>
+      <p>Example of a simple bucket policy allowing only AWS users from a specific account to read objects:</p>
+      <pre class="language-json"><code>
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": "s3:GetObject",
+      "Resource": "arn:aws:s3:::example-bucket/*",
+      "Condition": {
+        "IpAddress": {
+          "aws:SourceIp": "203.0.113.0/24"
+        }
+      }
+    }
+  ]
+}
+      </code></pre>
+
+      <h5 class="text-info">📌 Access Control Lists (ACLs)</h5>
+      <p>ACLs are a more granular method of controlling access to S3 resources. They allow you to specify permissions for each individual object or bucket, and you can assign permissions to AWS accounts or predefined groups such as "Everyone" or "Authenticated Users".</p>
+      <p>Example of an ACL that grants read access to the public on an object in S3:</p>
+      <pre class="language-json"><code>
+{
+  "Grants": [
+    {
+      "Grantee": {
+        "Type": "Group",
+        "URI": "http://acs.amazonaws.com/groups/global/AllUsers"
+      },
+      "Permission": "READ"
+    }
+  ],
+  "Owner": {
+    "ID": "abcd1234",
+    "DisplayName": "user"
+  }
+}
+      </code></pre>
+
+      <h5 class="text-info">📌 Bucket Lifecycle Policies</h5>
+      <p>Lifecycle policies in S3 allow you to automate the transition of objects between different storage classes (such as from Standard to Glacier) or to delete objects after a certain period of time. This is useful for optimizing storage costs and ensuring compliance with retention policies.</p>
+      <p>Example of a lifecycle rule that transitions objects to Glacier after 30 days:</p>
+      <pre class="language-json"><code>
+{
+  "Rules": [
+    {
+      "ID": "Move to Glacier after 30 days",
+      "Status": "Enabled",
+      "Filter": {
+        "Prefix": "documents/"
+      },
+      "Transitions": [
+        {
+          "Days": 30,
+          "StorageClass": "GLACIER"
+        }
+      ]
+    }
+  ]
+}
+      </code></pre>
+
+      <h5 class="text-info">📌 CORS (Cross-Origin Resource Sharing) Rules</h5>
+      <p>CORS is used to allow cross-origin requests to interact with resources stored in S3. It enables applications running on one domain to make requests to resources on S3 that reside in a different domain. This is commonly used when serving a website hosted on S3 and needing to interact with its resources from other domains.</p>
+      <p>Example of CORS configuration for an S3 bucket:</p>
+      <pre class="language-json"><code>
+{
+  "CORSRules": [
+    {
+      "AllowedOrigins": [
+        "http://www.example.com"
+      ],
+      "AllowedMethods": [
+        "GET",
+        "POST"
+      ],
+      "MaxAgeSeconds": 3000,
+      "AllowedHeaders": [
+        "Authorization"
+      ]
+    }
+  ]
+}
+      </code></pre>
+
+      <h5 class="text-warning">📌 Important Considerations</h5>
+      <ul>
+        <li>❌ <b>Bucket Policies vs ACLs</b>: Bucket Policies are more powerful and flexible than ACLs. While ACLs allow you to manage access on an object level, Bucket Policies provide finer control over conditions and permissions.</li>
+        <li>❌ <b>Versioning</b>: Once versioning is enabled, all objects will have multiple versions, increasing storage costs. Consider carefully whether versioning is necessary for your use case.</li>
+        <li>❌ <b>Lifecycle Policies</b>: If not configured correctly, lifecycle policies may lead to premature deletion of data or incorrect storage transitions, so test your policies thoroughly before applying them in production environments.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Conclusion</h5>
+      <p>S3 rules, including bucket policies, ACLs, lifecycle policies, and CORS configurations, help manage access, storage, and security effectively. By leveraging these rules, you can control who can access your data, automate storage optimization, and ensure compliance with organizational requirements.</p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#StringInJava">
+      📝 What is String and What is Unique About It?
+    </button>
+  </h2>
+  <div id="StringInJava" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-success">📌 What is a String in Java?</h5>
+      <p>In Java, a <b>String</b> is a sequence of characters that is used to represent textual data. Strings are one of the most commonly used data types in Java programming. It is an object of the <code>String</code> class, which is part of the <code>java.lang</code> package.</p>
+
+      <h5 class="text-info">📌 Key Features of Strings in Java</h5>
+      <ul>
+        <li><b>Immutable</b>: Once a String object is created, it cannot be changed. If you try to modify a String, a new String object will be created instead.</li>
+        <li><b>String Pool</b>: Java maintains a special pool called the "String Pool" to optimize memory usage. If a String with the same value already exists in the pool, it will reuse that instance instead of creating a new one.</li>
+        <li><b>Final Class</b>: The String class is <b>final</b>, meaning it cannot be subclassed.</li>
+        <li><b>Object</b>: In Java, Strings are objects, not primitive data types like char. This allows Strings to have many useful methods like <code>length()</code>, <code>substring()</code>, etc.</li>
+      </ul>
+
+      <h5 class="text-info">📌 String Immutability Explained</h5>
+      <p>Strings in Java are immutable, meaning once they are created, their value cannot be changed. If you modify a String, it results in a new String object. This makes Strings thread-safe and helps prevent issues in concurrent programming.</p>
+      <p>Example of String immutability:</p>
+      <pre class="language-java"><code>
+String str1 = "Hello";
+String str2 = str1.concat(" World");  // Creates a new String object
+System.out.println(str1);  // Output: Hello
+System.out.println(str2);  // Output: Hello World
+      </code></pre>
+
+      <h5 class="text-info">📌 String Pool and String Literal</h5>
+      <p>Java uses a special memory area known as the String Pool, where all the String literals are stored. When you create a String using a literal (e.g., <code>"Hello"</code>), Java first checks if that String already exists in the String Pool. If it does, it reuses that instance, otherwise, it creates a new one.</p>
+      <p>Example:</p>
+      <pre class="language-java"><code>
+String s1 = "Hello";
+String s2 = "Hello";  // Reuses the existing "Hello" from the String Pool
+System.out.println(s1 == s2);  // Output: true
+      </code></pre>
+
+      <h5 class="text-warning">📌 String vs StringBuilder vs StringBuffer</h5>
+      <p>While String is immutable, if you need to modify a string frequently, using <code>StringBuilder</code> or <code>StringBuffer</code> is more efficient, as they allow modification without creating new objects each time.</p>
+      <ul>
+        <li><b>String</b>: Immutable, thread-safe, but inefficient for frequent modifications.</li>
+        <li><b>StringBuilder</b>: Mutable, not thread-safe, but more efficient for frequent modifications in single-threaded applications.</li>
+        <li><b>StringBuffer</b>: Mutable, thread-safe, but less efficient than StringBuilder for single-threaded applications.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Example of String Immutability in Action</h5>
+      <pre class="language-java"><code>
+String str1 = "Java";
+str1 = str1.concat(" is awesome!");
+System.out.println(str1);  // Output: Java is awesome!
+      </code></pre>
+
+      <h5 class="text-info">📌 Common String Methods</h5>
+      <ul>
+        <li><code>length()</code>: Returns the length of the String.</li>
+        <li><code>substring()</code>: Returns a substring of the original String.</li>
+        <li><code>charAt()</code>: Returns the character at the specified index.</li>
+        <li><code>equals()</code>: Compares two strings for equality.</li>
+        <li><code>toUpperCase()</code>, <code>toLowerCase()</code>: Converts the string to uppercase or lowercase.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Performance Considerations</h5>
+      <ul>
+        <li><b>Memory Efficiency</b>: The immutability of Strings allows Java to optimize memory usage via the String Pool, improving performance and reducing memory consumption in many scenarios.</li>
+        <li><b>Concurrency</b>: Since Strings are immutable, they can safely be shared between multiple threads without synchronization.</li>
+        <li><b>Efficiency in Concatenation</b>: For cases where you need to perform frequent concatenation or modification, consider using <code>StringBuilder</code> or <code>StringBuffer</code>, as String concatenation with <code>+</code> results in the creation of new String objects.</li>
+      </ul>
+
+      <h5 class="text-warning">📌 Conclusion</h5>
+      <p>In Java, a String is a special object used to store text. Its immutability ensures thread-safety and efficient memory usage. While Strings are suitable for most cases, StringBuilder or StringBuffer should be used for frequent string modifications. Understanding these differences will help you write more efficient and maintainable Java applications.</p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#CompletableFutureVsFuture">
+      ⚡ CompletableFuture vs Future in Java
+    </button>
+  </h2>
+  <div id="CompletableFutureVsFuture" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What is a Future in Java?</h5>
+      <p><code>Future</code> is an interface in Java used to represent the result of an asynchronous computation. It provides methods to check if the computation is complete, retrieve the result, or handle exceptions.</p>
+      <p><code>Future</code> allows you to wait for the computation to complete, and then fetch the result using methods like <code>get()</code>, <code>cancel()</code>, and <code>isDone()</code>.</p>
+
+      <h5 class="text-info">📌 What is CompletableFuture in Java?</h5>
+      <p><code>CompletableFuture</code> is a subclass of <code>Future</code> introduced in Java 8, providing a more powerful and flexible way of working with asynchronous tasks. It allows you to explicitly complete the future by calling the <code>complete()</code> method and offers non-blocking operations with methods like <code>thenApply()</code>, <code>thenCompose()</code>, etc.</p>
+
+      <h5 class="text-warning">📌 Key Differences Between Future and CompletableFuture</h5>
+      <ul>
+        <li><b>Asynchronous Computation</b>: 
+            <ul>
+              <li><code>Future</code> is a simpler interface designed to represent a result that will eventually be computed.</li>
+              <li><code>CompletableFuture</code> allows asynchronous, non-blocking execution and provides methods to handle chaining and combining futures.</li>
+            </ul>
+        </li>
+        <li><b>Completion Control</b>: 
+            <ul>
+              <li><code>Future</code> does not allow you to manually complete the task. You can only call <code>get()</code> or <code>isDone()</code> to check if the result is available.</li>
+              <li><code>CompletableFuture</code> allows manual completion of the task, enabling more advanced features like chaining or combining results from multiple asynchronous computations.</li>
+            </ul>
+        </li>
+        <li><b>Chaining and Combining</b>: 
+            <ul>
+              <li><code>Future</code> does not provide any methods to chain multiple tasks together.</li>
+              <li><code>CompletableFuture</code> offers methods like <code>thenApply()</code>, <code>thenCombine()</code>, and <code>thenCompose()</code> to chain and combine multiple asynchronous operations.</li>
+            </ul>
+        </li>
+        <li><b>Exception Handling</b>: 
+            <ul>
+              <li><code>Future</code> has limited support for exception handling. You can check exceptions when calling <code>get()</code>, but it does not provide direct handling mechanisms.</li>
+              <li><code>CompletableFuture</code> has more robust exception handling with methods like <code>exceptionally()</code> to handle exceptions asynchronously.</li>
+            </ul>
+        </li>
+        <li><b>Blocking vs Non-blocking</b>: 
+            <ul>
+              <li><code>Future</code> requires you to block by calling <code>get()</code> until the task completes.</li>
+              <li><code>CompletableFuture</code> is non-blocking and allows for easier chaining of asynchronous tasks without blocking the main thread.</li>
+            </ul>
+        </li>
+      </ul>
+
+      <h5 class="text-info">📌 Example of Future</h5>
+      <pre class="language-java"><code>
+import java.util.concurrent.*;
+
+public class FutureExample {
+    public static void main(String[] args) throws InterruptedException, ExecutionException {
+        ExecutorService executor = Executors.newCachedThreadPool();
+        Future<Integer> future = executor.submit(() -> {
+            Thread.sleep(1000);
+            return 123;
+        });
+        
+        // Blocking call, waits for the result
+        Integer result = future.get();
+        System.out.println("Result: " + result);
+        
+        executor.shutdown();
+    }
+}
+      </code></pre>
+
+      <h5 class="text-info">📌 Example of CompletableFuture</h5>
+      <pre class="language-java"><code>
+import java.util.concurrent.*;
+
+public class CompletableFutureExample {
+    public static void main(String[] args) throws InterruptedException, ExecutionException {
+        CompletableFuture<Integer> future = CompletableFuture.supplyAsync(() -> {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            return 123;
+        });
+        
+        // Non-blocking call, continues execution while waiting for result
+        future.thenApply(result -> {
+            System.out.println("Result: " + result);
+            return result * 2;
+        }).thenAccept(finalResult -> System.out.println("Final Result: " + finalResult));
+        
+        // Main thread will continue while the CompletableFuture works asynchronously
+        future.get(); // Wait for the result to be available
+    }
+}
+      </code></pre>
+
+      <h5 class="text-info">📌 Conclusion</h5>
+      <p><code>Future</code> is suitable when you need to get a result from an asynchronous task and wait for it. However, it is less flexible and doesn't support chaining of tasks or sophisticated exception handling. On the other hand, <code>CompletableFuture</code> is a more powerful tool that allows for non-blocking, asynchronous computation, chaining of tasks, and better handling of exceptions, making it more suitable for complex use cases.</p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#DateAndTimeJava8">
+      🕰️ Why Date and Time was Introduced in Java 8?
+    </button>
+  </h2>
+  <div id="DateAndTimeJava8" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 The Problem with java.util.Date</h5>
+      <p>Before Java 8, the primary class used for date and time operations was <code>java.util.Date</code>. While it provided the basic functionality to represent dates and times, it had several limitations:</p>
+      <ul>
+        <li><b>Mutable:</b> The <code>Date</code> class was mutable, meaning it could be changed after creation. This was error-prone as it could lead to unexpected side-effects when shared across different parts of the code.</li>
+        <li><b>Timezone Issues:</b> <code>Date</code> handled timezones poorly, leading to confusion when working with dates across different regions.</li>
+        <li><b>Thread Safety:</b> <code>Date</code> was not thread-safe, so concurrent programming was difficult without explicit synchronization.</li>
+        <li><b>Unclear Semantics:</b> The <code>Date</code> class had confusing behavior. For example, its <code>toString()</code> method returned a string in a non-standard format that was difficult to parse.</li>
+        <li><b>Inconsistent API:</b> The <code>java.util.Date</code> API had a mix of methods that could work with milliseconds, years, and other attributes inconsistently.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Introduction of java.time in Java 8</h5>
+      <p>To address these issues, Java 8 introduced a new date and time API under the <code>java.time</code> package. The new API follows the <b>ISO-8601</b> standard, which is widely used and provides better functionality, more flexibility, and cleaner code.</p>
+
+      <h5 class="text-success">✅ Key Features of java.time (Java 8 Date and Time API)</h5>
+      <ul>
+        <li><b>Immutability:</b> Classes like <code>LocalDate</code>, <code>LocalTime</code>, and <code>LocalDateTime</code> are immutable, which makes them safer to use, especially in multithreaded environments.</li>
+        <li><b>Thread-Safety:</b> The new API is thread-safe, meaning multiple threads can use the same instance without the risk of data corruption.</li>
+        <li><b>Clear Semantics:</b> The new classes in the <code>java.time</code> package have clearer semantics and follow international standards for representing and parsing dates and times.</li>
+        <li><b>Support for Time Zones:</b> The new API supports time zones effectively with classes like <code>ZonedDateTime</code> and <code>OffsetDateTime</code>, eliminating timezone-related issues in previous implementations.</li>
+        <li><b>Fluent API:</b> The new API is fluent and functional, allowing method chaining and lambda-style operations.</li>
+        <li><b>Separation of Concerns:</b> The new API separates date, time, and timezone concerns into distinct classes, unlike <code>Date</code> which combined them together.</li>
+      </ul>
+
+      <h5 class="text-warning">📌 Key Classes in java.time API</h5>
+      <ul>
+        <li><code>LocalDate</code> – Represents a date without time (e.g., 2025-05-04).</li>
+        <li><code>LocalTime</code> – Represents a time without date (e.g., 14:30:00).</li>
+        <li><code>LocalDateTime</code> – Combines <code>LocalDate</code> and <code>LocalTime</code> (e.g., 2025-05-04T14:30:00).</li>
+        <li><code>ZonedDateTime</code> – Represents date and time with timezone (e.g., 2025-05-04T14:30:00+02:00[Europe/Paris]).</li>
+        <li><code>Instant</code> – Represents a timestamp in UTC with nanosecond precision.</li>
+        <li><code>Duration</code> – Represents the amount of time between two temporal objects.</li>
+        <li><code>Period</code> – Represents the amount of time in years, months, and days.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Example of Using java.time API in Java 8</h5>
+      <pre class="language-java"><code>
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+
+public class DateTimeExample {
+    public static void main(String[] args) {
+        // LocalDate example
+        LocalDate date = LocalDate.of(2025, 5, 4);
+        System.out.println("LocalDate: " + date);
+        
+        // LocalTime example
+        LocalTime time = LocalTime.of(14, 30);
+        System.out.println("LocalTime: " + time);
+        
+        // LocalDateTime example
+        LocalDateTime dateTime = LocalDateTime.of(date, time);
+        System.out.println("LocalDateTime: " + dateTime);
+        
+        // ZonedDateTime example
+        ZonedDateTime zonedDateTime = ZonedDateTime.now(ZoneId.of("Europe/Paris"));
+        System.out.println("ZonedDateTime: " + zonedDateTime);
+        
+        // Formatting DateTime
+        String formattedDate = dateTime.format(DateTimeFormatter.ISO_DATE_TIME);
+        System.out.println("Formatted DateTime: " + formattedDate);
+    }
+}
+      </code></pre>
+
+      <h5 class="text-warning">📌 Why java.time was introduced?</h5>
+      <ul>
+        <li><b>Legacy API Issues:</b> The <code>java.util.Date</code> API had design flaws that made it error-prone and inconsistent.</li>
+        <li><b>Clearer, More Efficient Design:</b> The new API is built with modern best practices, using immutable, thread-safe objects.</li>
+        <li><b>Better Support for Time Zones:</b> The new API provides robust support for time zones and localization, which was a major weakness in the old <code>Date</code> class.</li>
+        <li><b>ISO-8601 Standard:</b> The new API follows the widely used ISO-8601 standard, making it compatible with international date and time representations.</li>
+      </ul>
+
+      <h5 class="text-success">📌 Conclusion</h5>
+      <p>The introduction of <code>java.time</code> in Java 8 was essential to address the shortcomings of the older <code>java.util.Date</code> class. With better support for modern time management practices, immutability, and timezone handling, the new API makes working with dates and times in Java cleaner, safer, and more efficient.</p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#OutOfMemoryErrorFix">
+      ⚠️ How to Fix OutOfMemoryError in Java?
+    </button>
+  </h2>
+  <div id="OutOfMemoryErrorFix" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What is OutOfMemoryError?</h5>
+      <p><code>OutOfMemoryError</code> in Java is thrown when the Java Virtual Machine (JVM) runs out of memory and cannot allocate any more memory for objects, threads, or other resources.</p>
+      <p>This error can happen in several places, but it's most commonly seen when the heap or PermGen (or Metaspace in Java 8 and later) is exhausted.</p>
+
+      <h5 class="text-success">✅ Common Causes of OutOfMemoryError</h5>
+      <ul>
+        <li><b>Memory Leak:</b> When objects are unintentionally retained in memory due to improper references or lack of garbage collection.</li>
+        <li><b>Large Objects:</b> Allocating large amounts of memory in one go, especially for large arrays or collections.</li>
+        <li><b>Excessive Threads:</b> Creating too many threads without proper management can also consume all available heap space.</li>
+        <li><b>Improper Configuration:</b> Insufficient memory allocation for the JVM, causing the heap or Metaspace to run out of memory.</li>
+      </ul>
+
+      <h5 class="text-warning">🔧 How to Fix OutOfMemoryError?</h5>
+      <h6 class="text-info">1. Increase Java Heap Size</h6>
+      <p>If your application requires more memory than the JVM can allocate, you can increase the heap size using JVM flags. This can be done as follows:</p>
+      <pre class="language-shell"><code>
+-Xms512m -Xmx2g
+      </code></pre>
+      <ul>
+        <li><b>-Xms:</b> Sets the initial heap size.</li>
+        <li><b>-Xmx:</b> Sets the maximum heap size.</li>
+      </ul>
+      <p>For example, the above configuration sets the initial heap size to 512 MB and the maximum heap size to 2 GB.</p>
+
+      <h6 class="text-info">2. Optimize Memory Usage</h6>
+      <p>Review your code for memory optimizations. You can try the following:</p>
+      <ul>
+        <li><b>Reduce Object Creation:</b> Avoid creating unnecessary objects, especially in loops.</li>
+        <li><b>Release Resources:</b> Explicitly release resources (like database connections, file streams) when done using them.</li>
+        <li><b>Use Proper Data Structures:</b> Ensure you are using the correct data structures for your use case (e.g., using a <code>HashMap</code> instead of a <code>List</code> when necessary).</li>
+      </ul>
+
+      <h6 class="text-info">3. Profile Your Application</h6>
+      <p>Use profiling tools such as VisualVM, JProfiler, or YourKit to identify memory leaks and monitor memory usage over time. These tools can help you locate objects that are consuming too much memory.</p>
+
+      <h6 class="text-info">4. Use Garbage Collection Tuning</h6>
+      <p>Garbage collection (GC) can sometimes be a cause of memory issues if it's not being triggered or optimized properly. You can configure JVM garbage collection settings:</p>
+      <ul>
+        <li><b>-XX:+UseG1GC:</b> Enable G1 garbage collector, which is designed for applications with large heap sizes.</li>
+        <li><b>-XX:MaxGCPauseMillis=200:</b> Limit the maximum pause time for garbage collection.</li>
+        <li><b>-XX:+UseConcMarkSweepGC:</b> Enable the CMS (Concurrent Mark Sweep) garbage collector for low-latency applications.</li>
+      </ul>
+
+      <h6 class="text-info">5. Fix Memory Leaks</h6>
+      <p>Memory leaks occur when objects are no longer needed but are still referenced, preventing the garbage collector from reclaiming the memory. You can prevent and fix memory leaks by:</p>
+      <ul>
+        <li><b>Properly Manage References:</b> Use weak references or soft references where necessary, especially in caches.</li>
+        <li><b>Close Resources:</b> Always close resources such as database connections, files, and network connections after use.</li>
+        <li><b>Review Collections:</b> Ensure that you are not holding large collections of objects unnecessarily (e.g., in static variables or in long-lived objects).</li>
+      </ul>
+
+      <h6 class="text-info">6. Optimize Thread Usage</h6>
+      <p>If your application creates many threads, consider optimizing or limiting the number of threads:</p>
+      <ul>
+        <li><b>Use Thread Pools:</b> Instead of creating threads manually, use a thread pool (e.g., <code>ExecutorService</code>) to manage threads efficiently.</li>
+        <li><b>Limit Thread Creation:</b> Ensure that you are not creating more threads than your application or system can handle.</li>
+      </ul>
+
+      <h6 class="text-info">7. Use Off-Heap Memory</h6>
+      <p>If heap memory is not sufficient, you can store large amounts of data in off-heap memory (i.e., memory not managed by the JVM’s garbage collector). You can use libraries like <code>DirectByteBuffer</code> for this.</p>
+
+      <h5 class="text-warning">🔍 How to Monitor for OutOfMemoryError?</h5>
+      <ul>
+        <li><b>Enable Heap Dumps:</b> You can configure the JVM to generate a heap dump when an <code>OutOfMemoryError</code> occurs by using the <code>-XX:+HeapDumpOnOutOfMemoryError</code> option.</li>
+        <li><b>Monitor Memory Usage:</b> Continuously monitor memory usage with JVM metrics or tools like JConsole, VisualVM, or Prometheus.</li>
+        <li><b>Set a Memory Limit:</b> Ensure that your JVM has a reasonable memory limit set using <code>-Xmx</code>, and adjust it based on system availability and application needs.</li>
+      </ul>
+
+      <h5 class="text-success">✅ Summary</h5>
+      <p>To fix an <code>OutOfMemoryError</code>, you need to understand its root cause. By increasing heap size, optimizing memory usage, tuning garbage collection, fixing memory leaks, and ensuring proper thread management, you can avoid or resolve memory-related issues effectively. Profiling tools and monitoring also play a crucial role in identifying and fixing these problems.</p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#StackOverflowErrorFix">
+      ⚠️ How to Fix StackOverflowError in Java?
+    </button>
+  </h2>
+  <div id="StackOverflowErrorFix" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What is StackOverflowError?</h5>
+      <p><code>StackOverflowError</code> occurs in Java when the stack memory allocated for a thread is exhausted. This usually happens when a method calls itself recursively without a proper termination condition, causing infinite recursion.</p>
+      <p>The error indicates that the Java Virtual Machine (JVM) has exhausted the stack space, and it typically results in the program crashing or terminating abnormally.</p>
+
+      <h5 class="text-success">✅ Common Causes of StackOverflowError</h5>
+      <ul>
+        <li><b>Uncontrolled Recursion:</b> This is the most common cause, where a method repeatedly calls itself without a termination condition.</li>
+        <li><b>Deep Recursive Calls:</b> Even if there’s a base case, deep recursion with a large call stack can result in stack overflow.</li>
+        <li><b>Infinite Loops in Recursion:</b> Recursive calls may not return correctly if the base case is never met, resulting in an infinite recursion.</li>
+        <li><b>Large Local Variables:</b> Having large data structures (like big arrays) in the method's local variables can also fill up the stack memory quickly.</li>
+      </ul>
+
+      <h5 class="text-warning">🔧 How to Fix StackOverflowError?</h5>
+      <h6 class="text-info">1. Fix Infinite Recursion</h6>
+      <p>Ensure that your recursive methods have proper base cases and that they always terminate. An example of fixing an infinite recursion:</p>
+      <pre class="language-java"><code>
+public class StackOverflowExample {
+    public int factorial(int n) {
+        if (n == 0) return 1;  // Base case
+        return n * factorial(n - 1);
+    }
+}
+      </code></pre>
+      <p>In this case, the method terminates when <code>n == 0</code>, preventing infinite recursion.</p>
+
+      <h6 class="text-info">2. Reduce Recursion Depth</h6>
+      <p>If your recursion depth is too large, consider refactoring your logic to use iteration instead of recursion. This reduces the amount of stack space required.</p>
+      <pre class="language-java"><code>
+public class IterativeFactorial {
+    public int factorial(int n) {
+        int result = 1;
+        for (int i = 1; i <= n; i++) {
+            result *= i;
+        }
+        return result;
+    }
+}
+      </code></pre>
+      <p>Here, the recursion is replaced with an iterative approach to avoid deep recursion and stack overflow.</p>
+
+      <h6 class="text-info">3. Increase Stack Size</h6>
+      <p>If the application legitimately requires deep recursion, you can increase the JVM stack size using the <code>-Xss</code> option. For example:</p>
+      <pre class="language-shell"><code>
+-Xss2m
+      </code></pre>
+      <p>This sets the stack size to 2 MB (the default is usually around 1 MB). Be careful with this approach, as allocating too much stack memory can have performance implications.</p>
+
+      <h6 class="text-info">4. Avoid Large Local Variables</h6>
+      <p>Avoid allocating large data structures in method local variables, especially within recursive methods, as this can quickly fill up the stack. Instead, try using heap-based data structures, such as arrays or collections, to store large data.</p>
+
+      <h6 class="text-info">5. Refactor to Use a Different Algorithm</h6>
+      <p>If your recursive approach is consuming too much stack space, consider rethinking your algorithm to use an iterative approach or break it into smaller subproblems. For example, certain divide-and-conquer algorithms can often be rewritten iteratively to avoid deep recursion.</p>
+
+      <h6 class="text-info">6. Test for StackOverflowError Early</h6>
+      <p>Make sure to test for recursion depth and edge cases in your application. Use unit tests and input validation to ensure that recursion terminates correctly before it can cause a stack overflow.</p>
+
+      <h5 class="text-success">✅ Summary</h5>
+      <p><code>StackOverflowError</code> typically occurs when recursion goes too deep or is uncontrolled. To fix it, ensure proper base cases for recursion, reduce recursion depth by using iteration, or consider increasing stack size if necessary. Refactoring the algorithm or using different data structures may also help avoid deep recursion and stack overflow.</p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#OutOfMemoryErrorvsStackOverflowError">
+      ⚠️ Difference Between OutOfMemoryError vs StackOverflowError in Java
+    </button>
+  </h2>
+  <div id="OutOfMemoryErrorvsStackOverflowError" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What is OutOfMemoryError?</h5>
+      <p><code>OutOfMemoryError</code> occurs when the JVM cannot allocate an object in the heap because it is out of memory. This typically happens when the heap is full, and no more objects can be created due to memory exhaustion.</p>
+      <p><code>OutOfMemoryError</code> is a runtime error that indicates the inability of the JVM to allocate memory for new objects due to insufficient heap memory or memory leaks.</p>
+
+      <h5 class="text-info">📌 What is StackOverflowError?</h5>
+      <p><code>StackOverflowError</code> occurs when the thread stack is exhausted, usually because of deep recursion or an uncontrolled loop in a recursive method. Each thread in Java has its own stack for method calls, and if this stack exceeds its limit, a <code>StackOverflowError</code> is thrown.</p>
+      <p>It typically happens due to recursive method calls that never reach the base case or require too much space on the stack.</p>
+
+      <h5 class="text-success">✅ Key Differences Between OutOfMemoryError and StackOverflowError</h5>
+      <ul>
+        <li><b>Cause:</b>
+          <ul>
+            <li><code>OutOfMemoryError</code>: Caused when the heap memory (for objects) is exhausted and no more objects can be created.</li>
+            <li><code>StackOverflowError</code>: Caused when the stack memory allocated to a thread is exhausted, typically due to deep recursion or unbounded recursive calls.</li>
+          </ul>
+        </li>
+        <li><b>Location of Memory Exhaustion:</b>
+          <ul>
+            <li><code>OutOfMemoryError</code>: Occurs in the heap area where Java objects are stored.</li>
+            <li><code>StackOverflowError</code>: Occurs in the stack area, which stores method call frames for threads.</li>
+          </ul>
+        </li>
+        <li><b>Typical Causes:</b>
+          <ul>
+            <li><code>OutOfMemoryError</code>: Large memory allocations, memory leaks, or insufficient heap space for large objects.</li>
+            <li><code>StackOverflowError</code>: Infinite recursion or excessively deep recursion.</li>
+          </ul>
+        </li>
+        <li><b>Handling:</b>
+          <ul>
+            <li><code>OutOfMemoryError</code>: Can sometimes be fixed by increasing heap size, improving memory management, or fixing memory leaks.</li>
+            <li><code>StackOverflowError</code>: Can be fixed by refactoring code to reduce recursion depth or switching to an iterative solution.</li>
+          </ul>
+        </li>
+      </ul>
+
+      <h5 class="text-warning">🔧 Fixing OutOfMemoryError</h5>
+      <ul>
+        <li><b>Increase Heap Size:</b> Increase the heap size by using JVM options like <code>-Xmx</code> to allocate more memory.</li>
+        <li><b>Memory Leak Detection:</b> Use profiling tools like VisualVM or YourKit to detect memory leaks and inefficient memory use.</li>
+        <li><b>Optimize Object Creation:</b> Avoid creating large objects or unnecessary objects in memory; use data structures efficiently.</li>
+      </ul>
+
+      <h5 class="text-warning">🔧 Fixing StackOverflowError</h5>
+      <ul>
+        <li><b>Refactor Recursion:</b> Ensure that recursive methods have proper base cases and terminate correctly.</li>
+        <li><b>Use Iteration:</b> Replace deep recursion with an iterative solution if recursion depth is too large.</li>
+        <li><b>Increase Stack Size:</b> Increase the stack size for threads using <code>-Xss</code>, but be careful not to allocate excessive memory.</li>
+      </ul>
+
+      <h5 class="text-success">✅ Example of OutOfMemoryError</h5>
+      <pre class="language-java"><code>
+public class OutOfMemoryExample {
+    public static void main(String[] args) {
+        List<int[]> list = new ArrayList<>();
+        while (true) {
+            list.add(new int[1000000]);  // Keeps allocating memory without limit
+        }
+    }
+}
+      </code></pre>
+
+      <h5 class="text-success">✅ Example of StackOverflowError</h5>
+      <pre class="language-java"><code>
+public class StackOverflowExample {
+    public static void recursiveMethod() {
+        recursiveMethod();  // Infinite recursion
+    }
+    
+    public static void main(String[] args) {
+        recursiveMethod();
+    }
+}
+      </code></pre>
+
+      <h5 class="text-warning">📢 Summary</h5>
+      <p>Both <code>OutOfMemoryError</code> and <code>StackOverflowError</code> are serious issues in Java, but they occur due to different causes. The former happens when heap memory is exhausted, often due to memory leaks or large objects, while the latter happens when the stack memory is exhausted, typically due to deep recursion. Both errors can be mitigated by optimizing memory usage, controlling recursion depth, and tuning JVM parameters.</p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#hashCodeOverrideExample">
+      ⚠️ Overriding hashCode() Method Returning Same Value (100)
+    </button>
+  </h2>
+  <div id="hashCodeOverrideExample" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Problem Explanation</h5>
+      <p>When you override the <code>hashCode()</code> method in Java, you should ensure that it returns a consistent value for the same object. However, when you override it and intentionally return the same value (e.g., 100), it can break the contract between <code>hashCode()</code> and <code>equals()</code>. This can lead to unpredictable behavior when using the object in hash-based collections like <code>HashSet</code>, <code>HashMap</code>, or <code>Hashtable</code>.</p>
+      
+      <p>Here's an example where the <code>hashCode()</code> method always returns 100:</p>
+
+      <h5 class="text-success">✅ Example of Overriding hashCode() and Returning 100</h5>
+      <pre class="language-java"><code>
+import java.util.HashSet;
+import java.util.Set;
+
+class Person {
+    private String name;
+
+    public Person(String name) {
+        this.name = name;
+    }
+
+    @Override
+    public int hashCode() {
+        return 100;  // Returning the same value every time
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        Person person = (Person) obj;
+        return name != null ? name.equals(person.name) : person.name == null;
+    }
+
+    public String getName() {
+        return name;
+    }
+}
+
+public class HashCodeOverrideExample {
+    public static void main(String[] args) {
+        Set<Person> set = new HashSet<>();
+        Person p1 = new Person("Alice");
+        Person p2 = new Person("Alice");
+
+        set.add(p1);
+        set.add(p2);
+
+        System.out.println("Set size: " + set.size());  // Output will be 1 because hashCode is same for both objects
+    }
+}
+      </code></pre>
+
+      <h5 class="text-warning">🔧 Explanation of Code Behavior</h5>
+      <p>In this example, both <code>p1</code> and <code>p2</code> are considered to have the same <code>hashCode()</code> value (100) due to the overridden method. However, because their <code>equals()</code> method compares the <code>name</code> attribute, it would return <code>true</code> when the names are the same.</p>
+      
+      <p>Now, in the <code>HashSet</code>, since the hash code of both objects is the same (100), the set will not be able to distinguish between <code>p1</code> and <code>p2</code> based solely on the hash code. But because the <code>equals()</code> method checks the names and returns <code>true</code>, only one object will be stored in the set. Therefore, the output will be:</p>
+      
+      <pre class="language-java"><code>
+Set size: 1
+      </code></pre>
+
+      <h5 class="text-info">📌 Why Is This Problematic?</h5>
+      <p>The problem occurs because the <code>hashCode()</code> contract states that if two objects are equal according to the <code>equals()</code> method, they must also have the same hash code. If you always return the same hash code (like 100), the <code>HashSet</code> and <code>HashMap</code> may not behave correctly for different objects, even if their <code>equals()</code> method shows them to be distinct.</p>
+      
+      <h5 class="text-warning">📢 Key Points to Remember</h5>
+      <ul>
+        <li>If <code>hashCode()</code> is overridden and always returns the same value, it can cause issues with hash-based collections like <code>HashSet</code>, <code>HashMap</code>, and <code>Hashtable</code>.</li>
+        <li>The <code>hashCode()</code> method should return a different hash code for different objects whenever possible, in order to ensure better distribution in hash-based collections.</li>
+        <li>If two objects are considered equal according to the <code>equals()</code> method, they must return the same <code>hashCode()</code>.</li>
+      </ul>
+
+      <h5 class="text-success">✅ Good hashCode() Implementation</h5>
+      <p>A better way to implement the <code>hashCode()</code> method would be to use the object's fields, so different objects will have different hash codes.</p>
+      <pre class="language-java"><code>
+@Override
+public int hashCode() {
+    return name != null ? name.hashCode() : 0;
+}
+      </code></pre>
+
+      <p>With this implementation, the hash code will depend on the <code>name</code> field, and the <code>HashSet</code> or <code>HashMap</code> will behave as expected.</p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#concurrentCollectionsLocks">
+      🔒 How Locks Work in Concurrent Collections in Java
+    </button>
+  </h2>
+  <div id="concurrentCollectionsLocks" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Introduction to Locks in Concurrent Collections</h5>
+      <p>In Java, concurrent collections provide thread-safe implementations to allow multiple threads to access data concurrently while ensuring the integrity of the data. To achieve this, locks are used to coordinate thread access to shared resources. These locks help manage thread safety in collections like <code>ConcurrentHashMap</code>, <code>CopyOnWriteArrayList</code>, etc.</p>
+
+      <h5 class="text-success">✅ Types of Locks in Concurrent Collections</h5>
+      <p>Java's concurrent collections employ various locking mechanisms to ensure thread safety:</p>
+      <ul>
+        <li><b>ReentrantLock</b>: A more advanced lock that allows for finer control, including the ability to try to acquire a lock or interrupt a thread. Commonly used in collections like <code>ConcurrentHashMap</code>.</li>
+        <li><b>Read-Write Locks (ReentrantReadWriteLock)</b>: These locks allow multiple threads to read a resource concurrently but provide exclusive access to writing threads. It's beneficial for collections like <code>ReadWriteMap</code> where reads are more frequent than writes.</li>
+        <li><b>Optimistic Locking</b>: Employed by collections like <code>CopyOnWriteArrayList</code>, where write operations (such as adding or modifying elements) are expensive and occur less frequently. Instead of locking on reads, a copy of the array is made on every modification, allowing reads to occur freely without locks.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Locking in Specific Concurrent Collections</h5>
+      <p>Here's a breakdown of how specific collections in Java's concurrent library handle locks:</p>
+
+      <h5 class="text-warning">🔐 1. <code>ConcurrentHashMap</code></h5>
+      <p><code>ConcurrentHashMap</code> uses a combination of <b>bucket-level locks</b> and <b>CAS (Compare-And-Swap)</b> operations to ensure thread safety without blocking the entire map:</p>
+      <ul>
+        <li><b>Bucket-level locks</b>: Rather than locking the entire map, <code>ConcurrentHashMap</code> divides the map into segments (or buckets), each of which can be locked independently. This minimizes contention when threads access different buckets.</li>
+        <li><b>CAS Operations</b>: For atomic updates to values, <code>ConcurrentHashMap</code> uses CAS, allowing for lock-free operations in many scenarios, like replacing values in a single bucket.</li>
+      </ul>
+
+      <h5 class="text-warning">🔐 2. <code>CopyOnWriteArrayList</code></h5>
+      <p><code>CopyOnWriteArrayList</code> does not use traditional locking. Instead, it uses an <b>optimistic locking strategy</b>:</p>
+      <ul>
+        <li>Whenever a write operation (like adding, removing, or updating an element) occurs, a new copy of the array is created. This ensures that the original array remains unchanged during the read operations.</li>
+        <li>This strategy works well for scenarios where reads are much more frequent than writes. However, writes become expensive as they involve copying the entire array.</li>
+      </ul>
+
+      <h5 class="text-warning">🔐 3. <code>BlockingQueue</code> (e.g., <code>LinkedBlockingQueue</code>, <code>ArrayBlockingQueue</code>)</h5>
+      <p><code>BlockingQueue</code> implementations typically use <b>ReentrantLocks</b> for controlling access to the queue. These locks are used to prevent multiple threads from accessing the queue simultaneously in a way that could corrupt the data:</p>
+      <ul>
+        <li><b>ReentrantLock</b> ensures that only one thread can insert or remove elements at a time, thus ensuring thread safety.</li>
+        <li><b>Condition Variables</b> are often used to allow threads to wait or signal for events such as when the queue is empty or full.</li>
+      </ul>
+
+      <h5 class="text-info">📌 What Happens Behind the Scenes?</h5>
+      <p>When you perform an operation on a concurrent collection, such as adding or retrieving elements, locks or atomic operations work in the background:</p>
+      <ul>
+        <li><b>Locking Mechanism</b>: Depending on the type of collection and the operation, the underlying implementation uses locks like <code>ReentrantLock</code> or optimistic locking techniques.</li>
+        <li><b>Thread Safety</b>: By using these locks or atomic operations, the concurrent collections ensure that operations like adding, removing, or modifying elements do not interfere with each other, thus avoiding race conditions and data corruption.</li>
+        <li><b>Efficient Concurrency</b>: The use of bucket-level locks in <code>ConcurrentHashMap</code>, read-write locks, or copy-on-write strategies ensures that threads can access shared resources concurrently with minimal performance degradation.</li>
+      </ul>
+
+      <h5 class="text-warning">🔧 Example: <code>ConcurrentHashMap</code> with Locking</h5>
+      <pre class="language-java"><code>
+import java.util.concurrent.ConcurrentHashMap;
+
+public class ConcurrentMapExample {
+    public static void main(String[] args) {
+        ConcurrentHashMap<String, String> map = new ConcurrentHashMap<>();
+
+        // Adding key-value pairs
+        map.put("name", "Alice");
+        map.put("age", "30");
+
+        // Retrieving value
+        System.out.println(map.get("name")); // Output: Alice
+
+        // Updating value (Thread-Safe)
+        map.put("age", "31");
+        System.out.println(map.get("age")); // Output: 31
+    }
+}
+      </code></pre>
+
+      <h5 class="text-info">📌 Conclusion</h5>
+      <p>Concurrent collections in Java provide a way to manage thread safety efficiently without blocking operations unnecessarily. These collections use different types of locks or lock-free strategies to ensure high concurrency and low contention.</p>
+      <ul>
+        <li><b>Bucket-level locks</b> and <b>CAS operations</b> are commonly used in collections like <code>ConcurrentHashMap</code>.</li>
+        <li><b>Copy-on-write</b> strategies (as in <code>CopyOnWriteArrayList</code>) avoid locking altogether but incur the cost of copying the entire data structure during writes.</li>
+        <li><b>ReentrantLock</b> is often used in <code>BlockingQueue</code> implementations to ensure thread safety during insertion and removal of elements.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#concurrentCollections">
+      🔒 List of Concurrent Collections in Java
+    </button>
+  </h2>
+  <div id="concurrentCollections" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Introduction</h5>
+      <p>Java's <b>java.util.concurrent</b> package provides a variety of thread-safe collections that are designed for use in multithreaded environments. These collections offer concurrent access to shared resources without risking data corruption. Below is a list of these concurrent collections.</p>
+
+      <h5 class="text-warning">🔐 1. <code>ConcurrentHashMap</code></h5>
+      <p><code>ConcurrentHashMap</code> is a highly concurrent, thread-safe map implementation. It allows multiple threads to read and write to the map concurrently with minimal locking and contention:</p>
+      <ul>
+        <li>Supports high concurrency by locking only on individual segments of the map (buckets).</li>
+        <li>Ideal for large-scale, highly concurrent applications.</li>
+        <li>Operations like <code>put</code>, <code>get</code>, and <code>remove</code> are thread-safe.</li>
+      </ul>
+
+      <h5 class="text-warning">🔐 2. <code>CopyOnWriteArrayList</code></h5>
+      <p><code>CopyOnWriteArrayList</code> is a thread-safe variant of <code>ArrayList</code>. It copies the entire list whenever it is modified (write operations), which makes it highly optimized for scenarios where read operations are more frequent than write operations:</p>
+      <ul>
+        <li>Provides a copy of the list on write operations, ensuring thread safety for reads.</li>
+        <li>Works well when writes are infrequent but reads are very frequent.</li>
+        <li>Iterators returned by <code>CopyOnWriteArrayList</code> are fail-safe.</li>
+      </ul>
+
+      <h5 class="text-warning">🔐 3. <code>CopyOnWriteArraySet</code></h5>
+      <p><code>CopyOnWriteArraySet</code> is a thread-safe set implementation that is similar to <code>CopyOnWriteArrayList</code>, but it implements the <code>Set</code> interface:</p>
+      <ul>
+        <li>It ensures thread safety by copying the underlying array on every modification.</li>
+        <li>Provides excellent performance for scenarios where reads are more frequent than writes.</li>
+      </ul>
+
+      <h5 class="text-warning">🔐 4. <code>BlockingQueue</code> (and its implementations)</h5>
+      <p><code>BlockingQueue</code> is an interface that supports thread-safe blocking operations. Common implementations include:</p>
+      <ul>
+        <li><b><code>LinkedBlockingQueue</code></b>: A queue that can grow dynamically in size.</li>
+        <li><b><code>ArrayBlockingQueue</code></b>: A bounded queue with a fixed capacity.</li>
+        <li><b><code>PriorityBlockingQueue</code></b>: A queue that orders elements based on their priority.</li>
+        <li><b><code>DelayQueue</code></b>: A queue designed for scheduling tasks with delays.</li>
+        <li><b><code>SynchronousQueue</code></b>: A special type of queue where each insert operation must wait for a corresponding remove operation.</li>
+      </ul>
+
+      <h5 class="text-warning">🔐 5. <code>ConcurrentLinkedQueue</code></h5>
+      <p><code>ConcurrentLinkedQueue</code> is a non-blocking, thread-safe queue that is designed for high concurrency. It supports lock-free operations for both adding and removing elements:</p>
+      <ul>
+        <li>Ideal for situations where multiple threads need to add or remove elements concurrently.</li>
+        <li>Uses a lock-free, non-blocking algorithm to ensure thread safety.</li>
+      </ul>
+
+      <h5 class="text-warning">🔐 6. <code>ConcurrentLinkedDeque</code></h5>
+      <p><code>ConcurrentLinkedDeque</code> is a thread-safe, non-blocking deque (double-ended queue) implementation:</p>
+      <ul>
+        <li>Supports adding and removing elements from both ends of the queue.</li>
+        <li>Implemented as a lock-free data structure for highly concurrent environments.</li>
+      </ul>
+
+      <h5 class="text-warning">🔐 7. <code>LinkedTransferQueue</code></h5>
+      <p><code>LinkedTransferQueue</code> is a highly concurrent queue with an additional <code>transfer</code> operation:</p>
+      <ul>
+        <li>Elements can be transferred between threads in a non-blocking manner.</li>
+        <li>Suitable for implementing producer-consumer scenarios where data needs to be transferred between threads.</li>
+      </ul>
+
+      <h5 class="text-warning">🔐 8. <code>DelayQueue</code></h5>
+      <p><code>DelayQueue</code> is a specialized queue used for scheduling tasks with delays:</p>
+      <ul>
+        <li>Used in situations where elements need to be processed after a specified delay.</li>
+        <li>Commonly used in task scheduling systems and timed events.</li>
+      </ul>
+
+      <h5 class="text-warning">🔐 9. <code>TransferQueue</code></h5>
+      <p><code>TransferQueue</code> extends <code>BlockingQueue</code> and allows for transferring elements between threads:</p>
+      <ul>
+        <li>It introduces the <code>transfer</code> method that provides more control over when elements are transferred.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Conclusion</h5>
+      <p>Java provides a rich set of concurrent collections to support multi-threaded applications, allowing developers to choose the best collection for specific use cases:</p>
+      <ul>
+        <li><code>ConcurrentHashMap</code> for high-performance concurrent maps.</li>
+        <li><code>CopyOnWriteArrayList</code> and <code>CopyOnWriteArraySet</code> for read-heavy applications.</li>
+        <li><code>BlockingQueue</code> and its implementations for producer-consumer scenarios.</li>
+        <li><code>ConcurrentLinkedQueue</code> and <code>ConcurrentLinkedDeque</code> for highly concurrent, non-blocking queues.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#transactionSpringBoot">
+      What is a Transaction in Spring Boot and How to Implement It?
+    </button>
+  </h2>
+  <div id="transactionSpringBoot" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      
+      <h5 class="text-info">📌 Transaction in Spring Boot</h5>
+      <p>In Spring Boot, <b>transactions</b> ensure that a series of operations are executed in an all-or-nothing manner. If any operation fails, all changes within that transaction can be rolled back, preserving data integrity. Spring provides declarative transaction management using the <code>@Transactional</code> annotation to handle transactions easily.</p>
+
+      <h5 class="text-success">✅ Steps to Implement Transaction in Spring Boot</h5>
+      <ol>
+        <li>Add Spring Data JPA dependency in <code>pom.xml</code> or <code>build.gradle</code>.</li>
+        <li>Enable transaction management (Spring Boot does it automatically with <code>@EnableTransactionManagement</code>).</li>
+        <li>Use the <code>@Transactional</code> annotation on service methods that require transaction management.</li>
+      </ol>
+      <p><b>Example:</b></p>
+      <pre class="language-java"><code>
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+public class TransactionService {
+
+    @Transactional
+    public void performTransaction() {
+        // Multiple database operations
+        // If any operation fails, all will be rolled back
+    }
+}
+      </code></pre>
+
+      <h5 class="text-warning">🔔 Parameters in <code>@Transactional</code> Annotation</h5>
+
+      <h5 class="text-info">📌 <b>propagation</b></h5>
+      <p>The <code>propagation</code> property defines how the current transaction behaves with respect to an ongoing transaction:</p>
+      <ul>
+        <li><code>Propagation.REQUIRED</code> (default): If a transaction exists, use it; otherwise, create a new one.</li>
+        <li><code>Propagation.REQUIRES_NEW</code>: Always create a new transaction, suspending the current one.</li>
+        <li><code>Propagation.NEVER</code>: Execute the method outside of a transaction; throws an exception if there’s an active transaction.</li>
+        <li><code>Propagation.MANDATORY</code>: Ensure an existing transaction is active, otherwise throws an exception.</li>
+        <li><code>Propagation.NOT_SUPPORTED</code>: Execute without a transaction, suspending the current one.</li>
+        <li><code>Propagation.SUPPORTS</code>: Use the existing transaction if available, otherwise execute without a transaction.</li>
+      </ul>
+
+      <h5 class="text-info">📌 <b>isolation</b></h5>
+      <p>The <code>isolation</code> property defines the level of isolation for the transaction:</p>
+      <ul>
+        <li><code>Isolation.DEFAULT</code>: Use the default isolation level of the underlying database.</li>
+        <li><code>Isolation.READ_COMMITTED</code>: Prevents dirty reads (reads uncommitted data).</li>
+        <li><code>Isolation.READ_UNCOMMITTED</code>: Allows dirty reads (reading uncommitted data).</li>
+        <li><code>Isolation.REPEATABLE_READ</code>: Prevents dirty reads and non-repeatable reads.</li>
+        <li><code>Isolation.SERIALIZABLE</code>: The highest isolation level, where transactions are executed serially.</li>
+      </ul>
+
+      <h5 class="text-info">📌 <b>timeout</b></h5>
+      <p>The <code>timeout</code> property specifies the maximum time (in seconds) a transaction is allowed to run before it gets rolled back. This helps prevent long-running transactions.</p>
+
+      <h5 class="text-info">📌 <b>readOnly</b></h5>
+      <p>The <code>readOnly</code> property is used to optimize the transaction for read-only operations. It hints to the underlying database that no modifications are going to happen, which may improve performance.</p>
+
+      <h5 class="text-info">📌 <b>rollbackFor / noRollbackFor</b></h5>
+      <p>The <code>rollbackFor</code> property specifies the exceptions that should trigger a rollback. The <code>noRollbackFor</code> property specifies exceptions that should not trigger a rollback.</p>
+      <p><b>Example:</b></p>
+      <pre class="language-java"><code>
+@Transactional(rollbackFor = {SQLException.class})
+public void processTransaction() {
+    // Rollback on SQLException
+}
+      </code></pre>
+
+      <h5 class="text-warning">📢 Summary</h5>
+      <p>Using the <code>@Transactional</code> annotation in Spring Boot allows easy management of transactions, ensuring data integrity. You can fine-tune how transactions behave using various parameters like propagation, isolation, timeout, and more.</p>
+      
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#hibernateFetchStrategies">
+      Hibernate Fetch Strategies – Types and Explanation
+    </button>
+  </h2>
+  <div id="hibernateFetchStrategies" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-primary">📌 What are Fetch Strategies in Hibernate?</h5>
+      <p>Fetch strategies in Hibernate define how related entities or collections are loaded from the database. They determine whether the data is fetched immediately (eager) or when accessed (lazy).</p>
+
+      <h5 class="text-info">1️⃣ EAGER Fetching</h5>
+      <p><strong>Eager fetching</strong> means the related entities are loaded at the same time as the main entity, regardless of whether you use them or not.</p>
+      <pre><code>
+@OneToMany(fetch = FetchType.EAGER)
+private List<Order> orders;
+      </code></pre>
+      <ul>
+        <li>✔ Data is available immediately.</li>
+        <li>❌ Can cause performance issues if too much data is loaded.</li>
+      </ul>
+
+      <h5 class="text-info">2️⃣ LAZY Fetching</h5>
+      <p><strong>Lazy fetching</strong> delays the loading of related entities until they are accessed for the first time.</p>
+      <pre><code>
+@OneToMany(fetch = FetchType.LAZY)
+private List<Order> orders;
+      </code></pre>
+      <ul>
+        <li>✔ Optimizes performance by avoiding unnecessary data loading.</li>
+        <li>❌ May throw <code>LazyInitializationException</code> if accessed outside session context.</li>
+      </ul>
+
+      <h5 class="text-success">✨ FetchType Summary</h5>
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>Annotation</th>
+            <th>Default Fetch Type</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>@OneToOne</td>
+            <td>EAGER</td>
+          </tr>
+          <tr>
+            <td>@ManyToOne</td>
+            <td>EAGER</td>
+          </tr>
+          <tr>
+            <td>@OneToMany</td>
+            <td>LAZY</td>
+          </tr>
+          <tr>
+            <td>@ManyToMany</td>
+            <td>LAZY</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h5 class="text-info">3️⃣ Join Fetch (Using JPQL)</h5>
+      <p>Used in queries to fetch associations eagerly using a SQL <code>JOIN</code>.</p>
+      <pre><code>
+SELECT e FROM Employee e JOIN FETCH e.addresses
+      </code></pre>
+
+      <h5 class="text-info">4️⃣ Batch Fetching</h5>
+      <p>Fetches multiple lazy associations in batches instead of one-by-one.</p>
+      <pre><code>
+hibernate.default_batch_fetch_size = 10
+      </code></pre>
+      <ul>
+        <li>✔ Reduces number of SELECTs</li>
+        <li>❌ Requires configuration and tuning</li>
+      </ul>
+
+      <h5 class="text-info">5️⃣ Subselect Fetching</h5>
+      <p>Loads all lazy associations using a single subselect when accessed.</p>
+      <pre><code>
+@BatchSize(size = 10)
+@Fetch(FetchMode.SUBSELECT)
+private List&lt;Orders&gt; orders;
+      </code></pre>
+
+      <h5 class="text-warning">🚨 Things to Watch</h5>
+      <ul>
+        <li>Be cautious with <code>EAGER</code> fetching – it can lead to N+1 problem and performance issues.</li>
+        <li>Use <code>LAZY</code> wherever possible and control loading via queries.</li>
+        <li>Use <code>JOIN FETCH</code> and <code>@EntityGraph</code> for fine-grained control in queries.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion" id="techStacksAccordion">
+  
+  <!-- MEAN Stack -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingMean">
+      <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMean">
+        🔶 MEAN Stack (MongoDB, Express, Angular, Node.js)
+      </button>
+    </h2>
+    <div id="collapseMean" class="accordion-collapse collapse show" data-bs-parent="#techStacksAccordion">
+      <div class="accordion-body">
+        <p><strong>MEAN</strong> is a full-stack JavaScript framework used for building dynamic web applications.</p>
+        <ul>
+          <li><strong>M:</strong> <code>MongoDB</code> – NoSQL database</li>
+          <li><strong>E:</strong> <code>Express.js</code> – Backend web framework</li>
+          <li><strong>A:</strong> <code>Angular</code> – Frontend framework by Google</li>
+          <li><strong>N:</strong> <code>Node.js</code> – JavaScript runtime for server-side code</li>
+        </ul>
+        <p>Everything is JavaScript-based, from database to frontend.</p>
+        <strong>✅ Pros:</strong>
+        <ul>
+          <li>Structured with Angular’s powerful framework</li>
+          <li>End-to-end JavaScript stack</li>
+        </ul>
+        <strong>⚠️ Cons:</strong>
+        <ul>
+          <li>Angular can be heavy and complex for beginners</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- MERN Stack -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingMern">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMern">
+        🟢 MERN Stack (MongoDB, Express, React, Node.js)
+      </button>
+    </h2>
+    <div id="collapseMern" class="accordion-collapse collapse" data-bs-parent="#techStacksAccordion">
+      <div class="accordion-body">
+        <p><strong>MERN</strong> is also a full-stack JavaScript framework, similar to MEAN, but uses React instead of Angular.</p>
+        <ul>
+          <li><strong>M:</strong> <code>MongoDB</code> – NoSQL database</li>
+          <li><strong>E:</strong> <code>Express.js</code> – Backend web framework</li>
+          <li><strong>R:</strong> <code>React.js</code> – Frontend library by Facebook</li>
+          <li><strong>N:</strong> <code>Node.js</code> – JavaScript runtime</li>
+        </ul>
+        <strong>✅ Pros:</strong>
+        <ul>
+          <li>React is lightweight and component-based</li>
+          <li>Better for building dynamic and scalable UIs</li>
+        </ul>
+        <strong>⚠️ Cons:</strong>
+        <ul>
+          <li>Needs additional libraries for routing and state management (like Redux or React Router)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
 
 
 
