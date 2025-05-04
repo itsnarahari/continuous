@@ -37240,6 +37240,108 @@ WHERE rank = 2;
       });
     });
 
+  // Loop through all accordion bodies and add a Play button
+document.addEventListener("DOMContentLoaded", function () {
+  // Loop through all accordion bodies
+  document.querySelectorAll(".accordion-body").forEach((body) => {
+    // Create Play button
+    const playBtn = document.createElement("button");
+    playBtn.className = "btn btn-sm btn-outline-primary me-2 mb-2";
+    playBtn.innerText = "🔊 Play Voice Over";
+    playBtn.onclick = function () {
+      speakAccordionText(this);
+    };
+
+    // Create Stop button
+    const stopBtn = document.createElement("button");
+    stopBtn.className = "btn btn-sm btn-outline-danger mb-2";
+    stopBtn.innerText = "⏹ Stop";
+    stopBtn.onclick = function () {
+      window.speechSynthesis.cancel();
+    };
+
+    // Insert buttons
+    const spacer = document.createElement("div");
+    spacer.className = "mb-2";
+    body.prepend(spacer);
+    body.prepend(stopBtn);
+    body.prepend(playBtn);
+  });
+});
+
+function speakAccordionText(button) {
+  window.speechSynthesis.cancel();
+
+  const body = button.closest(".accordion-body");
+  let rawText = Array.from(body.querySelectorAll("p, li, h5"))
+    .map(el => el.textContent.trim())
+    .filter(Boolean)
+    .join(". ");
+
+  // Remove backticks and double quotes from the text
+  rawText = rawText.replace(/[`"*]+/g, ''); // Removes all backticks and double quotes
+
+  const chunks = splitTextIntoChunks(rawText, 200); // Break into smaller parts
+
+  const voices = speechSynthesis.getVoices();
+
+  // 🎯 Prefer Indian Female Voice
+  const preferredVoice = voices.find(v =>
+    v.lang === "en-IN" && v.name.toLowerCase().includes("female")
+  ) || voices.find(v =>
+    v.lang === "en-IN" && v.name.toLowerCase().includes("india")
+  ) || voices.find(v =>
+    v.lang.startsWith("en") && v.name.toLowerCase().includes("female")
+  );
+
+  let index = 0;
+
+  function speakNextChunk() {
+    if (index >= chunks.length) return;
+
+    const utterance = new SpeechSynthesisUtterance(chunks[index]);
+    utterance.rate = 0.95; // Slow pace for softness
+    utterance.pitch = 1.3; // Slightly higher pitch for a feminine tone
+    utterance.volume = 1;
+
+    if (preferredVoice) {
+      utterance.voice = preferredVoice;
+    }
+
+    utterance.onend = () => {
+      index++;
+      speakNextChunk(); // Speak the next chunk
+    };
+
+    speechSynthesis.speak(utterance);
+  }
+
+  speakNextChunk();
+}
+
+function splitTextIntoChunks(text, maxLength) {
+  const sentences = text.match(/[^\.!\?]+[\.!\?]+/g) || [text];
+  const chunks = [];
+
+  let currentChunk = "";
+  for (let sentence of sentences) {
+    if ((currentChunk + sentence).length > maxLength) {
+      chunks.push(currentChunk);
+      currentChunk = sentence;
+    } else {
+      currentChunk += sentence;
+    }
+  }
+  if (currentChunk) chunks.push(currentChunk);
+  return chunks;
+}
+
+// Load voices once they're available
+if (speechSynthesis.onvoiceschanged !== undefined) {
+  speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
+}
+
+
     function searchQuestions() {
       const input = document.getElementById("searchBox").value.toLowerCase();
       const items = document.querySelectorAll(".accordion-item");
