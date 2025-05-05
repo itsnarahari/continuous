@@ -1,11 +1,12 @@
 package com.continuous.practice.oops;
 
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 
 class Parent {
 
-    public void m1() throws NullPointerException {
+    public void m1() throws FileNotFoundException {
         System.out.println("m1");
     }
 
@@ -35,7 +36,7 @@ class Parent {
 
 class Child extends Parent {
 
-    public void m1()throws RuntimeException {
+    public void m1()throws FileNotFoundException {
         System.out.println("m1");
     }
 
@@ -57,9 +58,10 @@ class Child extends Parent {
 }
 
 public class Inheritance {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws FileNotFoundException {
         Parent parent = new Child();
         parent.pro();
+        parent.m1();
 
         List<String> list= new ArrayList<>();
         System.out.println(list!=null);

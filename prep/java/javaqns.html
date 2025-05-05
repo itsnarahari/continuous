@@ -32351,7 +32351,7 @@ NonExistingClass obj = new NonExistingClass();  // Throws NoClassDefFoundError i
 
       <h5 class="text-warning">⚠️ Difference Between Exception and RuntimeException</h5>
 
-      <table class="table table-bordered">
+      <table class="table table-bordered table-dark">
         <thead>
           <tr>
             <th>Feature</th>
@@ -38631,6 +38631,431 @@ private List&lt;Orders&gt; orders;
   </div>
 
 </div>
+<div class="accordion" id="sqlParamsAccordion">
+
+  <!-- IN Parameter -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingIn">
+      <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseIn">
+        🟢 IN Parameter in SQL Stored Procedure
+      </button>
+    </h2>
+    <div id="collapseIn" class="accordion-collapse collapse show" data-bs-parent="#sqlParamsAccordion">
+      <div class="accordion-body">
+        <p><strong>IN parameters</strong> are used to pass values **into** a stored procedure.</p>
+        <p>They are **read-only** within the procedure and cannot be changed to return a value.</p>
+
+        <h6>✅ Example:</h6>
+        <pre><code>
+CREATE PROCEDURE GetEmployeeById(IN empId INT)
+BEGIN
+  SELECT * FROM Employees WHERE id = empId;
+END;
+        </code></pre>
+
+        <p>Usage:</p>
+        <pre><code>
+CALL GetEmployeeById(101);
+        </code></pre>
+
+        <strong>✔️ Benefits:</strong>
+        <ul>
+          <li>Send values into procedure logic</li>
+          <li>Best for filters and conditions</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- OUT Parameter -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingOut">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOut">
+        🔵 OUT Parameter in SQL Stored Procedure
+      </button>
+    </h2>
+    <div id="collapseOut" class="accordion-collapse collapse" data-bs-parent="#sqlParamsAccordion">
+      <div class="accordion-body">
+        <p><strong>OUT parameters</strong> are used to **return values from** a stored procedure back to the caller.</p>
+        <p>They are **write-only** inside the procedure.</p>
+
+        <h6>✅ Example:</h6>
+        <pre><code>
+CREATE PROCEDURE GetEmployeeName(IN empId INT, OUT empName VARCHAR(50))
+BEGIN
+  SELECT name INTO empName FROM Employees WHERE id = empId;
+END;
+        </code></pre>
+
+        <p>Usage:</p>
+        <pre><code>
+CALL GetEmployeeName(101, @name);
+SELECT @name;
+        </code></pre>
+
+        <strong>✔️ Benefits:</strong>
+        <ul>
+          <li>Return single or multiple values without using result sets</li>
+          <li>Used for output status or derived results</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- INOUT Parameter -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingInOut">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseInOut">
+        🟣 INOUT Parameter in SQL Stored Procedure
+      </button>
+    </h2>
+    <div id="collapseInOut" class="accordion-collapse collapse" data-bs-parent="#sqlParamsAccordion">
+      <div class="accordion-body">
+        <p><strong>INOUT parameters</strong> can both **receive a value** and **return a value**.</p>
+        <p>They are used when the same variable is used for input and output.</p>
+
+        <h6>✅ Example:</h6>
+        <pre><code>
+CREATE PROCEDURE UpdateAndReturnSalary(INOUT empSalary DECIMAL)
+BEGIN
+  SET empSalary = empSalary + 5000;
+END;
+        </code></pre>
+
+        <p>Usage:</p>
+        <pre><code>
+SET @sal = 45000;
+CALL UpdateAndReturnSalary(@sal);
+SELECT @sal; -- Returns 50000
+        </code></pre>
+
+        <strong>✔️ Benefits:</strong>
+        <ul>
+          <li>Efficient for modifying values in-place</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div class="accordion" id="viewInSqlAccordion">
+
+  <!-- What is a View -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingWhatIsView">
+      <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseWhatIsView">
+        📌 What is a View in SQL?
+      </button>
+    </h2>
+    <div id="collapseWhatIsView" class="accordion-collapse collapse show" data-bs-parent="#viewInSqlAccordion">
+      <div class="accordion-body">
+        <p>A <strong>View</strong> in SQL is a virtual table based on the result of a SQL query.</p>
+        <p>It does not store data itself, but presents data from one or more tables as if it were a table.</p>
+
+        <h6>✅ Syntax:</h6>
+        <pre><code>
+CREATE VIEW view_name AS
+SELECT column1, column2
+FROM table_name
+WHERE condition;
+        </code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Benefits of Views -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingBenefits">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBenefits">
+        ✅ Benefits of Views
+      </button>
+    </h2>
+    <div id="collapseBenefits" class="accordion-collapse collapse" data-bs-parent="#viewInSqlAccordion">
+      <div class="accordion-body">
+        <ul>
+          <li>✔️ Simplifies complex SQL queries by encapsulating logic</li>
+          <li>✔️ Provides abstraction and hides table complexity</li>
+          <li>✔️ Increases security by exposing only specific columns</li>
+          <li>✔️ Allows read-only access to data</li>
+          <li>✔️ Can help reuse queries across multiple applications</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Types of Views -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingTypes">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTypes">
+        📂 Types of Views
+      </button>
+    </h2>
+    <div id="collapseTypes" class="accordion-collapse collapse" data-bs-parent="#viewInSqlAccordion">
+      <div class="accordion-body">
+        <ul>
+          <li><strong>Simple View</strong>: Based on a single table without functions or joins</li>
+          <li><strong>Complex View</strong>: Involves joins, group by, or functions</li>
+          <li><strong>Materialized View</strong>: Stores actual data (used in databases like Oracle/PostgreSQL)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Example of View -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingExample">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample">
+        🔍 Example of a View
+      </button>
+    </h2>
+    <div id="collapseExample" class="accordion-collapse collapse" data-bs-parent="#viewInSqlAccordion">
+      <div class="accordion-body">
+        <pre><code>
+-- Create a view of employees with high salary
+CREATE VIEW HighPaidEmployees AS
+SELECT name, department, salary
+FROM Employees
+WHERE salary > 100000;
+
+-- Usage
+SELECT * FROM HighPaidEmployees;
+        </code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Limitations of Views -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingLimitations">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseLimitations">
+        ⚠️ Limitations of Views
+      </button>
+    </h2>
+    <div id="collapseLimitations" class="accordion-collapse collapse" data-bs-parent="#viewInSqlAccordion">
+      <div class="accordion-body">
+        <ul>
+          <li>🔸 Cannot always be updated (especially complex views)</li>
+          <li>🔸 No indexes on views (except materialized views)</li>
+          <li>🔸 Performance overhead in case of heavy underlying queries</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div class="accordion" id="noSqlUseCasesAccordion">
+
+  <!-- General Difference -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingGeneral">
+      <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseGeneral">
+        🧩 SQL vs NoSQL – General Differences
+      </button>
+    </h2>
+    <div id="collapseGeneral" class="accordion-collapse collapse show" data-bs-parent="#noSqlUseCasesAccordion">
+      <div class="accordion-body">
+        <ul>
+          <li><strong>SQL</strong> (Relational): Structured data with fixed schemas, tables, joins.</li>
+          <li><strong>NoSQL</strong> (Non-relational): Flexible schemas, often schema-less, good for semi-structured/unstructured data.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- When to Use NoSQL -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingWhenUse">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseWhenUse">
+        ✅ When to Use NoSQL Over SQL
+      </button>
+    </h2>
+    <div id="collapseWhenUse" class="accordion-collapse collapse" data-bs-parent="#noSqlUseCasesAccordion">
+      <div class="accordion-body">
+        <ul>
+          <li>📦 Handling large volumes of data with varied structure (e.g. logs, user sessions)</li>
+          <li>📱 Rapid development with frequent schema changes (Agile/MVP environments)</li>
+          <li>🌐 Storing JSON-like documents (e.g. MongoDB for APIs)</li>
+          <li>⚡ Real-time analytics and event-driven data processing</li>
+          <li>🚀 High scalability and availability with horizontal scaling</li>
+          <li>🧠 Use cases with key-value, document, graph, or columnar storage needs</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- NoSQL Database Types & Use Cases -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingTypes">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTypes">
+        📂 NoSQL Database Types & Examples
+      </button>
+    </h2>
+    <div id="collapseTypes" class="accordion-collapse collapse" data-bs-parent="#noSqlUseCasesAccordion">
+      <div class="accordion-body">
+        <ul>
+          <li><strong>Document DB</strong> – MongoDB: APIs, user profiles, CMS</li>
+          <li><strong>Key-Value Store</strong> – Redis, DynamoDB: Caching, sessions</li>
+          <li><strong>Column Store</strong> – Cassandra, HBase: Time-series, logs, analytics</li>
+          <li><strong>Graph DB</strong> – Neo4j: Social networks, fraud detection</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- When SQL is Better -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingWhenSqlBetter">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseWhenSqlBetter">
+        ❗ When SQL is a Better Choice
+      </button>
+    </h2>
+    <div id="collapseWhenSqlBetter" class="accordion-collapse collapse" data-bs-parent="#noSqlUseCasesAccordion">
+      <div class="accordion-body">
+        <ul>
+          <li>✅ Need for strong ACID transactions (e.g. banking)</li>
+          <li>✅ Structured data with complex relationships (joins)</li>
+          <li>✅ Reporting and BI use cases</li>
+          <li>✅ Mature schema and rigid validation requirements</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingManyToMany">
+    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseManyToMany">
+      🔁 @ManyToMany Join Table — Automatic Updates & Example Explained
+    </button>
+  </h2>
+  <div id="collapseManyToMany" class="accordion-collapse collapse show" data-bs-parent="#accordionExample">
+    <div class="accordion-body">
+      <h5>📌 Overview:</h5>
+      <p>
+        The <code>@ManyToMany</code> annotation in JPA is used to define a many-to-many relationship between two entities.
+        In your example, a <strong>Student</strong> can enroll in multiple <strong>Courses</strong> and a <strong>Course</strong> can have multiple <strong>Students</strong>.
+        This relationship is handled via a join table named <code>student_course</code>.
+      </p>
+
+      <h5>🔄 Is the Join Table Updated Automatically?</h5>
+      <p>
+        ✅ Yes. When you persist or update the <strong>Student</strong> entity and set its <code>courses</code> list, JPA automatically manages the insertions/updates
+        in the <code>student_course</code> join table — <strong>no manual SQL is needed</strong>.
+      </p>
+
+      <h5>🎯 Owning Side of Relationship:</h5>
+      <p>
+        The <strong>owning side</strong> is the <code>Student</code> class because it contains the <code>@JoinTable</code> annotation.
+        All changes (like adding/removing a Course) should be made on the owning side to persist correctly.
+      </p>
+
+      <h5>⚠️ Important:</h5>
+      <ul>
+        <li>If you only modify the <code>Course</code> class (the inverse side), changes might not be persisted unless both sides are kept in sync.</li>
+        <li>The join table reflects the state of the owning side.</li>
+      </ul>
+
+      <h5>🧪 Example Code:</h5>
+      <pre><code>
+Course course1 = new Course();
+course1.setTitle("Java");
+
+Course course2 = new Course();
+course2.setTitle("Spring Boot");
+
+List&lt;Course&gt; courseList = Arrays.asList(course1, course2);
+
+Student student = new Student();
+student.setName("John");
+student.setCourses(courseList);
+
+// Save in proper order
+courseRepository.saveAll(courseList);
+studentRepository.save(student);
+      </code></pre>
+
+      <p>This results in:</p>
+      <ul>
+        <li>Entries in <code>course</code> table</li>
+        <li>Entry in <code>student</code> table</li>
+        <li>Join rows in <code>student_course</code> table (auto-generated)</li>
+      </ul>
+
+      <h5>📝 Summary:</h5>
+      <ul>
+        <li><strong>✔ Join table is automatically updated</strong> when you persist the owning side.</li>
+        <li><strong>✔ Student is the owning side</strong> in your example.</li>
+        <li><strong>✔ No need for SQL or manual table update</strong>.</li>
+        <li><strong>⚠️ Always update relationships from the owning side</strong>.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingHikari">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseHikari">
+      ⚡ What is HikariCP in Spring Boot 3?
+    </button>
+  </h2>
+  <div id="collapseHikari" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
+    <div class="accordion-body">
+      <h5>🔍 What is HikariCP?</h5>
+      <p>
+        <strong>HikariCP</strong> is a high-performance JDBC connection pooling library. Starting from Spring Boot 2.x (and continued in Spring Boot 3), it is the <strong>default connection pool</strong> used by Spring Boot for managing database connections.
+      </p>
+
+      <h5>🚀 Why HikariCP?</h5>
+      <ul>
+        <li>✅ Fastest connection pool among popular ones (like DBCP, C3P0)</li>
+        <li>✅ Low latency and high throughput</li>
+        <li>✅ Minimal configuration required</li>
+        <li>✅ Robust connection validation and leak detection</li>
+      </ul>
+
+      <h5>⚙️ Configuration in <code>application.properties</code></h5>
+      <pre><code>
+spring.datasource.url=jdbc:mysql://localhost:3306/mydb
+spring.datasource.username=root
+spring.datasource.password=yourpassword
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+
+# Optional Hikari-specific configurations
+spring.datasource.hikari.maximum-pool-size=10
+spring.datasource.hikari.minimum-idle=5
+spring.datasource.hikari.idle-timeout=600000
+spring.datasource.hikari.pool-name=MyHikariCP
+      </code></pre>
+
+      <h5>📌 Key Parameters</h5>
+      <ul>
+        <li><code>maximum-pool-size</code> – Max connections in the pool</li>
+        <li><code>minimum-idle</code> – Min number of idle connections</li>
+        <li><code>idle-timeout</code> – Time before idle connection is removed</li>
+        <li><code>connection-timeout</code> – Max time to wait for a connection</li>
+        <li><code>pool-name</code> – Naming the pool for easier debugging</li>
+      </ul>
+
+      <h5>📈 Benefits in Spring Boot</h5>
+      <ul>
+        <li>👍 Automatically initialized and injected by Spring Boot when you use <code>spring-boot-starter-data-jpa</code></li>
+        <li>👍 No need to explicitly define Hikari unless you need customization</li>
+        <li>👍 Works seamlessly with JPA and transaction management</li>
+      </ul>
+
+      <h5>🧪 Check if Hikari is being used</h5>
+      <pre><code>
+  Console log on startup:
+  "HikariCP - Starting..."
+      </code></pre>
+      <p>Or run: <code>System.out.println(dataSource.getClass())</code></p>
+
+      <h5>📦 When to override?</h5>
+      <p>If you need to switch to another pool (e.g., Apache DBCP), you must exclude Hikari and configure the new pool explicitly.</p>
+    </div>
+  </div>
+</div>
+
+
 
 
 
@@ -38700,13 +39125,13 @@ function speakAccordionText(button) {
   window.speechSynthesis.cancel();
 
   const body = button.closest(".accordion-body");
-  let rawText = Array.from(body.querySelectorAll("p, li, h5"))
+  let rawText = Array.from(body.querySelectorAll("p, li, h5, text-warning, text-info, text-primary, text-success, text-danger, text-secondary, text-muted,text-dark, text-light, text-warning"))
     .map(el => el.textContent.trim())
     .filter(Boolean)
     .join(". ");
 
   // Remove backticks and double quotes from the text
-  rawText = rawText.replace(/[`"*]+/g, ''); // Removes all backticks and double quotes
+  rawText = rawText.replace(/[`"*🔧✅📌🔔❌🔁📢⚠️📘]+/g, ''); // Removes all backticks and double quotes
 
   const chunks = splitTextIntoChunks(rawText, 200); // Break into smaller parts
 
