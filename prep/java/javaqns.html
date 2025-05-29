@@ -14424,105 +14424,6 @@ public class Test {
           </div>
         </div>
       </div>
-      <div class="accordion" id="executorAccordion">
-
-        <div class="accordion-item">
-          <h2 class="accordion-header" id="headingSubmit">
-            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSubmit"
-              aria-expanded="true" aria-controls="collapseSubmit">
-              🔹 submit() Method
-            </button>
-          </h2>
-          <div id="collapseSubmit" class="accordion-collapse collapse show" aria-labelledby="headingSubmit"
-            data-bs-parent="#executorAccordion">
-            <div class="accordion-body">
-              <strong>Used to submit a task and get a Future object.</strong><br>
-              - Accepts both <code>Runnable</code> and <code>Callable</code>.<br>
-              - Returns a <code>Future</code> which can be used to get the result or check task completion.<br>
-              - Useful for tasks that return a value or may throw exceptions.<br><br>
-              <b>Example:</b>
-              <pre><code>
-ExecutorService executor = Executors.newFixedThreadPool(1);
-Future&lt;String&gt; future = executor.submit(() -&gt; {
-    return "Hello from submit!";
-});
-System.out.println(future.get()); // prints: Hello from submit!
-executor.shutdown();
-        </code></pre>
-            </div>
-          </div>
-        </div>
-
-        <div class="accordion-item">
-          <h2 class="accordion-header" id="headingExecute">
-            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-              data-bs-target="#collapseExecute" aria-expanded="false" aria-controls="collapseExecute">
-              🔸 execute() Method
-            </button>
-          </h2>
-          <div id="collapseExecute" class="accordion-collapse collapse" aria-labelledby="headingExecute"
-            data-bs-parent="#executorAccordion">
-            <div class="accordion-body">
-              <strong>Used to execute a task without expecting a result.</strong><br>
-              - Accepts only <code>Runnable</code>.<br>
-              - Doesn’t return any value (no Future).<br>
-              - Suitable for fire-and-forget type tasks.<br><br>
-              <b>Example:</b>
-              <pre><code>
-ExecutorService executor = Executors.newFixedThreadPool(1);
-executor.execute(() -&gt; System.out.println("Hello from execute!"));
-executor.shutdown();
-        </code></pre>
-            </div>
-          </div>
-        </div>
-
-        <div class="accordion-item">
-          <h2 class="accordion-header" id="headingComparison">
-            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-              data-bs-target="#collapseComparison" aria-expanded="false" aria-controls="collapseComparison">
-              🔁 Key Differences
-            </button>
-          </h2>
-          <div id="collapseComparison" class="accordion-collapse collapse" aria-labelledby="headingComparison"
-            data-bs-parent="#executorAccordion">
-            <div class="accordion-body">
-              <table class="table table-bordered">
-                <thead>
-                  <tr>
-                    <th>Aspect</th>
-                    <th>submit()</th>
-                    <th>execute()</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>Return Type</td>
-                    <td>Future</td>
-                    <td>void</td>
-                  </tr>
-                  <tr>
-                    <td>Supports Callable</td>
-                    <td>✅</td>
-                    <td>❌</td>
-                  </tr>
-                  <tr>
-                    <td>Exception Handling</td>
-                    <td>Captured in Future</td>
-                    <td>Throws at runtime</td>
-                  </tr>
-                  <tr>
-                    <td>Use Case</td>
-                    <td>Need result</td>
-                    <td>Just run the task</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-      </div>
       <div class="accordion" id="executorDesignAccordion">
 
         <div class="accordion-item">
@@ -39259,6 +39160,85 @@ public class CorrelationIdFilter implements Filter {
       <p>
         Store structured log data from microservices and query it via Elasticsearch to identify real-time issues or trends.
       </p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#sqljoins">
+      SQL Joins with Examples
+    </button>
+  </h2>
+  <div id="sqljoins" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 1. What is a Join?</h5>
+      <p>A <strong>JOIN</strong> in SQL is used to combine rows from two or more tables based on a related column (often a foreign key). Joins help retrieve data that is spread across multiple tables.</p>
+
+      <h5 class="text-info">📌 2. INNER JOIN</h5>
+      <p><strong>INNER JOIN</strong> returns only the records that have matching values in both tables.</p>
+      <p><strong>Use Case:</strong> Fetching orders along with customer names, but only for customers who have placed orders.</p>
+      <pre class="language-sql"><code>
+SELECT customers.name, orders.order_id
+FROM customers
+INNER JOIN orders ON customers.id = orders.customer_id;
+      </code></pre>
+      <p>✅ Use INNER JOIN when you only want the matching data between two tables.</p>
+
+      <h5 class="text-info">📌 3. LEFT JOIN (or LEFT OUTER JOIN)</h5>
+      <p><strong>LEFT JOIN</strong> returns all records from the left table, and the matched records from the right table. If there's no match, NULLs are returned for the right table's columns.</p>
+      <p><strong>Use Case:</strong> Show all customers and any orders they may have placed.</p>
+      <pre class="language-sql"><code>
+SELECT customers.name, orders.order_id
+FROM customers
+LEFT JOIN orders ON customers.id = orders.customer_id;
+      </code></pre>
+      <p>✅ Use LEFT JOIN when you want everything from the left table, even if there’s no match in the right.</p>
+
+      <h5 class="text-info">📌 4. RIGHT JOIN (or RIGHT OUTER JOIN)</h5>
+      <p><strong>RIGHT JOIN</strong> returns all records from the right table, and the matched records from the left table.</p>
+      <p><strong>Use Case:</strong> Show all orders and any associated customer (even if the customer was deleted).</p>
+      <pre class="language-sql"><code>
+SELECT customers.name, orders.order_id
+FROM customers
+RIGHT JOIN orders ON customers.id = orders.customer_id;
+      </code></pre>
+      <p>✅ Use RIGHT JOIN when you want everything from the right table, even if there’s no match in the left.</p>
+
+      <h5 class="text-info">📌 5. FULL OUTER JOIN</h5>
+      <p><strong>FULL OUTER JOIN</strong> returns all records when there is a match in either left or right table. Non-matching rows will have NULLs.</p>
+      <p><strong>Use Case:</strong> Show all customers and all orders, even if they don't match.</p>
+      <pre class="language-sql"><code>
+SELECT customers.name, orders.order_id
+FROM customers
+FULL OUTER JOIN orders ON customers.id = orders.customer_id;
+      </code></pre>
+      <p>✅ Use FULL OUTER JOIN when you want all data from both tables, with NULLs where there's no match.</p>
+
+      <h5 class="text-info">📌 6. CROSS JOIN</h5>
+      <p><strong>CROSS JOIN</strong> returns the Cartesian product of both tables (i.e., every combination of rows).</p>
+      <p><strong>Use Case:</strong> Generating a schedule where each employee needs to be assigned every available shift.</p>
+      <pre class="language-sql"><code>
+SELECT employees.name, shifts.shift_time
+FROM employees
+CROSS JOIN shifts;
+      </code></pre>
+      <p>✅ Use CROSS JOIN when you need all combinations of two datasets (e.g., permutations, pairing every item).</p>
+
+      <h5 class="text-info">📌 7. SELF JOIN</h5>
+      <p><strong>SELF JOIN</strong> is used to join a table with itself.</p>
+      <p><strong>Use Case:</strong> Find employees and their managers from the same `employees` table.</p>
+      <pre class="language-sql"><code>
+SELECT e1.name AS Employee, e2.name AS Manager
+FROM employees e1
+JOIN employees e2 ON e1.manager_id = e2.id;
+      </code></pre>
+      <p>✅ Use SELF JOIN to relate rows within the same table.</p>
+
+      <h5 class="text-info">📌 Conclusion</h5>
+      <p>Use <strong>INNER JOIN</strong> when you need only matching data. Use <strong>LEFT/RIGHT JOIN</strong> when one table is primary and you want unmatched data from one side. Use <strong>FULL OUTER JOIN</strong> to get everything from both sides. Use <strong>CROSS JOIN</strong> for generating combinations, and <strong>SELF JOIN</strong> for relationships within the same table.</p>
 
     </div>
   </div>
