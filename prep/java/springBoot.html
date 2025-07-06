@@ -7938,6 +7938,101 @@ hibernate.default_batch_fetch_size=10
     </div>
   </div>
 </div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#injectVsAutowired">
+      @Inject vs @Autowired in Spring
+    </button>
+  </h2>
+  <div id="injectVsAutowired" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <h5 class="text-warning">📌 How does <code>@Inject</code> work?</h5>
+      <p>
+        The <code>@Inject</code> annotation comes from <strong>JSR-330 (Java Dependency Injection standard)</strong>. 
+        When used in a Spring application, Spring's container recognizes it and injects the required dependency automatically.
+      </p>
+      <pre class="language-java"><code>
+import javax.inject.Inject;
+
+public class MyService {
+    @Inject
+    private UserRepository userRepository;
+}
+      </code></pre>
+      <ul>
+        <li>⛽ It tells the container to inject a dependency at the field, constructor, or method.</li>
+        <li>✅ It is framework-agnostic (can work with Spring, Jakarta EE, etc.)</li>
+      </ul>
+
+      <h5 class="text-info">📌 Difference between <code>@Autowired</code> and <code>@Inject</code></h5>
+      <table class="table table-bordered table-dark table-striped">
+        <thead>
+          <tr>
+            <th>Aspect</th>
+            <th>@Autowired (Spring)</th>
+            <th>@Inject (JSR-330)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Package</td>
+            <td><code>org.springframework.beans.factory.annotation</code></td>
+            <td><code>javax.inject</code></td>
+          </tr>
+          <tr>
+            <td>Null Handling</td>
+            <td>Use <code>required=false</code> to make it optional</td>
+            <td>Use <code>@Nullable</code> or <code>Optional</code> for optional injection</td>
+          </tr>
+          <tr>
+            <td>Scope</td>
+            <td>Spring-specific</td>
+            <td>Java-standard (vendor-neutral)</td>
+          </tr>
+          <tr>
+            <td>Required Spring Context</td>
+            <td>Yes</td>
+            <td>Yes (Spring must still process it)</td>
+          </tr>
+          <tr>
+            <td>Support for Qualifier</td>
+            <td><code>@Qualifier</code> supported</td>
+            <td><code>@Named</code> supported</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h5 class="text-success">📌 Which One Should You Use?</h5>
+      <ul>
+        <li>👍 Use <code>@Autowired</code> if you want full Spring-specific features.</li>
+        <li>🌐 Use <code>@Inject</code> if you prefer standard Java annotations (more portable).</li>
+        <li>📦 Both annotations work the same way in Spring, but <code>@Autowired</code> gives you more control.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Example with Qualifier</h5>
+      <pre class="language-java"><code>
+// Using @Autowired
+@Autowired
+@Qualifier("myBean")
+private MyService service;
+
+// Using @Inject
+@Inject
+@Named("myBean")
+private MyService service;
+      </code></pre>
+
+      <h5 class="text-info">📌 Summary</h5>
+      <ul>
+        <li><code>@Inject</code> is a standard Java DI annotation.</li>
+        <li><code>@Autowired</code> is Spring-specific and has more flexibility.</li>
+        <li>Both are recognized and supported by the Spring container.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
 
 
 
