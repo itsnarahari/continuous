@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Advanced React Interview Questions</title>
+
+  <!-- Bootstrap & Prism CSS for styling and syntax highlighting -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+
+  <!-- Prism.js for code highlighting -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-jsx.min.js"></script>
+
+  <style>
+    body {
+      background-color: #121212;
+      color: #ffffff;
+    }
+
+    .container {
+      max-width: 900px;
+      margin-top: 40px;
+    }
+
+    .accordion-button {
+      background-color: #343a40;
+      color: #ffffff;
+    }
+
+    .accordion-button:focus {
+      box-shadow: none;
+    }
+
+    .accordion-button:not(.collapsed) {
+      background-color: #007bff;
+      color: #ffffff;
+    }
+
+    .accordion-body {
+      background-color: #191818;
+    }
+
+    .highlight-yellow {
+      color: #ffcc00;
+      font-weight: bold;
+    }
+
+    .highlight-blue {
+      color: #4db8ff;
+      font-weight: bold;
+    }
+
+    pre[class*="language-"] {
+      background: #000000 !important;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 0.95rem;
+    }
+
+    .search-container {
+      margin-bottom: 25px;
+      text-align: center;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #f4f2f2;
+      background: #000000;
+      color: #ffffff;
+      font-size: 16px;
+      outline: none;
+    }
+
+    .accordion-button::after {
+      filter: brightness(0) invert(1);
+    }
+
+    .accordion-button.collapsed::after {
+      filter: brightness(0) invert(1);
+    }
+
+    .search-input::placeholder {
+      color: #ffffff;
+    }
+
+    .accordion-item {
+      border: 1px solid #ffffff;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+
+    .accordion-body {
+      color: #ffffff;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+
+<body class="bg-dark text-light">
+  <div class="container">
+    <div class="search-container">
+      <input type="text" id="searchBox" class="search-input" placeholder="Search questions..." onkeyup="filterQuestions()" />
+    </div>
+
+    <div class="accordion" id="qaAccordion"></div>
+  </div>
+
+  <!-- Bootstrap Bundle JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Dynamic Questions Script -->
+  <script>
+    function filterQuestions() {
+      const query = document.getElementById("searchBox").value.toLowerCase();
+      const items = document.querySelectorAll(".search-item");
+      items.forEach(item => {
+        const parent = item.closest(".accordion-item");
+        const match = item.textContent.toLowerCase().includes(query);
+        parent.style.display = match ? "" : "none";
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const qaAccordion = document.getElementById("qaAccordion");
+      const questions = [
+        "Explain the React Fiber architecture.",
+        "What is Concurrent Mode in React?",
+        "How does React handle reconciliation?",
+        "What are React Server Components (RSC)?",
+        "How does useEffect differ from useLayoutEffect?",
+        "What is React’s useTransition hook?",
+        "Explain batching in React.",
+        "How does React Suspense work internally?",
+        "What is the difference between controlled and uncontrolled components?",
+        "Explain memoization in React.",
+        "How would you design a plugin system using React?",
+        "What is the Context API and what are its limitations?",
+        "How would you implement dynamic forms in React?",
+        "Explain lifting state vs using a state manager.",
+        "What is the difference between prop drilling and composition?",
+        "How do you test hooks using React Testing Library?",
+        "What tools do you use to profile and optimize a React app?",
+        "Explain lazy loading in React.",
+        "What happens during the React render and commit phases?",
+        "How would you debug hydration issues in React SSR apps?",
+        "How does React differ from other frameworks like Angular or Vue?",
+        "What are hooks rules and why do they matter?",
+        "What is the difference between state and props in React?",
+        "What is the virtual DOM and how does React use it?",
+        "How can you optimize performance in large React applications?",
+        "What are Higher-Order Components (HOCs) in React?",
+        "What is a custom hook and when would you create one?",
+        "Explain the role of keys in lists in React.",
+        "What is hydration in React and when is it used?",
+        "How does React's useId hook help with SSR?"
+      ];
+
+      const answers = [
+        "React Fiber is the reimplementation of React's core algorithm to allow interruptible rendering. It supports features like time-slicing, suspense, and better error handling.",
+        "Concurrent Mode enables React to interrupt rendering and work on multiple tasks simultaneously, improving performance and responsiveness.",
+        "React uses a diffing algorithm to compare the previous and new virtual DOM. With keys, it efficiently determines what changed and updates only the necessary nodes.",
+        "React Server Components (RSC) allow rendering components on the server without sending their code to the client, enabling reduced bundle size and faster load times.",
+        "useEffect runs asynchronously after paint, while useLayoutEffect runs synchronously after all DOM mutations but before painting. The latter is used when you need to read layout or apply measurements.",
+        "useTransition allows you to mark some updates as non-urgent so React can interrupt rendering and keep the interface responsive.",
+        "Batching is the process where React groups multiple state updates into a single re-render for performance optimization. React 18 allows batching in more scenarios automatically.",
+        "React Suspense lets you wait for something (like data or code) before rendering a component. It works by throwing a promise during rendering, which pauses rendering until it's resolved.",
+        "Controlled components are tied to React state and update through onChange. Uncontrolled components manage their own state using refs.",
+        "React.memo memoizes components, useMemo memoizes values, and useCallback memoizes functions. This helps prevent unnecessary renders but must be used carefully.",
+        "Use a plugin registry, context, and dynamic imports. Components can register themselves or be injected dynamically based on configuration.",
+        "Context API is good for passing data deeply without prop drilling. However, it re-renders all consumers when the context value changes, which can hurt performance.",
+        "Dynamic forms can be built using schema-driven approaches with JSON definitions, rendering inputs conditionally based on type.",
+        "Lifting state up is good for local shared state. For global or complex state, use Redux, Zustand, or Recoil to avoid prop drilling and improve maintainability.",
+        "Prop drilling is passing props through multiple levels. Composition allows injecting behavior/data via children, making components more reusable.",
+        "Use renderHook from @testing-library/react-hooks or Vitest. Mock dependencies and assert output/state transitions.",
+        "Use React DevTools Profiler, Chrome DevTools, and bundle analyzers. Look for re-render patterns, component timings, and memory usage.",
+        "Lazy loading is done using React.lazy and Suspense to split code and load components only when needed.",
+        "The render phase prepares the virtual DOM. The commit phase applies changes to the actual DOM. React can pause render, but not commit.",
+        "Check for mismatch warnings, ensure consistent markup, and avoid conditionals that differ between client/server renders.",
+        "React focuses on a component-based architecture with unidirectional data flow. Unlike Angular (which is opinionated and full-featured) or Vue (which uses a template syntax), React emphasizes JSX and functional programming.",
+        "Hooks must be called at the top level of a component or custom hook, not inside loops or conditions. This ensures React can correctly track hook calls across renders.",
+        "Props are read-only and passed from parent to child, while state is mutable and local to the component. State is used to track data that changes over time.",
+        "The virtual DOM is an in-memory representation of the real DOM. React updates the virtual DOM first, then calculates the most efficient way to update the real DOM.",
+        "Use memoization (React.memo, useMemo, useCallback), code splitting, lazy loading, efficient list rendering, and avoid unnecessary re-renders.",
+        "HOCs are functions that take a component and return a new one with additional props or logic. They're used for cross-cutting concerns like auth or theming.",
+        "A custom hook is a function that uses built-in hooks to encapsulate reusable logic (e.g., form handling, fetch with retry). It promotes cleaner, DRY components.",
+        "Keys help React identify which items have changed, are added, or are removed. They should be stable, unique, and not based on array indices when possible.",
+        "Hydration is the process of attaching event listeners and making the static HTML generated from SSR interactive. It synchronizes client and server markup.",
+        "useId ensures consistent ID generation between server and client during SSR to avoid mismatch issues, especially in forms or accessibility use cases."
+      ];
+
+      questions.forEach((question, i) => {
+        const item = document.createElement('div');
+        item.className = 'accordion-item';
+        item.innerHTML = `
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q${i + 1}">
+              ${i + 1}. ${question}
+            </button>
+          </h2>
+          <div id="q${i + 1}" class="accordion-collapse collapse">
+            <div class="accordion-body">${answers[i]}</div>
+          </div>
+        `;
+        qaAccordion.appendChild(item);
+      });
+    });
+  </script>
+</body>
+
+</html>
