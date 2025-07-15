@@ -246,7 +246,7 @@ public class CollectionTest {
         System.out.println("second Highest number %d".formatted(i1));
 
 //        33. Count the occurences of each word in a list
-        s.chars().mapToObj(value -> (char) value).collect(Collectors.)
+        s.chars().mapToObj(value -> (char) value).collect(Collectors.counting());
 
 
     }
