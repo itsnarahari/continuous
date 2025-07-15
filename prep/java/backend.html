@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>React Q&A</title>
+
+    <!-- Bootstrap & Prism.js for Syntax Highlighting -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css"
+      rel="stylesheet"
+    />
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+
+    <style>
+      /* body {
+      background-color: #121212;
+      color: white;
+    } */
+
+      .accordion-button {
+        background-color: #343a40;
+        color: white;
+      }
+
+      .accordion-button:focus {
+        box-shadow: none;
+      }
+
+      .accordion-button:not(.collapsed) {
+        background-color: #007bff;
+        color: white;
+      }
+
+      .accordion-body {
+        background-color: #1e1e1e;
+        color: white;
+      }
+
+      .highlight-yellow {
+        color: #ffcc00;
+        /* Yellow */
+        font-weight: bold;
+      }
+
+      .highlight-blue {
+        color: #4db8ff;
+        /* Light blue */
+        font-weight: bold;
+      }
+
+      pre[class*="language-"] {
+        background: #1e1e1e !important;
+        border-radius: 8px;
+        padding: 12px;
+      }
+
+      /* Search Box Styling */
+      .search-container {
+        margin-bottom: 15px;
+        text-align: center;
+      }
+
+      .search-input {
+        width: 100%;
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid #666;
+        background: #222;
+        color: white;
+        outline: none;
+        font-size: 16px;
+      }
+
+      .search-input::placeholder {
+        color: #aaa;
+      }
+    </style>
+  </head>
+
+  <body class="bg-dark text-light mb-4">
+    <div class="container">
+      <div class="header fw-bold text-center mb-4">React Q&A</div>
+      <p id="questionCount" class="text-center">0 Questions</p>
+
+      <!-- Search Box in a Bootstrap Container -->
+      <div class="search-container">
+        <input
+          type="text"
+          class="search-input form-control"
+          id="searchBox"
+          placeholder="Search questions..."
+          onkeyup="searchQuestions()"
+        />
+      </div>
+
+      <div class="accordion" id="backendAccordion">
+        <div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#authTypesExplained">
+      🔐 Basic Auth vs OAuth 1.0 vs OAuth 2.0 – What, How & When?
+    </button>
+  </h2>
+  <div id="authTypesExplained" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 1. Basic Authentication</h5>
+      <p>Sends <code>username:password</code> in every request header (Base64 encoded).</p>
+      <pre class="language-http"><code>
+Authorization: Basic dXNlcjpwYXNz
+      </code></pre>
+      <strong>🔐 Not secure unless over HTTPS.</strong> Simple to use but rarely used for production APIs.
+
+      <h6 class="text-warning">✅ Use When:</h6>
+      <ul>
+        <li>Internal tools / admin dashboards</li>
+        <li>Quick testing with Postman / curl</li>
+      </ul>
+
+      <h6 class="text-danger">❌ Avoid When:</h6>
+      <ul>
+        <li>Public APIs</li>
+        <li>Security-critical systems</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-info">📌 2. OAuth 1.0</h5>
+      <p>Older standard that requires clients to sign requests using a secret + access token. Used by Twitter API (historically).</p>
+      <pre class="language-text"><code>
+Header includes:
+oauth_consumer_key, oauth_token, oauth_signature_method, ...
+      </code></pre>
+      <ul>
+        <li>Requires cryptographic signing (HMAC-SHA1)</li>
+        <li>Complex implementation & difficult debugging</li>
+      </ul>
+
+      <h6 class="text-warning">✅ Use When:</h6>
+      <ul>
+        <li>You need request integrity without HTTPS (rare)</li>
+        <li>You work with legacy APIs like Twitter v1.1</li>
+      </ul>
+
+      <h6 class="text-danger">❌ Avoid When:</h6>
+      <ul>
+        <li>You're building a new modern app</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-info">📌 3. OAuth 2.0 (Modern Standard)</h5>
+      <p>Widely adopted standard used by Google, Facebook, GitHub, AWS. It uses <strong>access tokens</strong> issued by an authorization server.</p>
+      <ul>
+        <li>Supports multiple flows: <code>Authorization Code</code>, <code>Client Credentials</code>, <code>Implicit</code>, <code>Device Code</code></li>
+        <li>Supports JWT access tokens</li>
+        <li>Separation of resource owner, client, and authorization server</li>
+      </ul>
+
+      <pre class="language-http"><code>
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6...
+      </code></pre>
+
+      <h6 class="text-success">✅ Use When:</h6>
+      <ul>
+        <li>You want third-party login (Google/Facebook)</li>
+        <li>You're building SPAs or mobile apps</li>
+        <li>You want access control with scopes and expiry</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-info">📊 Comparison Summary</h5>
+      <table class="table table-dark table-bordered">
+        <thead><tr>
+          <th>Method</th><th>Security</th><th>Token Support</th><th>Recommended</th>
+        </tr></thead>
+        <tbody>
+          <tr><td>Basic Auth</td><td>🔐 Weak</td><td>❌ No</td><td>🟡 Internal only</td></tr>
+          <tr><td>OAuth 1.0</td><td>✅ Good (signed)</td><td>✅ Yes</td><td>🔴 Legacy only</td></tr>
+          <tr><td>OAuth 2.0</td><td>✅ Strong (with HTTPS)</td><td>✅ Yes (JWT/Bearer)</td><td>🟢 Modern apps</td></tr>
+        </tbody>
+      </table>
+
+      <h5 class="text-info">📌 Bonus: JWT (JSON Web Tokens)</h5>
+      <p>Often used with OAuth 2.0, especially in SPAs and mobile apps.</p>
+      <pre class="language-text"><code>
+JWT = Header + Payload + Signature (all Base64)
+      </code></pre>
+
+      <h6 class="text-success">✅ Contains:</h6>
+      <ul>
+        <li>User ID / roles / expiration</li>
+        <li>Is signed and optionally encrypted</li>
+        <li>Can be verified without DB call</li>
+      </ul>
+
+      <h5 class="text-info">📌 Conclusion</h5>
+      <ul>
+        <li>🌐 Use <strong>OAuth 2.0</strong> for web/mobile apps</li>
+        <li>🔐 Use <strong>JWT</strong> for token-based auth</li>
+        <li>🔧 Use <strong>Basic Auth</strong> only for simple internal APIs</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#oauthGrantTypes">
+      🎟️ What is Grant Type in OAuth 2.0?
+    </button>
+  </h2>
+  <div id="oauthGrantTypes" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What is a Grant Type?</h5>
+      <p>In OAuth 2.0, a <strong>Grant Type</strong> is a way for a client application to get an <code>access token</code> from the authorization server. Each grant type defines a different flow for authentication, depending on the type of app (web, mobile, backend, etc.).</p>
+
+      <h5 class="text-info">📌 Common Grant Types</h5>
+
+      <h6 class="text-warning">🔐 1. Authorization Code Grant (with PKCE)</h6>
+      <ul>
+        <li>🌐 Used by web & mobile apps</li>
+        <li>Redirects user to login at auth server</li>
+        <li>Most secure for public clients</li>
+      </ul>
+      <pre class="language-text"><code>
+POST /oauth/token
+grant_type=authorization_code
+code=AUTH_CODE_FROM_REDIRECT
+client_id=your_client
+redirect_uri=callback_url
+      </code></pre>
+
+      <h6 class="text-warning">🤖 2. Client Credentials Grant</h6>
+      <ul>
+        <li>Used for machine-to-machine APIs</li>
+        <li>No user interaction</li>
+      </ul>
+      <pre class="language-text"><code>
+POST /oauth/token
+grant_type=client_credentials
+client_id=...
+client_secret=...
+      </code></pre>
+
+      <h6 class="text-warning">🔁 3. Refresh Token Grant</h6>
+      <ul>
+        <li>Used to get new access token without re-login</li>
+        <li>Requires a valid <code>refresh_token</code></li>
+      </ul>
+      <pre class="language-text"><code>
+POST /oauth/token
+grant_type=refresh_token
+refresh_token=...
+client_id=...
+      </code></pre>
+
+      <h6 class="text-warning">📱 4. Password Grant (Deprecated / Unsafe)</h6>
+      <ul>
+        <li>Directly sends username & password to auth server</li>
+        <li>⚠️ Not recommended for public clients</li>
+      </ul>
+      <pre class="language-text"><code>
+POST /oauth/token
+grant_type=password
+username=user
+password=pass
+client_id=...
+      </code></pre>
+
+      <h6 class="text-warning">📺 5. Device Code Grant</h6>
+      <ul>
+        <li>Used for smart TVs and devices with no browser</li>
+        <li>User logs in from a second device</li>
+      </ul>
+
+      <h5 class="text-info">📊 Summary Table</h5>
+      <table class="table table-dark table-bordered">
+        <thead>
+          <tr>
+            <th>Grant Type</th>
+            <th>Best For</th>
+            <th>User Interaction</th>
+            <th>Secure?</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Authorization Code + PKCE</td><td>Web/Mobile Apps</td><td>✅ Yes</td><td>✅ High</td></tr>
+          <tr><td>Client Credentials</td><td>Machine-to-Machine</td><td>❌ No</td><td>✅ High</td></tr>
+          <tr><td>Refresh Token</td><td>Token Renewal</td><td>❌ No</td><td>✅ High</td></tr>
+          <tr><td>Password Grant</td><td>Legacy Internal Apps</td><td>✅ Yes</td><td>⚠️ Low</td></tr>
+          <tr><td>Device Code</td><td>Smart Devices</td><td>✅ Yes (other device)</td><td>✅ Medium</td></tr>
+        </tbody>
+      </table>
+
+      <h5 class="text-info">📌 Conclusion</h5>
+      <p>Each grant type is designed for a different use case. Most modern applications use <strong>Authorization Code with PKCE</strong> for frontend users and <strong>Client Credentials</strong> for backend services.</p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#reactMobileOAuth">
+      🔐 How React or Mobile App Integrates with OAuth 2.0 (PKCE)
+    </button>
+  </h2>
+  <div id="reactMobileOAuth" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Why OAuth with PKCE?</h5>
+      <p>OAuth 2.0 with <strong>PKCE (Proof Key for Code Exchange)</strong> is the most secure and recommended flow for SPAs (React) and mobile apps (iOS/Android).</p>
+
+      <h5 class="text-info">📌 How the Flow Works</h5>
+      <ol>
+        <li>🧠 Your app generates a <code>code_verifier</code> and <code>code_challenge</code></li>
+        <li>🔗 User is redirected to the OAuth login (Google, GitHub, etc.)</li>
+        <li>🪪 After login, the auth server redirects back with an <code>authorization_code</code></li>
+        <li>🔁 Your app sends the code + <code>code_verifier</code> to exchange for an <code>access_token</code></li>
+      </ol>
+
+      <h5 class="text-info">🔐 React Integration Example (PKCE)</h5>
+      <pre class="language-js"><code>
+// Example with Google OAuth (using oidc-client-ts or similar libs)
+
+import { createAuthProvider } from "react-token-auth";
+
+export const { useAuth, authFetch, login, logout } = createAuthProvider({
+  getAccessToken: () => localStorage.getItem("access_token"),
+  onUpdateToken: (token) => localStorage.setItem("access_token", token),
+});
+      </code></pre>
+      <p>For full PKCE support, use libraries like:</p>
+      <ul>
+        <li><code>oidc-client-ts</code> (React)</li>
+        <li><code>AppAuth</code> (for React Native)</li>
+        <li>Or use <code>Auth0</code>, <code>Firebase Auth</code>, <code>Azure AD</code> for easy setup</li>
+      </ul>
+
+      <h5 class="text-info">📱 Mobile App Integration (React Native)</h5>
+      <p>Use <code>expo-auth-session</code> or <code>react-native-app-auth</code> for secure login with PKCE:</p>
+      <pre class="language-js"><code>
+import * as AuthSession from 'expo-auth-session';
+
+const redirectUri = AuthSession.makeRedirectUri({ useProxy: true });
+
+const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=...&response_type=code&redirect_uri=${redirectUri}&scope=email`;
+
+const result = await AuthSession.startAsync({ authUrl });
+      </code></pre>
+
+      <h5 class="text-info">📦 Token Storage</h5>
+      <ul>
+        <li>React: store token in <code>httpOnly cookies</code> (recommended) or <code>localStorage</code></li>
+        <li>Mobile: store securely in <code>SecureStore</code> or <code>Keychain</code></li>
+      </ul>
+
+      <h5 class="text-info">🔐 Security Notes</h5>
+      <ul>
+        <li>Always use HTTPS</li>
+        <li>Use PKCE for public clients (SPA/mobile)</li>
+        <li>Don't store tokens in plain AsyncStorage or JS variables</li>
+      </ul>
+
+      <h5 class="text-info">✅ Conclusion</h5>
+      <p>React and Mobile apps use <strong>OAuth 2.0 Authorization Code Flow with PKCE</strong> to securely authenticate users. Libraries handle most of the heavy lifting, and the server issues access and refresh tokens for API calls.</p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#microservicesPatterns">
+      🧩 List of All Microservices Design Patterns (Grouped)
+    </button>
+  </h2>
+  <div id="microservicesPatterns" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📦 1. Decomposition Patterns</h5>
+      <ul>
+        <li><strong>Decompose by Business Capability</strong> – Split services based on business domains</li>
+        <li><strong>Decompose by Subdomain</strong> – Inspired by DDD (Domain-Driven Design)</li>
+        <li><strong>Self-Contained System</strong> – Each service with its own UI/backend/database</li>
+      </ul>
+
+      <h5 class="text-info">🔗 2. Integration Patterns</h5>
+      <ul>
+        <li><strong>API Gateway</strong> – A single entry point for all services (e.g., Zuul, Spring Cloud Gateway)</li>
+        <li><strong>Aggregator</strong> – Combines responses from multiple services</li>
+        <li><strong>Proxy</strong> – Routes request to appropriate microservice</li>
+        <li><strong>Client-Side Service Discovery</strong> – Client fetches service location (e.g., Eureka client)</li>
+        <li><strong>Backend for Frontend (BFF)</strong> – Separate APIs for each client type (web/mobile)</li>
+      </ul>
+
+      <h5 class="text-info">🧵 3. Database Patterns</h5>
+      <ul>
+        <li><strong>Database per Service</strong> – Each microservice owns its DB schema</li>
+        <li><strong>Shared Database (Anti-pattern)</strong> – Multiple services on one DB (avoid)</li>
+        <li><strong>Command Query Responsibility Segregation (CQRS)</strong> – Separate read/write models</li>
+        <li><strong>Event Sourcing</strong> – Persist events instead of current state</li>
+      </ul>
+
+      <h5 class="text-info">📨 4. Communication Patterns</h5>
+      <ul>
+        <li><strong>Synchronous REST</strong> – Simple, direct HTTP calls</li>
+        <li><strong>Asynchronous Messaging</strong> – Use message brokers (Kafka, RabbitMQ)</li>
+        <li><strong>Publish-Subscribe</strong> – One-to-many broadcasting (e.g., Kafka topics)</li>
+        <li><strong>Choreography vs Orchestration</strong> – Event-driven flow vs centralized logic</li>
+      </ul>
+
+      <h5 class="text-info">🛠️ 5. Reliability Patterns</h5>
+      <ul>
+        <li><strong>Circuit Breaker</strong> – Prevent system failure when service is down (e.g., Resilience4j)</li>
+        <li><strong>Bulkhead</strong> – Isolate failures by partitioning resources</li>
+        <li><strong>Retry</strong> – Automatically retry failed calls</li>
+        <li><strong>Timeout</strong> – Avoid waiting indefinitely on failed services</li>
+        <li><strong>Fail Fast</strong> – Quickly return error instead of hanging</li>
+      </ul>
+
+      <h5 class="text-info">🕵️‍♂️ 6. Observability Patterns</h5>
+      <ul>
+        <li><strong>Log Aggregation</strong> – Centralized log storage and querying (e.g., ELK, Loki)</li>
+        <li><strong>Distributed Tracing</strong> – Track requests across services (e.g., Zipkin, Jaeger)</li>
+        <li><strong>Health Check</strong> – Endpoint to check service status</li>
+        <li><strong>Metrics Collection</strong> – Collect CPU, memory, request time, etc.</li>
+      </ul>
+
+      <h5 class="text-info">🔒 7. Security Patterns</h5>
+      <ul>
+        <li><strong>Access Token Propagation</strong> – Forward user's token across services</li>
+        <li><strong>API Gateway with JWT</strong> – Validate token before routing</li>
+        <li><strong>OAuth2 / OpenID Connect</strong> – Secure authentication and authorization</li>
+        <li><strong>Service-to-Service Mutual TLS</strong> – Secure internal communication</li>
+      </ul>
+
+      <h5 class="text-info">📦 8. Deployment Patterns</h5>
+      <ul>
+        <li><strong>Service Registry and Discovery</strong> – Auto-register and discover services (e.g., Eureka, Consul)</li>
+        <li><strong>Sidecar Pattern</strong> – Attach helper container (e.g., logging, proxy)</li>
+        <li><strong>Service Mesh</strong> – Dedicated infrastructure for communication (e.g., Istio, Linkerd)</li>
+        <li><strong>Blue-Green / Canary Deployments</strong> – Safe rollout with rollback ability</li>
+      </ul>
+
+      <h5 class="text-info">📌 Conclusion</h5>
+      <p>Microservices architecture relies on a combination of these design patterns to handle scalability, communication, data management, fault tolerance, and security. Choosing the right pattern depends on your app’s complexity, team size, and business needs.</p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#dddDefinition">
+      🧠 What is Domain-Driven Design (DDD)?
+    </button>
+  </h2>
+  <div id="dddDefinition" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What is Domain-Driven Design?</h5>
+      <p><strong>Domain-Driven Design (DDD)</strong> is a software development approach that focuses on modeling the business domain accurately in the code, and structuring the project based on core domain logic rather than technical concerns.</p>
+
+      <p>It's especially powerful for complex applications with evolving business rules.</p>
+
+      <h5 class="text-info">🔑 Key Concepts in DDD</h5>
+
+      <ul>
+        <li><strong>Domain:</strong> The real-world problem area the application solves</li>
+        <li><strong>Model:</strong> The abstract system of concepts that describes selected aspects of a domain</li>
+        <li><strong>Ubiquitous Language:</strong> A common language shared by developers and domain experts</li>
+        <li><strong>Bounded Context:</strong> A logical boundary within which a domain model is defined and applicable</li>
+        <li><strong>Entities:</strong> Objects with identity that persist over time (e.g., User, Order)</li>
+        <li><strong>Value Objects:</strong> Objects with no identity, defined by their values (e.g., Address, Money)</li>
+        <li><strong>Aggregates:</strong> A cluster of domain objects treated as a single unit (with a root entity)</li>
+        <li><strong>Repositories:</strong> Abstractions to access and persist aggregates</li>
+        <li><strong>Services:</strong> Domain operations that don’t naturally fit into an entity/value object</li>
+        <li><strong>Domain Events:</strong> Events that signal something important in the domain (e.g., OrderPlaced)</li>
+      </ul>
+
+      <h5 class="text-info">📁 Folder Structure Example</h5>
+      <pre class="language-text"><code>
+src/
+└── order/
+    ├── domain/
+    │   ├── model/
+    │   │   ├── Order.java
+    │   │   └── OrderItem.java
+    │   ├── service/
+    │   │   └── OrderDomainService.java
+    │   └── event/
+    │       └── OrderPlacedEvent.java
+    ├── application/
+    │   └── OrderApplicationService.java
+    ├── infrastructure/
+    │   └── JpaOrderRepository.java
+    └── api/
+        └── OrderController.java
+      </code></pre>
+
+      <h5 class="text-info">🎯 Benefits of DDD</h5>
+      <ul>
+        <li>✅ Clear separation of concerns</li>
+        <li>✅ Scalable and maintainable architecture</li>
+        <li>✅ Close alignment with business language and rules</li>
+        <li>✅ Enables better testing of domain logic</li>
+      </ul>
+
+      <h5 class="text-warning">⚠️ When to Use DDD?</h5>
+      <ul>
+        <li>Complex business logic and evolving requirements</li>
+        <li>Large team with domain experts</li>
+        <li>Need for long-term scalability and clarity</li>
+      </ul>
+
+      <h5 class="text-danger">❌ When NOT to Use?</h5>
+      <ul>
+        <li>Simple CRUD apps</li>
+        <li>Short-term or small-scale projects</li>
+        <li>When there's no clear domain complexity</li>
+      </ul>
+
+      <h5 class="text-info">📌 Conclusion</h5>
+      <p><strong>DDD is not just technical design</strong> – it’s a collaborative approach between developers and domain experts to build a model-rich, scalable, and business-aligned application. It shines in complex enterprise systems like banking, insurance, e-commerce, etc.</p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#dddSpringStructure">
+      🧱 DDD with Spring Boot Structure, Bounded Contexts & Splitting Services
+    </button>
+  </h2>
+  <div id="dddSpringStructure" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📦 DDD-Inspired Spring Boot Folder Structure</h5>
+      <p>This layout separates concerns based on <strong>domain, application, infrastructure, and API layers</strong> per DDD principles.</p>
+      <pre class="language-text"><code>
+src/
+└── order/
+    ├── domain/
+    │   ├── model/
+    │   │   ├── Order.java
+    │   │   └── OrderItem.java
+    │   ├── repository/
+    │   │   └── OrderRepository.java
+    │   ├── service/
+    │   │   └── OrderDomainService.java
+    │   └── event/
+    │       └── OrderPlacedEvent.java
+    ├── application/
+    │   └── OrderApplicationService.java
+    ├── infrastructure/
+    │   └── JpaOrderRepository.java
+    └── api/
+        └── OrderController.java
+      </code></pre>
+      <ul>
+        <li><code>domain/</code> – Pure business logic (no frameworks)</li>
+        <li><code>application/</code> – Orchestrates use cases</li>
+        <li><code>infrastructure/</code> – Database access, APIs, messaging</li>
+        <li><code>api/</code> – REST controllers</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-info">🌐 What is a Bounded Context?</h5>
+      <p>A <strong>Bounded Context</strong> is a boundary around a specific business domain where a model applies consistently.</p>
+      <ul>
+        <li>Each bounded context owns its data and logic</li>
+        <li>Multiple contexts may share the same term but have different meanings</li>
+      </ul>
+      <p>Example:</p>
+      <ul>
+        <li><strong>User</strong> in “Billing” → means the customer</li>
+        <li><strong>User</strong> in “Admin” → means the system operator</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-info">🔀 How to Split Services by Bounded Context</h5>
+      <p>Use business capabilities to define microservices:</p>
+      <pre class="language-text"><code>
+services/
+├── order-service/
+│   ├── domain/
+│   ├── application/
+│   ├── infrastructure/
+│   └── api/
+├── payment-service/
+│   ├── domain/
+│   ├── application/
+│   ├── infrastructure/
+│   └── api/
+├── inventory-service/
+│   ├── domain/
+│   └── ...
+      </code></pre>
+      <p>Each service:</p>
+      <ul>
+        <li>Has its own database schema</li>
+        <li>Owns its domain model</li>
+        <li>Communicates via events or APIs</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-info">📨 Inter-Service Communication</h5>
+      <ul>
+        <li><strong>REST API</strong> – Synchronous (e.g., order → payment)</li>
+        <li><strong>Kafka / RabbitMQ</strong> – Asynchronous event-based communication (e.g., OrderPlaced event)</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-info">🧠 Benefits of This DDD Structure</h5>
+      <ul>
+        <li>✅ Clear modular boundaries</li>
+        <li>✅ Separation of business logic from infrastructure</li>
+        <li>✅ Scalable and testable</li>
+        <li>✅ Helps team scale independently per domain</li>
+      </ul>
+
+      <h5 class="text-info">📌 Conclusion</h5>
+      <p>Using DDD with Spring Boot encourages maintainable, domain-focused services with a clean architecture. Splitting by bounded contexts avoids tight coupling and keeps your code aligned with real-world business logic.</p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#serviceCommunication">
+      🔄 In How Many Ways Microservices Can Communicate?
+    </button>
+  </h2>
+  <div id="serviceCommunication" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 1. Synchronous Communication</h5>
+      <p>In synchronous communication, one service waits for a response from the other service before continuing.</p>
+
+      <ul>
+        <li><strong>🔗 REST API (HTTP)</strong>
+          <ul>
+            <li>Most common method</li>
+            <li>Simple JSON over HTTP</li>
+            <li>Example: <code>order-service → payment-service</code></li>
+          </ul>
+        </li>
+
+        <li><strong>🧩 gRPC</strong>
+          <ul>
+            <li>High-performance RPC with Protobuf</li>
+            <li>Supports bi-directional streaming</li>
+            <li>Useful in language-agnostic environments</li>
+          </ul>
+        </li>
+
+        <li><strong>📞 Feign Clients (Spring Cloud)</strong>
+          <ul>
+            <li>Declarative REST client</li>
+            <li>Tightly integrated with Eureka and Ribbon</li>
+          </ul>
+        </li>
+      </ul>
+
+      <h5 class="text-info">📌 2. Asynchronous Communication</h5>
+      <p>In asynchronous communication, the sender doesn't wait for a response and continues its work.</p>
+
+      <ul>
+        <li><strong>📨 Message Broker (Kafka, RabbitMQ)</strong>
+          <ul>
+            <li>Event-driven communication</li>
+            <li>Scalable and decoupled</li>
+            <li>Example: <code>OrderPlaced → triggers inventory, billing</code></li>
+          </ul>
+        </li>
+
+        <li><strong>📧 Event Bus / Pub-Sub</strong>
+          <ul>
+            <li>One-to-many messaging</li>
+            <li>Used when multiple services need to react to a single event</li>
+            <li>Example: Firebase Cloud Messaging, AWS SNS</li>
+          </ul>
+        </li>
+
+        <li><strong>🪝 Webhooks</strong>
+          <ul>
+            <li>Notify external systems when an event happens</li>
+            <li>Used in 3rd party integrations</li>
+          </ul>
+        </li>
+      </ul>
+
+      <h5 class="text-info">📌 3. Hybrid Communication</h5>
+      <p>Some systems use both types depending on the use case.</p>
+      <ul>
+        <li>✅ REST for real-time actions</li>
+        <li>✅ Kafka for background event handling</li>
+        <li>✅ gRPC for low-latency, structured internal service calls</li>
+      </ul>
+
+      <h5 class="text-warning">⚠️ Tradeoffs</h5>
+      <ul>
+        <li><strong>Synchronous</strong>: Easier to debug, but introduces tight coupling and latency</li>
+        <li><strong>Asynchronous</strong>: More scalable and resilient, but adds complexity and eventual consistency</li>
+      </ul>
+
+      <h5 class="text-info">📌 Conclusion</h5>
+      <p>Microservices can communicate in <strong>multiple ways</strong> depending on latency, reliability, consistency, and team independence needs. A well-designed system usually combines both <strong>synchronous REST/gRPC</strong> and <strong>asynchronous Kafka/event-based</strong> communication.</p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#kafkaRabbitRetryDLQ">
+      🆚 Kafka vs RabbitMQ + Retry, DLQ, Idempotency Strategies
+    </button>
+  </h2>
+  <div id="kafkaRabbitRetryDLQ" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Kafka vs RabbitMQ – High-Level Comparison</h5>
+      <table class="table table-dark table-striped">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>Kafka</th>
+            <th>RabbitMQ</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Message Model</td>
+            <td>Log-based (publish-subscribe)</td>
+            <td>Queue-based (push to consumers)</td>
+          </tr>
+          <tr>
+            <td>Ordering</td>
+            <td>Guaranteed within partitions</td>
+            <td>No global ordering guarantee</td>
+          </tr>
+          <tr>
+            <td>Replay Support</td>
+            <td>✅ Yes (via offset)</td>
+            <td>❌ No (unless manually handled)</td>
+          </tr>
+          <tr>
+            <td>Performance</td>
+            <td>Very high throughput (good for big data)</td>
+            <td>Lower throughput (but lower latency)</td>
+          </tr>
+          <tr>
+            <td>Storage</td>
+            <td>Persistent log (retention based)</td>
+            <td>Transient queues (messages expire or removed)</td>
+          </tr>
+          <tr>
+            <td>Ideal For</td>
+            <td>Event streaming, analytics, logs</td>
+            <td>Task queues, short-term messaging</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h5 class="text-info">🔁 Retry Strategies in Microservices</h5>
+      <ul>
+        <li><strong>Immediate Retry:</strong> Retry N times instantly (not ideal for transient errors)</li>
+        <li><strong>Exponential Backoff:</strong> Retry with increasing delays (1s, 2s, 4s…)</li>
+        <li><strong>Jitter:</strong> Add randomness to retry timing to avoid thundering herd</li>
+        <li><strong>Resilience4j:</strong> Use in Spring Boot for built-in retry + backoff</li>
+      </ul>
+      <pre class="language-java"><code>
+@Retry(name = "inventoryService", maxAttempts = 3)
+public String callInventory() {
+    return restTemplate.getForObject("http://inventory/api", String.class);
+}
+      </code></pre>
+
+      <h5 class="text-info">💀 Dead Letter Queue (DLQ)</h5>
+      <p>If a message repeatedly fails, it can be moved to a DLQ for inspection or manual retry.</p>
+      <ul>
+        <li><strong>RabbitMQ:</strong> Built-in DLX (Dead Letter Exchange)</li>
+        <li><strong>Kafka:</strong> You implement your own DLQ topic (e.g., <code>order-dlq</code>)</li>
+      </ul>
+      <p>Spring Boot Kafka example:</p>
+      <pre class="language-java"><code>
+@KafkaListener(topics = "orders", errorHandler = "dlqHandler")
+public void listen(String message) {
+    // Process message
+}
+      </code></pre>
+
+      <h5 class="text-info">🛡️ Idempotency in Event Processing</h5>
+      <p><strong>Idempotency</strong> ensures that even if a message is processed multiple times, the result remains the same.</p>
+      <ul>
+        <li>💡 Use unique IDs for every event/message</li>
+        <li>🗃️ Store processed IDs in a cache or database</li>
+        <li>✅ Before processing, check if event ID already handled</li>
+      </ul>
+      <pre class="language-java"><code>
+if (eventAlreadyProcessed(orderId)) return;
+processOrder(orderId);
+markAsProcessed(orderId);
+      </code></pre>
+
+      <h5 class="text-info">📌 When to Choose What?</h5>
+      <ul>
+        <li><strong>Kafka:</strong> You need high throughput, replays, distributed event log</li>
+        <li><strong>RabbitMQ:</strong> You need low-latency, routing flexibility, classic queuing</li>
+        <li>✅ Use both! RabbitMQ for command-style tasks, Kafka for domain events</li>
+      </ul>
+
+      <h5 class="text-success">✅ Best Practice</h5>
+      <ul>
+        <li>Use <strong>asynchronous retry</strong> to avoid blocking consumers</li>
+        <li>Always implement <strong>DLQ</strong> for failed messages</li>
+        <li>Ensure <strong>idempotency</strong> for safe retries</li>
+      </ul>
+
+      <h5 class="text-info">📌 Conclusion</h5>
+      <p>Choosing between Kafka and RabbitMQ depends on your architecture’s needs. Regardless of what you choose, ensure fault tolerance by handling retries, dead letters, and duplicate messages with care.</p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#kafkaOutboxTPC">
+      🧾 Kafka Outbox Pattern for Transactional Messaging + Two-Phase Commit (2PC)
+    </button>
+  </h2>
+  <div id="kafkaOutboxTPC" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📦 Problem: Dual Writes in Microservices</h5>
+      <p>Imagine you save something to a database and also publish an event to Kafka:</p>
+      <pre class="language-java"><code>
+saveToDatabase(order);
+kafkaTemplate.send("order-topic", event);
+      </code></pre>
+      <p><strong>Risk:</strong> If Kafka send fails, DB is already committed → data inconsistency. This is called the <strong>dual-write problem</strong>.</p>
+
+      <h5 class="text-info">📌 What is Kafka Outbox Pattern?</h5>
+      <p>The <strong>Outbox Pattern</strong> avoids this by saving events in the same database transaction, then publishing them to Kafka later in a safe, retryable way.</p>
+
+      <h5 class="text-success">✅ Steps:</h5>
+      <ol>
+        <li>1️⃣ Save entity + domain event into DB (e.g., `orders` + `outbox` table)</li>
+        <li>2️⃣ Background process reads from `outbox` table and sends to Kafka</li>
+        <li>3️⃣ Mark event as processed or delete from `outbox`</li>
+      </ol>
+
+      <pre class="language-sql"><code>
+-- order table
+INSERT INTO orders (id, status) VALUES (101, 'PLACED');
+
+-- outbox table
+INSERT INTO outbox (id, topic, payload, published) VALUES (501, 'order-topic', '{orderId: 101}', false);
+      </code></pre>
+
+      <h5 class="text-info">🛠️ Sample Spring Boot Structure</h5>
+      <ul>
+        <li><code>OrderService</code>: saves order + outbox entry in one DB transaction</li>
+        <li><code>OutboxPublisher</code>: scheduled job or Debezium connector</li>
+      </ul>
+
+      <h5 class="text-info">💡 Benefits</h5>
+      <ul>
+        <li>✅ Guarantees consistency (DB + Kafka sync)</li>
+        <li>✅ Works well with eventual consistency systems</li>
+        <li>✅ No need for 2PC (which is heavy and complex)</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-info">🔄 What is Two-Phase Commit (2PC)?</h5>
+      <p><strong>2PC</strong> is a distributed transaction protocol used to ensure atomicity across multiple systems (e.g., DB + Kafka).</p>
+
+      <h5 class="text-success">✅ Phases:</h5>
+      <ol>
+        <li>1️⃣ <strong>Prepare:</strong> All participants say “yes, I’m ready”</li>
+        <li>2️⃣ <strong>Commit:</strong> Coordinator tells all to commit</li>
+      </ol>
+
+      <h5 class="text-warning">⚠️ Drawbacks of 2PC:</h5>
+      <ul>
+        <li>❌ Blocks resources for a long time</li>
+        <li>❌ Doesn’t scale well (tight coupling)</li>
+        <li>❌ Not supported natively between Kafka and most databases</li>
+      </ul>
+
+      <p><strong>That’s why Kafka Outbox Pattern is a better modern alternative to 2PC.</strong></p>
+
+      <h5 class="text-info">📌 Conclusion</h5>
+      <p>Use the <strong>Outbox Pattern</strong> when your service must both persist data and reliably send a Kafka event. It avoids the complexity and downsides of <strong>2PC</strong> by achieving eventual consistency in a safe and robust way.</p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#kafkaRetryTesting">
+      🧪 Testing + Retry Logic for Failed Kafka Publish Attempts
+    </button>
+  </h2>
+  <div id="kafkaRetryTesting" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Problem</h5>
+      <p>When sending messages to Kafka via `KafkaTemplate`, failures like network issues, broker downtime, or serialization errors can occur. These need to be handled gracefully to avoid data loss.</p>
+
+      <h5 class="text-info">🔁 Retry Logic for KafkaProducer</h5>
+      <p>There are 3 types of retries to consider:</p>
+      <ul>
+        <li>✅ <strong>KafkaTemplate retry</strong> (synchronous, manual)</li>
+        <li>✅ <strong>Spring Retry</strong> (declarative retries)</li>
+        <li>✅ <strong>Outbox + Scheduled Retry</strong> (eventually consistent)</li>
+      </ul>
+
+      <h5 class="text-success">Option 1️⃣: Retry Manually on Failure</h5>
+      <pre class="language-java"><code>
+kafkaTemplate.send("orders", message)
+    .addCallback(
+        result -> System.out.println("Sent successfully"),
+        ex -> {
+            log.error("Send failed: retrying...");
+            retrySend("orders", message); // custom retry logic
+        });
+      </code></pre>
+
+      <h5 class="text-success">Option 2️⃣: Retry Using Spring Retry</h5>
+      <pre class="language-java"><code>
+@Retryable(
+    value = { KafkaException.class },
+    maxAttempts = 3,
+    backoff = @Backoff(delay = 2000))
+public void sendMessage(String topic, String message) {
+    kafkaTemplate.send(topic, message);
+}
+      </code></pre>
+      <p>Use `@EnableRetry` in your configuration class.</p>
+
+      <h5 class="text-success">Option 3️⃣: Outbox + Scheduled Retry</h5>
+      <p>Messages are saved to DB. A scheduler reads failed/pending events and retries sending.</p>
+      <pre class="language-java"><code>
+@Scheduled(fixedDelay = 5000)
+public void retryOutboxEvents() {
+    List&lt;OutboxEvent&gt; failedEvents = outboxRepo.findUnsentEvents();
+    failedEvents.forEach(event -> {
+        try {
+            kafkaTemplate.send(event.getTopic(), event.getPayload());
+            event.markAsSent();
+        } catch (Exception e) {
+            log.warn("Retry failed, will try again later");
+        }
+    });
+}
+      </code></pre>
+
+      <h5 class="text-info">🧪 Testing Kafka Failure Scenarios</h5>
+      <ul>
+        <li>✅ Use `@EmbeddedKafka` in integration tests</li>
+        <li>✅ Mock KafkaTemplate to simulate failures</li>
+        <li>✅ Assert retry attempts and logging</li>
+      </ul>
+
+      <pre class="language-java"><code>
+@Mock
+KafkaTemplate&lt;String, String&gt; kafkaTemplate;
+
+@Test
+void testKafkaSendRetryOnFailure() {
+    doThrow(new KafkaException("fail"))
+        .doThrow(new KafkaException("fail again"))
+        .doNothing()
+        .when(kafkaTemplate).send(anyString(), anyString());
+
+    yourService.sendMessage("topic", "msg");
+
+    verify(kafkaTemplate, times(3)).send("topic", "msg");
+}
+      </code></pre>
+
+      <h5 class="text-info">🧯 Fallback on Persistent Failure</h5>
+      <p>If retries exceed the limit, fallback to DLQ or mark the message for manual recovery:</p>
+      <ul>
+        <li>❌ Do NOT lose the event silently</li>
+        <li>✅ Mark as `FAILED` in DB for alerting or reprocessing</li>
+      </ul>
+
+      <h5 class="text-info">📌 Conclusion</h5>
+      <p>Reliable Kafka publishing requires a combination of:</p>
+      <ul>
+        <li>✅ Retry on transient failures</li>
+        <li>✅ Persistent storage (Outbox) to avoid data loss</li>
+        <li>✅ Scheduled retry and fallback alerts for failures</li>
+      </ul>
+      <p>Test all edge cases using mocks and embedded brokers to ensure your system gracefully handles message delivery issues.</p>
+
+    </div>
+  </div>
+</div>
+
+
+
+
+      </div>
+    </div>
+
+    <!-- Bootstrap & Search Script -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        let questionCount = document.querySelectorAll(".accordion-item").length;
+        document.getElementById(
+          "questionCount"
+        ).innerHTML = `<strong>Total Questions: ${questionCount}</strong>`;
+      });
+      document.addEventListener("DOMContentLoaded", function () {
+        let items = document.querySelectorAll(".accordion-item");
+
+        items.forEach((item, index) => {
+          let button = item.querySelector(".accordion-button");
+          if (button) {
+            button.innerHTML =
+              `<span class="fw-bold me-2">${index + 1}.</span> ` +
+              button.innerHTML;
+          }
+        });
+      });
+
+      // Loop through all accordion bodies and add a Play button
+      document.addEventListener("DOMContentLoaded", function () {
+        // Loop through all accordion bodies
+        document.querySelectorAll(".accordion-body").forEach((body) => {
+          // Create Play button
+          const playBtn = document.createElement("button");
+          playBtn.className = "btn btn-sm btn-outline-primary me-2 mb-2";
+          playBtn.innerText = "🔊 Play Voice Over";
+          playBtn.onclick = function () {
+            speakAccordionText(this);
+          };
+
+          // Create Stop button
+          const stopBtn = document.createElement("button");
+          stopBtn.className = "btn btn-sm btn-outline-danger mb-2";
+          stopBtn.innerText = "⏹ Stop";
+          stopBtn.onclick = function () {
+            window.speechSynthesis.cancel();
+          };
+
+          // Insert buttons
+          const spacer = document.createElement("div");
+          spacer.className = "mb-2";
+          body.prepend(spacer);
+          body.prepend(stopBtn);
+          body.prepend(playBtn);
+        });
+      });
+
+      let currentUtterance = null;
+
+      function speakAccordionText(button) {
+        // Cancel any current speech
+        speechSynthesis.cancel();
+
+        const body = button.closest(".accordion-body");
+
+        // Get clean text from relevant tags
+        let rawText = Array.from(
+          body.querySelectorAll(
+            "p, li, h5, text-warning, text-info, text-primary, text-success, text-danger, text-secondary, text-muted,text-dark, text-light, text-warning"
+          )
+        )
+          .map((el) => el.textContent.trim())
+          .filter(Boolean)
+          .join(". ");
+
+        // Remove unwanted characters
+        rawText = rawText.replace(/[`"*]+/g, "");
+
+        const chunks = splitTextIntoChunks(rawText, 200);
+
+        function getPreferredVoice() {
+          const voices = speechSynthesis.getVoices();
+          return (
+            voices.find(
+              (v) =>
+                v.lang === "en-IN" && v.name.toLowerCase().includes("female")
+            ) ||
+            voices.find((v) => v.lang === "en-IN") ||
+            voices.find(
+              (v) =>
+                v.name.toLowerCase().includes("female") &&
+                v.lang.startsWith("en")
+            )
+          );
+        }
+
+        function speakChunks(index = 0) {
+          if (index >= chunks.length) return;
+
+          const utterance = new SpeechSynthesisUtterance(chunks[index]);
+          utterance.voice = getPreferredVoice();
+          utterance.rate = 0.95;
+          utterance.pitch = 1.3;
+          utterance.volume = 1;
+
+          currentUtterance = utterance;
+
+          utterance.onend = () => speakChunks(index + 1);
+          utterance.onerror = (e) => console.error("Speech error:", e);
+
+          speechSynthesis.speak(utterance);
+        }
+
+        // Wait for voices to load before speaking
+        if (speechSynthesis.getVoices().length === 0) {
+          speechSynthesis.onvoiceschanged = () => speakChunks();
+        } else {
+          speakChunks();
+        }
+      }
+
+      function splitTextIntoChunks(text, maxLength) {
+        const sentences = text.match(/[^\.!\?]+[\.!\?]+/g) || [text];
+        const chunks = [];
+
+        let currentChunk = "";
+        for (let sentence of sentences) {
+          if ((currentChunk + sentence).length > maxLength) {
+            if (currentChunk) chunks.push(currentChunk);
+            currentChunk = sentence;
+          } else {
+            currentChunk += sentence;
+          }
+        }
+        if (currentChunk) chunks.push(currentChunk);
+        return chunks;
+      }
+
+      // Optional: Stop button functionality
+      function stopSpeech() {
+        if (currentUtterance) {
+          speechSynthesis.cancel();
+          currentUtterance = null;
+        }
+      }
+
+      function searchQuestions() {
+        const input = document.getElementById("searchBox").value.toLowerCase();
+        const items = document.querySelectorAll(".accordion-item");
+
+        items.forEach((item) => {
+          const buttonText =
+            item
+              .querySelector(".accordion-button")
+              ?.textContent.toLowerCase() || "";
+          const bodyText =
+            item.querySelector(".accordion-body")?.textContent.toLowerCase() ||
+            "";
+
+          const combinedText = buttonText + " " + bodyText;
+
+          if (combinedText.includes(input)) {
+            item.style.display = "";
+          } else {
+            item.style.display = "none";
+          }
+        });
+      }
+
+      function copyToClipboard(text) {
+        navigator.clipboard
+          .writeText(text)
+          .then(() => {
+            alert("Copied: " + text);
+          })
+          .catch((err) => {
+            console.error("Failed to copy:", err);
+          });
+      }
+    </script>
+  </body>
+</html>
