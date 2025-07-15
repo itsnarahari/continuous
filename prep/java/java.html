@@ -23701,34 +23701,6 @@ Parsed Date: 2025-12-01</code></pre>
                 // Implement behavior to ensure only one accordion is open at a time
                 let accordionItems = document.querySelectorAll(".accordion-button");
 
-                accordionItems.forEach((button) => {
-                    button.addEventListener("click", function () {
-                        // Close all other accordion items
-                        accordionItems.forEach((otherButton) => {
-                            if (otherButton !== button) {
-                                let collapseElement = otherButton.closest(".accordion-item").querySelector(".accordion-collapse");
-                                if (collapseElement.classList.contains("show")) {
-                                    let bootstrapCollapse = new bootstrap.Collapse(collapseElement, {
-                                        toggle: false, // Don't toggle, just close
-                                    });
-                                    bootstrapCollapse.hide();
-                                }
-                            }
-                        });
-
-                        // Ensure the newly opened accordion scrolls into view
-                        let collapseElement = button.closest(".accordion-item").querySelector(".accordion-collapse");
-                        if (!collapseElement.classList.contains("show")) {
-                            collapseElement.classList.add("show"); // Manually add 'show' class to ensure it's open
-                        }
-
-                        // Scroll the opened accordion item into view
-                        collapseElement.scrollIntoView({
-                            behavior: "smooth", // Smooth scrolling
-                            block: "start", // Align the element to the top of the container
-                        });
-                    });
-                });
             });
 
             // Search questions function (same as before)
