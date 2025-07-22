@@ -17,71 +17,70 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
-
-    <style>
-      /* body {
+  <style>
+    /* body {
       background-color: #121212;
       color: white;
     } */
 
-      .accordion-button {
-        background-color: #343a40;
-        color: white;
-      }
+    .accordion-button {
+      background-color: #343a40;
+      color: white;
+    }
 
-      .accordion-button:focus {
-        box-shadow: none;
-      }
+    .accordion-button:focus {
+      box-shadow: none;
+    }
 
-      .accordion-button:not(.collapsed) {
-        background-color: #007bff;
-        color: white;
-      }
+    .accordion-button:not(.collapsed) {
+      background-color: #007bff;
+      color: white;
+    }
 
-      .accordion-body {
-        background-color: #1e1e1e;
-        color: white;
-      }
+    .accordion-body {
+      background-color: #1e1e1e;
+      color: white;
+    }
 
-      .highlight-yellow {
-        color: #ffcc00;
-        /* Yellow */
-        font-weight: bold;
-      }
+    .highlight-yellow {
+      color: #ffcc00;
+      /* Yellow */
+      font-weight: bold;
+    }
 
-      .highlight-blue {
-        color: #4db8ff;
-        /* Light blue */
-        font-weight: bold;
-      }
+    .highlight-blue {
+      color: #4db8ff;
+      /* Light blue */
+      font-weight: bold;
+    }
 
-      pre[class*="language-"] {
-        background: #1e1e1e !important;
-        border-radius: 8px;
-        padding: 12px;
-      }
+    pre[class*="language-"] {
+      background: #1e1e1e !important;
+      border-radius: 8px;
+      padding: 12px;
+    }
 
-      /* Search Box Styling */
-      .search-container {
-        margin-bottom: 15px;
-        text-align: center;
-      }
+    /* Search Box Styling */
+    .search-container {
+      margin-bottom: 15px;
+      text-align: center;
+    }
 
-      .search-input {
-        width: 100%;
-        padding: 10px;
-        border-radius: 8px;
-        border: 1px solid #666;
-        background: #222;
-        color: white;
-        outline: none;
-        font-size: 16px;
-      }
+    .search-input {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #666;
+      background: #222;
+      color: white;
+      outline: none;
+      font-size: 16px;
+    }
 
-      .search-input::placeholder {
-        color: #aaa;
-      }
-    </style>
+    .search-input::placeholder {
+      color: #aaa;
+    }
+  </style>
   </head>
 
   <body class="bg-dark text-light mb-4">
@@ -4264,6 +4263,115 @@ Client → Server → Queue → Worker (Lambda, Background Service)
 
       <strong class="text-info">Use Case in Production:</strong><br/>
       When your Spring Boot app starts showing high memory usage or crashes with <code>OutOfMemoryError</code>, enabling heap dumps can help you find the root cause like memory leaks, object retention, etc.
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item text-warning" type="button" data-bs-toggle="collapse" data-bs-target="#treeMapNullKey">
+      Why TreeMap does not allow null keys in Java?
+    </button>
+  </h2>
+  <div id="treeMapNullKey" class="accordion-collapse collapse">
+    <div class="accordion-body text-white bg-dark">
+      <strong>Reason:</strong><br/>
+      TreeMap does not allow <code>null</code> keys because it uses a <span class="text-info">Red-Black Tree</span> and relies on key comparison (either <code>compareTo()</code> or a <code>Comparator</code>).<br/><br/>
+
+      When inserting or searching, TreeMap internally does:
+      <pre><code class="language-java">k1.compareTo(k2);</code></pre>
+      If <code>k1</code> is <code>null</code>, this throws a <code>NullPointerException</code>.
+
+      <br/><br/><strong>HashMap vs TreeMap:</strong>
+      <ul>
+        <li><span class="text-info">HashMap:</span> Allows <code>null</code> keys (only one), since it uses <code>equals()</code> and <code>hashCode()</code>.</li>
+        <li><span class="text-info">TreeMap:</span> Does not allow <code>null</code> keys by default due to key ordering and comparisons.</li>
+      </ul>
+
+      <strong>Example that fails:</strong>
+      <pre><code class="language-java">
+TreeMap&lt;String, String&gt; map = new TreeMap&lt;&gt;();
+map.put(null, "value"); // ❌ Throws NullPointerException
+      </code></pre>
+
+      <strong>✅ How to allow null keys (with Comparator):</strong>
+      <pre><code class="language-java">
+TreeMap&lt;String, String&gt; map = new TreeMap&lt;&gt;(
+    Comparator.nullsFirst(Comparator.naturalOrder())
+);
+map.put(null, "value"); // ✅ Works fine
+      </code></pre>
+
+      <strong>Summary:</strong>
+      <ul>
+        <li><span class="text-info">Reason:</span> TreeMap needs keys to be comparable, <code>null</code> can't be compared.</li>
+        <li><span class="text-info">Default Behavior:</span> No support for null keys.</li>
+        <li><span class="text-info">Workaround:</span> Use a custom <code>Comparator</code> that handles <code>null</code> values.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item text-success" type="button" data-bs-toggle="collapse" data-bs-target="#nullOverloading">
+      What happens when overloaded methods are called with null arguments?
+    </button>
+  </h2>
+  <div id="nullOverloading" class="accordion-collapse collapse">
+    <div class="accordion-body text-white bg-dark">
+      <strong>Code Summary:</strong><br/>
+      You have overloaded methods for both <code>m1</code> and <code>m2</code> with different argument types: <code>Object</code>, <code>String</code>, <code>Integer</code>, and <code>Double</code>.
+
+      <br/><br/><strong>Code Snippet:</strong>
+      <pre><code class="language-java">
+public class Prep {
+    public static void m1(Object obj){
+        System.out.printf("obj");
+    }
+
+    public static void m1(String string){
+        System.out.println("string");
+    }
+
+    public static void m2(Integer integer){
+        System.out.println("integer");
+    }
+
+    public static void m2(Double doubl){
+        System.out.println("doubl");
+    }
+
+    public static void main(String[] args) {
+        m1(null);
+        m2(null);
+    }
+}
+      </code></pre>
+
+      <strong>Output:</strong>
+      <pre><code class="language-text">
+string
+// ❌ Compilation error on m2(null)
+      </code></pre>
+
+      <strong>Explanation:</strong>
+      <ul>
+        <li><span class="text-warning">m1(null):</span> Compiler selects the most specific method. <code>String</code> is more specific than <code>Object</code>, so <code>m1(String)</code> is called → <code>string</code> is printed.</li>
+        <li><span class="text-danger">m2(null):</span> Compilation Error ❌ because <code>null</code> matches both <code>Integer</code> and <code>Double</code> — both are equally specific to the compiler, causing **ambiguity**.</li>
+      </ul>
+
+      <strong>How to fix?</strong><br/>
+      You can cast the <code>null</code> to tell the compiler what method to call:
+      <pre><code class="language-java">
+m2((Integer) null); // prints: integer
+m2((Double) null);  // prints: doubl
+      </code></pre>
+
+      <strong>Key Concepts:</strong>
+      <ul>
+        <li><span class="text-info">Most Specific Method Wins:</span> If one overloaded method is more specific, compiler chooses it.</li>
+        <li><span class="text-info">Ambiguity:</span> If two methods are equally specific (like Integer vs Double), compiler throws an error.</li>
+        <li><span class="text-info">Casting:</span> Use casting to resolve ambiguity explicitly.</li>
+      </ul>
     </div>
   </div>
 </div>
