@@ -2616,7 +2616,1657 @@ public void handleOrderCreated(OrderCreatedEvent event) {
     </div>
   </div>
 </div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse" data-bs-target="#pojoVsDto">
+      What is the difference between POJO and DTO in Java?
+    </button>
+  </h2>
+  <div id="pojoVsDto" class="accordion-collapse collapse">
+    <div class="accordion-body text-white bg-dark">
+      <strong>POJO (Plain Old Java Object):</strong><br/>
+      - A POJO is a simple Java class that doesn't follow any special restrictions.<br/>
+      - It may contain business logic, methods, and annotations.<br/>
+      - Used for encapsulating data and behavior.<br/><br/>
 
+      <strong>DTO (Data Transfer Object):</strong><br/>
+      - A DTO is a type of POJO used specifically to transfer data between layers or systems (like between client and server).<br/>
+      - Should not contain business logic, only fields and their getters/setters.<br/>
+      - It helps in reducing the number of remote calls or in exposing only required fields.<br/><br/>
+
+      <strong>Key Differences:</strong>
+      <ul>
+        <li><span class="text-warning">Purpose:</span> POJO is general-purpose; DTO is for data transfer.</li>
+        <li><span class="text-warning">Content:</span> POJO may have logic; DTO must be only data.</li>
+        <li><span class="text-warning">Usage:</span> POJO can be used anywhere; DTO is mostly used in APIs and serialization.</li>
+        <li><span class="text-warning">Serialization:</span> DTOs are often serializable for network transfer.</li>
+      </ul>
+
+      <strong>Example POJO:</strong>
+      <pre><code class="language-java">
+public class User {
+    private String name;
+    private int age;
+
+    public int getBirthYear() {
+        return 2025 - age;
+    }
+}
+      </code></pre>
+
+      <strong>Example DTO:</strong>
+      <pre><code class="language-java">
+public class UserDTO {
+    private String name;
+    private int age;
+
+    // Only getters and setters
+}
+      </code></pre>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item text-warning" type="button" data-bs-toggle="collapse" data-bs-target="#entityVsPojoVsDto">
+      Entity vs POJO vs DTO in Java – What's the difference?
+    </button>
+  </h2>
+  <div id="entityVsPojoVsDto" class="accordion-collapse collapse">
+    <div class="accordion-body text-white bg-dark">
+      <strong>🟡 POJO (Plain Old Java Object)</strong><br/>
+      - A simple Java object not bound by any special restrictions.<br/>
+      - No need to implement interfaces or extend classes.<br/>
+      - May or may not have logic.<br/><br/>
+
+      <strong>🟢 Entity</strong><br/>
+      - A special type of POJO that maps to a database table.<br/>
+      - Annotated with <code>@Entity</code> in JPA/Hibernate.<br/>
+      - Often includes annotations like <code>@Id</code>, <code>@Column</code>, <code>@Table</code>, etc.<br/>
+      - It represents **persistent state** in a relational database.<br/><br/>
+
+      <strong>🔵 DTO (Data Transfer Object)</strong><br/>
+      - A POJO created to transfer data between layers (ex: controller ↔ service, service ↔ frontend).<br/>
+      - Should not contain business logic.<br/>
+      - Helps expose only required data fields (security and performance).<br/><br/>
+
+      <strong>🔁 Comparison Table:</strong><br/>
+      <table class="table table-bordered table-dark table-sm">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>POJO</th>
+            <th>Entity</th>
+            <th>DTO</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Definition</td>
+            <td>Basic Java object</td>
+            <td>POJO mapped to DB</td>
+            <td>POJO used for data transfer</td>
+          </tr>
+          <tr>
+            <td>Annotations</td>
+            <td>None required</td>
+            <td>@Entity, @Id, etc.</td>
+            <td>Usually none or minimal (e.g., @JsonProperty)</td>
+          </tr>
+          <tr>
+            <td>Business Logic</td>
+            <td>May include</td>
+            <td>May include some logic</td>
+            <td>Should not include</td>
+          </tr>
+          <tr>
+            <td>Serialization</td>
+            <td>Optional</td>
+            <td>Not always</td>
+            <td>Often serialized (JSON, XML)</td>
+          </tr>
+          <tr>
+            <td>Usage Layer</td>
+            <td>Any layer</td>
+            <td>Persistence layer</td>
+            <td>Controller / API layer</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <strong>🧪 Example:</strong><br/>
+
+      <strong>Entity:</strong>
+      <pre><code class="language-java">
+@Entity
+public class User {
+  @Id
+  private Long id;
+  private String name;
+}
+      </code></pre>
+
+      <strong>DTO:</strong>
+      <pre><code class="language-java">
+public class UserDTO {
+  private String name;
+  // only data to expose to client
+}
+      </code></pre>
+
+      <strong>POJO (General):</strong>
+      <pre><code class="language-java">
+public class Config {
+  private String env;
+  private boolean enabled;
+}
+      </code></pre>
+
+      ✅ <strong>Summary:</strong>  
+      - **POJO** = Generic, simple Java object.  
+      - **Entity** = POJO + DB mapping.  
+      - **DTO** = POJO used to transfer safe/specific data between layers or to the frontend.
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item text-success" type="button" data-bs-toggle="collapse" data-bs-target="#nativeCodeJIT">
+      What is "native code" in the context of JIT compilation in Java?
+    </button>
+  </h2>
+  <div id="nativeCodeJIT" class="accordion-collapse collapse">
+    <div class="accordion-body text-white bg-dark">
+      <strong>Definition:</strong><br/>
+      Native code refers to the low-level machine code that is directly executed by the underlying CPU architecture (e.g., x86, ARM). It is platform-specific and optimized for performance.<br/><br/>
+
+      <strong>How it relates to Java:</strong>
+      <ol>
+        <li>Java source code (.java) is compiled into <code>.class</code> files containing <span class="text-info">bytecode</span>.</li>
+        <li>This bytecode is interpreted or compiled by the JVM.</li>
+        <li>The <span class="text-warning">JIT (Just-In-Time) compiler</span> identifies frequently used bytecode and compiles it into <span class="text-success">native code</span>.</li>
+        <li>This native code is stored in memory and executed directly by the CPU for faster performance.</li>
+      </ol>
+
+      <strong>Why is it faster?</strong><br/>
+      - Native code skips interpretation overhead.<br/>
+      - Tailored to your CPU instructions.<br/>
+      - Allows better CPU-level optimizations like inlining and loop unrolling.<br/><br/>
+
+      <strong>Example:</strong><br/>
+      <pre><code class="language-java">
+// Java method
+public int square(int x) {
+    return x * x;
+}
+      </code></pre>
+      - JVM interprets this initially.<br/>
+      - If called repeatedly, JIT compiles it to native assembly instructions like:<br/>
+      <pre><code class="language-bash">
+mov eax, edi     ; Move input x into register
+imul eax, eax    ; Multiply x by x
+ret              ; Return result
+      </code></pre>
+
+      <strong>Conclusion:</strong><br/>
+      Native code is the reason behind Java's high runtime performance — it’s machine-optimized and skips the slower interpretation step.
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item text-warning" type="button" data-bs-toggle="collapse" data-bs-target="#cpuArchDiff">
+      What is the difference between CPU architectures like x86 and ARM?
+    </button>
+  </h2>
+  <div id="cpuArchDiff" class="accordion-collapse collapse">
+    <div class="accordion-body text-white bg-dark">
+
+      <strong>🧠 What is CPU Architecture?</strong><br/>
+      CPU architecture refers to the internal design and instruction set of a processor. It defines how a CPU executes instructions, manages memory, and interacts with software.
+
+      <br/><br/>
+      <strong>🔄 Two Common Architectures:</strong>
+      <ul>
+        <li><span class="text-info"><strong>x86 (CISC)</strong> - Complex Instruction Set Computer</span></li>
+        <li><span class="text-success"><strong>ARM (RISC)</strong> - Reduced Instruction Set Computer</span></li>
+      </ul>
+
+      <hr/>
+
+      <strong>🔍 Comparison Table:</strong><br/>
+      <table class="table table-dark table-bordered table-sm">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>x86</th>
+            <th>ARM</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Instruction Set</td>
+            <td>Complex (CISC)</td>
+            <td>Simpler (RISC)</td>
+          </tr>
+          <tr>
+            <td>Power Consumption</td>
+            <td>Higher (not battery-friendly)</td>
+            <td>Lower (ideal for mobile)</td>
+          </tr>
+          <tr>
+            <td>Performance</td>
+            <td>High for heavy computing (e.g., PCs)</td>
+            <td>Efficient for lightweight tasks</td>
+          </tr>
+          <tr>
+            <td>Devices</td>
+            <td>Laptops, Desktops, Servers</td>
+            <td>Mobile phones, tablets, IoT</td>
+          </tr>
+          <tr>
+            <td>Binary Compatibility</td>
+            <td>x86-only software won’t run on ARM</td>
+            <td>ARM-only apps won’t run on x86</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <hr/>
+
+      <strong>📱 Real-World Examples:</strong>
+      <ul>
+        <li>💻 Intel/AMD processors → <code>x86</code></li>
+        <li>📱 iPhones, Androids, Raspberry Pi → <code>ARM</code></li>
+        <li>🖥️ Apple Silicon Macs (M1/M2/M3) → <code>ARM-based</code> but emulate x86 via Rosetta</li>
+      </ul>
+
+      <hr/>
+
+      <strong>🎯 Summary:</strong><br/>
+      - x86 = powerful, legacy-heavy, less efficient for battery.<br/>
+      - ARM = lightweight, power-efficient, rising in popularity (even in laptops).<br/>
+      - JIT compilers generate <span class="text-info">native code specifically tailored</span> to either x86 or ARM depending on the running device.
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item text-warning" type="button" data-bs-toggle="collapse" data-bs-target="#stackOverflowVsOOM">
+      Why does StackOverflowError occur before OutOfMemoryError in Java?
+    </button>
+  </h2>
+  <div id="stackOverflowVsOOM" class="accordion-collapse collapse">
+    <div class="accordion-body text-white bg-dark">
+
+      <strong>🧠 Basic Concepts:</strong><br/>
+      - Java memory is divided into several areas like <code>Heap</code>, <code>Stack</code>, <code>Metaspace</code>, etc.<br/>
+      - <code>StackOverflowError</code> and <code>OutOfMemoryError</code> both happen when certain memory areas are exhausted.<br/>
+
+      <hr/>
+
+      <strong>📌 StackOverflowError:</strong><br/>
+      - Occurs when the <span class="text-info">call stack exceeds its limit</span> (deep or infinite recursion).<br/>
+      - Each method call adds a frame to the thread's stack.<br/>
+      - When the limit is reached → `java.lang.StackOverflowError` is thrown.
+
+      <br/><br/>
+      <strong>💥 Example:</strong><br/>
+      <code>
+        public void recurse() { recurse(); } // infinite recursion<br/>
+        recurse(); // Triggers StackOverflowError
+      </code>
+
+      <hr/>
+
+      <strong>📌 OutOfMemoryError:</strong><br/>
+      - Occurs when the <span class="text-success">JVM heap or other memory pools</span> cannot allocate memory.<br/>
+      - Can happen due to:
+        <ul>
+          <li>Large object allocations</li>
+          <li>Memory leaks</li>
+          <li>Too many classes loaded</li>
+        </ul>
+
+      <br/>
+      <strong>💥 Example:</strong><br/>
+      <code>
+        List&lt;int[]&gt; list = new ArrayList<>();<br/>
+        while (true) list.add(new int[1_000_000]);
+      </code><br/>
+      This fills up the heap → `java.lang.OutOfMemoryError`
+
+      <hr/>
+
+      <strong>⚖️ Why StackOverflowError Happens First?</strong>
+      <ul>
+        <li>Stack memory is much smaller (~512KB to 1MB per thread by default).</li>
+        <li>Heap is larger (tens or hundreds of MB by default).</li>
+        <li>Infinite recursion or deep call chains quickly exhaust the stack.</li>
+        <li>OutOfMemoryError takes longer and usually results from gradual accumulation.</li>
+      </ul>
+
+      <hr/>
+
+      <strong>🧪 JVM Configurable Limits:</strong><br/>
+      - Stack Size: <code>-Xss256k</code><br/>
+      - Heap Size: <code>-Xms512m -Xmx1024m</code><br/>
+
+      <hr/>
+
+      <strong>✅ Summary:</strong><br/>
+      - <span class="text-info">StackOverflowError</span> = call stack limit reached (usually due to recursion).<br/>
+      - <span class="text-success">OutOfMemoryError</span> = heap or metaspace full (due to excessive memory use).<br/>
+      - Stack is smaller, so stack errors usually appear first in recursive issues.
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse" data-bs-target="#customExceptionClass">
+      What difference does it make if a custom exception extends RuntimeException or Exception?
+    </button>
+  </h2>
+  <div id="customExceptionClass" class="accordion-collapse collapse">
+    <div class="accordion-body text-white bg-dark">
+
+      <strong>🔍 Key Concept:</strong><br/>
+      In Java, exceptions are divided into two categories:<br/>
+      - <span class="text-warning">Checked Exceptions</span> (extend <code>Exception</code>, but not <code>RuntimeException</code>)<br/>
+      - <span class="text-success">Unchecked Exceptions</span> (extend <code>RuntimeException</code>)
+
+      <hr/>
+
+      <strong>🟡 Custom Exception extends <code>Exception</code></strong><br/>
+      ✅ Becomes a <u>Checked Exception</u><br/>
+      - Must be declared with <code>throws</code> in method signatures<br/>
+      - Must be handled using <code>try-catch</code> or declared to be thrown<br/>
+
+      <strong>Example:</strong><br/>
+      <code>
+        public class MyCheckedException extends Exception { ... }<br/><br/>
+        public void someMethod() throws MyCheckedException {<br/>
+          throw new MyCheckedException();<br/>
+        }
+      </code>
+
+      <hr/>
+
+      <strong>🟢 Custom Exception extends <code>RuntimeException</code></strong><br/>
+      ✅ Becomes an <u>Unchecked Exception</u><br/>
+      - No need to declare with <code>throws</code><br/>
+      - Can be thrown anywhere without compiler checks<br/>
+      - Ideal for programming errors like null, invalid state, etc.<br/>
+
+      <strong>Example:</strong><br/>
+      <code>
+        public class MyUncheckedException extends RuntimeException { ... }<br/><br/>
+        public void someMethod() {<br/>
+          throw new MyUncheckedException();<br/>
+        }
+      </code>
+
+      <hr/>
+
+      <strong>⚖️ When to Use Which?</strong><br/>
+      <ul>
+        <li>📘 Use <code>extends Exception</code> → when the caller <u>must handle or declare</u> the exception (e.g., file not found, validation failure).</li>
+        <li>📗 Use <code>extends RuntimeException</code> → when it’s a programming error or logic bug (e.g., illegal state, null values).</li>
+      </ul>
+
+      <hr/>
+
+      <strong>🛠️ Real World Analogy:</strong><br/>
+      - Checked → Like borrowing a library book (you must return it)<br/>
+      - Unchecked → Like buying a book (you're on your own, no obligation)<br/>
+
+      <hr/>
+
+      <strong>✅ Summary:</strong><br/>
+      - <span class="text-warning">`extends Exception`</span> → Checked, must be declared or handled.<br/>
+      - <span class="text-success">`extends RuntimeException`</span> → Unchecked, no declaration needed.<br/>
+      - Use based on whether the client **must** be forced to handle the error or not.
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item text-warning" type="button" data-bs-toggle="collapse" data-bs-target="#stringBuilderMethods">
+      📚 List of All Important StringBuilder Methods in Java
+    </button>
+  </h2>
+  <div id="stringBuilderMethods" class="accordion-collapse collapse">
+    <div class="accordion-body text-white bg-dark">
+
+      <strong>📌 Overview:</strong><br/>
+      <code>StringBuilder</code> is a mutable sequence of characters, useful for fast string manipulation.
+
+      <hr/>
+
+      <strong>🔧 Commonly Used Methods:</strong>
+      <ul>
+        <li><code>append(String s)</code> - Adds string to the end</li>
+        <li><code>insert(int offset, String s)</code> - Inserts string at specified index</li>
+        <li><code>replace(int start, int end, String str)</code> - Replaces characters between start and end with new string</li>
+        <li><code>delete(int start, int end)</code> - Deletes characters between start and end</li>
+        <li><code>deleteCharAt(int index)</code> - Deletes single character at index</li>
+        <li><code>reverse()</code> - Reverses the sequence</li>
+        <li><code>capacity()</code> - Returns current capacity of the builder</li>
+        <li><code>ensureCapacity(int minimumCapacity)</code> - Ensures minimum capacity</li>
+        <li><code>charAt(int index)</code> - Returns character at given index</li>
+        <li><code>setCharAt(int index, char ch)</code> - Replaces character at index</li>
+        <li><code>length()</code> - Returns the number of characters</li>
+        <li><code>substring(int start)</code> - Returns substring from start to end</li>
+        <li><code>substring(int start, int end)</code> - Substring from start to end</li>
+        <li><code>toString()</code> - Converts builder content to a string</li>
+        <li><code>indexOf(String str)</code> - Finds first occurrence index</li>
+        <li><code>lastIndexOf(String str)</code> - Finds last occurrence index</li>
+        <li><code>setLength(int newLength)</code> - Sets new length</li>
+        <li><code>trimToSize()</code> - Reduces capacity to string length</li>
+      </ul>
+
+      <hr/>
+
+      <strong>🧪 Example:</strong><br/>
+      <pre><code class="language-java">
+StringBuilder sb = new StringBuilder("Hello");
+sb.append(" World"); // "Hello World"
+sb.insert(5, ",");   // "Hello, World"
+sb.replace(6, 7, "..."); // "Hello,...World"
+sb.delete(5, 9); // "HelloWorld"
+sb.reverse(); // "dlroWolleH"
+      </code></pre>
+
+      <hr/>
+
+      <strong>✅ Summary:</strong><br/>
+      Use <code>StringBuilder</code> when you need efficient string modifications without creating multiple new string objects.
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse" data-bs-target="#treesetVsTreemap">
+      🌳 TreeSet vs TreeMap in Java
+    </button>
+  </h2>
+  <div id="treesetVsTreemap" class="accordion-collapse collapse">
+    <div class="accordion-body text-white bg-dark">
+
+      <strong>📌 Definition:</strong><br/>
+      <ul>
+        <li><code>TreeSet</code> - A NavigableSet implementation based on a TreeMap that stores unique elements in sorted order.</li>
+        <li><code>TreeMap</code> - A NavigableMap that stores key-value pairs in sorted order based on keys.</li>
+      </ul>
+
+      <hr/>
+
+      <strong>🔍 Key Differences:</strong>
+      <table class="table table-dark table-bordered table-sm">
+        <thead>
+          <tr>
+            <th>Aspect</th>
+            <th>TreeSet</th>
+            <th>TreeMap</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Storage</td>
+            <td>Stores only keys (no values)</td>
+            <td>Stores key-value pairs</td>
+          </tr>
+          <tr>
+            <td>Underlying Structure</td>
+            <td>Backed by TreeMap</td>
+            <td>Backed by Red-Black Tree</td>
+          </tr>
+          <tr>
+            <td>Duplicates</td>
+            <td>Does not allow duplicate elements</td>
+            <td>Does not allow duplicate keys</td>
+          </tr>
+          <tr>
+            <td>Sorting</td>
+            <td>Sorted by natural order or custom Comparator</td>
+            <td>Keys sorted by natural order or custom Comparator</td>
+          </tr>
+          <tr>
+            <td>Use Case</td>
+            <td>When only unique sorted elements are needed</td>
+            <td>When mapping keys to values in sorted order</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <hr/>
+
+      <strong>🧪 Example:</strong><br/>
+      <pre><code class="language-java">
+// TreeSet example
+TreeSet&lt;String&gt; treeSet = new TreeSet&lt;&gt;();
+treeSet.add("Apple");
+treeSet.add("Banana");
+
+// TreeMap example
+TreeMap&lt;Integer, String&gt; treeMap = new TreeMap&lt;&gt;();
+treeMap.put(2, "Two");
+treeMap.put(1, "One");
+      </code></pre>
+
+      <hr/>
+
+      <strong>✅ Summary:</strong><br/>
+      Use <code>TreeSet</code> when you only need sorted unique elements. Use <code>TreeMap</code> when you need to maintain key-value pairs in a sorted manner by keys.
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item text-warning" type="button" data-bs-toggle="collapse" data-bs-target="#nullInSwitch">
+      ❓ Does <code>null</code> support in <code>switch</code> statement in Java?
+    </button>
+  </h2>
+  <div id="nullInSwitch" class="accordion-collapse collapse">
+    <div class="accordion-body text-white bg-dark">
+
+      <strong>🚫 Short Answer:</strong>  
+      <span class="text-danger">No, <code>null</code> is not supported directly in a <code>switch</code> statement.</span><br/>
+      If you try to pass <code>null</code> to a switch, it throws a <code>NullPointerException</code>.
+
+      <hr/>
+
+      <strong>🧪 Example:</strong>
+      <pre><code class="language-java">
+String input = null;
+
+switch (input) {
+    case "A":
+        System.out.println("A");
+        break;
+    case "B":
+        System.out.println("B");
+        break;
+    default:
+        System.out.println("Default");
+}
+      </code></pre>
+
+      <strong>❗ Output:</strong><br/>
+      <code>NullPointerException</code> at runtime because `input` is null.
+
+      <hr/>
+
+      <strong>✅ Safe Way to Handle:</strong><br/>
+      Use an <code>if</code> check before the switch:
+      <pre><code class="language-java">
+String input = null;
+
+if (input == null) {
+    System.out.println("Handled null");
+} else {
+    switch (input) {
+        case "A":
+            System.out.println("A");
+            break;
+        case "B":
+            System.out.println("B");
+            break;
+        default:
+            System.out.println("Default");
+    }
+}
+      </code></pre>
+
+      <hr/>
+
+      <strong>📌 Summary:</strong><br/>
+      - `switch` in Java does <span class="text-danger">not accept null</span> as input.<br/>
+      - Always <span class="text-info">null-check</span> the variable before using it in a switch block.
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse" data-bs-target="#java21SwitchNull">
+      💡 Does Java 21 support <code>null</code> in <code>switch</code> statements?
+    </button>
+  </h2>
+  <div id="java21SwitchNull" class="accordion-collapse collapse">
+    <div class="accordion-body text-white bg-dark">
+
+      ✅ <strong>Yes, Java 21 (Preview Feature) allows handling <code>null</code> in switch statements</strong> with <code>switch</code> expressions using pattern matching.  
+      This was not possible in earlier versions.
+
+      <hr/>
+
+      <strong>🆕 Example in Java 21 (Preview):</strong>
+      <pre><code class="language-java">
+String input = null;
+
+String result = switch (input) {
+    case null -> "It's null!";
+    case "A" -> "It's A";
+    case "B" -> "It's B";
+    default -> "Something else";
+};
+
+System.out.println(result);
+      </code></pre>
+
+      <strong>✅ Output:</strong><br/>
+      <code>It's null!</code>
+
+      <hr/>
+
+      <strong>⚠️ Note:</strong><br/>
+      - This feature is available as **preview** in Java 21.<br/>
+      - You must enable preview features during compilation and execution:
+      <pre><code class="language-bash">
+javac --enable-preview --release 21 YourFile.java
+java --enable-preview YourFile
+      </code></pre>
+
+      <hr/>
+
+      <strong>📌 Summary:</strong><br/>
+      - Java <span class="text-warning">17 and earlier:</span> <code>null</code> in <code>switch</code> throws <code>NullPointerException</code>.<br/>
+      - Java <span class="text-success">21 (Preview)</span>: You can now use `case null ->` in switch expressions. ✅
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse" data-bs-target="#interfaceSameMethod">
+      🔁 Can a class implement two interfaces with the same method names?
+    </button>
+  </h2>
+  <div id="interfaceSameMethod" class="accordion-collapse collapse">
+    <div class="accordion-body text-white bg-dark">
+
+      ✅ Yes! A class can implement multiple interfaces that declare methods with the same name **and same signature** (return type and parameters).  
+      In that case, the implementing class just needs to provide **one implementation**.
+
+      <hr/>
+
+      <strong>🧪 Example:</strong>
+
+      <pre><code class="language-java">
+// Interface A
+interface A {
+    void show();
+}
+
+// Interface B
+interface B {
+    void show();
+}
+
+// Implementing class
+class MyClass implements A, B {
+    public void show() {
+        System.out.println("Same method from both A and B implemented once.");
+    }
+}
+
+// Usage
+public class Main {
+    public static void main(String[] args) {
+        MyClass obj = new MyClass();
+        obj.show();  // ✅ Output: Same method from both A and B implemented once.
+    }
+}
+      </code></pre>
+
+      <hr/>
+
+      <strong>❗ What if signatures are different?</strong><br/>
+      If the return types or parameters are different, the compiler will throw an error or you'll need to implement both methods differently using **method overloading**.
+
+      <hr/>
+
+      <strong>📌 Summary:</strong><br/>
+      - ✔️ Same method name and signature → single implementation is enough.<br/>
+      - ❌ Different return types with same parameters → compilation error.<br/>
+      - 🔀 Different parameters → use method overloading.
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item text-warning" type="button" data-bs-toggle="collapse" data-bs-target="#defaultMethodConflict">
+      ⚠️ What if both interfaces have default methods with the same name?
+    </button>
+  </h2>
+  <div id="defaultMethodConflict" class="accordion-collapse collapse">
+    <div class="accordion-body text-white bg-dark">
+
+      🧩 If two interfaces provide **default methods** with the **same method name and signature**, the implementing class **must override** that method to avoid ambiguity.
+
+      <hr/>
+
+      <strong>🧪 Example:</strong>
+
+      <pre><code class="language-java">
+interface A {
+    default void greet() {
+        System.out.println("Hello from A");
+    }
+}
+
+interface B {
+    default void greet() {
+        System.out.println("Hello from B");
+    }
+}
+
+class MyClass implements A, B {
+    // ❗ Must override greet() to resolve the conflict
+    public void greet() {
+        // You can choose which one to call, or provide new logic
+        A.super.greet();  // or B.super.greet()
+        System.out.println("Hello from MyClass");
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        new MyClass().greet();
+    }
+}
+      </code></pre>
+
+      <strong>✅ Output:</strong>
+      <pre>
+Hello from A
+Hello from MyClass
+      </pre>
+
+      <hr/>
+
+      <strong>📌 Summary:</strong><br/>
+      - ✔️ If both interfaces define default methods with the same signature → must override.<br/>
+      - 🛠️ Use `InterfaceName.super.methodName()` to call a specific one.<br/>
+      - 🚫 If not overridden, it results in a **"duplicate default methods"** compile-time error.
+
+      <hr/>
+
+      💡 This rule ensures **diamond problem** is resolved clearly and safely in Java 8+.
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse" data-bs-target="#differentReturnTypes">
+      ❓ What happens if two interfaces have methods with the same name but different return types?
+    </button>
+  </h2>
+  <div id="differentReturnTypes" class="accordion-collapse collapse">
+    <div class="accordion-body text-white bg-dark">
+
+      🔥 Java **does not allow** two methods with the same name and **different return types only** (when no other difference like parameters exists). This leads to a **compile-time error** due to ambiguity.
+
+      <hr/>
+
+      <strong>🚫 Example that causes compile error:</strong>
+
+      <pre><code class="language-java">
+interface A {
+    String process();
+}
+
+interface B {
+    int process();
+}
+
+class MyClass implements A, B {
+    // ❌ Compile-time error: process() has incompatible return types
+}
+      </code></pre>
+
+      <hr/>
+
+      <strong>💡 Why?</strong><br/>
+      - Java **method signatures** include name + parameter types, **not** the return type.<br/>
+      - So `String process()` and `int process()` are seen as **duplicate methods**, causing conflict.<br/>
+      - The compiler can't determine which method is meant to be implemented.
+
+      <hr/>
+
+      <strong>✅ Valid workaround (change method parameters):</strong>
+
+      <pre><code class="language-java">
+interface A {
+    String process(String input);
+}
+
+interface B {
+    int process(int input);
+}
+
+class MyClass implements A, B {
+    public String process(String input) {
+        return input.toUpperCase();
+    }
+
+    public int process(int input) {
+        return input * 2;
+    }
+}
+      </code></pre>
+
+      ✅ Here, it compiles successfully because method **parameters are different**, so the signatures are distinct.
+
+      <hr/>
+
+      <strong>📌 Summary:</strong><br/>
+      - ❌ Same method name + same parameters + different return types → Compile error<br/>
+      - ✔️ Same name + different parameters → Allowed (Method overloading)<br/>
+      - Return type **alone** can't differentiate overloaded methods.
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse" data-bs-target="#interfaceOverloading">
+      🧩 Can a class implement two interfaces with same method name but different parameters?
+    </button>
+  </h2>
+  <div id="interfaceOverloading" class="accordion-collapse collapse">
+    <div class="accordion-body text-white bg-dark">
+
+      ✅ Yes, this is allowed in Java. If two interfaces define methods with the <strong>same name</strong> but <strong>different parameters</strong>, then they are treated as <strong>different overloaded methods</strong>.
+
+      <hr/>
+
+      <strong>🧪 Example:</strong>
+
+      <pre><code class="language-java">
+// Interface A
+interface A {
+    void show(String message);
+}
+
+// Interface B
+interface B {
+    void show(int number);
+}
+
+// Implementing class
+class MyClass implements A, B {
+    public void show(String message) {
+        System.out.println("From A: " + message);
+    }
+
+    public void show(int number) {
+        System.out.println("From B: " + number);
+    }
+}
+      </code></pre>
+
+      <hr/>
+
+      <strong>🎯 Explanation:</strong><br/>
+      - `A.show(String)` and `B.show(int)` are treated as **different methods**.
+      - This is a valid form of **method overloading** across interfaces.
+      - Implementing class must define both methods.
+
+      <hr/>
+
+      <strong>📌 Key Point:</strong><br/>
+      Overloading methods across interfaces is possible as long as their <code>parameter lists differ</code>. Return type does not help in overloading.
+
+      <hr/>
+
+      ✅ This avoids ambiguity and the Java compiler can resolve which method to call based on arguments passed.
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item text-danger" type="button" data-bs-toggle="collapse" data-bs-target="#waitOutsideSync">
+      ⚠️ What if we call <code>wait()</code> outside of <code>synchronized</code> block in Java?
+    </button>
+  </h2>
+  <div id="waitOutsideSync" class="accordion-collapse collapse">
+    <div class="accordion-body text-white bg-dark">
+
+      🧨 <strong>Calling <code>wait()</code> outside of a <code>synchronized</code> block causes a <code>java.lang.IllegalMonitorStateException</code></strong>.
+
+      <hr/>
+
+      <strong>📌 Reason:</strong><br/>
+      The calling thread <u>must own the monitor</u> of the object it's calling <code>wait()</code> on.<br/>
+      That only happens when the thread is inside a <code>synchronized(obj)</code> block or method.
+
+      <hr/>
+
+      <strong>🧪 Example (Invalid):</strong>
+      <pre><code class="language-java">
+public class MyClass {
+    public static void main(String[] args) throws InterruptedException {
+        Object lock = new Object();
+        lock.wait(); // ❌ Throws IllegalMonitorStateException
+    }
+}
+      </code></pre>
+
+      <hr/>
+
+      <strong>✅ Correct Usage:</strong>
+      <pre><code class="language-java">
+public class MyClass {
+    public static void main(String[] args) throws InterruptedException {
+        Object lock = new Object();
+        synchronized (lock) {
+            lock.wait(); // ✅ This is legal
+        }
+    }
+}
+      </code></pre>
+
+      <hr/>
+
+      <strong>📣 Summary:</strong><br/>
+      - ☑️ <code>wait()</code>, <code>notify()</code>, and <code>notifyAll()</code> <u>must</u> be called inside a synchronized context.<br/>
+      - ☠️ Otherwise, JVM throws <code>IllegalMonitorStateException</code> at runtime.
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse" data-bs-target="#syncVsConcurrentMap">
+      🆚 SynchronizedHashMap vs ConcurrentHashMap in Java
+    </button>
+  </h2>
+  <div id="syncVsConcurrentMap" class="accordion-collapse collapse">
+    <div class="accordion-body text-white bg-dark">
+
+      🔐 <strong>SynchronizedHashMap</strong> and <strong>ConcurrentHashMap</strong> both provide thread-safety for maps, but differ in <u>performance</u>, <u>locking strategy</u>, and <u>use cases</u>.
+
+      <hr/>
+
+      <table class="table table-bordered table-dark table-striped">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>SynchronizedHashMap</th>
+            <th>ConcurrentHashMap</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Thread Safety</td>
+            <td>✅ Yes (via synchronized block on whole map)</td>
+            <td>✅ Yes (uses finer-grained locking)</td>
+          </tr>
+          <tr>
+            <td>Locking Mechanism</td>
+            <td>Entire map is locked for each operation</td>
+            <td>Locks only part ("bucket") of the map</td>
+          </tr>
+          <tr>
+            <td>Performance (multi-threaded)</td>
+            <td>⚠️ Slower (high contention)</td>
+            <td>🚀 Faster (low contention)</td>
+          </tr>
+          <tr>
+            <td>Null Keys/Values</td>
+            <td>✅ Allows 1 null key, multiple null values</td>
+            <td>❌ Does NOT allow null keys or null values</td>
+          </tr>
+          <tr>
+            <td>Iteration Safety</td>
+            <td>❌ Fail-fast (may throw <code>ConcurrentModificationException</code>)</td>
+            <td>✅ Weakly consistent iterator (no exception)</td>
+          </tr>
+          <tr>
+            <td>Preferred Use</td>
+            <td>Simple sync wrapper for legacy use</td>
+            <td>Modern high-concurrency scenarios</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <hr/>
+
+      🧪 <strong>How to create:</strong>
+
+      <pre><code class="language-java">
+// SynchronizedHashMap
+Map&lt;String, String&gt; syncMap = Collections.synchronizedMap(new HashMap&lt;&gt;());
+
+// ConcurrentHashMap
+ConcurrentHashMap&lt;String, String&gt; concurrentMap = new ConcurrentHashMap&lt;&gt;();
+      </code></pre>
+
+      <hr/>
+
+      ✅ <strong>Use ConcurrentHashMap when:</strong><br/>
+      - Multiple threads frequently access and modify the map<br/>
+      - You need better performance<br/>
+      - You don't require nulls
+
+      ⚠️ <strong>Use SynchronizedHashMap when:</strong><br/>
+      - You need a simple thread-safe wrapper<br/>
+      - Working with legacy APIs or synchronized collections
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item text-warning" type="button" data-bs-toggle="collapse" data-bs-target="#functionalInterfaceExtends">
+      🔗 Can a Functional Interface extend another Interface?
+    </button>
+  </h2>
+  <div id="functionalInterfaceExtends" class="accordion-collapse collapse">
+    <div class="accordion-body text-white bg-dark">
+
+      ✅ Yes, a <strong>Functional Interface</strong> <u>can extend another interface</u>, including other functional interfaces, as long as it does <u>not declare more than one abstract method</u> in total (excluding default/static methods).
+
+      <hr/>
+
+      <strong>🧪 Example 1: Extending a functional interface</strong>
+
+      <pre><code class="language-java">
+@FunctionalInterface
+interface A {
+    void sayHello();
+}
+
+@FunctionalInterface
+interface B extends A {
+    // No new abstract methods added, so still valid
+}
+      </code></pre>
+
+      ✅ Interface `B` is still a valid functional interface.
+
+      <hr/>
+
+      <strong>🚫 Example 2: Adding new abstract methods</strong>
+
+      <pre><code class="language-java">
+@FunctionalInterface
+interface A {
+    void sayHello();
+}
+
+@FunctionalInterface
+interface B extends A {
+    void sayBye(); // ❌ Compilation Error: Multiple abstract methods
+}
+      </code></pre>
+
+      ❌ This is invalid as it violates the rule of having only one abstract method.
+
+      <hr/>
+
+      📝 <strong>Key Points:</strong>
+      <ul>
+        <li>A functional interface can extend another interface.</li>
+        <li>It must still have only <u>one abstract method</u> in total.</li>
+        <li><code>default</code> and <code>static</code> methods do <u>not</u> count towards abstract methods.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse" data-bs-target="#methodHiding">
+      🧩 What is Method Hiding in Java? (with example)
+    </button>
+  </h2>
+  <div id="methodHiding" class="accordion-collapse collapse">
+    <div class="accordion-body text-white bg-dark">
+
+      🔹 <strong>Method Hiding</strong> occurs when a <code>static method</code> in a subclass has the <u>same signature</u> as a <code>static method</code> in its superclass.
+
+      ✅ Unlike instance methods (which are overridden and support runtime polymorphism), <code>static methods</code> are <strong>hidden</strong>, not overridden.
+
+      <hr/>
+
+      <strong>🧪 Example:</strong>
+      <pre><code class="language-java">
+class Parent {
+    static void display() {
+        System.out.println("Parent static method");
+    }
+}
+
+class Child extends Parent {
+    static void display() {
+        System.out.println("Child static method");
+    }
+}
+
+public class Test {
+    public static void main(String[] args) {
+        Parent obj = new Child();
+        obj.display(); // Output: Parent static method ❗
+    }
+}
+      </code></pre>
+
+      <hr/>
+
+      🧠 <strong>Why?</strong>
+      <ul>
+        <li>Since <code>display()</code> is static, it's bound at <strong>compile-time</strong>.</li>
+        <li>Reference type <code>Parent</code> determines which method is called.</li>
+        <li>So even though the object is <code>Child</code>, it calls <code>Parent.display()</code>.</li>
+      </ul>
+
+      <hr/>
+
+      🚫 If you remove <code>static</code> and make them instance methods instead:
+      <pre><code class="language-java">
+class Parent {
+    void display() { ... }
+}
+
+class Child extends Parent {
+    void display() { ... }
+}
+      </code></pre>
+      Now it’s <strong>Method Overriding</strong> and behaves polymorphically.
+
+      <hr/>
+
+      📝 <strong>Key Notes:</strong>
+      <ul>
+        <li>Static methods are not overridden—they are hidden.</li>
+        <li>Resolved based on reference type (not object type).</li>
+        <li>This concept is called <strong>Method Hiding</strong>.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item text-warning" type="button" data-bs-toggle="collapse" data-bs-target="#matchStreamMethods">
+      🔍 Streams: anyMatch vs allMatch vs noneMatch (with example)
+    </button>
+  </h2>
+  <div id="matchStreamMethods" class="accordion-collapse collapse">
+    <div class="accordion-body text-white bg-dark">
+
+      Java Stream API provides three short-circuiting terminal operations for condition checks:
+
+      <ul>
+        <li><code>anyMatch()</code> - ✅ Returns true if <u>any</u> element matches the condition.</li>
+        <li><code>allMatch()</code> - ✅ Returns true if <u>all</u> elements match the condition.</li>
+        <li><code>noneMatch()</code> - ✅ Returns true if <u>no</u> elements match the condition.</li>
+      </ul>
+
+      <hr/>
+
+      <strong>📌 Example:</strong>
+      <pre><code class="language-java">
+import java.util.List;
+
+public class MatchExample {
+    public static void main(String[] args) {
+        List&lt;Integer&gt; numbers = List.of(2, 4, 6, 8);
+
+        boolean anyEven = numbers.stream().anyMatch(n -&gt; n % 2 == 0);
+        System.out.println("anyMatch: " + anyEven); // ✅ true
+
+        boolean allEven = numbers.stream().allMatch(n -&gt; n % 2 == 0);
+        System.out.println("allMatch: " + allEven); // ✅ true
+
+        boolean noneOdd = numbers.stream().noneMatch(n -&gt; n % 2 != 0);
+        System.out.println("noneMatch: " + noneOdd); // ✅ true
+    }
+}
+      </code></pre>
+
+      <hr/>
+
+      <strong>🔁 What if List contains mixed values?</strong>
+      <pre><code class="language-java">
+List&lt;Integer&gt; mixed = List.of(1, 2, 3, 4);
+
+anyMatch(n -&gt; n &gt; 3)   ➝ true  (4 matches)
+allMatch(n -&gt; n &gt; 0)   ➝ true  (all &gt; 0)
+noneMatch(n -&gt; n &gt; 4)  ➝ true  (none &gt; 4)
+      </code></pre>
+
+      <hr/>
+
+      <strong>🧠 Summary Table:</strong>
+      <table class="table table-bordered table-dark table-sm">
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th>Returns true if...</th>
+            <th>Short-circuit?</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>anyMatch</td>
+            <td>At least one element matches</td>
+            <td>✅ Yes</td>
+          </tr>
+          <tr>
+            <td>allMatch</td>
+            <td>All elements match</td>
+            <td>✅ Yes</td>
+          </tr>
+          <tr>
+            <td>noneMatch</td>
+            <td>No element matches</td>
+            <td>✅ Yes</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <hr/>
+
+      💡 <strong>Note:</strong> These methods are terminal and consume the stream. You cannot reuse the same stream afterward.
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse" data-bs-target="#streamOps">
+      🔁 Java Streams - Intermediate vs Terminal Operations (with Examples)
+    </button>
+  </h2>
+  <div id="streamOps" class="accordion-collapse collapse">
+    <div class="accordion-body text-white bg-dark">
+
+      Java Streams are processed in **two stages**:
+      - 🛠️ **Intermediate Operations** – Lazy operations that return a new Stream.
+      - 🚀 **Terminal Operations** – Trigger processing and produce a result or side-effect.
+
+      <hr/>
+      <h5 class="text-warning">📌 Intermediate Operations (Lazy - return Stream)</h5>
+      <ul>
+        <li><code>filter()</code> – Select elements matching a condition.</li>
+        <li><code>map()</code> – Transform elements (e.g., String to length).</li>
+        <li><code>flatMap()</code> – Flatten nested structures.</li>
+        <li><code>distinct()</code> – Remove duplicates.</li>
+        <li><code>sorted()</code> – Sort elements.</li>
+        <li><code>limit(n)</code> – Keep first n elements.</li>
+        <li><code>skip(n)</code> – Skip first n elements.</li>
+        <li><code>peek()</code> – Perform action without modifying elements (mostly for debugging).</li>
+      </ul>
+
+      <pre><code class="language-java">
+List&lt;String&gt; names = List.of("John", "Alice", "Bob", "Alice");
+
+names.stream()
+     .filter(n -&gt; n.length() &gt; 3)
+     .distinct()
+     .sorted()
+     .map(String::toUpperCase)
+     .forEach(System.out::println);
+      </code></pre>
+
+      <hr/>
+      <h5 class="text-success">✅ Terminal Operations (Eager - produce result)</h5>
+      <ul>
+        <li><code>forEach()</code> – Perform action on each element.</li>
+        <li><code>toArray()</code> – Collect elements into an array.</li>
+        <li><code>reduce()</code> – Reduce elements to a single value.</li>
+        <li><code>collect()</code> – Collect elements into List, Set, Map, etc.</li>
+        <li><code>min()</code>, <code>max()</code> – Find min/max by comparator.</li>
+        <li><code>count()</code> – Count number of elements.</li>
+        <li><code>anyMatch()</code>, <code>allMatch()</code>, <code>noneMatch()</code> – Boolean checks.</li>
+        <li><code>findFirst()</code>, <code>findAny()</code> – Return Optional of element.</li>
+      </ul>
+
+      <pre><code class="language-java">
+List&lt;Integer&gt; nums = List.of(1, 2, 3, 4, 5);
+
+int sum = nums.stream()
+              .filter(n -&gt; n % 2 == 0)
+              .mapToInt(n -&gt; n)
+              .sum();
+
+System.out.println("Sum of even numbers: " + sum);
+      </code></pre>
+
+      <hr/>
+      <h5 class="text-info">🧠 Summary Table</h5>
+      <table class="table table-dark table-bordered table-sm">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Method</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Intermediate</td><td>filter</td><td>Keep elements matching condition</td></tr>
+          <tr><td>Intermediate</td><td>map</td><td>Transform elements</td></tr>
+          <tr><td>Intermediate</td><td>flatMap</td><td>Flatten nested streams</td></tr>
+          <tr><td>Intermediate</td><td>distinct</td><td>Remove duplicates</td></tr>
+          <tr><td>Intermediate</td><td>sorted</td><td>Sort the stream</td></tr>
+          <tr><td>Intermediate</td><td>limit / skip</td><td>Trim the stream</td></tr>
+          <tr><td>Intermediate</td><td>peek</td><td>Inspect elements (for debugging)</td></tr>
+          <tr><td>Terminal</td><td>collect</td><td>Collect into list, set, map</td></tr>
+          <tr><td>Terminal</td><td>forEach</td><td>Iterate over elements</td></tr>
+          <tr><td>Terminal</td><td>reduce</td><td>Reduce to single value</td></tr>
+          <tr><td>Terminal</td><td>count</td><td>Count elements</td></tr>
+          <tr><td>Terminal</td><td>min / max</td><td>Find min/max with comparator</td></tr>
+          <tr><td>Terminal</td><td>anyMatch / allMatch / noneMatch</td><td>Boolean condition checks</td></tr>
+          <tr><td>Terminal</td><td>findFirst / findAny</td><td>Find matching element (Optional)</td></tr>
+        </tbody>
+      </table>
+
+      <hr/>
+      ⚠️ <strong>Note:</strong> Intermediate operations are lazy and won't execute until a terminal operation is called.
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item text-warning" type="button" data-bs-toggle="collapse" data-bs-target="#peekStream">
+      👀 What is <code>peek()</code> in Java Streams?
+    </button>
+  </h2>
+  <div id="peekStream" class="accordion-collapse collapse">
+    <div class="accordion-body text-white bg-dark">
+      
+      <p><strong><code>peek()</code></strong> is an <span class="text-info">intermediate operation</span> used to inspect elements of a stream during processing, primarily for debugging or logging purposes.</p>
+
+      <hr/>
+      <h5 class="text-success">✅ Use Case:</h5>
+      <ul>
+        <li>Debug the transformation chain.</li>
+        <li>Print/log elements as they pass through.</li>
+        <li>Do side-effects without changing elements.</li>
+      </ul>
+
+      <pre><code class="language-java">
+// Example: using peek to debug transformation
+List&lt;String&gt; names = List.of("John", "Alice", "Bob");
+
+List&lt;String&gt; result = names.stream()
+    .filter(name -&gt; name.length() &gt; 3)
+    .peek(name -&gt; System.out.println("After filter: " + name))
+    .map(String::toUpperCase)
+    .peek(name -&gt; System.out.println("After map: " + name))
+    .collect(Collectors.toList());
+
+System.out.println(result);
+      </code></pre>
+
+      <hr/>
+      <h5 class="text-warning">⚠️ Important Notes:</h5>
+      <ul>
+        <li><strong>Does NOT modify</strong> the stream elements.</li>
+        <li>It’s <strong>lazy</strong>, so it won't run unless followed by a terminal operation.</li>
+        <li>Not intended for modifying state – just for peeking.</li>
+      </ul>
+
+      <pre><code class="language-java">
+// peek won't run without terminal operation
+Stream.of("A", "B", "C")
+    .peek(System.out::println); // ❌ Nothing will print
+
+Stream.of("A", "B", "C")
+    .peek(System.out::println)
+    .count(); // ✅ peek will run now
+      </code></pre>
+
+      <hr/>
+      <h5 class="text-info">📌 When to use?</h5>
+      <ul>
+        <li>Use it to trace/debug stream flow.</li>
+        <li><span class="text-danger">Avoid using it for business logic</span>.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item text-warning" type="button" data-bs-toggle="collapse" data-bs-target="#collectorsJoining">
+      🔗 What is <code>Collectors.joining()</code> in Java Streams?
+    </button>
+  </h2>
+  <div id="collectorsJoining" class="accordion-collapse collapse">
+    <div class="accordion-body text-white bg-dark">
+      
+      <p><strong><code>Collectors.joining()</code></strong> is a terminal operation that <span class="text-info">concatenates</span> the elements of a Stream of <code>CharSequence</code> (like Strings) into a single String.</p>
+
+      <hr/>
+      <h5 class="text-success">✅ Syntax Variants:</h5>
+      <ul>
+        <li><code>Collectors.joining()</code> → no delimiter</li>
+        <li><code>Collectors.joining(delimiter)</code> → use delimiter only</li>
+        <li><code>Collectors.joining(delimiter, prefix, suffix)</code> → use delimiter, prefix, and suffix</li>
+      </ul>
+
+      <hr/>
+      <h5 class="text-info">📌 Example 1: No delimiter</h5>
+      <pre><code class="language-java">
+List&lt;String&gt; names = List.of("John", "Alice", "Bob");
+
+String result = names.stream()
+    .collect(Collectors.joining());
+
+System.out.println(result); // Output: JohnAliceBob
+      </code></pre>
+
+      <hr/>
+      <h5 class="text-info">📌 Example 2: With delimiter</h5>
+      <pre><code class="language-java">
+String result = names.stream()
+    .collect(Collectors.joining(", "));
+
+System.out.println(result); // Output: John, Alice, Bob
+      </code></pre>
+
+      <hr/>
+      <h5 class="text-info">📌 Example 3: With delimiter, prefix, suffix</h5>
+      <pre><code class="language-java">
+String result = names.stream()
+    .collect(Collectors.joining(" | ", "[", "]"));
+
+System.out.println(result); // Output: [John | Alice | Bob]
+      </code></pre>
+
+      <hr/>
+      <h5 class="text-warning">⚠️ Notes:</h5>
+      <ul>
+        <li>Works only on streams of CharSequence (like <code>String</code>).</li>
+        <li>Useful for creating CSVs, display strings, formatted output, etc.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item text-warning" type="button" data-bs-toggle="collapse" data-bs-target="#streamReduce">
+      ➕ What is <code>Stream.reduce()</code> in Java Streams?
+    </button>
+  </h2>
+  <div id="streamReduce" class="accordion-collapse collapse">
+    <div class="accordion-body text-white bg-dark">
+      
+      <p><strong><code>reduce()</code></strong> is a terminal operation in Java Streams that <span class="text-info">reduces</span> the stream to a single value by repeatedly applying a combining function.</p>
+
+      <hr/>
+      <h5 class="text-success">✅ Common Use Cases:</h5>
+      <ul>
+        <li>Sum of elements</li>
+        <li>Finding min/max</li>
+        <li>Concatenating strings</li>
+        <li>Custom aggregations</li>
+      </ul>
+
+      <hr/>
+      <h5 class="text-info">📌 Syntax:</h5>
+      <pre><code class="language-java">
+Optional&lt;T&gt; reduce(BinaryOperator&lt;T&gt; accumulator)
+T reduce(T identity, BinaryOperator&lt;T&gt; accumulator)
+<U> U reduce(U identity, BiFunction&lt;U, ? super T, U&gt; accumulator, BinaryOperator&lt;U&gt; combiner)
+      </code></pre>
+
+      <hr/>
+      <h5 class="text-info">📌 Example 1: Sum using identity</h5>
+      <pre><code class="language-java">
+List&lt;Integer&gt; nums = List.of(1, 2, 3, 4, 5);
+
+int sum = nums.stream()
+              .reduce(0, (a, b) -&gt; a + b);
+
+System.out.println(sum); // Output: 15
+      </code></pre>
+
+      <hr/>
+      <h5 class="text-info">📌 Example 2: Max value</h5>
+      <pre><code class="language-java">
+Optional&lt;Integer&gt; max = nums.stream()
+                            .reduce(Integer::max);
+
+max.ifPresent(System.out::println); // Output: 5
+      </code></pre>
+
+      <hr/>
+      <h5 class="text-info">📌 Example 3: Concatenate strings</h5>
+      <pre><code class="language-java">
+List&lt;String&gt; names = List.of("A", "B", "C");
+
+String result = names.stream()
+                     .reduce("", (a, b) -&gt; a + b);
+
+System.out.println(result); // Output: ABC
+      </code></pre>
+
+      <hr/>
+      <h5 class="text-warning">⚠️ Notes:</h5>
+      <ul>
+        <li><code>reduce()</code> is powerful but should be used when <code>collect()</code> is not enough or overkill.</li>
+        <li>First and third variants are useful in parallel streams with combiner.</li>
+        <li>Prefer built-in collectors like <code>Collectors.summingInt</code> when applicable.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#offServerPattern">
+      🛰️ Off-Server Pattern Explained
+    </button>
+  </h2>
+  <div id="offServerPattern" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What is Off-Server Pattern?</h5>
+      <p>
+        The <strong>Off-Server Pattern</strong> is a design architecture that offloads time-consuming or resource-heavy tasks from the main backend server to external systems or asynchronous workers. This pattern is useful to improve performance, scalability, and responsiveness of web/mobile applications.
+      </p>
+
+      <h5 class="text-info">📌 Real-World Use Cases</h5>
+      <ul>
+        <li>Uploading files directly to cloud storage like AWS S3</li>
+        <li>Triggering background jobs for image processing, reports, or batch updates</li>
+        <li>Sending emails or push notifications via async services</li>
+      </ul>
+
+      <h5 class="text-info">📌 Architecture Overview</h5>
+      <pre class="language-text"><code>
+Client → Server → Queue → Worker (Lambda, Background Service)
+           ↓
+        Immediate 202 Accepted response
+      </code></pre>
+      <p>
+        The server simply validates and queues the task, letting an external service or background job handle the processing.
+      </p>
+
+      <h5 class="text-info">📌 Example: Uploading to S3 using Signed URL</h5>
+      <ol>
+        <li>Client sends a request to the server to upload a file</li>
+        <li>Server responds with a pre-signed S3 URL</li>
+        <li>Client uploads the file <strong>directly to S3</strong></li>
+        <li>Server optionally stores the file reference path</li>
+      </ol>
+
+      <h5 class="text-info">📌 Benefits</h5>
+      <ul>
+        <li>⚡ Better response time for users</li>
+        <li>📈 Server handles more traffic with less load</li>
+        <li>🔄 Easier to scale individual components</li>
+      </ul>
+
+      <h5 class="text-info">📌 Challenges</h5>
+      <ul>
+        <li>⚠️ More complex architecture and monitoring</li>
+        <li>📊 Requires retry logic and failure tracking</li>
+        <li>🔍 Debugging async systems is harder than sync calls</li>
+      </ul>
+
+      <h5 class="text-info">📌 Conclusion</h5>
+      <p>
+        The Off-Server Pattern helps decouple tasks from the main application flow, making systems more <strong>responsive</strong>, <strong>scalable</strong>, and <strong>cloud-optimized</strong>. It's a recommended approach for modern applications that integrate with cloud services or deal with heavy data operations.
+      </p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingHeapDump">
+    <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse" data-bs-target="#collapseHeapDump" aria-expanded="false" aria-controls="collapseHeapDump">
+      How do we generate heapdump in Java or Spring Boot applications?
+    </button>
+  </h2>
+  <div id="collapseHeapDump" class="accordion-collapse collapse" aria-labelledby="headingHeapDump" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-white">
+      <strong>Heap Dump</strong> is a snapshot of the memory (heap) of a Java process at a specific time. It's useful for diagnosing memory leaks or analyzing object usage.<br/><br/>
+
+      <strong>☕ Ways to Generate Heap Dump:</strong><br/>
+
+      <span class="text-warning">1. Using jmap:</span><br/>
+      <code>jmap -dump:format=b,file=heapdump.hprof &lt;pid&gt;</code><br/>
+      > Replace <code>&lt;pid&gt;</code> with the Java process ID.<br/><br/>
+
+      <span class="text-warning">2. Using jcmd:</span><br/>
+      <code>jcmd &lt;pid&gt; GC.heap_dump /path/to/heapdump.hprof</code><br/>
+      > Works well with JDK 8+<br/><br/>
+
+      <span class="text-warning">3. Using JVM options (Spring Boot):</span><br/>
+      Add these JVM args to your <code>application startup command</code>:<br/>
+      <code>
+        -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/path/to/dumps/
+      </code><br/>
+      > Automatically creates a dump on OutOfMemoryError.<br/><br/>
+
+      <span class="text-warning">4. Using VisualVM:</span><br/>
+      - Attach to the process<br/>
+      - Click on <code>Heap Dump</code> to generate<br/><br/>
+
+      <span class="text-success">📌 Tip:</span> Analyze the generated <code>.hprof</code> file using tools like Eclipse MAT (Memory Analyzer Tool) or VisualVM for debugging memory issues.<br/><br/>
+
+      <strong class="text-info">Use Case in Production:</strong><br/>
+      When your Spring Boot app starts showing high memory usage or crashes with <code>OutOfMemoryError</code>, enabling heap dumps can help you find the root cause like memory leaks, object retention, etc.
+    </div>
+  </div>
+</div>
 
 
 
