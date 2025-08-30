@@ -4914,6 +4914,231 @@ new Thread(r).start(); // Lambda running in a separate thread
     </div>
   </div>
 </div>
+<div class="accordion" id="commAccordion">
+
+  <div class="accordion-item bg-dark text-light">
+    <h2 class="accordion-header" id="headingComm">
+      <button class="accordion-button collapsed search-item text-warning bg-dark" type="button" data-bs-toggle="collapse" data-bs-target="#collapseComm" aria-expanded="false" aria-controls="collapseComm">
+        🔗 Choosing Between REST, gRPC, and Messaging Queues
+      </button>
+    </h2>
+    <div id="collapseComm" class="accordion-collapse collapse" aria-labelledby="headingComm" data-bs-parent="#commAccordion">
+      <div class="accordion-body">
+
+        <!-- REST -->
+        <h5 class="text-warning">🌐 REST (Representational State Transfer)</h5>
+        <ul>
+          <li><b>When to use:</b> Best for external APIs, simple CRUD operations, and when human readability is important.</li>
+          <li><b>Pros:</b> Easy adoption, widely supported, human-readable (JSON/XML), stateless.</li>
+          <li><b>Cons:</b> Higher latency than gRPC, payload size larger, no built-in streaming.</li>
+          <li><b>Use Case:</b> Public APIs (payments, authentication, e-commerce services).</li>
+        </ul>
+        <hr class="border-secondary">
+
+        <!-- gRPC -->
+        <h5 class="text-info">⚡ gRPC (Google Remote Procedure Call)</h5>
+        <ul>
+          <li><b>When to use:</b> Low-latency, high-performance internal service-to-service communication.</li>
+          <li><b>Pros:</b> Binary protocol (Protobuf) → faster & smaller payload, streaming support, strongly typed contracts.</li>
+          <li><b>Cons:</b> Harder debugging (binary payloads not human-readable), browser support limited.</li>
+          <li><b>Use Case:</b> Microservices in the same network, real-time systems (e.g., ride tracking, chat apps).</li>
+        </ul>
+        <hr class="border-secondary">
+
+        <!-- Messaging Queue -->
+        <h5 class="text-success">📩 Messaging Queues (Kafka, RabbitMQ, etc.)</h5>
+        <ul>
+          <li><b>When to use:</b> Event-driven systems, async processing, decoupled communication.</li>
+          <li><b>Pros:</b> High throughput, fault tolerance, decoupling of producers & consumers, replay capability.</li>
+          <li><b>Cons:</b> More operational complexity, not ideal for synchronous request-response workflows.</li>
+          <li><b>Use Case:</b> Logging, analytics pipelines, order events, notification systems.</li>
+        </ul>
+        <hr class="border-secondary">
+
+        <!-- Summary -->
+        <h5 class="text-primary">📊 Summary: How to Decide?</h5>
+        <ul>
+          <li><b>REST:</b> Simple, external, human-readable APIs → ✅ Good for interoperability.</li>
+          <li><b>gRPC:</b> High-performance, low-latency internal communication → ✅ Good for microservices.</li>
+          <li><b>Kafka/Queues:</b> Asynchronous, event-driven, decoupled services → ✅ Good for streaming & pub/sub.</li>
+        </ul>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+<div class="accordion" id="svcDiscoveryAccordion">
+  <div class="accordion-item bg-dark text-light">
+    <h2 class="accordion-header" id="headingDisc">
+      <button class="accordion-button collapsed search-item text-warning bg-dark" type="button"
+              data-bs-toggle="collapse" data-bs-target="#collapseDisc" aria-expanded="false" aria-controls="collapseDisc">
+        🔎 Designing Dynamic Service Discovery in Large Microservice Systems
+      </button>
+    </h2>
+
+    <div id="collapseDisc" class="accordion-collapse collapse" aria-labelledby="headingDisc" data-bs-parent="#svcDiscoveryAccordion">
+      <div class="accordion-body">
+
+        <!-- Core Concepts -->
+        <h5 class="text-warning">🧠 Core Concepts</h5>
+        <ul>
+          <li><b>Service Identity:</b> Every service has a stable <code>name</code> (e.g., <code>payments</code>) decoupled from IP/host.</li>
+          <li><b>Registration:</b> Instances register themselves (or are auto-registered) with a registry (<i>who am I, where am I</i>).</li>
+          <li><b>Discovery:</b> Callers resolve <code>name → endpoints</code> via client/sidecar/cluster DNS.</li>
+          <li><b>Health & TTL:</b> Registrations expire or are pruned when health checks fail.</li>
+          <li><b>Load Balancing:</b> Discovered endpoints are rotated with smart policies (zone-aware, least-loaded, etc.).</li>
+        </ul>
+        <hr class="border-secondary">
+
+        <!-- Patterns -->
+        <h5 class="text-info">🧩 Discovery Patterns</h5>
+        <ol>
+          <li><b>Client-Side Discovery + Registry</b> (Eureka, Consul, Zookeeper)
+            <ul>
+              <li><i>How:</i> Service instances register; clients query registry and pick an endpoint.</li>
+              <li><i>Pros:</i> Simple dataplane; caller chooses policy; highly flexible.</li>
+              <li><i>Cons:</i> Every client needs discovery + LB logic; polyglot support can be uneven.</li>
+            </ul>
+          </li>
+          <li><b>Server-Side Discovery via Load Balancer / Proxy</b> (NGINX/HAProxy/Envoy, API Gateway)
+            <ul>
+              <li><i>How:</i> Clients call a stable VIP/host; proxy consults registry and forwards.</li>
+              <li><i>Pros:</i> Centralized policies; thin clients; consistent observability.</li>
+              <li><i>Cons:</i> Proxy layer adds hops; needs HA + scaling.</li>
+            </ul>
+          </li>
+          <li><b>DNS-Based Discovery (Kubernetes, Cloud DNS)</b>
+            <ul>
+              <li><i>How:</i> Cluster or cloud fabric maps <code>svc.namespace.svc.cluster.local</code> to ready pods.</li>
+              <li><i>Pros:</i> Zero app code; native to K8s/cloud; simple ops.</li>
+              <li><i>Cons:</i> DNS caching & TTL quirks; fewer LB policies at client.</li>
+            </ul>
+          </li>
+          <li><b>Service Mesh (Sidecar + Control Plane)</b> (Istio, Linkerd, Consul Service Mesh)
+            <ul>
+              <li><i>How:</i> Sidecar proxies discover via xDS/control plane; mTLS, retries, traffic shaping.</li>
+              <li><i>Pros:</i> Rich traffic policies, security (mTLS), telemetry without app changes.</li>
+              <li><i>Cons:</i> Added complexity; control plane management.</li>
+            </ul>
+          </li>
+        </ol>
+        <hr class="border-secondary">
+
+        <!-- Registration & Health -->
+        <h5 class="text-success">🏥 Registration, Health, & Lifecycles</h5>
+        <ul>
+          <li><b>Self-registration</b> at startup; <b>deregistration</b> on shutdown.</li>
+          <li><b>Health checks:</b> HTTP/TCP checks; <b>TTL</b> heartbeats for push-style systems.</li>
+          <li><b>Readiness vs Liveness:</b> Only ready instances should be discoverable; crash loops must be culled.</li>
+          <li><b>Zone/Region Tags:</b> Register metadata: <code>zone=ap-south-1a</code>, <code>version=v2</code> for smart routing.</li>
+        </ul>
+        <hr class="border-secondary">
+
+        <!-- Routing & LB -->
+        <h5 class="text-primary">⚖️ Routing, Load Balancing, & Resilience</h5>
+        <ul>
+          <li><b>Policies:</b> round-robin, least-requests, outlier detection, locality-aware.</li>
+          <li><b>Resilience:</b> timeouts, retries (with jittered backoff), circuit breakers, bulkheads.</li>
+          <li><b>Version-Aware Routing:</b> canary/blue-green using labels (<code>version=v2</code>), gradual rollout.</li>
+          <li><b>Caching:</b> short-TTL endpoint caches; watch/stream registry updates to avoid stampedes.</li>
+        </ul>
+        <hr class="border-secondary">
+
+        <!-- Security -->
+        <h5 class="text-danger">🔐 Security & Identity</h5>
+        <ul>
+          <li><b>mTLS</b> between services; rotate certs automatically (SPIRE, mesh cert-manager).</li>
+          <li><b>Service-to-Service AuthZ:</b> SPIFFE IDs/JWTs; enforce policies at proxy (OPA/Envoy).</li>
+          <li><b>Zero-Trust:</b> no implicit trust on network; every call authenticated + authorized.</li>
+        </ul>
+        <hr class="border-secondary">
+
+        <!-- Observability -->
+        <h5 class="text-info">📈 Observability</h5>
+        <ul>
+          <li><b>Tracing:</b> propagate context (<code>traceparent</code>); sample at ingress; visualize latencies.</li>
+          <li><b>Metrics:</b> success rate, p95/p99, retry counts, ejection events, registry churn.</li>
+          <li><b>Logs:</b> structured, with service name, instance ID, zone, and correlation IDs.</li>
+        </ul>
+        <hr class="border-secondary">
+
+        <!-- Concrete Choices -->
+        <h5 class="text-warning">🛠️ Common Implementations</h5>
+        <ul>
+          <li><b>Kubernetes-native:</b> Service DNS + headless Services for client LB; add Istio/Linkerd for mTLS, traffic shaping.</li>
+          <li><b>Consul-centric:</b> Consul catalog + Envoy for L7; use <code>service-resolver</code>/<code>service-router</code> for subsets/canary.</li>
+          <li><b>AWS:</b> Cloud Map + App Mesh (Envoy) or NLB + target groups; IAM + mTLS for security.</li>
+          <li><b>Netflix stack:</b> Eureka + Ribbon (client LB) + Zuul/API Gateway (or Envoy).</li>
+        </ul>
+        <hr class="border-secondary">
+
+        <!-- Decision Flow -->
+        <h5 class="text-success">🧭 Decision Flow (TL;DR)</h5>
+        <ol>
+          <li><b>Running on Kubernetes?</b>
+            <ul>
+              <li><b>Yes:</b> Start with ClusterIP Service + DNS. Need mTLS/traffic policy? Add a mesh (Istio/Linkerd).</li>
+              <li><b>No:</b> Use a registry (Consul/Eureka) + either client-side discovery or Envoy/HAProxy as server-side LB.</li>
+            </ul>
+          </li>
+          <li><b>Polyglot clients or strict security?</b> Prefer server-side via gateway/mesh with mTLS + policy.</li>
+          <li><b>High control at client (smart routing)?</b> Client-side discovery with a robust library + short-TTL cache.</li>
+          <li><b>Multi-region?</b> Tag by region/zone; prefer locality; fail over with rate limits and circuit breaking.</li>
+        </ol>
+        <hr class="border-secondary">
+
+        <!-- Mini Examples -->
+        <h5 class="text-primary">🧪 Mini Examples</h5>
+        <p class="mb-1"><b>Kubernetes DNS (Server-side discovery):</b></p>
+<pre class="bg-black text-light p-2 rounded-3"><code># payments.yaml
+apiVersion: v1
+kind: Service
+metadata: { name: payments, namespace: prod }
+spec:
+  selector: { app: payments }
+  ports: [{ port: 8080, targetPort: 8080 }]
+# Clients call http://payments.prod.svc.cluster.local:8080
+</code></pre>
+
+        <p class="mb-1"><b>Consul Registration (Client-side discovery):</b></p>
+<pre class="bg-black text-light p-2 rounded-3"><code>{
+  "service": {
+    "name": "orders",
+    "port": 9090,
+    "checks": [{ "http": "http://localhost:9090/health", "interval": "5s", "deregister_critical_service_after": "1m" }],
+    "meta": { "version": "v2", "zone": "ap-south-1a" }
+  }
+}
+</code></pre>
+
+        <p class="mb-1"><b>Envoy (Server-side LB with xDS):</b></p>
+<pre class="bg-black text-light p-2 rounded-3"><code># envoy.yaml (snippet)
+static_resources:
+  listeners: [ ... ]
+  clusters:
+  - name: products
+    type: EDS
+    lb_policy: LEAST_REQUEST
+    connect_timeout: 2s
+    circuit_breakers: { thresholds: [{ max_connections: 1024, max_requests: 2048 }] }
+    outlier_detection: { consecutive_5xx: 5, interval: 5s }
+</code></pre>
+        <hr class="border-secondary">
+
+        <!-- Pitfalls -->
+        <h5 class="text-danger">⚠️ Pitfalls to Avoid</h5>
+        <ul>
+          <li>Long DNS TTLs causing stale endpoints; keep TTLs short and enable re-resolution.</li>
+          <li>Retry storms during outages; add jitter, budgets, and circuit breakers.</li>
+          <li>Global any-to-any traffic; enforce egress policies and service-level ACLs.</li>
+          <li>Ignoring <b>readiness</b>: only route to instances that have warmed caches/dependencies.</li>
+        </ul>
+
+      </div>
+    </div>
+  </div>
+</div>
 
 
 
