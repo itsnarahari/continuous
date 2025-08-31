@@ -1,0 +1,2221 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fav</title>
+
+    <!-- Bootstrap & Prism.js for Syntax Highlighting -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+
+    <style>
+        body {
+            background-color: #121212;
+            color: white;
+        }
+
+        .container {
+            max-width: 900px;
+            margin-top: 20px;
+        }
+
+        .accordion-button {
+            background-color: #343a40;
+            color: white;
+        }
+
+        .accordion-button:focus {
+            box-shadow: none;
+        }
+
+        .accordion-button:not(.collapsed) {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .accordion-body {
+            background-color: #1e1e1e;
+            color: white;
+        }
+
+        .highlight-yellow {
+            color: #ffcc00;
+            /* Yellow */
+            font-weight: bold;
+        }
+
+        .highlight-blue {
+            color: #4db8ff;
+            /* Light blue */
+            font-weight: bold;
+        }
+
+        pre[class*="language-"] {
+            background: #1e1e1e !important;
+            border-radius: 8px;
+            padding: 12px;
+        }
+
+        /* Search Box Styling */
+        .search-container {
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #666;
+            background: #222;
+            color: white;
+            outline: none;
+            font-size: 16px;
+        }
+
+        .search-input::placeholder {
+            color: #aaa;
+        }
+    </style>
+</head>
+
+<body class="bg-dark text-light">
+    <div class="container">
+        <div class="header fw-bold text-center mb-4">Narahari's Favorites</div>
+        <!-- Search Box in a Bootstrap Container -->
+        <div class="search-container">
+            <input type="text" class="search-input form-control" id="searchBox" placeholder="Search questions..."
+                onkeyup="searchQuestions()" />
+        </div>
+<div class="accordion" id="fav">      
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#passByValueJavaQ1">
+      Explain pass-by-value in Java. How does it work with objects? <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="passByValueJavaQ1" class="accordion-collapse collapse" data-bs-parent="#fav">
+    <div class="accordion-body">
+      <p><span class="highlight-blue">Key truth:</span> <b>Java is 100% pass-by-value.</b> Methods receive a <em>copy</em> of the caller’s argument.</p>
+      <ul>
+        <li><b>Primitives:</b> copies of the actual values.</li>
+        <li><b>Objects:</b> copies of the <em>reference values</em> (pointers). Both variables point to the same object, but the parameter is a different reference variable.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Primitives: the value is copied</h6>
+      <pre class="language-java"><code>void bump(int x) { x++; }   // 'x' is a copy
+int a = 10;
+bump(a);
+System.out.println(a);       // 10 (unchanged)</code></pre>
+
+      <h6 class="mb-2">Objects: the reference is copied (mutations are visible)</h6>
+      <pre class="language-java"><code>class Dog { String name; Dog(String n){ this.name = n; } }
+
+void rename(Dog d) { d.name = "Bruno"; } // mutate via copied reference
+
+Dog dog = new Dog("Rocky");
+rename(dog);
+System.out.println(dog.name);             // Bruno (changed)</code></pre>
+
+      <h6 class="mb-2">Reassigning the parameter doesn’t affect the caller</h6>
+      <pre class="language-java"><code>void reassign(Dog d) { d = new Dog("Max"); } // only local reference changes
+
+Dog dog = new Dog("Rocky");
+reassign(dog);
+System.out.println(dog.name);             // Rocky (unchanged)</code></pre>
+      <p class="subtle">Because only the <em>reference value</em> was passed; re-pointing the local parameter doesn’t re-point the caller’s variable.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Classic gotcha: swap doesn’t work with plain references</h6>
+      <pre class="language-java"><code>void swap(Dog a, Dog b) { Dog t = a; a = b; b = t; }
+
+Dog d1 = new Dog("A"), d2 = new Dog("B");
+swap(d1, d2);
+System.out.println(d1.name + ", " + d2.name); // A, B (unchanged)</code></pre>
+
+      <p class="highlight-yellow">Swap using a mutable holder</p>
+      <pre class="language-java"><code>class Box&lt;T&gt; { T v; Box(T v){ this.v=v; } }
+void swapBoxes(Box&lt;Dog&gt; a, Box&lt;Dog&gt; b){ Dog t=a.v; a.v=b.v; b.v=t; }
+
+Box&lt;Dog&gt; b1 = new Box&lt;&gt;(new Dog("A"));
+Box&lt;Dog&gt; b2 = new Box&lt;&gt;(new Dog("B"));
+swapBoxes(b1, b2);
+System.out.println(b1.v.name + ", " + b2.v.name); // B, A</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Immutables vs mutables</h6>
+      <ul>
+        <li><b>Immutable:</b> <code>String</code>, boxed primitives, <code>BigDecimal</code>.</li>
+        <li><b>Mutable:</b> arrays and most POJOs — mutating through the parameter affects the same underlying object.</li>
+      </ul>
+
+      <p class="highlight-yellow">Immutable example</p>
+      <pre class="language-java"><code>void addBang(String s) { s = s + "!"; } // new String; local reassign only
+String msg = "hi";
+addBang(msg);
+System.out.println(msg);                 // "hi"</code></pre>
+
+      <p class="highlight-yellow">Array (mutable) example</p>
+      <pre class="language-java"><code>void incFirst(int[] a) { a[0]++; }
+int[] arr = {1,2,3};
+incFirst(arr);
+System.out.println(java.util.Arrays.toString(arr)); // [2, 2, 3]</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Wrappers & autoboxing pitfall</h6>
+      <pre class="language-java"><code>void inc(Integer x) { x = x + 1; } // creates a new Integer; local reassign only
+Integer n = 5;
+inc(n);
+System.out.println(n);              // 5</code></pre>
+
+      <div class="mt-3">
+        <button class="btn btn-sm btn-outline-info me-2" onclick="copyToClipboard('Java is pass-by-value. For objects, the reference value is copied: you can mutate the same object, but reassigning the parameter does not affect the caller. #hariPrep')">Copy summary</button>
+        <button class="btn btn-sm btn-outline-info" onclick="copyToClipboard('Primitives: value copied. Objects: reference copied. Mutations visible; reassignment not. Immutables don\\'t change; arrays/POJOs do.')">Copy key points</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#staticVarsThreadsQ1">
+      How do static variables and methods behave in multi-threaded applications? <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="staticVarsThreadsQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p><span class="highlight-blue">Key idea:</span> <b>static</b> members belong to the <em>class</em>, not instances. They are shared across all threads
+      <em>within the same ClassLoader</em>. Thread-safety is <b>not automatic</b>—it depends on how you access/modify shared state.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">1) Class initialization & visibility</h6>
+      <ul>
+        <li><span class="highlight-blue">One-time init:</span> Class initialization (&lt;clinit&gt;) is synchronized by the JVM—only one thread runs it; others block.</li>
+        <li><span class="highlight-blue">Final fields:</span> Properly set <code>static final</code> fields are safely published to all threads after init.</li>
+        <li><span class="highlight-blue">ClassLoader scope:</span> Each ClassLoader has its own copy of static fields (important in app servers, plugins).</li>
+      </ul>
+
+      <p class="highlight-yellow">Example: safely initialized constant</p>
+      <pre class="language-java"><code>public class Conf {
+  public static final int PORT = 8080;  // visible to all threads after class init
+}
+</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">2) Static mutable state = shared state</h6>
+      <ul>
+        <li>Multiple threads reading/writing the same <code>static</code> field can race without synchronization.</li>
+        <li><span class="highlight-blue">Use</span> <code>volatile</code> (visibility/order) or atomic types / locks for compound actions.</li>
+        <li>Prefer <b>immutable</b> objects published via <code>static final</code> when possible.</li>
+      </ul>
+
+      <p class="highlight-yellow">Wrong: non-atomic static counter</p>
+      <pre class="language-java"><code>public class Metrics {
+  public static int hits = 0;
+  public static void inc() { hits++; }   // data race: read-modify-write
+}
+</code></pre>
+
+      <p class="highlight-yellow">Right: atomic or synchronized</p>
+      <pre class="language-java"><code>import java.util.concurrent.atomic.AtomicLong;
+public class Metrics {
+  private static final AtomicLong HITS = new AtomicLong();
+  public static long inc() { return HITS.incrementAndGet(); }       // lock-free
+  public static long get() { return HITS.get(); }
+}
+// or
+public class Metrics2 {
+  private static long hits;
+  public static synchronized void inc() { hits++; }                 // serialized
+  public static synchronized long get() { return hits; }
+}
+</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">3) Static methods & thread-safety</h6>
+      <ul>
+        <li><b>Static method</b> ≠ thread-safe by itself. It is safe <em>iff</em> it only uses local variables / thread-safe collaborators.</li>
+        <li>Accessing mutable <code>static</code> fields inside a static method requires proper synchronization/atomics.</li>
+      </ul>
+
+      <p class="highlight-yellow">Pure function (thread-safe) vs shared-state (needs care)</p>
+      <pre class="language-java"><code>public class MathUtil {
+  public static int sum(int a, int b) { return a + b; }    // thread-safe (no shared state)
+}
+
+public class Cache {
+  private static final java.util.Map&lt;String,String&gt; M = new java.util.HashMap&lt;&gt;();
+  public static String get(String k) { return M.get(k); }  // NOT thread-safe
+}
+</code></pre>
+
+      <p class="highlight-yellow">Fix with concurrent collections</p>
+      <pre class="language-java"><code>import java.util.concurrent.ConcurrentHashMap;
+public class CacheSafe {
+  private static final ConcurrentHashMap&lt;String,String&gt; M = new ConcurrentHashMap&lt;&gt;();
+  public static String get(String k) { return M.get(k); }
+  public static void put(String k, String v) { M.put(k, v); }
+}
+</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">4) Safe publication & singletons</h6>
+      <ul>
+        <li>Publish shared objects via <code>static final</code>, or use <span class="highlight-blue">Initialization-on-demand Holder</span>.</li>
+        <li>For lazy init with double-checked locking, the <em>reference</em> must be <code>volatile</code>.</li>
+      </ul>
+
+      <p class="highlight-yellow">Holder idiom (lazy & thread-safe)</p>
+      <pre class="language-java"><code>public class Service {
+  private Service() {}
+  private static class Holder { static final Service INSTANCE = new Service(); }
+  public static Service getInstance() { return Holder.INSTANCE; }
+}
+</code></pre>
+
+      <p class="highlight-yellow">Double-checked locking (correct form)</p>
+      <pre class="language-java"><code>public class RepoProvider {
+  private static volatile Repo instance;
+  public static Repo get() {
+    Repo r = instance;
+    if (r == null) {
+      synchronized (RepoProvider.class) {
+        r = instance;
+        if (r == null) instance = r = new Repo();
+      }
+    }
+    return r;
+  }
+}
+</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">5) Thread-local vs static</h6>
+      <ul>
+        <li><code>ThreadLocal&lt;T&gt;</code> gives each thread its own copy—useful for formatters, temp buffers.</li>
+        <li>Avoid <code>static ThreadLocal</code> leaks in containers; clear on thread end or use frameworks that manage lifecycle.</li>
+      </ul>
+      <pre class="language-java"><code>private static final ThreadLocal&lt;java.text.SimpleDateFormat&gt; FMT =
+  ThreadLocal.withInitial(() -&gt; new java.text.SimpleDateFormat(\"yyyy-MM-dd\"));
+</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">6) Pitfalls to watch</h6>
+      <ul>
+        <li><b>Memory leaks:</b> long-lived statics holding big caches/listeners prevent GC.</li>
+        <li><b>Circular init:</b> static initializers that depend on other classes’ statics can deadlock or see default values.</li>
+        <li><b>Testing:</b> statics keep state between tests; reset hooks or design for injection.</li>
+      </ul>
+
+      <div class="mt-3">
+        <button class="btn btn-sm btn-outline-info me-2" onclick="copyToClipboard('Static = class-scoped, shared across threads (within a ClassLoader). Use final/immutable, atomics, locks, or concurrent collections. Class init is synchronized; safe-publication matters. #hariPrep')">Copy summary</button>
+        <button class="btn btn-sm btn-outline-info" onclick="copyToClipboard('Static methods are thread-safe only if they avoid shared mutable state. For shared state: use AtomicLong/ConcurrentHashMap/volatile or synchronize; prefer holder idiom for singletons.')">Copy key points</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#memLeakProdQ1">
+      How do you troubleshoot a memory leak in production? Tools you’d use? <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="memLeakProdQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p><span class="highlight-blue">Goal:</span> confirm it’s a leak (retained memory trends upward and never returns), localize the <em>retained objects</em> & reference chains, mitigate fast, and produce a root cause.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">1) Fast triage (is it really a leak?)</h6>
+      <ul>
+        <li><b>Symptoms:</b> rising RSS/heap, increasing GC frequency + pause %, OOMKill in k8s, slower responses.</li>
+        <li><b>Differentiate:</b> 
+          <ul>
+            <li><span class="highlight-blue">Heap leak:</span> Old Gen grows & doesn’t fall after full GC.</li>
+            <li><span class="highlight-blue">Native leak:</span> RSS grows while heap looks normal (Direct buffers, threads, JNI, metaspace).</li>
+            <li><span class="highlight-blue">Cache growth / legit load:</span> stabilizes at new plateau after traffic spike? then not a leak.</li>
+          </ul>
+        </li>
+      </ul>
+
+      <p class="highlight-yellow">Always-on signals to have in prod</p>
+      <pre class="language-bash"><code># JDK 11+: structured GC logs (low overhead)
+- Xlog:gc*,safepoint:file=/var/log/app-gc.log:time,uptime,level,tags
+
+# OOM heap dump & exit code capture
+- XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/dumps/app-oom.hprof
+
+# Container-aware sizing (k8s)
+- XX:MaxRAMPercentage=75.0</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">2) Live inspection (no restart)</h6>
+      <ul>
+        <li><span class="highlight-blue">jcmd/jstat</span>: quick health and histograms.</li>
+      </ul>
+      <pre class="language-bash"><code># Top-level health
+jcmd &lt;pid&gt; VM.flags
+jstat -gcutil &lt;pid&gt; 2s 10            # GC utilization trend
+jcmd &lt;pid&gt; GC.heap_info              # regions / usage
+
+# Live class histogram (cheap)
+jcmd &lt;pid&gt; GC.class_histogram        # sorted by bytes retained (shallow)
+</code></pre>
+      <ul>
+        <li><span class="highlight-blue">JFR (Java Flight Recorder)</span>: start a short <em>low-overhead</em> capture with allocation profiling.</li>
+      </ul>
+      <pre class="language-bash"><code># Start 3–5 min profile with allocations + CPU
+jcmd &lt;pid&gt; JFR.start name=leak settings=profile duration=5m filename=/dumps/leak.jfr
+# Later: jfr print --events 'AllocationInNewTLAB,AllocationOutsideTLAB'</code></pre>
+      <ul>
+        <li><span class="highlight-blue">async-profiler</span> (if available): <code>alloc</code> mode shows hottest allocation stacks.</li>
+      </ul>
+      <pre class="language-bash"><code># alloc flamegraph over 60s (very low overhead)
+./profiler.sh -e alloc -d 60 -f /dumps/alloc.html &lt;pid&gt;</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">3) Heap dump (point-in-time evidence)</h6>
+      <ul>
+        <li>Prefer off-peak. If memory is tight, <b>copy the dump path to a big volume</b> first.</li>
+      </ul>
+      <pre class="language-bash"><code># Online heap dump (may STW briefly)
+jcmd &lt;pid&gt; GC.heap_dump /dumps/live-$(date +%s).hprof
+
+# If OOM happens, use the automatic dump from -XX:+HeapDumpOnOutOfMemoryError
+</code></pre>
+
+      <p class="highlight-yellow">Analyze dump</p>
+      <ul>
+        <li><b>Eclipse MAT</b>: Dominator Tree → find biggest <em>retained</em> objects, <em>Paths to GC Roots</em>, <em>Leak Suspects Report</em>.</li>
+        <li><b>JDK jhat / VisualVM</b> (lighter), <b>YourKit/JProfiler</b> (commercial).</li>
+        <li>Look for classic offenders: unbounded <code>Map</code>/<code>List</code>, caches without eviction, <code>ThreadLocal</code> values, listeners not removed, HTTP session bloat.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">4) If it’s <em>native</em> (off-heap) growth</h6>
+      <ul>
+        <li><span class="highlight-blue">NMT (Native Memory Tracking)</span> to break down native categories.</li>
+      </ul>
+      <pre class="language-bash"><code># Enable at startup (some overhead)
+- XX:NativeMemoryTracking=summary  # or detail
+
+# Query at runtime
+jcmd &lt;pid&gt; VM.native_memory summary
+</code></pre>
+      <ul>
+        <li><span class="highlight-blue">Direct buffers:</span> track via <code>jcmd VM.native_memory</code>; ensure proper release patterns; consider <code>-Dio.netty.leakDetection.level=paranoid</code> for Netty.</li>
+        <li><span class="highlight-blue">Metaspace/classloader leak:</span> persistent redeploys, dynamic class gen. Watch <code>Metaspace</code> in NMT; look for custom ClassLoaders retaining references.</li>
+        <li><span class="highlight-blue">Thread leak:</span> <code>jcmd &lt;pid&gt; Thread.print</code>, count threads over time.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">5) Mitigation playbook (keep site up)</h6>
+      <ul>
+        <li>Enable/raise <b>eviction</b> on caches (Caffeine/Guava) or cap sizes (<span class="highlight-blue">size-based</span> + <span class="highlight-blue">time-based</span>).</li>
+        <li>Temporarily <b>reduce heap pressure</b>: lower concurrency, disable heavy features, throttle producers.</li>
+        <li><b>Roll</b> a known-good version or <b>scale out</b> to dilute leak rate while investigating.</li>
+        <li>Set a <b>restart policy</b> on OOM as last resort (kept warm pods minimize downtime).</li>
+      </ul>
+
+      <p class="highlight-yellow">Example: Caffeine bounded cache</p>
+      <pre class="language-java"><code>import com.github.benmanes.caffeine.cache.*;
+Cache&lt;Key,Val&gt; cache = Caffeine.newBuilder()
+    .maximumSize(200_000)
+    .expireAfterAccess(java.time.Duration.ofMinutes(10))
+    .recordStats()
+    .build();
+</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">6) Proving root cause</h6>
+      <ul>
+        <li>From heap dominators, identify the <em>owning</em> field/collection → trace to code → add logging/metrics.</li>
+        <li>Reproduce in staging with the same traffic pattern and enable allocation profiling (JFR/async-profiler). Verify that fixes cap the retained set.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Toolbox checklist</h6>
+      <ul>
+        <li><b>Runtime:</b> jcmd, jstat, jmap, JFR, async-profiler, VisualVM</li>
+        <li><b>Dumps:</b> Eclipse MAT, YourKit, JProfiler</li>
+        <li><b>Native:</b> NMT (<code>VM.native_memory</code>), <code>pmap</code>/<code>smaps</code>, Netty leak detector</li>
+        <li><b>Observability:</b> Prometheus/Grafana (heap, RSS, GC), log-based GC analyzers (e.g., GCeasy)</li>
+      </ul>
+
+      <div class="mt-3">
+        <button class="btn btn-sm btn-outline-info me-2"
+          onclick="copyToClipboard('-Xlog:gc*:file=/var/log/app-gc.log -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/dumps/app.hprof -XX:MaxRAMPercentage=75.0')">
+          Copy JVM prod flags
+        </button>
+        <button class="btn btn-sm btn-outline-info"
+          onclick="copyToClipboard('jcmd <pid> GC.class_histogram | jcmd <pid> JFR.start settings=profile duration=5m filename=/dumps/leak.jfr | jcmd <pid> GC.heap_dump /dumps/live.hprof')">
+          Copy live-diagnostics cmds
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#optionalNpeQ1">
+      How does Optional help avoid NullPointerException? Any drawbacks? <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="optionalNpeQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p><span class="highlight-blue">What Optional does:</span> wraps a possibly-absent value in a <code>container</code> so callers must handle both cases explicitly.
+        That removes many accidental <code>NullPointerException</code>s caused by unchecked dereferences.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Typical flow without Optional (NPE-prone)</h6>
+      <pre class="language-java"><code>// Might return null → caller forgets to check → NPE later
+User findUser(String id) { return dao.find(id); }
+
+String emailDomain(User u) { return u.getEmail().split("@")[1]; } // NPE risk
+</code></pre>
+
+      <h6 class="mb-2">With Optional: force explicit handling</h6>
+      <pre class="language-java"><code>import java.util.Optional;
+
+Optional&lt;User&gt; findUser(String id) {
+  return Optional.ofNullable(dao.find(id)); // never return null Optional
+}
+
+String emailDomain(String id) {
+  return findUser(id)
+      .map(User::getEmail)          // skipped if empty
+      .filter(e -&gt; e.contains("@"))
+      .map(e -&gt; e.substring(e.indexOf('@') + 1))
+      .orElse("unknown.example");   // explicit default
+}
+</code></pre>
+
+      <p class="subtle">Because the type is <code>Optional&lt;User&gt;</code>, the compiler nudges you to use <code>map</code>/<code>flatMap</code>/<code>orElse</code> & friends instead of blindly dereferencing.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Useful Optional operations</h6>
+      <ul>
+        <li><code>of(value)</code> / <code>ofNullable(value)</code> / <code>empty()</code></li>
+        <li><code>map</code>, <code>flatMap</code>, <code>filter</code> for fluent transformations</li>
+        <li><code>orElse(default)</code> (eager) vs <code>orElseGet(supplier)</code> (lazy)</li>
+        <li><code>orElseThrow()</code> to fail fast with a clear exception</li>
+        <li><code>ifPresent(consumer)</code>, <code>ifPresentOrElse</code> (Java 9+)</li>
+      </ul>
+
+      <p class="highlight-yellow">orElse vs orElseGet (gotcha)</p>
+      <pre class="language-java"><code>String expensiveDefault() { /* heavy work */ return "computed"; }
+Optional&lt;String&gt; opt = Optional.of("value");
+
+opt.orElse(expensiveDefault());     // calls expensiveDefault() even when present!
+opt.orElseGet(() -&gt; expensiveDefault()); // calls only if empty</code></pre>
+
+      <p class="highlight-yellow">Fail fast with context</p>
+      <pre class="language-java"><code>User user = repo.findById(id)
+    .orElseThrow(() -&gt; new IllegalArgumentException("Unknown user: " + id));</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Best practices (do’s)</h6>
+      <ul>
+        <li>✅ Return <code>Optional&lt;T&gt;</code> from methods to model “might be absent”.</li>
+        <li>✅ Always create with <code>Optional.ofNullable(x)</code> if <code>x</code> can be null.</li>
+        <li>✅ Keep chains readable; extract steps into named methods when complex.</li>
+        <li>✅ Prefer <code>orElseGet</code> for expensive defaults; <code>orElseThrow</code> for required values.</li>
+      </ul>
+
+      <h6 class="mb-2">Anti-patterns / drawbacks (don’ts)</h6>
+      <ul>
+        <li>❌ <b>Don’t put Optional in fields, DTOs, or collections</b> in most codebases—adds indirection/overhead and complicates serialization/ORM.</li>
+        <li>❌ <b>Don’t use Optional as a parameter</b> to methods; prefer overloading or two methods.</li>
+        <li>❌ <b>Don’t call <code>get()</code> blindly</b>; it defeats the purpose. Use <code>orElse</code>/<code>orElseThrow</code>.</li>
+        <li>❌ <b>Never store null inside Optional</b> (i.e., <code>Optional.of(null)</code> throws immediately).</li>
+        <li>⚠️ <b>Overhead</b>: it’s an extra object; heavy use on hot paths can allocate more—measure before blanketing.</li>
+        <li>⚠️ <b>Frameworks</b>: Some mappers/JPA serializers don’t like Optional fields—prefer plain types there.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Interoperability patterns</h6>
+      <pre class="language-java"><code>// Bridging legacy null-returning APIs
+Optional&lt;Customer&gt; cust = Optional.ofNullable(legacyFind());
+
+// From Optional back to null (if a framework requires)
+Customer maybe = cust.orElse(null);
+
+// Stream integration (Java 9+)
+Stream&lt;Order&gt; s = findOrder(id).stream(); // empty or singleton stream
+</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Summary</h6>
+      <ul>
+        <li><span class="highlight-blue">Why it helps:</span> makes absence <b>explicit</b>, encourages safe handling, and reduces accidental NPEs.</li>
+        <li><span class="highlight-blue">Trade-offs:</span> extra allocations and verbosity if overused; avoid in fields/params and at serialization boundaries.</li>
+      </ul>
+
+      <div class="mt-3">
+        <button class="btn btn-sm btn-outline-info me-2"
+          onclick="copyToClipboard('Return Optional from methods to model absence; use map/flatMap/filter and orElse/OrElseGet/orElseThrow. Avoid Optional in fields/parameters; never call get() blindly. #hariPrep')">
+          Copy summary
+        </button>
+        <button class="btn btn-sm btn-outline-info"
+          onclick="copyToClipboard('Gotcha: orElse evaluates its argument eagerly; use orElseGet for expensive defaults. Never store null in Optional; measure overhead on hot paths.')">
+          Copy key points
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#reflectionQ24">
+      24) What is reflection? When is it used? Downsides? <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="reflectionQ24" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p><span class="highlight-blue">Definition:</span> <b>Reflection</b> lets Java code inspect and manipulate classes, interfaces, fields, methods, constructors, and annotations <em>at runtime</em>.
+        It lives in <code>java.lang.reflect</code> and works via <code>Class&lt;?&gt;</code>, <code>Field</code>, <code>Method</code>, <code>Constructor</code>, <code>Modifier</code>, <code>AnnotatedElement</code>.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Common capabilities (examples)</h6>
+      <ul>
+        <li>Discover members/annotations: list fields/methods, read annotations/parameters.</li>
+        <li>Access & invoke: read/write fields (even private*), call methods/constructors dynamically.</li>
+        <li>Create proxies: intercept interface calls using <code>Proxy</code> for cross-cutting concerns.</li>
+      </ul>
+
+      <p class="highlight-yellow">Inspecting and invoking</p>
+      <pre class="language-java"><code>class User {
+  private String name;
+  public User(String n) { this.name = n; }
+  private String greet(String who) { return "Hi " + who + ", I'm " + name; }
+}
+
+Class&lt;?&gt; c = Class.forName("com.acme.User");
+Object u = c.getConstructor(String.class).newInstance("Narahari");
+
+java.lang.reflect.Field f = c.getDeclaredField("name");
+f.setAccessible(true);                 // JPMS note below*
+System.out.println("name=" + f.get(u));
+f.set(u, "Hari");
+
+// call private method
+java.lang.reflect.Method m = c.getDeclaredMethod("greet", String.class);
+m.setAccessible(true);
+String msg = (String) m.invoke(u, "Team");
+System.out.println(msg);               // Hi Team, I'm Hari
+</code></pre>
+
+      <p class="highlight-yellow">Dynamic proxy (logging)</p>
+      <pre class="language-java"><code>interface Repo { String find(long id); }
+class RepoImpl implements Repo { public String find(long id){ return "U" + id; } }
+
+Repo target = new RepoImpl();
+Repo logged = (Repo) java.lang.reflect.Proxy.newProxyInstance(
+  Repo.class.getClassLoader(),
+  new Class[]{Repo.class},
+  (proxy, method, args) -&gt; {
+    long t0 = System.nanoTime();
+    Object out = method.invoke(target, args);
+    System.out.println(method.getName() + " took " + (System.nanoTime()-t0) + "ns");
+    return out;
+  });
+
+logged.find(42);
+</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Where reflection is used</h6>
+      <ul>
+        <li><b>Frameworks & DI</b>: Spring injects beans, calls lifecycle methods, scans annotations.</li>
+        <li><b>ORMs</b>: Hibernate maps fields to columns, constructs entities, reads annotations.</li>
+        <li><b>Serialization</b>: Jackson/Gson create objects and bind JSON &lt;-&gt; POJOs.</li>
+        <li><b>AOP / Proxies</b>: dynamic proxies for security, logging, transactions.</li>
+        <li><b>Testing</b>: JUnit/Mockito discover tests, access internals for verification.</li>
+        <li><b>Plugins</b>: load classes by name, SPI discovery, service loaders.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Downsides / risks</h6>
+      <ul>
+        <li><span class="highlight-blue">Performance:</span> Reflective access is slower than direct calls; avoid on hot paths or cache lookups/method handles.</li>
+        <li><span class="highlight-blue">Type safety:</span> Errors become runtime (<code>NoSuchMethodException</code>, <code>ClassCastException</code>).</li>
+        <li><span class="highlight-blue">Encapsulation breakage:</span> <code>setAccessible(true)</code> bypasses access checks—can violate invariants.</li>
+        <li><span class="highlight-blue">Maintainability:</span> Renames/refactors can silently break reflective code.</li>
+        <li><span class="highlight-blue">Security & modules (Java 9+):</span> Strong encapsulation may <em>block</em> deep reflection across modules/packages.
+          You may need JVM flags like <code>--add-opens my.module/pkg=other.module</code>. SecurityManager (legacy) may also restrict.</li>
+        <li><span class="highlight-blue">Memory/Leaks:</span> Poor proxy/classloader use can leak (app servers, reloading).</li>
+      </ul>
+
+      <p class="subtle">*JPMS note: Since Java 9, setting <code>setAccessible(true)</code> on non-exported packages can fail without <code>--add-opens</code>.
+        Prefer public APIs, constructors, or configuration to avoid deep reflection.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Best practices</h6>
+      <ul>
+        <li>Prefer <b>normal typed access</b>. Use reflection only at boundaries (framework glue, generic libraries).</li>
+        <li><b>Cache</b> reflected lookups (<code>Method</code>, <code>Field</code>) if used repeatedly.</li>
+        <li>Consider <b><code>MethodHandles</code></b> for faster, typed invocation where possible.</li>
+        <li>Guard with <b>clear errors</b>: throw informative exceptions when reflective lookup fails.</li>
+        <li>Respect <b>encapsulation</b>: avoid poking private state in app code; keep it in infra layers.</li>
+      </ul>
+
+      <p class="highlight-yellow">MethodHandles (alternative)</p>
+      <pre class="language-java"><code>import java.lang.invoke.*;
+MethodHandles.Lookup L = MethodHandles.lookup();
+MethodHandle mh = L.findVirtual(String.class, "toUpperCase",
+                                MethodType.methodType(String.class));
+String res = (String) mh.invokeExact("hari"); // often faster than reflection invoke
+</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Exceptions to expect</h6>
+      <pre class="language-java"><code>// Handle typical reflection failures
+try {
+  Class.forName("com.acme.Missing");
+} catch (ClassNotFoundException e) { /* ... */ }
+// also: NoSuchMethodException, NoSuchFieldException, IllegalAccessException,
+// InvocationTargetException, InstantiationException
+</code></pre>
+
+      <div class="mt-3">
+        <button class="btn btn-sm btn-outline-info me-2"
+          onclick="copyToClipboard('Reflection = runtime inspection/manipulation of classes/members. Use in DI/ORM/serialization/proxies/testing. Downsides: performance, safety, encapsulation, JPMS access; prefer typed code, cache lookups, consider MethodHandles. #hariPrep')">
+          Copy summary
+        </button>
+        <button class="btn btn-sm btn-outline-info"
+          onclick="copyToClipboard('Avoid deep reflection on hot paths; cache Method/Field; handle NoSuch*/IllegalAccess*/InvocationTargetException; on Java 9+ use --add-opens if needed; prefer public APIs.')">
+          Copy key points
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#annotationsInternalsQ1">
+      How do annotations work internally in Java? <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="annotationsInternalsQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p><span class="highlight-blue">Big picture:</span> Annotations are <b>metadata</b> attached to program elements. The compiler encodes them in the
+        <em>.class</em> file (as attributes). Depending on <code>@Retention</code>, they are kept only in source, in bytecode, or available at runtime via reflection or annotation processing.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">1) Anatomy of an annotation type</h6>
+      <ul>
+        <li>Declared as a special interface with <code>@interface</code>. Elements look like no-arg abstract methods with optional <code>default</code> values.</li>
+        <li>Values can be: primitives, <code>String</code>, <code>Class&lt;?&gt;</code>, enums, other annotations, or <b>arrays</b> of these. (No nulls, no generics.)</li>
+        <li><b>Meta-annotations</b>: <code>@Target</code>, <code>@Retention</code>, <code>@Documented</code>, <code>@Inherited</code>, <code>@Repeatable</code>.</li>
+      </ul>
+<pre class="language-java"><code>import java.lang.annotation.*;
+@Target({ElementType.TYPE, ElementType.METHOD})
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+public @interface Audited {
+  String value() default "default-category";
+  boolean enabled() default true;
+}</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">2) Retention & where the data lives</h6>
+      <ul>
+        <li><code>SOURCE</code>: present only in source; discarded by compiler (e.g., <code>@SuppressWarnings</code>).</li>
+        <li><code>CLASS</code>: written to .class in attributes, but not visible at runtime; usable by bytecode tools.</li>
+        <li><code>RUNTIME</code>: stored in .class and <b>accessible via reflection</b> at runtime.</li>
+      </ul>
+      <p class="subtle">In the class file, annotations are stored in attributes such as <code>RuntimeVisibleAnnotations</code>, <code>RuntimeInvisibleAnnotations</code>, and for type-use (JSR 308): <code>RuntimeVisibleTypeAnnotations</code>.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">3) Access at runtime (reflection)</h6>
+      <ul>
+        <li>Reflection APIs (<code>Class</code>, <code>Method</code>, <code>Field</code>, <code>Parameter</code>) expose annotations if retention is <b>RUNTIME</b>.</li>
+        <li>At runtime, the JVM creates a <em>dynamic proxy</em> implementing your annotation interface; calls are routed to an internal invocation handler that returns element values.</li>
+      </ul>
+<pre class="language-java"><code>@Audited(value = "payments")
+class PaymentService {
+  @Audited("capture") public void capture() {}
+}
+
+Class&lt;?&gt; c = PaymentService.class;
+Audited typeAnn = c.getAnnotation(Audited.class);
+System.out.println(typeAnn.value());               // "payments"
+
+Audited mAnn = c.getDeclaredMethod("capture").getAnnotation(Audited.class);
+System.out.println(mAnn.value());                  // "capture"</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">4) Compile-time processing (APT)</h6>
+      <ul>
+        <li>Annotation Processors (<code>javax.annotation.processing</code> / <code>jakarta.annotation.processing</code>) run during compilation.</li>
+        <li>They read annotations on elements (<code>Elements</code>, <code>Types</code>), validate, and <b>generate code/resources</b> (e.g., mapstruct, dagger, lombok).</li>
+      </ul>
+<pre class="language-java"><code>@SupportedAnnotationTypes("com.acme.Audited")
+@SupportedSourceVersion(SourceVersion.RELEASE_21)
+public class AuditProcessor extends AbstractProcessor {
+  @Override public boolean process(Set&lt;? extends TypeElement&gt; anns, RoundEnvironment env) {
+    for (Element e : env.getElementsAnnotatedWith(processingEnv.getElementUtils()
+                                .getTypeElement("com.acme.Audited"))) {
+      // validate/generate files via Filer
+    }
+    return false; // allow other processors to see it
+  }
+}</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">5) Type annotations (JSR 308)</h6>
+      <ul>
+        <li>Can annotate <b>any use of a type</b> (casts, generics, arrays) and leverage tools like Checker Framework.</li>
+      </ul>
+<pre class="language-java"><code>List&lt;@NonNull String&gt; names = List.of("a");     // annotate type argument
+String s = (@NonNull String) obj;               // annotate cast</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">6) Repeatable & inherited annotations</h6>
+      <ul>
+        <li><code>@Repeatable(Container.class)</code> lets you apply an annotation multiple times. The compiler synthesizes a container annotation behind the scenes.</li>
+        <li><code>@Inherited</code> only affects <b>class-level</b> annotations and only along class inheritance (not interfaces, not methods/fields).</li>
+      </ul>
+<pre class="language-java"><code>@Repeatable(Roles.class)
+public @interface Role { String value(); }
+public @interface Roles { Role[] value(); }
+
+@Role("USER") @Role("ADMIN")
+class AdminService {}</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">7) How frameworks use them</h6>
+      <ul>
+        <li><b>Spring</b>: classpath scanning, reflection to read annotations (e.g., <code>@Component</code>, <code>@Transactional</code>), create proxies and apply behaviors.</li>
+        <li><b>JPA/Jackson</b>: read annotations to map entities or bind JSON; values drive runtime behavior.</li>
+        <li><b>Bytecode tools</b> (ASM, ByteBuddy): read <code>CLASS</code>-retained annotations to weave/transform.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">8) Limitations & pitfalls</h6>
+      <ul>
+        <li><b>No nulls / limited element types</b>; element defaults must be compile-time constants.</li>
+        <li><b>Order not guaranteed</b> when iterating <code>getAnnotations()</code> (don’t rely on it).</li>
+        <li><b>Performance:</b> reflective lookup is slower than direct code—cache results on hot paths.</li>
+        <li><b>Modules (Java 9+):</b> deep reflection may require <code>--add-opens</code> to access non-exported packages.</li>
+        <li><b>Equality semantics:</b> two annotation instances are equal if type + all element values match (arrays compared by contents).</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Quick reference</h6>
+      <table class="table table-dark table-striped table-bordered table-sm">
+        <thead><tr><th>Meta-annotation</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><code>@Target</code></td><td>Where it can be used (TYPE, METHOD, FIELD, PARAMETER, TYPE_USE, ...)</td></tr>
+          <tr><td><code>@Retention</code></td><td>Lifetime (SOURCE / CLASS / RUNTIME)</td></tr>
+          <tr><td><code>@Documented</code></td><td>Include in Javadoc</td></tr>
+          <tr><td><code>@Inherited</code></td><td>Class-level inheritance to subclasses</td></tr>
+          <tr><td><code>@Repeatable</code></td><td>Allow multiple instances via container</td></tr>
+        </tbody>
+      </table>
+
+      <div class="mt-3">
+        <button class="btn btn-sm btn-outline-info me-2"
+          onclick="copyToClipboard('Annotations = metadata stored in .class attributes. Visibility controlled by @Retention. Read via reflection at RUNTIME or processed by APT at compile time. Mind element type limits, modules, and performance. #hariPrep')">
+          Copy summary
+        </button>
+        <button class="btn btn-sm btn-outline-info"
+          onclick="copyToClipboard('Use @Target/@Retention wisely; cache reflective lookups; prefer RUNTIME for framework-driven behavior, CLASS for tooling. @Inherited only for class-level; @Repeatable needs a container.')">
+          Copy key points
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#svcCommRestGrpcKafkaQ1">
+      Service Communication: choose between REST, gRPC, and messaging (Kafka) <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="svcCommRestGrpcKafkaQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p><span class="highlight-blue">Big picture:</span> Pick based on <b>interaction pattern</b> (request/response vs event-driven), <b>latency/throughput</b>, <b>schema & contract</b>, and <b>operational guarantees</b> (ordering, retries, backpressure).</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Decision matrix</h6>
+      <table class="table table-dark table-striped table-bordered table-sm">
+        <thead>
+          <tr>
+            <th>Aspect</th>
+            <th>REST (HTTP/JSON)</th>
+            <th>gRPC (HTTP/2 + Protobuf)</th>
+            <th>Messaging (Kafka/RabbitMQ)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Pattern</td><td>Synchronous request/response</td><td>Synchronous/streaming (bi-di)</td><td>Asynchronous, event-driven</td></tr>
+          <tr><td>Latency</td><td>Medium</td><td><b>Low</b> (binary, HTTP/2)</td><td>High variance; queueing adds delay</td></tr>
+          <tr><td>Throughput</td><td>Good</td><td><b>Excellent</b></td><td><b>Excellent</b> (batching, partitions)</td></tr>
+          <tr><td>Schema</td><td>JSON (loose); OpenAPI</td><td><b>Protobuf (strong, versioned)</b></td><td>Avro/Protobuf/JSON + schema registry</td></tr>
+          <tr><td>Streaming</td><td>Server-sent events/WebSocket (extra)</td><td><b>Native</b> client/bi-di streams</td><td><b>Native</b> event streams</td></tr>
+          <tr><td>Browser/client</td><td><b>Native</b></td><td>Needs gRPC-Web proxy</td><td>Not browser-native</td></tr>
+          <tr><td>Coupling</td><td>Tight (temporal)</td><td>Tight (temporal)</td><td><b>Loose</b> (time decoupled)</td></tr>
+          <tr><td>Ordering</td><td>Per call only</td><td>Per stream</td><td><b>Per-partition</b> ordering</td></tr>
+          <tr><td>Retries</td><td>HTTP semantics; idempotency matters</td><td>Built-in status codes + client retries</td><td>Consumer retries, DLQ</td></tr>
+          <tr><td>Backpressure</td><td>Limited (HTTP)</td><td><b>Flow-control</b> via HTTP/2</td><td><b>Consumer pull</b>, batching</td></tr>
+          <tr><td>Use when</td><td>Public APIs, simple CRUD, interoperability</td><td>Low-latency, internal microservices, typed contracts, streaming</td><td>Event sourcing, async workflows, fan-out, decoupling</td></tr>
+        </tbody>
+      </table>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">When to choose what?</h6>
+      <ul>
+        <li><b>REST</b>: external/public APIs; human-debuggable payloads; gateways/WAFs; broad tooling (OpenAPI, Postman). Great for CRUD &amp; request/response without tight latency goals.</li>
+        <li><b>gRPC</b>: low-latency internal RPCs; strongly-typed contracts; streaming (real-time quotes, telemetry); small payloads at high RPS.</li>
+        <li><b>Kafka (messaging)</b>: decouple producers/consumers; event-driven architectures; fan-out; buffering spikes; audit trails; exactly-once processing (with caveats) and replays.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Examples</h6>
+      <p class="highlight-yellow">REST (Spring WebClient)</p>
+      <pre class="language-java"><code>import org.springframework.web.reactive.function.client.WebClient;
+
+WebClient api = WebClient.create("https://user-service");
+User user = api.get().uri("/users/{id}", id)
+  .retrieve().bodyToMono(User.class).block();</code></pre>
+
+      <p class="highlight-yellow">gRPC (proto + Java stub)</p>
+      <pre class="language-markup"><code>// user.proto
+syntax = "proto3";
+service UserService {
+  rpc GetUser (GetUserRequest) returns (UserReply);
+}
+message GetUserRequest { string id = 1; }
+message UserReply { string id = 1; string email = 2; }</code></pre>
+      <pre class="language-java"><code>// Client
+UserServiceGrpc.UserServiceBlockingStub stub = UserServiceGrpc.newBlockingStub(channel);
+UserReply res = stub.getUser(GetUserRequest.newBuilder().setId("42").build());</code></pre>
+
+      <p class="highlight-yellow">Kafka (Spring Kafka)</p>
+      <pre class="language-java"><code>// Producer
+kafkaTemplate.send("user.events", userId, eventJson);
+
+// Consumer
+@KafkaListener(topics = "user.events", groupId = "billing")
+void onEvent(ConsumerRecord&lt;String,String&gt; rec) {
+  // handle event; ensure idempotency via keys/logs
+}</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Design considerations & trade-offs</h6>
+      <ul>
+        <li><b>Schema evolution</b>:
+          <ul>
+            <li>REST/JSON: tolerant readers; version in URL/headers; document with OpenAPI.</li>
+            <li>gRPC/Protobuf: reserved field numbers; add-only changes; keep defaults.</li>
+            <li>Kafka: use Schema Registry (Avro/Protobuf); evolve schemas compatibly.</li>
+          </ul>
+        </li>
+        <li><b>Reliability</b>:
+          <ul>
+            <li>REST/gRPC: use timeouts + retries + circuit breakers; make mutating calls idempotent (idempotency keys, PUT, upserts).</li>
+            <li>Kafka: at-least-once by default; handle duplicates; use consumer groups, DLQs; exactly-once processing requires transactions + idempotent producers.</li>
+          </ul>
+        </li>
+        <li><b>Ordering & concurrency</b>:
+          <ul>
+            <li>Kafka: key by entity (e.g., userId) to preserve per-entity order within a partition.</li>
+            <li>REST/gRPC: ordering is the client’s responsibility; consider versioned writes with optimistic locking.</li>
+          </ul>
+        </li>
+        <li><b>Backpressure</b>:
+          <ul>
+            <li>gRPC: HTTP/2 flow control; streaming with client/server backpressure.</li>
+            <li>Kafka: consumers control rate; throttle producers or use quotas.</li>
+          </ul>
+        </li>
+        <li><b>Observability</b>: standardize correlation IDs across all three; emit metrics (latency, error rate, queue lag), and distributed tracing (trace/span ids in headers/record headers).</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Hybrid patterns (common in real systems)</h6>
+      <ul>
+        <li><b>Command via gRPC/REST</b>, <b>events via Kafka</b> (CQRS/event-carried state transfer).</li>
+        <li><b>REST/gRPC front door</b> behind an API Gateway, with <b>async processing behind the scenes</b> for long-running tasks.</li>
+        <li><b>Request/Reply over Kafka</b> (correlation IDs, reply topics) when crossing network zones/firewalls.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Quick choosing checklist</h6>
+      <ul>
+        <li>Is the caller a <b>browser or third-party</b>? → <b>REST</b>.</li>
+        <li>Is it <b>internal microservice</b> with strict <b>latency</b> or needs <b>streaming</b>? → <b>gRPC</b>.</li>
+        <li>Do you need <b>decoupling, fan-out, buffering, or audit/replay</b>? → <b>Kafka</b>.</li>
+        <li>Unclear? Start with REST; migrate hot internal paths to gRPC; introduce Kafka for async workflows.</li>
+      </ul>
+
+      <div class="mt-3">
+        <button class="btn btn-sm btn-outline-info me-2"
+          onclick="copyToClipboard('REST = interoperable request/response; gRPC = low-latency typed RPC + streaming; Kafka = async decoupling, ordering per partition, replay & high throughput. Choose by latency, coupling, schema, backpressure. #hariPrep')">
+          Copy summary
+        </button>
+        <button class="btn btn-sm btn-outline-info"
+          onclick="copyToClipboard('Cheat sheet: Browser/public → REST; Internal low-latency/streaming → gRPC; Fan-out/decoupling/replay → Kafka. Add timeouts/retries/idempotency; use schema evolution best practices.')">
+          Copy key points
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#serviceDiscoveryDesignQ1">
+      Service Discovery: How would you design microservices to dynamically discover each other in a large system? <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="serviceDiscoveryDesignQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p><span class="highlight-blue">Goal:</span> Let service <em>A</em> call service <em>B</em> by a <b>stable logical name</b> (e.g., <code>orders</code>) while instances scale up/down, move across nodes/zones, or roll during deploys—<b>without</b> hardcoded IPs/ports.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">1) Core patterns</h6>
+      <ul>
+        <li><b>Client-side discovery</b>: clients query a <em>registry</em> for <code>orders</code> → pick an instance with a client load balancer (e.g., Spring Cloud LoadBalancer). Pros: fewer hops; Cons: smarter clients.</li>
+        <li><b>Server-side discovery</b>: a gateway/LB (NGINX/Envoy) routes <code>orders</code> to healthy instances. Pros: thin clients; Cons: extra hop.</li>
+        <li><b>Service mesh</b> (sidecars like Envoy/Istio/Linkerd): sidecar handles discovery, mTLS, retries, circuit breaking. Pros: policy outside app; Cons: added infra complexity.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">2) Registries & naming</h6>
+      <ul>
+        <li><b>Eureka / Consul / ZooKeeper</b>: apps register (self or via sidecar). Clients resolve by name → instance list.</li>
+        <li><b>Kubernetes</b>: the <b>cluster DNS</b> is the registry; call <code>http://orders</code> or <code>http://orders.&lt;ns&gt;.svc.cluster.local</code>.</li>
+        <li><b>Cloud-native</b>: AWS Cloud Map, GCP Service Directory, etc.</li>
+      </ul>
+
+      <p class="highlight-yellow">Eureka client (Spring Cloud)</p>
+      <pre class="language-yaml"><code>spring:
+  application:
+    name: orders
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://eureka:8761/eureka</code></pre>
+
+      <p class="highlight-yellow">Consul discovery (Spring Cloud Consul)</p>
+      <pre class="language-yaml"><code>spring:
+  application.name: payments
+  cloud:
+    consul:
+      host: consul
+      discovery:
+        register: true
+        instanceId: ${spring.application.name}:${random.value}</code></pre>
+
+      <p class="highlight-yellow">Kubernetes Service (DNS-based)</p>
+      <pre class="language-yaml"><code>apiVersion: v1
+kind: Service
+metadata: { name: orders }
+spec:
+  selector: { app: orders }
+  ports: [{ port: 80, targetPort: 8080 }]</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">3) Client integration & load balancing</h6>
+      <ul>
+        <li><b>Spring</b>: use <code>@LoadBalanced</code> clients; address services by name.</li>
+        <li>LB strategies: round-robin, least-connections/EWMA, <b>zone-aware</b> (prefer same AZ/region), <b>weighted</b> (canaries).</li>
+      </ul>
+      <pre class="language-java"><code>// Spring Boot - client-side discovery with LoadBalancer
+import org.springframework.cloud.client.loadbalancer.LoadBalanced;
+import org.springframework.web.reactive.function.client.WebClient;
+
+@Bean @LoadBalanced
+WebClient.Builder lbWebClient() { return WebClient.builder(); }
+
+// Call by logical name (Eureka/Consul/K8s DNS behind the scenes)
+String r = lbWebClient().build()
+  .get().uri("http://orders/api/v1/health")
+  .retrieve().bodyToMono(String.class).block();</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">4) Health checks & registration</h6>
+      <ul>
+        <li>Instances register on startup and <b>renew</b> heartbeats (Eureka) or pass <b>active health checks</b> (Consul/K8s).</li>
+        <li>On failing checks, registry <b>evicts/deregisters</b> → traffic drains automatically.</li>
+        <li>Use <code>/actuator/health</code> with readiness/liveness probes to avoid sending traffic to cold/starting pods.</li>
+      </ul>
+      <pre class="language-yaml"><code># Kubernetes probes
+livenessProbe:  { httpGet: { path: /actuator/health/liveness, port: 8080 }, initialDelaySeconds: 20 }
+readinessProbe: { httpGet: { path: /actuator/health/readiness, port: 8080 }, initialDelaySeconds: 10 }</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">5) Resilience around discovery</h6>
+      <ul>
+        <li><b>Cache & TTLs</b>: clients cache instance lists; respect registry TTL; refresh w/ backoff + jitter.</li>
+        <li><b>Outage behavior</b>: serve from <b>stale cache</b> if registry is slow, but mark suspect instances with circuit breakers.</li>
+        <li><b>Retries</b>: short timeouts; retry on <code>5xx/connection</code> to a <em>different</em> instance; ensure idempotency for mutating calls.</li>
+        <li><b>Bulkheads</b>: per-dest host connection pools/threads to isolate failures.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">6) Multi-zone / multi-region</h6>
+      <ul>
+        <li><b>Locality-aware</b> routing: prefer same zone/region for latency and egress cost; fail over only if local pool is unhealthy.</li>
+        <li><b>Separate registries</b> per region with controlled cross-region fallback, or a global directory with region hints.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">7) Security & policy</h6>
+      <ul>
+        <li><b>mTLS</b> between services (mesh makes this easy); use SPIFFE IDs or cert SANs to identify workloads.</li>
+        <li><b>AuthZ</b>: gateway/sidecar enforces <b>service-to-service</b> ACLs; pass end-user JWT/propagate identity as needed.</li>
+        <li>Lock down registry API (write access) and protect with RBAC.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">8) Observability</h6>
+      <ul>
+        <li>Emit <b>service metrics</b>: discovery errors, instance list age, per-instance latency/error rates.</li>
+        <li><b>Tracing</b>: propagate <code>traceparent</code>/B3 headers through gateways/sidecars; tag spans with <code>peer.service</code>.</li>
+        <li>Log connection failures with <b>target instance id</b> to detect bad nodes quickly.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">9) Service mesh example (Istio)</h6>
+      <ul>
+        <li>Apps talk to <code>localhost</code> sidecar; mesh resolves <code>orders</code>, enforces mTLS, and balances traffic.</li>
+      </ul>
+      <pre class="language-yaml"><code># DestinationRule (subset-based LB/canary)
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata: { name: orders }
+spec:
+  host: orders
+  subsets:
+    - name: v1
+      labels: { version: v1 }
+    - name: v2
+      labels: { version: v2 }</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Design checklist</h6>
+      <ul>
+        <li>✅ Choose a registry (Eureka/Consul/K8s DNS) and a pattern (client-side, server-side, or mesh).</li>
+        <li>✅ Expose <code>/health</code> (liveness/readiness) and configure checks; ensure <b>graceful deregistration</b>.</li>
+        <li>✅ Use name-based addressing + client LB; implement timeouts, retries with jitter, circuit breakers, bulkheads.</li>
+        <li>✅ Cache discovery responses with sane TTL; handle registry outages gracefully.</li>
+        <li>✅ Segment by zone/region; prefer local; plan cross-region failover.</li>
+        <li>✅ Secure with mTLS and ACLs; standardize tracing/metrics.</li>
+      </ul>
+
+      <div class="mt-3">
+        <button class="btn btn-sm btn-outline-info me-2"
+          onclick="copyToClipboard('Discovery design: pick registry (Eureka/Consul/K8s DNS), address by service name, use client/server-side LB or mesh, health-check + deregister, cache with TTL, add timeouts/retries/circuit breakers, secure with mTLS, prefer zone-local. #hariPrep')">
+          Copy summary
+        </button>
+        <button class="btn btn-sm btn-outline-info"
+          onclick="copyToClipboard('Spring: @LoadBalanced WebClient and call http://&lt;service-name&gt;. K8s: use Service DNS. Mesh: offload discovery/mTLS/retries to Envoy/Istio. Emit metrics for discovery latency, cache age, and per-instance error rates.')">
+          Copy key points
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#distributedConsistencyQ1">
+      Data Consistency: distributed transactions & eventual consistency across microservices <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="distributedConsistencyQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p><span class="highlight-blue">Big picture:</span> In a microservices world you cannot (and usually should not) span a single ACID transaction across services.
+      Use <b>local transactions</b> inside each service and coordinate outcomes via <b>messages</b> (Sagas), <b>outbox/CDC</b>, <b>idempotency</b>, and <b>compensations</b>.
+      Fall back to XA/2PC only for tightly coupled systems with a shared coordinator.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">1) Options at a glance</h6>
+      <table class="table table-dark table-striped table-bordered table-sm">
+        <thead><tr><th>Approach</th><th>How it works</th><th>Pros</th><th>Cons / When to avoid</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><b>XA / 2PC</b></td>
+            <td>Global coordinator prepares & commits multiple resources in one transaction</td>
+            <td>Strong consistency</td>
+            <td>Latency, availability penalties, complex ops; limited cloud-native support</td>
+          </tr>
+          <tr>
+            <td><b>Saga (Choreography)</b></td>
+            <td>Services emit/consume events; each local tx triggers next step or compensation</td>
+            <td>Loosely coupled; scales well</td>
+            <td>Complex flows; risk of event storms; hard to visualize</td>
+          </tr>
+          <tr>
+            <td><b>Saga (Orchestration)</b></td>
+            <td>Central “orchestrator” commands steps and compensations</td>
+            <td>Single place for flow logic/visibility</td>
+            <td>Coordinator becomes dependency; careful scaling required</td>
+          </tr>
+          <tr>
+            <td><b>TCC (Try-Confirm/Cancel)</b></td>
+            <td>Reserve (try), then confirm or cancel</td>
+            <td>Low contention; explicit compensation</td>
+            <td>APIs must expose try/confirm/cancel; longer-lived locks/reservations</td>
+          </tr>
+          <tr>
+            <td><b>Outbox + CDC</b></td>
+            <td>Write domain change and an outbox row in one DB tx; CDC relays to broker</td>
+            <td>Atomic message publish; resilient</td>
+            <td>Extra infra (CDC), outbox table growth</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">2) Saga patterns (example: Order → Payment → Inventory → Ship)</h6>
+      <ul>
+        <li><b>Choreography:</b> <code>OrderCreated</code> → Payment service charges → emits <code>PaymentAuthorized</code> → Inventory reserves → … On failure, each service emits a <em>compensation</em> event (e.g., <code>PaymentRefunded</code>, <code>InventoryReleased</code>).</li>
+        <li><b>Orchestration:</b> An Orchestrator issues commands (<code>AuthorizePayment</code>, <code>ReserveStock</code>), observes replies, then decides next action or compensations.</li>
+      </ul>
+      <pre class="language-java"><code>// Orchestrator sketch (commands + replies)
+record AuthorizePaymentCmd(String orderId, Money amount) {}
+record PaymentAuthorizedEvt(String orderId) {}
+record PaymentDeclinedEvt(String orderId, String reason) {}
+
+@Service
+class OrderSaga {
+  void on(OrderCreated evt) { bus.send(new AuthorizePaymentCmd(evt.orderId(), evt.total())); }
+  void on(PaymentAuthorizedEvt evt) { bus.send(new ReserveStockCmd(evt.orderId())); }
+  void on(PaymentDeclinedEvt evt) { bus.send(new CancelOrderCmd(evt.orderId())); }
+}</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">3) Transactional Outbox + CDC (Debezium/Kafka)</h6>
+      <p>Ensure “save state & publish event” are atomic by writing both in the <b>same</b> DB transaction. A CDC tool reads the outbox table and publishes to Kafka.</p>
+      <pre class="language-java"><code>// JPA entities
+@Entity class Order {
+  @Id String id; OrderStatus status; Money total;
+  void markCreated() { this.status = OrderStatus.CREATED; }
+}
+@Entity class OutboxEvent {
+  @Id @GeneratedValue Long id;
+  String aggregateId; String type; String payload; Instant createdAt;
+  static OutboxEvent of(String aggId, String type, String json) { /*...*/ return e; }
+}
+
+@Transactional
+public void createOrder(Order o) {
+  o.markCreated();
+  em.persist(o);
+  var evtJson = toJson(new OrderCreated(o.id, o.total));
+  em.persist(OutboxEvent.of(o.id, "OrderCreated", evtJson)); // same DB tx
+}</code></pre>
+      <pre class="language-yaml"><code># Debezium connector reads outbox table and publishes to Kafka
+table.include.list: app.outbox_event
+transforms: unwrap
+transforms.unwrap.type: io.debezium.transforms.outbox.EventRouter
+transforms.unwrap.table.fields.additional.placement: type:header:event-type</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">4) Idempotency & exactly-once <em>effects</em></h6>
+      <ul>
+        <li><b>Producers:</b> use stable keys (e.g., <code>orderId</code>) and include a unique <b>eventId</b> / <b>idempotency key</b>.</li>
+        <li><b>Consumers:</b> <em>at-least-once</em> is normal—handle duplicates:
+          <ul>
+            <li>Upserts with unique constraints (e.g., <code>event_id</code> UNIQUE) to make operations idempotent.</li>
+            <li>Maintain a <code>processed_events</code> table or cache to dedupe.</li>
+            <li>Use Kafka transactions (consume-transform-produce) to avoid “gaps” when re-emitting.</li>
+          </ul>
+        </li>
+      </ul>
+      <pre class="language-java"><code>@Transactional
+public void onPaymentAuthorized(PaymentAuthorized evt) {
+  if (processedEventRepo.existsById(evt.id())) return;      // dedupe
+  orderRepo.updateStatus(evt.orderId(), Status.PAID);
+  processedEventRepo.save(new ProcessedEvent(evt.id()));
+}</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">5) TCC (Try-Confirm-Cancel) reservation</h6>
+      <ul>
+        <li><b>Try</b>: reserve resources (hold funds/stock) with expiry.</li>
+        <li><b>Confirm</b>: finalize; <b>Cancel</b>: release reservation.</li>
+      </ul>
+      <pre class="language-java"><code>// Payments API (TCC)
+POST /payments/try       { orderId, amount }  // returns reservationId
+POST /payments/confirm   { reservationId }
+POST /payments/cancel    { reservationId }</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">6) Dealing with read-model staleness</h6>
+      <ul>
+        <li><b>Eventual consistency:</b> Reads may be stale for a short time.</li>
+        <li>Techniques: <b>read-your-writes</b> (sticky to writer for a window), <b>versioning + ETags</b>, <b>command query separation</b> (CQRS) with projections updated from events.</li>
+        <li>UI/UX: show “processing…” states; retry fetch after a short delay.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">7) Ordering, retries, and timeouts</h6>
+      <ul>
+        <li><b>Partition by key</b> (Kafka) to keep per-entity order; design compensations as <em>commutative</em> when possible.</li>
+        <li>Use <b>timeouts + bounded retries</b> with jitter; surface a <b>dead-letter queue</b> and a replay process.</li>
+        <li>Protect with <b>circuit breakers</b>, <b>bulkheads</b>, and per-destination connection pools.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">8) When (if ever) to use XA/2PC</h6>
+      <ul>
+        <li>Small number of resources, strong consistency is a <b>hard</b> requirement, and infra supports XA with proven reliability.</li>
+        <li>Expect higher latency and failure coupling; monitor coordinator health carefully.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">9) Operational checklist</h6>
+      <ul>
+        <li>✅ <b>Unique event IDs</b>, idempotency keys, and dedupe storage.</li>
+        <li>✅ <b>Outbox</b> for atomic write+publish; CDC to broker.</li>
+        <li>✅ <b>Saga</b> design with compensations; document state transitions.</li>
+        <li>✅ <b>Observability</b>: trace IDs in events/headers, metrics for lag, retries, compensation counts.</li>
+        <li>✅ <b>Reconciliation</b>: periodic jobs to detect & fix drift (e.g., compare ledger vs. projections).</li>
+      </ul>
+
+      <div class="mt-3">
+        <button class="btn btn-sm btn-outline-info me-2"
+          onclick="copyToClipboard('Prefer Saga + Outbox/CDC for distributed consistency. Use idempotency keys, unique eventIds, and dedupe to get exactly-once effects. Handle retries, ordering (partition by key), and compensations. TCC for reservations; XA only if absolutely required. #hariPrep')">
+          Copy summary
+        </button>
+        <button class="btn btn-sm btn-outline-info"
+          onclick="copyToClipboard('Implementation kit: local @Transactional + Outbox row; Debezium→Kafka; idempotent consumers with UNIQUE(event_id); orchestrator or choreography for Sagas; DLQ + replay; CQRS projections and read-your-writes where needed.')">
+          Copy key points
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#resilienceFaultToleranceQ1">
+      Resilience & Fault Tolerance: circuit breakers, retries, and fallbacks <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="resilienceFaultToleranceQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p><span class="highlight-blue">Goal:</span> keep user-facing latency predictable and prevent cascading failures when dependencies degrade.
+        Use <b>timeouts</b> first, then <b>retry with backoff</b>, guard with a <b>circuit breaker</b>, isolate via <b>bulkheads</b>, and provide <b>fallbacks</b> where acceptable.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Concepts & states</h6>
+      <ul>
+        <li><b>Retry:</b> reattempt failed calls with exponential backoff + jitter (only for transient errors; make operations idempotent).</li>
+        <li><b>Circuit Breaker:</b> monitors recent calls in a sliding window. States: <code>CLOSED</code> (normal), <code>OPEN</code> (fail fast), <code>HALF_OPEN</code> (probe limited calls).</li>
+        <li><b>Fallback:</b> alternative response when primary path fails (cache, default, degraded path, queue for later).</li>
+        <li><b>Bulkhead:</b> isolate resources (thread/connection pools) per dependency to avoid total exhaustion.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Spring Boot + Resilience4j (annotation style)</h6>
+      <pre class="language-yaml"><code># application.yml
+resilience4j:
+  timelimiter:
+    instances:
+      catalog:
+        timeout-duration: 1s
+  circuitbreaker:
+    instances:
+      catalog:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 50
+        failure-rate-threshold: 50
+        slow-call-rate-threshold: 50
+        slow-call-duration-threshold: 750ms
+        permitted-number-of-calls-in-half-open-state: 5
+        wait-duration-in-open-state: 10s
+        record-exceptions:
+          - java.io.IOException
+          - org.springframework.web.reactive.function.client.WebClientResponseException$ServerError
+        ignore-exceptions:
+          - org.springframework.web.reactive.function.client.WebClientResponseException$BadRequest
+  retry:
+    instances:
+      catalog:
+        max-attempts: 3         # 1 original + 2 retries
+        wait-duration: 200ms
+        retry-exceptions:
+          - java.io.IOException
+        ignore-exceptions:
+          - org.springframework.web.reactive.function.client.WebClientResponseException$BadRequest
+  bulkhead:
+    instances:
+      catalog:
+        max-concurrent-calls: 50
+        max-wait-duration: 100ms
+</code></pre>
+
+      <pre class="language-java"><code>import io.github.resilience4j.bulkhead.annotation.Bulkhead;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
+import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
+
+@Service
+public class CatalogClient {
+
+  private final org.springframework.web.reactive.function.client.WebClient webClient;
+
+  public CatalogClient(WebClient.Builder builder) {
+    this.webClient = builder.baseUrl("http://catalog").build();
+  }
+
+  @TimeLimiter(name = "catalog")
+  @CircuitBreaker(name = "catalog", fallbackMethod = "fallbackProduct")
+  @Retry(name = "catalog")
+  @Bulkhead(name = "catalog")
+  public java.util.concurrent.CompletableFuture&lt;Product&gt; getProduct(String id) {
+    return webClient.get().uri("/api/products/{id}", id)
+        .retrieve()
+        .bodyToMono(Product.class)
+        .toFuture();
+  }
+
+  // Fallback signature must match method + Throwable at end
+  private java.util.concurrent.CompletableFuture&lt;Product&gt; fallbackProduct(String id, Throwable t) {
+    // Degraded response (e.g., cached/default)
+    Product cached = new Product(id, "Unavailable", java.math.BigDecimal.ZERO);
+    return java.util.concurrent.CompletableFuture.completedFuture(cached);
+  }
+}
+</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Programmatic composition (Reactor operators)</h6>
+      <pre class="language-java"><code>import io.github.resilience4j.circuitbreaker.*;
+import io.github.resilience4j.retry.*;
+import io.github.resilience4j.timelimiter.*;
+import reactor.core.publisher.Mono;
+
+CircuitBreaker cb = CircuitBreaker.ofDefaults("catalog");
+Retry retry = Retry.ofDefaults("catalog");
+TimeLimiter tl = TimeLimiter.of(Duration.ofSeconds(1));
+
+Mono&lt;Product&gt; call = webClient.get().uri("/api/products/{id}", id)
+  .retrieve().bodyToMono(Product.class);
+
+Mono&lt;Product&gt; resilient = call
+  .transformDeferred(CircuitBreakerOperator.of(cb))
+  .transformDeferred(RetryOperator.of(retry))
+  .timeout(Duration.ofSeconds(1))
+  .onErrorResume(ex -&gt; cache.get(id).map(Mono::just).orElseGet(() -&gt; Mono.just(Product.degraded(id))));
+</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Retries: good vs bad</h6>
+      <ul>
+        <li>✅ Retry on <b>transient</b> failures (<code>5xx</code>, timeouts, network blips). Use <b>exponential backoff + jitter</b> (e.g., 100ms, 200ms, 400ms ± random).</li>
+        <li>❌ Don’t retry on <b>client errors</b> (<code>4xx</code>) or non-idempotent operations unless guarded by <b>idempotency keys</b>.</li>
+        <li>✅ Cap total retry time; use budgets per request.</li>
+      </ul>
+
+      <p class="highlight-yellow">Idempotent update with key</p>
+      <pre class="language-java"><code>// Client sends same Idempotency-Key for retries; server dedupes
+POST /payments  (Idempotency-Key: 2b17-...)
+</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Fallback strategies</h6>
+      <ul>
+        <li><b>Cache</b> last known good (with TTL) for read flows.</li>
+        <li><b>Degrade</b> non-critical features (recommendations, avatars).</li>
+        <li><b>Queue</b> write requests to process later (asynchronous handoff) when primary is down.</li>
+        <li><b>Alternate path</b> (secondary region/provider) with feature flags.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Bulkheads & timeouts (must-have)</h6>
+      <ul>
+        <li>Per-dependency <b>connection pools</b> and <b>thread pools</b> (don’t share everything).</li>
+        <li>Set client timeouts: connect/read/write; server timeouts too.</li>
+        <li>Use <b>rate limiters</b> to shed load before saturation.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Observability & tuning</h6>
+      <ul>
+        <li>Expose metrics: breaker state, failure/slow-call rates, retry counts, fallback rate, p95 latency.</li>
+        <li>Log with correlation IDs; add tags for dependency name and outcome (<code>success|fallback|short-circuit</code>).</li>
+        <li>Start with lenient thresholds; tighten after measuring real failure modes.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Common pitfalls</h6>
+      <ul>
+        <li>Infinite/too aggressive retries → <b>retry storms</b>. Always backoff + jitter + cap.</li>
+        <li>Fallbacks returning stale/unsafe data; set TTLs and mark responses as <em>degraded</em>.</li>
+        <li>Global shared thread pool → head-of-line blocking; isolate per dependency.</li>
+        <li>Mismatched fallback signatures → method not found at runtime; include <code>Throwable</code> parameter.</li>
+      </ul>
+
+      <div class="mt-3">
+        <button class="btn btn-sm btn-outline-info me-2"
+          onclick="copyToClipboard('Order: timeouts → retries (backoff+jitter, idempotent) → circuit breaker (open/half-open) → fallback (cache/degrade/queue). Add bulkheads, rate limiting, and metrics. #hariPrep')">
+          Copy summary
+        </button>
+        <button class="btn btn-sm btn-outline-info"
+          onclick="copyToClipboard('Resilience4j YAML: set failure-rate & slow-call thresholds, open wait, half-open probes. Annotations: @TimeLimiter @CircuitBreaker @Retry with fallbackMethod. Programmatic: Reactor operators. Beware retry storms; make writes idempotent.')">
+          Copy key points
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#securityAuthQ1">
+      Security: What strategies do you use for authentication and authorization (OAuth2, JWT, API Gateway)? <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="securityAuthQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p><span class="highlight-blue">Big picture:</span> Centralize <b>authentication</b> (who are you?) with an Identity Provider (IdP) via <b>OAuth2/OIDC</b>, propagate identity with short-lived <b>access tokens</b> (often JWT), enforce <b>authorization</b> (what can you do?) in API Gateway and services using <b>scopes/roles/policies</b>. Use <b>mTLS</b> for service-to-service trust where needed.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">1) Choosing the right mechanism</h6>
+      <table class="table table-dark table-striped table-bordered table-sm">
+        <thead><tr><th>Scenario</th><th>AuthN method</th><th>Token</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Browser / user login</td><td><b>OAuth2 + OIDC</b> (Auth Code + <b>PKCE</b>)</td><td>JWT access + refresh (in auth server)</td><td>Use BFF or gateway to keep tokens off the browser when possible</td></tr>
+          <tr><td>Service → Service (machine)</td><td><b>Client Credentials</b> / <b>mTLS</b></td><td>JWT or <b>opaque</b> access token</td><td>Least privilege scopes; consider SPIFFE IDs</td></tr>
+          <tr><td>Native / CLI / TV</td><td>Device Code / PKCE</td><td>JWT access + refresh</td><td>User completes on secondary device</td></tr>
+          <tr><td>High revocation need</td><td>OAuth2</td><td><b>Opaque token + introspection</b></td><td>Gateway/service calls introspection endpoint</td></tr>
+        </tbody>
+      </table>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">2) OAuth2/OIDC flows (what to use when)</h6>
+      <ul>
+        <li><b>Authorization Code + PKCE</b>: interactive user login (web/native). <em>Default choice.</em></li>
+        <li><b>Client Credentials</b>: backend to backend (no user).</li>
+        <li><b>Refresh Token</b>: issue short-lived access tokens; store/rotate refresh tokens server-side (BFF) or hardened client.</li>
+        <li><b>OIDC</b>: adds <code>id_token</code> for user profile; don’t use <code>id_token</code> as an API credential.</li>
+      </ul>
+
+      <p class="highlight-yellow">Spring Security (Resource Server) — validate JWT from IdP</p>
+      <pre class="language-yaml"><code># application.yml
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: https://idp.example.com/.well-known/jwks.json   # key rotation</code></pre>
+      <pre class="language-java"><code>import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.SecurityFilterChain;
+
+@EnableMethodSecurity
+@org.springframework.context.annotation.Configuration
+class SecurityConfig {
+  @org.springframework.context.annotation.Bean
+  SecurityFilterChain api(HttpSecurity http) throws Exception {
+    http.oauth2ResourceServer(oauth2 -&gt; oauth2.jwt());
+    http.authorizeHttpRequests(reg -&gt; reg
+        .requestMatchers("/public/**").permitAll()
+        .requestMatchers("/admin/**").hasRole("admin")   // from JWT claims mapping
+        .anyRequest().authenticated());
+    return http.build();
+  }
+}</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">3) JWT essentials</h6>
+      <ul>
+        <li>Self-contained: <code>header.payload.signature</code> (JWS). Validate <b>signature</b>, <b>issuer</b> (<code>iss</code>), <b>audience</b> (<code>aud</code>), <b>expiry</b> (<code>exp</code>), <code>nbf</code>.</li>
+        <li>Keep access tokens <b>short-lived</b> (5–15 min). Use refresh tokens and <b>rotate</b> them.</li>
+        <li>Map claims → authorities (e.g., <code>scope</code>, <code>roles</code>) and enforce with <code>@PreAuthorize</code>.</li>
+      </ul>
+      <pre class="language-java"><code>@org.springframework.security.access.prepost.PreAuthorize("hasAuthority('SCOPE_payments:write')")
+public void capturePayment(...) { /* ... */ }</code></pre>
+
+      <p class="subtle">When immediate revocation is required, prefer <b>opaque tokens</b> + introspection or keep a short TTL and use gateway deny-lists.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">4) API Gateway as the “front door”</h6>
+      <ul>
+        <li>Terminate OAuth2/OIDC, validate tokens (<b>iss/aud/exp</b>), enforce <b>rate limits</b>, <b>mTLS</b> (east-west), inject <b>identity headers</b> to services.</li>
+        <li>Central policies: <b>RBAC/ABAC</b>, scope checks, request size limits, CORS, WAF rules.</li>
+        <li>Propagate <b>trace</b> and <b>correlation</b> IDs.</li>
+      </ul>
+      <p class="highlight-yellow">Spring Cloud Gateway (JWT filter)</p>
+      <pre class="language-yaml"><code>spring:
+  cloud:
+    gateway:
+      default-filters:
+        - TokenRelay   # forward OAuth2 token downstream
+      routes:
+        - id: orders
+          uri: http://orders:8080
+          predicates: [ Path=/api/orders/** ]
+          filters:
+            - name: RequestRateLimiter
+              args: { replenishRate: 50, burstCapacity: 100 }</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">5) Authorization strategies (RBAC, ABAC, policies)</h6>
+      <ul>
+        <li><b>RBAC</b>: roles like <code>ROLE_ADMIN</code>, easy but coarse.</li>
+        <li><b>Scope-based</b>: OAuth2 scopes (e.g., <code>payments:write</code>) for API permissions.</li>
+        <li><b>ABAC / Policy-based</b>: decisions on attributes (user, resource, context). Implement with <b>OPA</b>/Cedar/SpEL.</li>
+      </ul>
+      <pre class="language-java"><code>// Attribute-based check (method security)
+@org.springframework.security.access.prepost.PreAuthorize("@policy.canViewOrder(authentication, #orderId)")
+public Order getOrder(String orderId) { ... }</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">6) Service-to-service security</h6>
+      <ul>
+        <li><b>Client Credentials</b> for central authz audit & scopes.</li>
+        <li><b>mTLS</b> for transport identity; combine with JWT for fine-grained authz.</li>
+        <li>Consider <b>SPIFFE/SPIRE</b> to issue workload identities; mesh (Istio/Linkerd) simplifies mTLS & policy.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">7) Token lifecycle, rotation, revocation</h6>
+      <ul>
+        <li>Use <b>JWKS</b> (key set) with <code>kid</code> for signing key rotation.</li>
+        <li>Short-lived access tokens; store and <b>rotate refresh</b> tokens; detect reuse.</li>
+        <li>For emergency revoke: <b>opaque tokens</b> + introspection, or maintain a gateway/server-side deny-list keyed by <code>jti</code>.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">8) UX & web app patterns</h6>
+      <ul>
+        <li><b>BFF (Backend For Frontend)</b>: browser talks to your server; BFF holds tokens securely; sets <b>HttpOnly</b>, <b>SameSite</b>, <b>Secure</b> cookies.</li>
+        <li>Avoid storing tokens in <code>localStorage</code>; prefer cookies + CSRF protections or fetch via BFF.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">9) Common pitfalls</h6>
+      <ul>
+        <li>Using <code>id_token</code> to call APIs (don’t) — use <b>access token</b>.</li>
+        <li>Not validating <b>audience</b>/<b>issuer</b> or ignoring <b>clock skew</b>.</li>
+        <li>Long-lived access tokens with no rotation; no plan for key rollover.</li>
+        <li>Embedding excessive PII/roles in JWT (token bloat, privacy). Keep minimal claims.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Copy-paste starter configs</h6>
+      <p class="highlight-yellow">Resource Server with authorities mapping</p>
+      <pre class="language-java"><code>@org.springframework.context.annotation.Bean
+org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter jwtAuthConverter() {
+  var conv = new org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter();
+  var granted = new org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter();
+  granted.setAuthoritiesClaimName("scope");                 // or "roles"
+  granted.setAuthorityPrefix("SCOPE_");                     // or "ROLE_"
+  conv.setJwtGrantedAuthoritiesConverter(granted);
+  return conv;
+}</code></pre>
+
+      <p class="highlight-yellow">Client Credentials (Spring)</p>
+      <pre class="language-yaml"><code>spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          svc:
+            authorizationGrantType: client_credentials
+            client-id: orders
+            client-secret: &lt;secret&gt;
+        provider:
+          svc:
+            token-uri: https://idp.example.com/oauth/token</code></pre>
+
+      <div class="mt-3">
+        <button class="btn btn-sm btn-outline-info me-2"
+          onclick="copyToClipboard('AuthN via OAuth2/OIDC (Auth Code + PKCE). Short-lived JWT access tokens; refresh tokens at IdP/BFF. Validate iss/aud/exp via resource servers. Enforce authZ at gateway + services (scopes/RBAC/ABAC). Use mTLS or client-credentials for S2S; rotate keys (JWKS). #hariPrep')">
+          Copy summary
+        </button>
+        <button class="btn btn-sm btn-outline-info"
+          onclick="copyToClipboard('Gateway validates tokens & adds rate limits; services use Spring Resource Server JWT. Prefer short-lived access tokens, rotate refresh tokens, support JWKS rotation, use BFF for browsers, and consider opaque tokens + introspection for fast revocation.')">
+          Copy key points
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#scalingIndependentlyQ1">
+      Scalability: How do you scale microservices independently without impacting other services? <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="scalingIndependentlyQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p><span class="highlight-blue">Goal:</span> make each service scale on its <b>own bottlenecks</b> (CPU, IO, queue lag, DB) with <b>minimal coupling</b>, so adding capacity or changing traffic for one service doesn’t degrade others.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">1) Core principles</h6>
+      <ul>
+        <li><b>Strong boundaries:</b> one team owns one service + its data. Contracts (OpenAPI/Protobuf) evolve <em>backward-compatibly</em>.</li>
+        <li><b>Stateless processes:</b> keep state in external stores/caches so instances can scale horizontally.</li>
+        <li><b>Isolate resources:</b> per-service <b>connection pools</b>, <b>thread pools</b>, <b>rate limits</b>, and <b>circuit breakers</b> (bulkheads).</li>
+        <li><b>Decouple via async:</b> offload heavy/slow work to <b>queues/streams</b> (Kafka/RabbitMQ) to absorb spikes.</li>
+        <li><b>Per-service data:</b> separate schema/DB (or logical isolation) to avoid cross-team contention & lock amplification.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">2) Compute/runtime isolation (Kubernetes example)</h6>
+      <pre class="language-yaml"><code>apiVersion: apps/v1
+kind: Deployment
+metadata: { name: payments }
+spec:
+  replicas: 3
+  template:
+    spec:
+      containers:
+      - name: app
+        image: org/payments:1.0.0
+        resources:
+          requests: { cpu: "500m", memory: "512Mi" }   # guarantees
+          limits:   { cpu: "2",    memory: "1Gi"   }   # isolation cap
+        readinessProbe: { httpGet: { path: /actuator/health/readiness, port: 8080 } }
+        livenessProbe:  { httpGet: { path: /actuator/health/liveness,  port: 8080 } }</code></pre>
+
+      <p class="highlight-yellow">Horizontal Pod Autoscaler (HPA)</p>
+      <pre class="language-yaml"><code>apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata: { name: payments-hpa }
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: payments }
+  minReplicas: 3
+  maxReplicas: 20
+  metrics:
+    - type: Resource
+      resource: { name: cpu, target: { type: Utilization, averageUtilization: 70 } }</code></pre>
+      <p class="subtle">Use <b>custom metrics</b> for better signals: RPS, p95 latency, or <b>queue length/lag</b> (KEDA for Kafka/RabbitMQ).</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">3) Data layer scaling per service</h6>
+      <ul>
+        <li><b>Read replicas</b> and <b>caching</b> (Redis) for read-heavy services.</li>
+        <li><b>Partition/shard</b> by key (userId/orderId) for write-heavy services.</li>
+        <li>Tune <b>connection pools</b> per service to avoid DB saturation; use circuit breakers on DB too.</li>
+      </ul>
+      <pre class="language-yaml"><code># Spring Boot (Hikari) per-service pool
+spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 30
+      minimum-idle: 10
+      leak-detection-threshold: 60000</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">4) Async & backpressure (independent consumers)</h6>
+      <ul>
+        <li>Partition topics by entity key; each service scales its <b>consumer group</b> independently by adding instances.</li>
+        <li>Apply <b>backpressure</b>: bounded queues, max concurrency; drop/defer non-critical work when overloaded.</li>
+      </ul>
+      <pre class="language-java"><code>// Spring Kafka: isolate concurrency for this service
+@org.springframework.kafka.annotation.KafkaListener(
+  topics = "order.events", groupId = "billing", concurrency = "6")
+void onEvent(org.apache.kafka.clients.consumer.ConsumerRecord&lt;String,String&gt; rec) { ... }</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">5) Network isolation & blast radius control</h6>
+      <ul>
+        <li><b>Bulkheads:</b> per-dependency HTTP client pools & timeouts; never share a single global pool.</li>
+        <li><b>Circuit breakers</b> + <b>rate limiting</b> per upstream to prevent retry storms and cross-service collapse.</li>
+        <li><b>API Gateway</b>: enforce quotas per client/service; shed excess load.</li>
+      </ul>
+      <pre class="language-java"><code>// WebClient: per-host pool & timeouts
+reactor.netty.http.client.HttpClient client = reactor.netty.http.client.HttpClient.create()
+  .compress(true)
+  .responseTimeout(java.time.Duration.ofSeconds(2));
+org.springframework.web.reactive.function.client.WebClient svc =
+  org.springframework.web.reactive.function.client.WebClient.builder()
+    .clientConnector(new org.springframework.http.client.reactive.ReactorClientHttpConnector(client))
+    .baseUrl("http://inventory")
+    .build();</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">6) Deploy & version independently</h6>
+      <ul>
+        <li><b>Canary/blue-green</b> per service to test under real traffic.</li>
+        <li><b>Backward-compatible</b> APIs & schemas; additive changes first; deprecate slowly.</li>
+        <li>Feature flags for runtime toggles; <b>rollbacks</b> are per-service, fast.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">7) Observability per service</h6>
+      <ul>
+        <li>Define SLIs/SLOs per service (availability, p95 latency, error rate).</li>
+        <li>Emit <b>RED/USE</b> metrics: Rate, Errors, Duration / Utilization, Saturation, Errors.</li>
+        <li>Distributed tracing with <code>traceparent</code>; tag spans with <code>peer.service</code> and <code>version</code>.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">8) Common pitfalls (and fixes)</h6>
+      <ul>
+        <li>🔴 <b>Shared DB</b> across services → lock contention & schema coupling → ✅ give each service its own schema/DB (or strict logical isolation).</li>
+        <li>🔴 Unbounded caches/queues → memory pressure → ✅ set caps + TTL, monitor hit ratio and queue depth.</li>
+        <li>🔴 Global thread pools → head-of-line blocking → ✅ per-dependency/thread-pool isolation.</li>
+        <li>🔴 Chatty sync calls → fan-out storms → ✅ batch, cache, or move to async/event-carried state.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">9) Quick checklist</h6>
+      <ul>
+        <li>✅ Stateless instances; autoscale on <b>business-aligned</b> metrics (RPS, lag, latency), not CPU alone.</li>
+        <li>✅ Per-service DB/caches and tuned pools; partition/shard hot data.</li>
+        <li>✅ Bulkheads, timeouts, retries (backoff+jitter), circuit breakers, and rate limits per dependency.</li>
+        <li>✅ Async queues for heavy work; consumers scale horizontally by partition.</li>
+        <li>✅ Independent deploys (canary) with backward-compatible contracts and strong observability.</li>
+      </ul>
+
+      <div class="mt-3">
+        <button class="btn btn-sm btn-outline-info me-2"
+          onclick="copyToClipboard('Scale each service on its own signals (RPS/lag/latency). Keep stateless, isolate compute and data, use bulkheads/circuit breakers, async queues, and per-service DB/caches. Deploy & version independently with canaries and strong observability. #hariPrep')">
+          Copy summary
+        </button>
+        <button class="btn btn-sm btn-outline-info"
+          onclick="copyToClipboard('Do: per-service pools, HPA/KEDA, partitioned consumers, read replicas/sharding, rate limits. Avoid: shared DB, global pools, unbounded caches/queues, chatty sync calls.')">
+          Copy key points
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#monitoringLoggingQ1">
+      Monitoring & Logging: centralized logs and distributed tracing tools/patterns <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="monitoringLoggingQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p><span class="highlight-blue">Goal:</span> get <b>all logs</b> and <b>all traces/metrics</b> from every service into a central place with <b>correlation IDs</b>, so you can follow a request end-to-end and debug quickly.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">1) Common stacks (pick one end-to-end)</h6>
+      <table class="table table-dark table-striped table-bordered table-sm">
+        <thead><tr><th>Area</th><th>Popular Options</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Logs</td><td><b>ELK</b> (Elasticsearch + Logstash + Kibana), <b>EFK</b> (Fluentd/Fluent Bit), <b>Loki</b> + Grafana, <b>OpenSearch</b></td><td>Ship <b>structured JSON</b> from apps/containers; use central retention & ILM</td></tr>
+          <tr><td>Tracing</td><td><b>OpenTelemetry (OTel)</b> SDK/Collector, Jaeger, Zipkin, Grafana Tempo</td><td>Standardize on <b>W3C Trace Context</b> (<code>traceparent</code>)</td></tr>
+          <tr><td>Metrics</td><td>Prometheus + Grafana, OpenTelemetry Metrics, Cloud (CloudWatch/Stackdriver)</td><td>RED/USE dashboards; exemplars linking to traces</td></tr>
+          <tr><td>Shipping</td><td>Fluent Bit/Fluentd, Vector, Filebeat</td><td>DaemonSet in k8s; backpressure & buffers</td></tr>
+        </tbody>
+      </table>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">2) Logging patterns (app side)</h6>
+      <ul>
+        <li><b>Structure logs as JSON</b> (one event per line). Include <code>timestamp</code>, <code>level</code>, <code>service</code>, <code>traceId</code>, <code>spanId</code>, <code>http.method</code>, <code>path</code>, <code>latency_ms</code>, <code>userId</code> (if allowed).</li>
+        <li>Use <b>MDC</b> to inject correlation IDs into every log line.</li>
+        <li>Mask/omit PII/secrets; set sane log levels; rotate and cap.</li>
+      </ul>
+
+      <p class="highlight-yellow">Spring Boot (Logback) JSON with trace correlation</p>
+      <pre class="language-xml"><code>&lt;configuration&gt;
+  &lt;appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender"&gt;
+    &lt;encoder class="net.logstash.logback.encoder.LogstashEncoder"&gt;
+      &lt;customFields&gt;{ "service":"orders" }&lt;/customFields&gt;
+    &lt;/encoder&gt;
+  &lt;/appender&gt;
+  &lt;root level="INFO"&gt;&lt;appender-ref ref="STDOUT"/&gt;&lt;/root&gt;
+&lt;/configuration&gt;</code></pre>
+
+      <p class="highlight-yellow">MDC enrichment</p>
+      <pre class="language-java"><code>import org.slf4j.MDC;
+try {
+  MDC.put("orderId", orderId);
+  log.info("Processing order");
+} finally { MDC.clear(); }</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">3) Distributed tracing with OpenTelemetry</h6>
+      <ul>
+        <li>Instrument services with <b>OTel SDK</b> or auto-instrumentation; export to an <b>OTel Collector</b> (OTLP).</li>
+        <li>Propagate context across HTTP (<code>traceparent</code>), gRPC (binary metadata), and <b>Kafka headers</b>.</li>
+        <li>Sample wisely: head sampling (fixed rate) or tail sampling (keep only slow/errors).</li>
+      </ul>
+
+      <p class="highlight-yellow">Spring Boot 3+ (Micrometer Tracing + OTel)</p>
+      <pre class="language-yaml"><code>management:
+  otlp:
+    tracing:
+      endpoint: http://otel-collector:4318/v1/traces
+  tracing:
+    sampling:
+      probability: 0.2
+logging.pattern.level: "%5p [traceId=%X{traceId} spanId=%X{spanId}]"</code></pre>
+
+      <p class="highlight-yellow">OTel Collector (send traces to Jaeger/Tempo)</p>
+      <pre class="language-yaml"><code>receivers:
+  otlp: { protocols: { http: {}, grpc: {} } }
+processors:
+  batch: {}
+exporters:
+  jaeger:
+    endpoint: jaeger-collector:14250
+    tls: { insecure: true }
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [jaeger]</code></pre>
+
+      <p class="highlight-yellow">Kafka correlation helper</p>
+      <pre class="language-java"><code>// Producer: copy W3C context into headers
+recordHeaders.add(new RecordHeader("traceparent",
+  io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
+    .getInstance().fields().get(0).getBytes(java.nio.charset.StandardCharsets.UTF_8)));</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">4) Kubernetes central log shipping</h6>
+      <ul>
+        <li>Run <b>Fluent Bit</b> (DaemonSet) to tail container stdout/stderr and ship to ELK/Loki/OpenSearch.</li>
+        <li>Add <b>labels</b> &amp; <b>k8s metadata</b> (namespace, pod, container) for search and dashboards.</li>
+      </ul>
+      <pre class="language-yaml"><code># Fluent Bit DaemonSet snippet (to Loki)
+[OUTPUT]
+    Name loki
+    Match *
+    Host loki
+    Labels {job="kubernetes",namespace="$kubernetes['namespace_name']",pod="$kubernetes['pod_name']"}</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">5) Dashboards & queries</h6>
+      <ul>
+        <li><b>Kibana/Loki</b>: saved searches like <code>service:orders AND level:error AND traceId:&lt;id&gt;</code>.</li>
+        <li><b>Grafana</b>: RED/USE dashboards; link metrics to traces with <b>exemplars</b>.</li>
+        <li><b>Service map</b>: Jaeger/Tempo dependency graphs to see hot paths & error edges.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">6) Best practices</h6>
+      <ul>
+        <li>Log <b>events, not sentences</b>; include identifiers. Avoid multi-line stack traces unless needed.</li>
+        <li>Set <b>timeouts</b> &amp; <b>error handling</b> so traces capture failures (not infinite spans).</li>
+        <li><b>Scrub PII</b> (names/emails/cards) and secrets (tokens/keys). Use allow-lists.</li>
+        <li>Control cost: sampling, index lifecycle management (ILM), cold storage/archives.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">7) Quick starters</h6>
+      <ul>
+        <li>✅ Spring Boot 3+: add <code>micrometer-tracing-bridge-otel</code> &amp; <code>opentelemetry-exporter-otlp</code>.</li>
+        <li>✅ Logback <b>logstash-encoder</b> for JSON.</li>
+        <li>✅ OTel Collector to fan-out to Jaeger/Tempo and vendor backends.</li>
+        <li>✅ Fluent Bit/Vector to ship container logs centrally.</li>
+      </ul>
+
+      <div class="mt-3">
+        <button class="btn btn-sm btn-outline-info me-2"
+          onclick="copyToClipboard('Centralize logs (JSON) and traces (OpenTelemetry). Propagate W3C traceparent across HTTP/gRPC/Kafka. Use Fluent Bit/Vector to ship logs; visualize with Kibana/Grafana; store traces in Jaeger/Tempo. Add MDC fields and exemplars. #hariPrep')">
+          Copy summary
+        </button>
+        <button class="btn btn-sm btn-outline-info"
+          onclick="copyToClipboard('Spring Boot 3: Micrometer Tracing + OTLP → OTel Collector → Jaeger/Tempo. Logback JSON with logstash-encoder incl. traceId/spanId. In k8s, use Fluent Bit DaemonSet; add k8s labels for queries; sample traces to control cost.')">
+          Copy key points
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#reactVsVueSpeedQ1">
+      Which one is faster: React or Vue? <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="reactVsVueSpeedQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p><span class="highlight-blue">Short answer:</span> <b>Both React and Vue can be very fast</b> when used correctly. 
+      In many real apps the difference is negligible compared to <em>how</em> you code (state placement, memoization, virtualization, bundling).</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">How their performance models differ</h6>
+      <ul>
+        <li><b>Vue 3</b>: fine-grained reactivity (Proxies) tracks <em>exact</em> dependencies → fewer components re-render by default. Templates are compiled to optimized render functions.</li>
+        <li><b>React 18</b>: re-renders a component when its parent renders/props change; you <b>opt in</b> to skipping work using <code>React.memo</code>, <code>useMemo</code>, <code>useCallback</code>. Concurrent rendering improves responsiveness under load but doesn’t make pure CPU work “faster”.</li>
+      </ul>
+
+      <p class="subtle">Rule of thumb: out-of-the-box, Vue may do less work for small reactive updates; with good memoization, React matches it.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">What actually makes apps “feel fast”</h6>
+      <ul>
+        <li><b>Critical path</b>: bundle size, network waterfalls, SSR/SSG, hydration.</li>
+        <li><b>Work avoided</b>: limiting renders, virtualizing large lists, splitting routes/components.</li>
+        <li><b>Scheduling</b>: breaking long tasks, deferring non-critical work, using transitions.</li>
+        <li><b>Data strategy</b>: colocate state; minimize global/state explosions and prop drilling.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Practical optimizations</h6>
+      <div class="row">
+        <div class="col-md-6">
+          <p class="highlight-yellow mb-1">React quick hits</p>
+<pre class="language-js"><code>import React, { memo, useMemo, useCallback } from "react";
+
+const Row = memo(function Row({ item, onClick }) {
+  // re-renders only if props change (by ===)
+  const label = useMemo(() =&gt; computeLabel(item), [item.id]); 
+  const handle = useCallback(() =&gt; onClick(item.id), [item.id, onClick]);
+  return &lt;div onClick={handle}&gt;{label}&lt;/div&gt;;
+});
+
+// Virtualize big lists
+// import { FixedSizeList as List } from 'react-window';</code></pre>
+          <ul>
+            <li>Use <code>memo</code> aggressively on stable subtrees.</li>
+            <li>Keep state local; avoid unnecessary Context re-renders.</li>
+            <li>Virtualize long lists (<code>react-window</code>/<code>react-virtual</code>).</li>
+          </ul>
+        </div>
+        <div class="col-md-6">
+          <p class="highlight-yellow mb-1">Vue 3 quick hits</p>
+<pre class="language-js"><code>&lt;template&gt;
+  &lt;ItemRow :item="item" /&gt;
+  &lt;!-- One-off static subtrees --&gt;
+  &lt;div v-once&gt;Static&lt;/div&gt;
+&lt;/template&gt;
+
+&lt;script setup&gt;
+import { computed } from 'vue';
+const props = defineProps({ item: Object });
+const label = computed(() =&gt; computeLabel(props.item.id)); // cached
+&lt;/script&gt;</code></pre>
+          <ul>
+            <li>Prefer <code>computed</code> for derived data; it caches.</li>
+            <li>Use <code>v-once</code>/<code>keep-alive</code> for static/expensive subtrees.</li>
+            <li>Virtualize lists (<code>vue-virtual-scroller</code>).</li>
+          </ul>
+        </div>
+      </div>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Measure, don’t guess</h6>
+      <ul>
+        <li><b>Browser:</b> Performance panel (FPS, long tasks); Lighthouse for LCP/INP/CLS.</li>
+        <li><b>React:</b> React Profiler (record commits, “why did this render”).</li>
+        <li><b>Vue:</b> Vue Devtools perf tab (component render times, reactive events).</li>
+        <li><b>Production:</b> web-vitals, Real User Monitoring (RUM), flamecharts.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">When one may edge the other</h6>
+      <ul>
+        <li><b>Many tiny reactive updates:</b> Vue often wins with less tuning.</li>
+        <li><b>Heavy custom memoization/large trees:</b> React performs great if you use <code>memo</code> + stable refs.</li>
+        <li><b>SSR/streaming:</b> Both offer excellent SSR; pipeline and caching usually dominate differences.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Bottom line</h6>
+      <ul>
+        <li>Pick based on <b>team expertise</b>, <b>ecosystem</b>, and <b>DX</b>. With best practices, both deliver 60fps UIs.</li>
+        <li>Focus on <b>architecture</b> (state design, fetching, code-splitting, virtualization) more than framework choice.</li>
+      </ul>
+
+      <div class="mt-3">
+        <button class="btn btn-sm btn-outline-info me-2"
+          onclick="copyToClipboard('Both React and Vue are fast. Vue’s fine-grained reactivity often avoids work by default; React matches it with memoization (React.memo/useMemo/useCallback). Real speed comes from avoiding work: state colocation, virtualization, code-splitting, SSR, and measurement. #hariPrep')">
+          Copy summary
+        </button>
+        <button class="btn btn-sm btn-outline-info"
+          onclick="copyToClipboard('Measure, don’t guess: Browser Performance panel, Lighthouse, React Profiler, Vue Devtools. Optimize: memo/computed, virtualize lists, colocate state, avoid unnecessary context/props churn, split bundles.')">
+          Copy key points
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+    </div>
+
+    <!-- Bootstrap & Search Script -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function searchQuestions() {
+            let input = document.getElementById("searchBox").value.toLowerCase();
+            let items = document.querySelectorAll(".search-item");
+
+            items.forEach((item) => {
+                let text = item.textContent.toLowerCase();
+                let parent = item.closest(".accordion-item");
+
+                if (text.includes(input)) {
+                    parent.style.display = "";
+                } else {
+                    parent.style.display = "none";
+                }
+            });
+        }
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert("Copied: " + text);
+            }).catch(err => {
+                console.error("Failed to copy:", err);
+            });
+        }
+    </script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            let items = document.querySelectorAll(".accordion-item");
+
+            items.forEach((item, index) => {
+                let button = item.querySelector(".accordion-button");
+                if (button) {
+                    button.innerHTML = `<span class="fw-bold me-2">${index + 1}.</span> ` + button.innerHTML;
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

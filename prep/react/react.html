@@ -307,6 +307,550 @@ function Counter() {
 <div class="accordion-item">
   <h2 class="accordion-header">
     <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#reactVsVueSpeedQ1">
+      Which one is faster: React or Vue? <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="reactVsVueSpeedQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p><span class="highlight-blue">Short answer:</span> <b>Both React and Vue can be very fast</b> when used correctly. 
+      In many real apps the difference is negligible compared to <em>how</em> you code (state placement, memoization, virtualization, bundling).</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">How their performance models differ</h6>
+      <ul>
+        <li><b>Vue 3</b>: fine-grained reactivity (Proxies) tracks <em>exact</em> dependencies → fewer components re-render by default. Templates are compiled to optimized render functions.</li>
+        <li><b>React 18</b>: re-renders a component when its parent renders/props change; you <b>opt in</b> to skipping work using <code>React.memo</code>, <code>useMemo</code>, <code>useCallback</code>. Concurrent rendering improves responsiveness under load but doesn’t make pure CPU work “faster”.</li>
+      </ul>
+
+      <p class="subtle">Rule of thumb: out-of-the-box, Vue may do less work for small reactive updates; with good memoization, React matches it.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">What actually makes apps “feel fast”</h6>
+      <ul>
+        <li><b>Critical path</b>: bundle size, network waterfalls, SSR/SSG, hydration.</li>
+        <li><b>Work avoided</b>: limiting renders, virtualizing large lists, splitting routes/components.</li>
+        <li><b>Scheduling</b>: breaking long tasks, deferring non-critical work, using transitions.</li>
+        <li><b>Data strategy</b>: colocate state; minimize global/state explosions and prop drilling.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Practical optimizations</h6>
+      <div class="row">
+        <div class="col-md-6">
+          <p class="highlight-yellow mb-1">React quick hits</p>
+<pre class="language-js"><code>import React, { memo, useMemo, useCallback } from "react";
+
+const Row = memo(function Row({ item, onClick }) {
+  // re-renders only if props change (by ===)
+  const label = useMemo(() =&gt; computeLabel(item), [item.id]); 
+  const handle = useCallback(() =&gt; onClick(item.id), [item.id, onClick]);
+  return &lt;div onClick={handle}&gt;{label}&lt;/div&gt;;
+});
+
+// Virtualize big lists
+// import { FixedSizeList as List } from 'react-window';</code></pre>
+          <ul>
+            <li>Use <code>memo</code> aggressively on stable subtrees.</li>
+            <li>Keep state local; avoid unnecessary Context re-renders.</li>
+            <li>Virtualize long lists (<code>react-window</code>/<code>react-virtual</code>).</li>
+          </ul>
+        </div>
+        <div class="col-md-6">
+          <p class="highlight-yellow mb-1">Vue 3 quick hits</p>
+<pre class="language-js"><code>&lt;template&gt;
+  &lt;ItemRow :item="item" /&gt;
+  &lt;!-- One-off static subtrees --&gt;
+  &lt;div v-once&gt;Static&lt;/div&gt;
+&lt;/template&gt;
+
+&lt;script setup&gt;
+import { computed } from 'vue';
+const props = defineProps({ item: Object });
+const label = computed(() =&gt; computeLabel(props.item.id)); // cached
+&lt;/script&gt;</code></pre>
+          <ul>
+            <li>Prefer <code>computed</code> for derived data; it caches.</li>
+            <li>Use <code>v-once</code>/<code>keep-alive</code> for static/expensive subtrees.</li>
+            <li>Virtualize lists (<code>vue-virtual-scroller</code>).</li>
+          </ul>
+        </div>
+      </div>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Measure, don’t guess</h6>
+      <ul>
+        <li><b>Browser:</b> Performance panel (FPS, long tasks); Lighthouse for LCP/INP/CLS.</li>
+        <li><b>React:</b> React Profiler (record commits, “why did this render”).</li>
+        <li><b>Vue:</b> Vue Devtools perf tab (component render times, reactive events).</li>
+        <li><b>Production:</b> web-vitals, Real User Monitoring (RUM), flamecharts.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">When one may edge the other</h6>
+      <ul>
+        <li><b>Many tiny reactive updates:</b> Vue often wins with less tuning.</li>
+        <li><b>Heavy custom memoization/large trees:</b> React performs great if you use <code>memo</code> + stable refs.</li>
+        <li><b>SSR/streaming:</b> Both offer excellent SSR; pipeline and caching usually dominate differences.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Bottom line</h6>
+      <ul>
+        <li>Pick based on <b>team expertise</b>, <b>ecosystem</b>, and <b>DX</b>. With best practices, both deliver 60fps UIs.</li>
+        <li>Focus on <b>architecture</b> (state design, fetching, code-splitting, virtualization) more than framework choice.</li>
+      </ul>
+
+      <div class="mt-3">
+        <button class="btn btn-sm btn-outline-info me-2"
+          onclick="copyToClipboard('Both React and Vue are fast. Vue’s fine-grained reactivity often avoids work by default; React matches it with memoization (React.memo/useMemo/useCallback). Real speed comes from avoiding work: state colocation, virtualization, code-splitting, SSR, and measurement. #hariPrep')">
+          Copy summary
+        </button>
+        <button class="btn btn-sm btn-outline-info"
+          onclick="copyToClipboard('Measure, don’t guess: Browser Performance panel, Lighthouse, React Profiler, Vue Devtools. Optimize: memo/computed, virtualize lists, colocate state, avoid unnecessary context/props churn, split bundles.')">
+          Copy key points
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#viteReactWhyQ1">
+      What is Vite, and why integrate it with React? <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="viteReactWhyQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p><span class="highlight-blue">Vite in one line:</span> a <b>next-gen frontend toolchain</b> that gives <b>instant dev server starts</b> and <b>blazing HMR</b> using native ES modules, with a production build powered by Rollup.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">How Vite works (under the hood)</h6>
+      <ul>
+        <li><b>Dev server:</b> serves source files as <em>native ESM</em>. No heavy upfront bundling → near-instant cold start.</li>
+        <li><b>Pre-bundling:</b> uses <em>esbuild</em> to prebundle deps once (super fast, Go-based), then caches them.</li>
+        <li><b>HMR:</b> tracks a module graph; on save, it <em>invalidates only affected modules</em> and pushes updates via WebSocket.</li>
+        <li><b>Build:</b> for production it hands off to <em>Rollup</em> → tree-shaking, code-splitting, optimized chunks.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Why teams integrate Vite with React</h6>
+      <ul>
+        <li><b>Speed & DX:</b> sub-second cold starts and fast refresh even in large repos; low RAM compared to legacy Webpack setups.</li>
+        <li><b>React Fast Refresh:</b> first-class via <code>@vitejs/plugin-react</code> or the faster <code>@vitejs/plugin-react-swc</code>.</li>
+        <li><b>Sane defaults:</b> TS, JSX/TSX, CSS Modules, PostCSS, env files, and absolute import aliases with minimal config.</li>
+        <li><b>Modern standards:</b> native ESM, dynamic imports, top-tier HMR; great for monorepos and component libraries.</li>
+        <li><b>Easier builds:</b> Rollup output is predictable; easy code-splitting and library mode.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Quick start: React + Vite</h6>
+      <pre class="language-bash"><code># New app
+npm create vite@latest my-app -- --template react-swc
+cd my-app
+npm install
+npm run dev   # http://localhost:5173</code></pre>
+
+      <p class="highlight-yellow">Vite config (React + SWC, alias, dev proxy)</p>
+      <pre class="language-typescript"><code>// vite.config.ts
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react-swc";
+import path from "node:path";
+
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "src"),
+    },
+  },
+  server: {
+    port: 5173,
+    proxy: {
+      "/api": { target: "http://localhost:8080", changeOrigin: true },
+    },
+  },
+  build: {
+    sourcemap: true,
+  },
+});</code></pre>
+
+      <p class="highlight-yellow">Env variables & usage</p>
+      <pre class="language-bash"><code># .env.development
+VITE_API_BASE=/api</code></pre>
+      <pre class="language-js"><code>// src/config.ts
+export const API_BASE = import.meta.env.VITE_API_BASE;</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Migrating from CRA/Webpack (high level)</h6>
+      <ul>
+        <li>Replace <code>react-scripts</code> with <code>vite</code> and add <code>@vitejs/plugin-react-swc</code>.</li>
+        <li>Move entry HTML to project root as <code>index.html</code> (Vite controls it). In JSX examples, remember to escape as needed (e.g., <code>&amp;lt;App /&amp;gt;</code> in docs).</li>
+        <li>Switch <code>process.env.X</code> → <code>import.meta.env.VITE_X</code> and prefix envs with <code>VITE_</code>.</li>
+        <li>Port aliases to <code>vite.config.ts</code> and optionally <code>tsconfig.json</code> paths.</li>
+        <li>Replace custom loaders with Vite/rollup plugins (e.g., SVGR has a Vite plugin).</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Common wins with Vite + React</h6>
+      <ul>
+        <li><b>Faster feedback loop:</b> HMR keeps component state; edit-save cycles are milliseconds.</li>
+        <li><b>TypeScript first:</b> transpile via SWC/esbuild; type-check separately with <code>tsc --noEmit</code> or <code>vite-plugin-checker</code>.</li>
+        <li><b>Testing:</b> Vitest integrates smoothly (Jest-like API, blazing fast, uses Vite pipeline).</li>
+        <li><b>SSR & libraries:</b> SSR helpers and “library mode” for publishing React component libs.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Gotchas / when to be careful</h6>
+      <ul>
+        <li><b>Legacy browsers:</b> add the <code>@vitejs/plugin-legacy</code> if you must support older environments.</li>
+        <li><b>Non-ESM or exotic loaders:</b> some old Webpack-only plugins/loaders won’t work; check for a Vite plugin equivalent.</li>
+        <li><b>Env differences:</b> <code>import.meta.env</code> replaces <code>process.env</code>; ensure secrets <em>without</em> <code>VITE_</code> never go to client bundles.</li>
+        <li><b>Dev/prod parity:</b> esbuild vs Rollup can produce slightly different warnings; run prod builds in CI.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Bottom line</h6>
+      <ul>
+        <li><b>What:</b> Vite is a fast dev server + lean build system leveraging ESM, esbuild, and Rollup.</li>
+        <li><b>Why with React:</b> dramatically faster dev cycles, simpler config, modern defaults, and excellent Fast Refresh—especially noticeable in large apps/monorepos.</li>
+      </ul>
+
+      <div class="mt-3">
+        <button class="btn btn-sm btn-outline-info me-2"
+          onclick="copyToClipboard('Vite = native-ESM dev server + esbuild prebundle + Rollup build. With React, you get instant starts, fast HMR (Fast Refresh), simple config, and modern defaults. Migrate from CRA by switching to @vitejs/plugin-react-swc, using import.meta.env, and moving index.html to root. #hariPrep')">
+          Copy summary
+        </button>
+        <button class="btn btn-sm btn-outline-info"
+          onclick="copyToClipboard('Pros: ultra-fast dev, strong DX, tree-shaken builds, easy TS/CSS Modules. Watchouts: legacy browser support (use plugin-legacy), replace Webpack-only loaders, env var prefix VITE_.')">
+          Copy key points
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#reactNotesAllInOneQ1">
+      React: Core Notes (Basics → Hooks → State Mgmt → Perf → Patterns) <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="reactNotesAllInOneQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p><span class="highlight-blue">Scope:</span> Basics & Component architecture · State/Props/Lifecycle & Hooks · Conditional Rendering & Lists · Context & Redux · Performance · Custom Hooks · Routing · Testing · Interview Patterns & Best Practices.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">1) React Basics & Component Architecture</h6>
+      <ul>
+        <li><b>Components</b>: functions returning JSX; compose small units (smart/container vs dumb/presentational as needed).</li>
+        <li><b>Props</b>: immutable inputs; <b>State</b>: local, mutable via setters; <b>Top-down data flow</b>.</li>
+        <li><b>Keys</b>: stable identity for list items (avoid array index for re-orderable lists).</li>
+        <li><b>Composition over inheritance</b>: pass children/render-props, not subclassing.</li>
+      </ul>
+      <pre class="language-js"><code>function Card({ title, children }) {
+  return &lt;section className="card"&gt;&lt;h3&gt;{title}&lt;/h3&gt;{children}&lt;/section&gt;;
+}
+function Profile({ user }) {
+  return &lt;Card title="Profile"&gt;&lt;img alt={user.name} src={user.avatar}/&gt;&lt;/Card&gt;;
+}</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">2) State, Props, Lifecycle & Hooks</h6>
+      <ul>
+        <li><code>useState</code>: local state; <code>useEffect</code>: side-effects (fetch, subscriptions, DOM); cleanup returns a function.</li>
+        <li><code>useRef</code>: mutable container that <em>doesn’t</em> trigger render; also to reference DOM nodes.</li>
+        <li><code>useMemo</code>/<code>useCallback</code>: memoize expensive calc / stable functions (<em>optimize later, when measured</em>).</li>
+        <li><code>useReducer</code>: complex state transitions, pairs well with Context.</li>
+        <li><code>useLayoutEffect</code>: sync after DOM mutations (measure/layout); prefer <code>useEffect</code> normally.</li>
+        <li>React 18: <code>useTransition</code>, <code>useDeferredValue</code> for responsive UIs.</li>
+      </ul>
+      <pre class="language-js"><code>function Counter() {
+  const [n, setN] = React.useState(0);
+  React.useEffect(() =&gt; {
+    document.title = `Count ${n}`;
+    return () =&gt; { /* cleanup if needed */ };
+  }, [n]);
+  return &lt;button onClick={() =&gt; setN(c =&gt; c + 1)}&gt;{n}&lt;/button&gt;;
+}</code></pre>
+
+      <table class="table table-dark table-striped table-bordered table-sm">
+        <thead><tr><th>Class lifecycle</th><th>Hooks equivalent</th></tr></thead>
+        <tbody>
+          <tr><td>constructor</td><td>initialize state with <code>useState</code></td></tr>
+          <tr><td>componentDidMount</td><td><code>useEffect(..., [])</code></td></tr>
+          <tr><td>componentDidUpdate</td><td><code>useEffect</code> with deps</td></tr>
+          <tr><td>componentWillUnmount</td><td>return cleanup from <code>useEffect</code></td></tr>
+          <tr><td>shouldComponentUpdate</td><td><code>React.memo</code> / <code>useMemo</code> / <code>useCallback</code></td></tr>
+        </tbody>
+      </table>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">3) Conditional Rendering & Lists</h6>
+      <ul>
+        <li>Use ternaries/&&; extract to small components for readability.</li>
+        <li>Lists: map arrays; supply <b>stable key</b> (e.g., <code>item.id</code>).</li>
+      </ul>
+      <pre class="language-js"><code>function List({ items, loading }) {
+  if (loading) return &lt;Spinner /&gt;;
+  if (!items.length) return &lt;Empty /&gt;;
+  return &lt;ul&gt;{items.map(it =&gt; &lt;li key={it.id}&gt;{it.name}&lt;/li&gt;)}&lt;/ul&gt;;
+}</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">4) Context API & Redux</h6>
+      <ul>
+        <li><b>Context</b>: pass values down the tree (theme, user). Avoid as a write-heavy global store to prevent re-renders; split contexts.</li>
+        <li><b>Redux Toolkit (RTK)</b>: recommended for Redux—less boilerplate, Immer for immutable updates, RTK Query for data fetching/caching.</li>
+        <li>Use <b>selectors</b> (<code>reselect</code>) & normalize entities to minimize renders.</li>
+      </ul>
+      <pre class="language-js"><code>// Context (lightweight)
+const AuthCtx = React.createContext(null);
+function App(){ const [user,setUser]=React.useState(null);
+  return &lt;AuthCtx.Provider value={{user,setUser}}&gt;&lt;Routes /&gt;&lt;/AuthCtx.Provider&gt;;
+}
+function useAuth(){ return React.useContext(AuthCtx); }</code></pre>
+      <pre class="language-js"><code>// Redux Toolkit slice
+import { configureStore, createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+export const fetchUser = createAsyncThunk("user/fetch", async (id) =&gt; (await fetch(`/api/u/${id}`)).json());
+const userSlice = createSlice({
+  name: "user", initialState: { entity:null, status:"idle" },
+  reducers: {},
+  extraReducers: (b) =&gt; b
+    .addCase(fetchUser.pending, (s) =&gt; { s.status="loading"; })
+    .addCase(fetchUser.fulfilled, (s,a) =&gt; { s.status="succeeded"; s.entity=a.payload; })
+});
+export const store = configureStore({ reducer: { user: userSlice.reducer } });</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">5) Performance Optimization</h6>
+      <ul>
+        <li><b>Rendering model</b>: parents re-render children by default; minimize prop churn; lift state only when necessary.</li>
+        <li><b>Memoization</b>: <code>React.memo</code> for pure components; <code>useMemo</code>/<code>useCallback</code> for expensive calc/stable handlers (after profiling).</li>
+        <li><b>Code-splitting</b>: <code>React.lazy</code> + <code>&lt;Suspense&gt;</code>; split routes/components.</li>
+        <li><b>Lists</b>: virtualize large lists (<code>react-window</code>/<code>react-virtual</code>), windowing.</li>
+        <li><b>Concurrent UX</b>: <code>useTransition</code> for non-blocking updates; <code>useDeferredValue</code> to throttle typing filters.</li>
+      </ul>
+      <pre class="language-js"><code>const Row = React.memo(function Row({ item, onClick }) {
+  const label = React.useMemo(() =&gt; heavyCompute(item), [item.id]);
+  const handle = React.useCallback(() =&gt; onClick(item.id), [item.id, onClick]);
+  return &lt;div onClick={handle}&gt;{label}&lt;/div&gt;;
+});</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">6) Custom Hooks, Routing, & Testing</h6>
+      <p class="highlight-yellow mb-1">Custom Hooks</p>
+      <ul>
+        <li>Encapsulate stateful logic; prefix with <code>use</code>; compose other hooks.</li>
+      </ul>
+      <pre class="language-js"><code>function useFetch(url) {
+  const [data,setData]=React.useState(null), [err,setErr]=React.useState(null);
+  React.useEffect(() =&gt; {
+    let alive=true;
+    (async () =&gt; { try{
+      const r=await fetch(url); const j=await r.json();
+      if(alive) setData(j);
+    }catch(e){ if(alive) setErr(e);} })();
+    return () =&gt; { alive=false; };
+  }, [url]);
+  return { data, err };
+}</code></pre>
+
+      <p class="highlight-yellow mb-1">Routing (React Router v6+)</p>
+      <pre class="language-js"><code>import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
+function App() {
+  return &lt;BrowserRouter&gt;
+    &lt;nav&gt;&lt;Link to="/users"&gt;Users&lt;/Link&gt;&lt;/nav&gt;
+    &lt;Routes&gt;
+      &lt;Route path="/" element={&lt;Home /&gt;} /&gt;
+      &lt;Route path="/users/:id" element={&lt;User /&gt;} /&gt;
+      &lt;Route path="*" element={&lt;NotFound /&gt;} /&gt;
+    &lt;/Routes&gt;
+  &lt;/BrowserRouter&gt;;
+}</code></pre>
+
+      <p class="highlight-yellow mb-1">Testing (React Testing Library + Vitest/Jest)</p>
+      <ul>
+        <li>Test behavior over implementation; query by role/text; simulate user via <code>@testing-library/user-event</code>.</li>
+      </ul>
+      <pre class="language-js"><code>import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+test("increments", async () =&gt; {
+  render(&lt;Counter /&gt;);
+  await userEvent.click(screen.getByRole("button"));
+  expect(screen.getByRole("button")).toHaveTextContent("1");
+});</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">7) React Interview Patterns & Best Practices</h6>
+      <ul>
+        <li><b>Controlled vs Uncontrolled</b> inputs (source of truth in state vs DOM). Forms: React Hook Form/Formik for perf.</li>
+        <li><b>Compound Components</b>: share state via context inside a component family (e.g., Tabs/Accordion).</li>
+        <li><b>Render props / HOCs</b>: legacy composition patterns—prefer hooks now.</li>
+        <li><b>Error Boundaries</b>: class components or libraries to catch render errors.</li>
+        <li><b>Portals</b> for modals/tooltips outside stacking context.</li>
+        <li><b>Accessibility</b>: semantic HTML, ARIA roles, keyboard focus management.</li>
+        <li><b>Security</b>: avoid <code>dangerouslySetInnerHTML</code> (sanitize), never trust inputs, handle auth headers safely.</li>
+        <li><b>Structure</b>: feature-based folders; co-locate tests/styles; TypeScript for contracts.</li>
+        <li><b>Data fetching</b>: SWR/RTK Query/React Query for caching, dedupe, retries.</li>
+      </ul>
+      <pre class="language-js"><code>// Controlled input
+function NameField() {
+  const [name,setName]=React.useState("");
+  return &lt;input value={name} onChange={e=&gt;setName(e.target.value)} /&gt;;
+}</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Cheat Sheet (TL;DR)</h6>
+      <ul>
+        <li>Lift state minimally; prefer composition; use stable keys.</li>
+        <li>Effects for side-effects with cleanups; memoize only hot paths.</li>
+        <li>Context for read-often/globally relevant values; Redux Toolkit for cross-page/complex state; RTK Query for server cache.</li>
+        <li>Optimize: code-split, virtualize lists, <code>React.memo</code>, <code>useTransition</code> for UX.</li>
+        <li>Route with RRv6; test with RTL; keep a11y and security in mind.</li>
+      </ul>
+
+      <div class="mt-3">
+        <button class="btn btn-sm btn-outline-info me-2"
+          onclick="copyToClipboard('React notes: Components + props/state; hooks (useState/effect/ref/memo/callback/reducer); lists with stable keys; Context for light globals, Redux Toolkit for complex app state; performance via memoization, code-splitting, virtualization; custom hooks; React Router v6; test with RTL; patterns: controlled inputs, compound components, error boundaries, portals. #hariPrep')">
+          Copy summary
+        </button>
+        <button class="btn btn-sm btn-outline-info"
+          onclick="copyToClipboard('Perf checklist: minimize prop churn, React.memo hot subtrees, useMemo/useCallback sparingly after profiling, virtualize lists, lazy + Suspense, useTransition for low-priority updates, normalize & select state in Redux.')">
+          Copy key points
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#vueVirtualDomQ1">
+      Does Vue also use a Virtual DOM? <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="vueVirtualDomQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p><span class="highlight-blue">Short answer:</span> <b>Yes.</b> Vue 2 and Vue 3 both use a <b>Virtual DOM (VDOM)</b>. Vue 3 still diffs VDOM trees, but combines that with <b>fine-grained reactivity</b> so only components whose reactive data changed re-render, and the compiler adds hints to minimize the amount of diffing work.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">How it works in Vue</h6>
+      <ul>
+        <li><b>Template → render function → VNodes:</b> Vue compiles your SFC template into a <em>render function</em> that produces a tree of <b>virtual nodes (VNodes)</b>.</li>
+        <li><b>Diff &amp; patch:</b> On state changes, Vue <em>diffs</em> the new VNode tree against the previous one and <em>patches</em> only the necessary parts of the real DOM.</li>
+        <li><b>Reactivity gates work:</b> Vue tracks which reactive properties each component uses; when one changes, only those components re-render (others are skipped).</li>
+        <li><b>Compiler hints (Vue 3):</b> the compiler hoists <b>static</b> nodes and adds <b>patch flags</b> so the runtime can skip whole subtrees or focus diffs (e.g., “only text changed”).</li>
+      </ul>
+
+      <p class="highlight-yellow">Template &rarr; VDOM (conceptual)</p>
+      <pre class="language-markup"><code>&lt;!-- Template --&gt;
+&lt;ul&gt;
+  &lt;li v-for="user in users" :key="user.id"&gt;{{ user.name }}&lt;/li&gt;
+&lt;/ul&gt;
+</code></pre>
+      <pre class="language-js"><code>// Equivalent idea with a render() that returns VNodes
+import { h } from "vue";
+export default {
+  props: ["users"],
+  render() {
+    return h("ul", this.users.map(u =&gt; h("li", { key: u.id }, u.name)));
+  }
+};</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Why a Virtual DOM?</h6>
+      <ul>
+        <li><b>Performance:</b> batch and minimize DOM mutations; skip static subtrees.</li>
+        <li><b>Portability:</b> same render logic works for SSR, Native (via render targets), etc.</li>
+        <li><b>Predictability:</b> declarative view updated from state; no manual DOM diffing.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Vue vs React (VDOM behavior)</h6>
+      <ul>
+        <li><b>Both</b> use VDOM diff/patch.</li>
+        <li><b>Vue 3</b> also uses dependency tracking: a component won’t re-render if none of the reactive values it used changed. The <b>compiler</b> further narrows diffs with patch flags and static hoisting.</li>
+        <li><b>React</b> re-renders from parents downward; you opt-out of work via <code>React.memo</code>/<code>useMemo</code>/<code>useCallback</code>.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Keys & list updates</h6>
+      <ul>
+        <li>Always provide a <b>stable</b> <code>:key</code> in <code>v-for</code> to preserve element identity and avoid DOM churn.</li>
+      </ul>
+      <pre class="language-markup"><code>&lt;li v-for="u in users" :key="u.id"&gt;{{ u.name }}&lt;/li&gt;</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">When Vue “skips” work</h6>
+      <ul>
+        <li><code>v-once</code> for static subtrees (render once, never update).</li>
+        <li>Compiler <b>hoists</b> static nodes out of the render function.</li>
+        <li>Patch flags let Vue update just text/props instead of re-diffing entire branches.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Common pitfalls</h6>
+      <ul>
+        <li>Missing/unstable <code>:key</code> in lists → unnecessary re-mounts.</li>
+        <li>Overly global state causing avoidable updates; keep state close to where it’s used.</li>
+        <li>Huge lists: VDOM still does work—use <b>virtualization</b> (e.g., <code>vue-virtual-scroller</code>).</li>
+      </ul>
+
+      <div class="mt-3">
+        <button class="btn btn-sm btn-outline-info me-2"
+          onclick="copyToClipboard('Yes—Vue uses a Virtual DOM. Vue 3 pairs VDOM diffing with fine-grained reactivity and compiler hints (static hoisting, patch flags) so only affected components and fields update. Always use :key in lists; virtualize very large lists. #hariPrep')">
+          Copy summary
+        </button>
+        <button class="btn btn-sm btn-outline-info"
+          onclick="copyToClipboard('Template → render function → VNodes → diff/patch. Vue re-renders only components whose reactive deps changed; compiler hoists static parts and adds patch flags. Use v-once for static, :key for lists, and virtualize large collections.')">
+          Copy key points
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
       data-bs-target="#reactFeatures">
       Top Features of React 🚀
     </button>
@@ -2872,7 +3416,6 @@ function SearchBox() {
     </div>
   </div>
 </div>
-
 
 
 
