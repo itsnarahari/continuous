@@ -1385,6 +1385,440 @@ management:
         </div>
       </div>
 
+      <div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#readWriteLockJavaQ1">
+      ReadWriteLock in Java — deep dive (ReentrantReadWriteLock, StampedLock, patterns) <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="readWriteLockJavaQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p><span class="highlight-blue">What it is:</span> <code>java.util.concurrent.locks.ReadWriteLock</code> exposes two locks:
+        <b>read</b> (shared) and <b>write</b> (exclusive). Many readers may hold the read lock simultaneously iff no writer holds the write lock; a writer requires exclusive access.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">1) ReentrantReadWriteLock — essentials</h6>
+      <ul>
+        <li><b>Reentrant:</b> the same thread can re-acquire its read or write lock. A thread with the <b>write</b> lock can reenter both write and read.</li>
+        <li><b>No lock upgrade:</b> holding <em>read</em> then calling <code>writeLock().lock()</code> will block (risking deadlock). Release read first, then acquire write.</li>
+        <li><b>Lock downgrade:</b> allowed: acquire read while holding write, then release write (keeps read).</li>
+        <li><b>Fairness:</b> <code>new ReentrantReadWriteLock(true)</code> reduces starvation (esp. writers) but can lower throughput. Default (non-fair) is often faster.</li>
+        <li><b>Conditions:</b> only from the <b>write</b> lock: <code>writeLock().newCondition()</code>. Read lock does <em>not</em> support conditions.</li>
+      </ul>
+
+      <p class="highlight-yellow">Basic pattern</p>
+      <pre class="language-java"><code>import java.util.concurrent.locks.*;
+
+class Counter {
+  private final ReadWriteLock rw = new ReentrantReadWriteLock(); // non-fair by default
+  private final Lock r = rw.readLock();
+  private final Lock w = rw.writeLock();
+  private long value;
+
+  long get() {
+    r.lock();
+    try { return value; }
+    finally { r.unlock(); }
+  }
+
+  void inc() {
+    w.lock();
+    try { value++; }
+    finally { w.unlock(); }
+  }
+}</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">2) Read-mostly cache with RWL</h6>
+      <pre class="language-java"><code>import java.util.*;
+import java.util.concurrent.locks.*;
+
+class RWCache&lt;K,V&gt; {
+  private final Map&lt;K,V&gt; map = new HashMap&lt;&gt;();
+  private final ReadWriteLock rw = new ReentrantReadWriteLock();
+  private final Lock r = rw.readLock(), w = rw.writeLock();
+
+  V get(K k) {
+    r.lock();
+    try { return map.get(k); }
+    finally { r.unlock(); }
+  }
+
+  V computeIfAbsent(K k, java.util.function.Function&lt;K,V&gt; loader) {
+    V v;
+    r.lock();
+    try {
+      v = map.get(k);
+      if (v != null) return v;
+    } finally { r.unlock(); }
+
+    // Upgrade pattern: release read, acquire write, recheck, populate
+    w.lock();
+    try {
+      v = map.get(k);
+      if (v == null) {
+        v = loader.apply(k);
+        map.put(k, v);
+      }
+      // Downgrade: acquire read before releasing write if continuing with read operations
+      // r.lock(); try { ... } finally { r.unlock(); }
+      return v;
+    } finally { w.unlock(); }
+  }
+}</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">3) Downgrading correctly (write ➜ read)</h6>
+      <pre class="language-java"><code>void writeThenRead() {
+  w.lock();
+  try {
+    // ... modify shared state ...
+    r.lock();             // acquire read while still holding write
+  } finally {
+    w.unlock();           // now only read lock remains (downgraded)
+  }
+  try {
+    // ... perform read-only work safely ...
+  } finally {
+    r.unlock();
+  }
+}</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">4) Interruptible & timed acquisition</h6>
+      <pre class="language-java"><code>boolean tryWriteWithTimeout(Lock wl) throws InterruptedException {
+  return wl.tryLock(300, java.util.concurrent.TimeUnit.MILLISECONDS);
+}
+// Also available: readLock().lockInterruptibly(), writeLock().lockInterruptibly()</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">5) When to use RWL vs alternatives</h6>
+      <ul>
+        <li><b>Use RWL</b> when: reads are frequent/long, writes are infrequent; read critical sections are sizable (not just a few instructions).</li>
+        <li><b>Prefer simple locks</b> (<code>synchronized</code> / <code>ReentrantLock</code>) when: low contention, very short sections—overhead of RWL may hurt.</li>
+        <li><b>Prefer data structures</b>: <code>ConcurrentHashMap</code> often beats hand-rolled RWL maps; LongAdder for hot counters; immutable snapshots for copy-on-write scenarios.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">6) Writer/reader starvation & fairness</h6>
+      <ul>
+        <li><b>Writer starvation (non-fair):</b> constant stream of readers can delay writers. If this matters, use <code>new ReentrantReadWriteLock(true)</code>.</li>
+        <li><b>Fair locks</b> queue strictly (roughly FIFO) → predictable but potentially lower throughput.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">7) Conditions (only on write lock)</h6>
+      <pre class="language-java"><code>final Condition notEmpty;
+{
+  ReentrantReadWriteLock rrw = new ReentrantReadWriteLock();
+  notEmpty = rrw.writeLock().newCondition();
+}
+void awaitData() throws InterruptedException {
+  // must hold the write lock to await/signal
+}</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">8) StampedLock vs ReentrantReadWriteLock (advanced)</h6>
+      <ul>
+        <li><b>StampedLock</b> (Java 8+): supports <b>optimistic reads</b> and <b>tryConvertToWriteLock</b> for upgrades; can offer higher throughput on highly contended read-mostly workloads.</li>
+        <li><b>Trade-offs:</b> <em>not reentrant</em>, <em>no</em> <code>Condition</code>, API is lower-level (you manage long stamps), easy to misuse.</li>
+      </ul>
+      <pre class="language-java"><code>import java.util.concurrent.locks.StampedLock;
+
+class StampedPoint {
+  private double x, y;
+  private final StampedLock sl = new StampedLock();
+
+  double distance() {
+    long s = sl.tryOptimisticRead();
+    double cx = x, cy = y;
+    if (!sl.validate(s)) {           // a write happened; fall back to read lock
+      s = sl.readLock();
+      try { cx = x; cy = y; }
+      finally { sl.unlockRead(s); }
+    }
+    return Math.hypot(cx, cy);
+  }
+
+  void move(double dx, double dy) {
+    long s = sl.writeLock();
+    try { x += dx; y += dy; }
+    finally { sl.unlockWrite(s); }
+  }
+}</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">9) Common pitfalls</h6>
+      <ul>
+        <li>❌ <b>Upgrading</b> (read ➜ write) by calling <code>writeLock().lock()</code> while still holding read → can deadlock. <b>Release read first</b>, then acquire write; or use <code>StampedLock.tryConvertToWriteLock</code>.</li>
+        <li>❌ Holding write lock while doing slow I/O/remote calls—keeps readers blocked. Keep write sections short.</li>
+        <li>❌ Using RWL for tiny getters/setters—overhead may exceed benefit.</li>
+        <li>❌ Forgetting <code>finally</code> unlock → leaked locks, stalls. Always unlock in <code>finally</code>.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">10) Quick choosing guide</h6>
+      <ul>
+        <li><b>Mostly reads, occasional writes</b> with non-trivial critical sections → <b>ReentrantReadWriteLock</b> (non-fair; switch to fair if writers starve).</li>
+        <li><b>Extremely read-heavy</b> and contention is high → consider <b>StampedLock</b> with optimistic reads.</li>
+        <li><b>Simple/low contention</b> → <b>synchronized</b> or <b>ReentrantLock</b> (simpler, fewer foot-guns).</li>
+        <li><b>Maps/caches</b> → prefer <b>ConcurrentHashMap</b> / Caffeine over manual RWL.</li>
+      </ul>
+
+      <div class="mt-3">
+        <button class="btn btn-sm btn-outline-info me-2"
+          onclick="copyToClipboard('ReadWriteLock = shared read + exclusive write. ReentrantReadWriteLock supports reentrancy & downgrading, but not upgrading; Conditions only on write lock. Use for read-mostly workloads; beware writer starvation (use fair mode if needed); keep write sections short. Consider StampedLock for optimistic reads. #hariPrep')">
+          Copy summary
+        </button>
+        <button class="btn btn-sm btn-outline-info"
+          onclick="copyToClipboard('Patterns: release read before acquiring write; downgrade by taking read then releasing write; prefer ConcurrentHashMap for maps; non-fair often faster; only write lock supports Condition; use tryLock/interruptible for responsiveness.')">
+          Copy key points
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#starvationQ1">
+      What is starvation? <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="starvationQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p><span class="highlight-blue">Definition:</span> <b>Starvation</b> (resource starvation) is when a thread or task is <em>perpetually denied</em> the resources it needs to make progress—CPU time, locks, I/O, or queue slots—while others keep getting them. It’s not stuck forever by a circular wait (that’s <b>deadlock</b>); it’s just <em>consistently outcompeted</em>.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Common causes</h6>
+      <ul>
+        <li><b>Unfair scheduling</b>: higher-priority or frequently waking threads monopolize CPU.</li>
+        <li><b>Unfair locks</b>: readers continuously acquire a lock, preventing writers (“writer starvation”).</li>
+        <li><b>Contention hot spots</b>: a few hot keys/locks always busy.</li>
+        <li><b>Thread pool saturation</b>: all workers blocked on I/O or waiting on other tasks → queued tasks never run.</li>
+        <li><b>Queue bias</b>: always serving head-of-line or certain partitions first.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Starvation vs others</h6>
+      <ul>
+        <li><b>Deadlock:</b> threads wait on each other in a cycle; <em>no</em> one can progress.</li>
+        <li><b>Livelock:</b> threads keep changing state/rescheduling but do no useful work.</li>
+        <li><b>Starvation:</b> some progress happens, but <em>one</em> thread/task rarely/never progresses.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Java examples</h6>
+      <p class="highlight-yellow">1) Writer starvation with non-fair ReadWriteLock</p>
+      <pre class="language-java"><code>import java.util.concurrent.locks.*;
+
+class RWStarveDemo {
+  private final ReadWriteLock rw = new ReentrantReadWriteLock(); // non-fair (default)
+  private final Lock r = rw.readLock(), w = rw.writeLock();
+  private int value;
+
+  int read() { r.lock(); try { return value; } finally { r.unlock(); } }
+  void write(int x) { w.lock(); try { value = x; } finally { w.unlock(); } }
+}
+// If readers keep arriving, writer may wait a long time.</code></pre>
+      <p class="highlight-yellow">Fix: fair lock</p>
+      <pre class="language-java"><code>ReadWriteLock rw = new ReentrantReadWriteLock(true); // fair = reduce writer starvation</code></pre>
+
+      <p class="highlight-yellow">2) Thread priority starvation</p>
+      <pre class="language-java"><code>// High-priority busy loop may starve a low-priority thread on some OS/JVMs
+Thread hi = new Thread(() -> { while(true){ /* compute */ } });
+hi.setPriority(Thread.MAX_PRIORITY); hi.start();</code></pre>
+      <p class="subtle">Avoid priority games; rely on fair locking and backoff rather than MAX_PRIORITY loops.</p>
+
+      <p class="highlight-yellow">3) Thread-pool starvation</p>
+      <pre class="language-java"><code>// All workers block on an RPC and then submit follow-up work back to the same pool.
+// The follow-up tasks cannot start (no free workers) → pipeline stalls.
+var pool = java.util.concurrent.Executors.newFixedThreadPool(8);
+
+pool.submit(() -> {
+  // blocking call...
+  var result = rpc.call();
+  pool.submit(() -> process(result)); // may never run if all 8 are blocked similarly
+});</code></pre>
+      <p class="highlight-yellow">Fixes</p>
+      <ul>
+        <li>Use <b>separate pools</b> (I/O vs CPU), or a <b>bounded queue + backpressure</b>.</li>
+        <li>Prefer <b>async/non-blocking</b> I/O (CompletableFuture, reactive) to free threads.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Detection & symptoms</h6>
+      <ul>
+        <li>Very long wait times for a subset of requests/threads; p99/p999 spikes while average is fine.</li>
+        <li>Metrics: growing queue length, thread states <code>WAITING/TIMED_WAITING</code> for one group; others RUNNABLE.</li>
+        <li>Lock diagnostics: threads waiting long on the same monitor/lock; use <code>jstack</code>/<code>jcmd Thread.print</code>.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">How to prevent/fix starvation</h6>
+      <ul>
+        <li><b>Fairness</b>: prefer fair locks where starvation risk is real (<code>new ReentrantLock(true)</code>, <code>new ReentrantReadWriteLock(true)</code>).</li>
+        <li><b>Bound & shed</b>: bounded queues with rejection strategies; apply <b>rate limiting</b> so the system doesn’t overload.</li>
+        <li><b>Separate concerns</b>: split thread pools (CPU vs I/O), separate per-dependency pools (bulkheads).</li>
+        <li><b>Backoff & jitter</b> on retries so “noisy neighbors” don’t monopolize.</li>
+        <li><b>Prioritize fairness in queues</b>: round-robin or weighted fair queues; avoid strict head-of-line bias.</li>
+        <li><b>Reduce lock hold time</b>: keep critical sections short; avoid blocking I/O inside locks.</li>
+        <li><b>Use data structures</b>: e.g., <code>ConcurrentHashMap</code>, LongAdder reduce contention vs coarse locks.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Quick checklist</h6>
+      <ul>
+        <li>✅ Measure tail latencies and queue wait times; inspect lock contention.</li>
+        <li>✅ Use fair locks where needed; keep write sections short; consider RW locks only when read-mostly.</li>
+        <li>✅ Isolate with bulkheads and separate pools; avoid nested submissions to the same tiny pool.</li>
+        <li>✅ Apply backpressure and retries with backoff; cap concurrency per endpoint/tenant.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#livelockQ1">
+      What is livelock? <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="livelockQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p><span class="highlight-blue">Definition:</span> <b>Livelock</b> is when threads/processes keep <em>changing state</em> in response to each other (so they’re “alive”), but <b>no one makes progress</b>. Unlike deadlock (everyone blocked), livelocked threads are often running hot, repeatedly retrying/backing off and undoing each other.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Livelock vs Deadlock vs Starvation</h6>
+      <ul>
+        <li><b>Deadlock:</b> stuck waiting forever (e.g., circular lock wait); CPU mostly idle for those threads.</li>
+        <li><b>Livelock:</b> threads actively run/retreat/retry but never complete; CPU usage can be high.</li>
+        <li><b>Starvation:</b> some thread rarely gets service due to unfairness; others do make progress.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Classic causes</h6>
+      <ul>
+        <li><b>Mutual politeness</b>: each thread yields/retries when it detects contention, and they keep colliding.</li>
+        <li><b>Global retry loops</b> without jitter/backoff randomness.</li>
+        <li><b>Compensating actions</b> that undo each other repeatedly (e.g., rollback-then-retry in lock-free code).</li>
+        <li><b>Symmetric protocols</b> where both sides react the same way under contention.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Java example: two workers politely backing off forever</h6>
+      <pre class="language-java"><code>import java.util.concurrent.locks.*;
+
+class LivelockDemo {
+  private static final Lock A = new ReentrantLock();
+  private static final Lock B = new ReentrantLock();
+
+  static void polite(String name, Lock first, Lock second) {
+    while (true) {
+      boolean gotFirst = first.tryLock();
+      if (!gotFirst) { Thread.yield(); continue; }
+      try {
+        if (second.tryLock()) { // got both: work done
+          try {
+            System.out.println(name + " doing work");
+            break;
+          } finally { second.unlock(); }
+        } else {
+          // politeness: release and let the other try -> both keep doing this = LIVELOCK
+          first.unlock();
+          try { Thread.sleep(1); } catch (InterruptedException ignored) {}
+        }
+      } finally { /* if we broke out after success, first is still held and will be unlocked by scope exit */ }
+    }
+  }
+
+  public static void main(String[] args) {
+    new Thread(() -> polite("T1", A, B)).start();
+    new Thread(() -> polite("T2", B, A)).start();
+  }
+}</code></pre>
+      <p class="subtle">Both threads keep acquiring one lock, failing on the second, releasing, and retrying in sync—no progress.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">How to prevent/fix livelock</h6>
+      <ul>
+        <li><b>Break symmetry</b>: enforce a global lock order (A then B for everyone) so retries don’t mirror each other.</li>
+        <li><b>Randomized backoff</b>: add <em>jitter</em> to retries so threads desynchronize.</li>
+        <li><b>Bounded retries + escalation</b>: after N failed tries, take a stronger action (block on second lock, enqueue request, or hand off to a coordinator).</li>
+        <li><b>tryLock with timeout</b>: don’t spin forever; give up and retry the whole operation after a randomized delay.</li>
+        <li><b>Use higher-level primitives</b>: message queues, single-writer principle, STM-like patterns, or <code>Concurrent</code> collections that avoid manual lock dance.</li>
+      </ul>
+
+      <p class="highlight-yellow">Applying order & randomized backoff</p>
+      <pre class="language-java"><code>void safeAcquire(Lock a, Lock b) throws InterruptedException {
+  // Enforce order using identity hash to break symmetry
+  Lock first = System.identityHashCode(a) < System.identityHashCode(b) ? a : b;
+  Lock second = first == a ? b : a;
+
+  java.util.Random rnd = new java.util.Random();
+  int attempts = 0;
+  while (true) {
+    first.lock();
+    try {
+      if (second.tryLock(5, java.util.concurrent.TimeUnit.MILLISECONDS)) {
+        try { /* do work */ return; }
+        finally { second.unlock(); }
+      }
+    } finally { first.unlock(); }
+    Thread.sleep(1 + rnd.nextInt(5 + attempts)); // jitter & backoff
+    attempts++;
+  }
+}</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Detecting livelock in production</h6>
+      <ul>
+        <li><b>Symptoms</b>: high CPU, lots of retries/restarts, throughput ~0 for a specific operation despite active threads.</li>
+        <li><b>Thread dumps</b>: threads alternate between RUNNABLE and short WAITING/TIMED_WAITING with repeating stack traces in retry loops.</li>
+        <li><b>Metrics</b>: skyrocketing retry counters, frequent “released-without-progress”, toggling state flags.</li>
+        <li><b>Tracing/logs</b>: same request spans repeatedly abandoned/restarted without completion.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">Checklist</h6>
+      <ul>
+        <li>✅ Avoid symmetric retry logic; introduce lock ordering or leader election.</li>
+        <li>✅ Add <b>exponential backoff + jitter</b> to all contention/retry loops.</li>
+        <li>✅ Cap retries; escalate to queue/coordination or fail fast with a clear error.</li>
+        <li>✅ Keep critical sections minimal; avoid doing I/O while holding locks.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+
 
         </div>
     </div>
