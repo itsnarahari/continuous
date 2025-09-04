@@ -1,0 +1,2678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Walmart Q&A</title>
+
+  <!-- Bootstrap & Prism.js for Syntax Highlighting -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+
+<!-- Add the languages you use -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+
+  <style>
+    body { background-color: #121212; color: white; }
+    .container { max-width: 900px; margin-top: 20px; }
+    .accordion-button { background-color: #343a40; color: white; }
+    .accordion-button:focus { box-shadow: none; }
+    .accordion-button:not(.collapsed) { background-color: #007bff; color: white; }
+    .accordion-body { background-color: #1e1e1e; color: white; }
+    .highlight-yellow { color: #ffcc00; font-weight: bold; }
+    .highlight-blue { color: #4db8ff; font-weight: bold; }
+    pre[class*="language-"] { background: #1e1e1e !important; border-radius: 8px; padding: 12px; }
+
+    /* Search Box Styling */
+    .search-container { margin-bottom: 15px; text-align: center; }
+    .search-input {
+      width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #666;
+      background: #222; color: white; outline: none; font-size: 16px;
+    }
+    .search-input::placeholder { color: #aaa; }
+  </style>
+</head>
+
+<body class="bg-dark text-light">
+  <div class="container">
+    <div class="header fw-bold text-center mb-4">Company Wise Q&A</div>
+
+    <!-- Search Box -->
+    <div class="search-container">
+      <input type="text" class="search-input form-control" id="searchBox"
+             placeholder="Search questions..." onkeyup="searchQuestions()" />
+    </div>
+
+    <h3 class="text-warning">Walmart</h3>
+
+    <div class="accordion" id="walmartAccordion">
+      <div class="accordion-item bg-dark text-light border-secondary">
+        <h2 class="accordion-header" id="chm-h1">
+          <button class="accordion-button collapsed bg-dark text-warning" type="button"
+                  data-bs-toggle="collapse" data-bs-target="#chm-c1"
+                  aria-expanded="false" aria-controls="chm-c1">
+            🚦 ConcurrentHashMap Scalability Challenges & Optimizations
+          </button>
+        </h2>
+        <!-- IMPORTANT: parent points to #walmartAccordion -->
+        <div id="chm-c1" class="accordion-collapse collapse" data-bs-parent="#walmartAccordion">
+          <div class="accordion-body">
+
+            <h6 class="text-info">⚠️ Scalability challenges under high contention</h6>
+            <ul>
+              <li><b>Hot buckets:</b> Too many threads hit same bin → CAS retries & locking slow everyone.</li>
+              <li><b>Remapping bottlenecks:</b> <code>compute</code>/<code>merge</code> lock a bin while function runs; heavy work inside serializes threads.</li>
+              <li><b>Resizing overhead:</b> Small initial capacity → frequent resizes, all threads “help transfer” causing CPU/cache churn.</li>
+              <li><b>Counter cells contention:</b> Calls like <code>size()</code> sum striped counters; high writes → retries.</li>
+              <li><b>Poor hash codes:</b> Collisions even with tree bins → per-bin serialization.</li>
+            </ul>
+
+            <h6 class="text-info mt-3">🔎 Red flags in production</h6>
+            <ul>
+              <li>High CPU but low throughput.</li>
+              <li>Profiles show time in <code>ConcurrentHashMap$Node</code> or <code>transfer</code>.</li>
+              <li>Endpoints with <code>size()</code> or heavy <code>compute</code> have long tail latency.</li>
+            </ul>
+
+            <h6 class="text-success mt-3">✅ Optimizations</h6>
+            <ol>
+              <li><b>Pre-size correctly:</b>
+                <pre><code class="language-java">int expected = 1_000_000;
+ConcurrentHashMap&lt;K,V&gt; map = new ConcurrentHashMap<>(expected, 0.75f);</code></pre>
+                Avoid resizes in hot paths.
+              </li>
+              <li><b>Use good hashCodes:</b> Ensure keys distribute well; add shard-id if few keys dominate.</li>
+              <li><b>Avoid <code>size()</code> / <code>isEmpty()</code>:</b> Track counts separately for hot paths.</li>
+              <li><b>Keep remap functions tiny:</b> Don’t do I/O or CPU-heavy work inside <code>computeIfAbsent</code>.</li>
+            </ol>
+
+            <h6 class="text-success mt-3">⚡ Patterns to reduce contention</h6>
+            <p><b>1. LongAdder per key (better counters):</b></p>
+            <pre><code class="language-java">ConcurrentHashMap&lt;String, LongAdder&gt; counts = new ConcurrentHashMap<>();
+
+void incr(String k) {
+  counts.computeIfAbsent(k, kk -&gt; new LongAdder()).increment();
+}</code></pre>
+
+            <p><b>2. Sharding (striped maps):</b></p>
+            <pre><code class="language-java">final int SHARDS = 64;
+final ConcurrentHashMap&lt;K,V&gt;[] shards =
+  IntStream.range(0, SHARDS)
+           .mapToObj(i -&gt; new ConcurrentHashMap&lt;K,V&gt;())
+           .toArray(ConcurrentHashMap[]::new);
+
+private ConcurrentHashMap&lt;K,V&gt; shard(K key) {
+  int h = key.hashCode();
+  int idx = (h ^ (h &gt;&gt;&gt; 16)) & (SHARDS - 1);
+  return shards[idx];
+}</code></pre>
+
+            <p><b>3. Read-mostly workloads → immutable snapshot:</b></p>
+            <pre><code class="language-java">volatile Map&lt;K,V&gt; snapshot = Map.of();
+
+void update(Map&lt;K,V&gt; newData) {
+  snapshot = Map.copyOf(newData);
+}
+
+V get(K k) { return snapshot.get(k); }</code></pre>
+
+            <h6 class="text-info mt-3">📝 Quick checklist (TL;DR)</h6>
+            <ul>
+              <li>Pre-size the map</li>
+              <li>Ensure good <code>hashCode()</code></li>
+              <li>Avoid <code>size()</code> on hot paths</li>
+              <li>Use <code>LongAdder</code> for counters</li>
+              <li>Shard the map if few keys are super hot</li>
+              <li>Keep <code>compute/merge</code> lambdas minimal</li>
+              <li>Switch to immutable snapshots for read-mostly cases</li>
+            </ul>
+
+          </div>
+        </div>
+      </div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#jmmVisibilityQ1">
+      How does the Java Memory Model (JMM) ensure visibility and ordering of operations in multi-core systems? 
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="jmmVisibilityQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p><span class="highlight-blue">Goal of JMM:</span> Provide rules that guarantee predictable behavior of multithreaded programs across CPUs, caches, and compiler optimizations. 
+      It defines <em>when writes by one thread become visible to others</em> and <em>what order of operations is guaranteed</em>.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">⚠️ Challenges in multi-core systems</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">Caching:</span> Each CPU core may cache variables; without rules, threads may see stale values.</li>
+        <li><span class="highlight-blue">Reordering:</span> Compilers and CPUs reorder instructions for performance. Without constraints, this breaks predictable multithreading.</li>
+        <li><span class="highlight-blue">Store/load buffers:</span> Writes may be delayed in per-core buffers, not visible immediately to other cores.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🔑 JMM Guarantees</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">Atomicity:</span> Reads/writes to <code>volatile</code> variables, references, and primitives (except <code>long</code>/<code>double</code> before Java 5) are atomic.</li>
+        <li><span class="highlight-blue">Visibility:</span> A write to a <code>volatile</code> variable is flushed to main memory immediately; subsequent reads see the updated value.</li>
+        <li><span class="highlight-blue">Ordering:</span> The <b>happens-before</b> relationship ensures a logical order of operations between threads.</li>
+      </ul>
+
+      <p class="highlight-yellow">Happens-before rules:</p>
+      <ul>
+        <li><span class="highlight-blue">Program order rule:</span> Within a single thread, operations appear in program order.</li>
+        <li><span class="highlight-blue">Monitor lock rule:</span> Unlock on a monitor happens-before subsequent lock on the same monitor.</li>
+        <li><span class="highlight-blue">Volatile rule:</span> Write to a volatile happens-before every subsequent read of that variable.</li>
+        <li><span class="highlight-blue">Thread start rule:</span> A call to <code>Thread.start()</code> happens-before actions in the started thread.</li>
+        <li><span class="highlight-blue">Thread termination rule:</span> Actions in a thread happen-before <code>Thread.join()</code> returns.</li>
+        <li><span class="highlight-blue">Transitivity:</span> If A happens-before B and B happens-before C, then A happens-before C.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">✅ Tools provided by JMM</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">Volatile variables:</span> Ensure visibility + establish ordering (a lightweight synchronization).</li>
+        <li><span class="highlight-blue">Synchronized blocks/locks:</span> Imply memory barriers on entry/exit, ensuring visibility and ordering of shared state.</li>
+        <li><span class="highlight-blue">Final fields safety:</span> Immutable objects (properly constructed) guarantee that final fields are visible correctly after construction.</li>
+        <li><span class="highlight-blue">Explicit fences:</span> Unsafe and VarHandles provide fine-grained memory fences in Java 9+.</li>
+      </ul>
+
+      <p class="highlight-yellow">Example with volatile:</p>
+      <pre class="language-java"><code>class FlagExample {
+  private volatile boolean flag = false;
+
+  public void writer() {
+    flag = true; // write is immediately visible
+  }
+
+  public void reader() {
+    if (flag) {
+      // guaranteed to see true once writer() executes
+      System.out.println("Flag updated!");
+    }
+  }
+}</code></pre>
+
+      <p><span class="highlight-blue">Without volatile:</span> Another thread may never observe the update because the CPU could cache <code>flag</code> locally or reorder instructions.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">📝 Quick Summary</h6>
+      <ul>
+        <li>JMM shields us from CPU/cache/compiler reordering by defining <b>happens-before</b> rules.</li>
+        <li><code>volatile</code> gives visibility + ordering, but no atomic compound actions.</li>
+        <li><code>synchronized</code> adds visibility, ordering, and mutual exclusion.</li>
+        <li>Immutable objects with <code>final</code> fields are inherently safe for sharing.</li>
+        <li>Correct use of these tools ensures threads on different cores see consistent, ordered data.</li>
+      </ul>
+
+      <p class="mt-3"><span class="highlight-blue">Rule of thumb:</span> Use <code>volatile</code> for simple flags, 
+        <code>synchronized/locks</code> for compound actions, and design around <b>happens-before</b> to ensure correctness on multi-core systems.</p>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#syncStampedVarhandleQ1">
+      Compare synchronized blocks vs StampedLock vs VarHandle for concurrency control 
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="syncStampedVarhandleQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p><span class="highlight-blue">Context:</span> Java offers multiple concurrency primitives. 
+      <code>synchronized</code> is the oldest, <code>StampedLock</code> (Java 8) offers advanced locking, and 
+      <code>VarHandle</code> (Java 9) provides low-level atomic/volatile-style operations.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🔒 1. synchronized blocks</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">Type:</span> Intrinsic monitor lock (per object).</li>
+        <li><span class="highlight-blue">Features:</span> Mutual exclusion; reentrant; enforces <b>visibility & ordering</b> via memory barriers.</li>
+        <li><span class="highlight-blue">Pros:</span> Simple, automatic release on exceptions, well-integrated with JMM (happens-before rules).</li>
+        <li><span class="highlight-blue">Cons:</span> Blocking only; no read/write distinction; can cause contention under high concurrency.</li>
+      </ul>
+
+      <p class="highlight-yellow">Example:</p>
+      <pre class="language-java"><code>class Counter {
+  private int count = 0;
+  public synchronized void increment() { count++; }
+  public synchronized int get() { return count; }
+}</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">📝 2. StampedLock (Java 8)</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">Type:</span> Explicit lock with <b>modes</b> (write, read, optimistic read).</li>
+        <li><span class="highlight-blue">Features:</span> 
+          <ul>
+            <li>Write lock → exclusive, like synchronized.</li>
+            <li>Read lock → shared (multiple readers).</li>
+            <li>Optimistic read → non-blocking, validated if no write occurred.</li>
+          </ul>
+        </li>
+        <li><span class="highlight-blue">Pros:</span> Improves scalability for read-heavy workloads; supports optimistic concurrency.</li>
+        <li><span class="highlight-blue">Cons:</span> Non-reentrant; manual unlock required; more error-prone.</li>
+      </ul>
+
+      <p class="highlight-yellow">Example:</p>
+      <pre class="language-java"><code>class Point {
+  private double x, y;
+  private final StampedLock lock = new StampedLock();
+
+  void move(double dx, double dy) {
+    long stamp = lock.writeLock();
+    try { x += dx; y += dy; }
+    finally { lock.unlockWrite(stamp); }
+  }
+
+  double distanceFromOrigin() {
+    long stamp = lock.tryOptimisticRead();
+    double cx = x, cy = y;
+    if (!lock.validate(stamp)) {
+      stamp = lock.readLock();
+      try { cx = x; cy = y; }
+      finally { lock.unlockRead(stamp); }
+    }
+    return Math.hypot(cx, cy);
+  }
+}</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">⚡ 3. VarHandle (Java 9)</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">Type:</span> Low-level mechanism to access and update variables with memory-order semantics.</li>
+        <li><span class="highlight-blue">Features:</span> Supports <b>volatile reads/writes</b>, <b>atomic CAS</b>, 
+          <b>getAndSet</b>, and explicit memory ordering (plain, opaque, acquire, release, volatile).</li>
+        <li><span class="highlight-blue">Pros:</span> Fine-grained, non-blocking concurrency; replaces sun.misc.Unsafe; high-performance data structures.</li>
+        <li><span class="highlight-blue">Cons:</span> Very low-level; requires careful design; no mutual exclusion (must build protocols around it).</li>
+      </ul>
+
+      <p class="highlight-yellow">Example:</p>
+      <pre class="language-java"><code>import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
+
+class AtomicInt {
+  private volatile int value = 0;
+  private static final VarHandle VALUE;
+  static {
+    try {
+      VALUE = MethodHandles.lookup()
+        .findVarHandle(AtomicInt.class, "value", int.class);
+    } catch (Exception e) { throw new Error(e); }
+  }
+
+  void increment() { VALUE.getAndAdd(this, 1); }
+  int get() { return (int) VALUE.getVolatile(this); }
+}</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">📊 Head-to-Head</h6>
+      <ul>
+        <li><span class="highlight-blue">Ease of use:</span> synchronized ✅ easiest → StampedLock ⚠️ advanced → VarHandle ⚡ very low-level.</li>
+        <li><span class="highlight-blue">Read scalability:</span> synchronized ❌ single lock → StampedLock ✅ many readers + optimistic → VarHandle ✅ non-blocking if carefully built.</li>
+        <li><span class="highlight-blue">Atomic ops:</span> synchronized ✅ via lock → StampedLock ✅ with write lock → VarHandle ✅ CAS & fences, no blocking.</li>
+        <li><span class="highlight-blue">Safety:</span> synchronized ✅ automatic → StampedLock ⚠️ manual unlock → VarHandle ⚠️ very error-prone.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">📝 Quick Summary</h6>
+      <ul>
+        <li>Use <b>synchronized</b> for simplicity & correctness when contention is moderate.</li>
+        <li>Use <b>StampedLock</b> for read-heavy workloads needing optimistic reads & better scalability.</li>
+        <li>Use <b>VarHandle</b> when building lock-free or high-performance concurrent data structures.</li>
+      </ul>
+
+      <p class="mt-3"><span class="highlight-blue">Rule of thumb:</span> 
+        Start with <code>synchronized</code> (easy & safe), move to <code>StampedLock</code> for specialized read-heavy needs, 
+        and only drop to <code>VarHandle</code> when you really need fine-grained, lock-free atomic operations.</p>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#jvmLeakQ1">
+      How do you debug and fix a memory leak in a production JVM? 
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="jvmLeakQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p><span class="highlight-blue">What is a JVM memory leak?</span> Objects remain <em>reachable from GC roots</em> even though
+        the application no longer needs them (e.g., stuck in static caches, collections, ThreadLocals, listeners, class loaders).
+        GC can’t reclaim them → heap (or metaspace/native) grows and never returns after Full GC.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🚦 First, stabilize production (no restart if possible)</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">Reduce pressure:</span> temporarily rate-limit, drain traffic to other replicas, or lower concurrency.</li>
+        <li><span class="highlight-blue">Guard rails:</span> ensure <code>-XX:+ExitOnOutOfMemoryError</code> (fail fast), sufficient replicas, and alerts on heap/GC/pause time.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🔍 Detecting a leak vs. a spike</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">Leak signal:</span> Old Gen rises across time and <em>does not</em> return to baseline after Full GC.</li>
+        <li><span class="highlight-blue">Not a leak:</span> Eden churn is high but Old Gen plateaus; post-GC baselines are stable.</li>
+        <li><span class="highlight-blue">Metaspace/native leak:</span> Heap looks fine but process RSS grows; watch <code>Metaspace</code>, <code>Direct</code>, and <code>Threads</code>.</li>
+      </ul>
+
+      <p class="highlight-yellow">Quick live checks (no restart):</p>
+      <pre class="language-bash"><code># GC & heap info snapshots
+jcmd &lt;pid&gt; GC.heap_info
+jstat -gc -t &lt;pid&gt; 1s 60            # watch promotion, old-gen, FGC count
+
+# Class histogram (what types are growing)
+jcmd &lt;pid&gt; GC.class_histogram
+
+# Force a Full GC once (if safe) to see if old gen returns
+jcmd &lt;pid&gt; GC.run
+
+# Heap dump (big file; do when near OOM or in off-peak)
+jcmd &lt;pid&gt; GC.heap_dump filename=/tmp/heap_$(date +%s).hprof</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🎥 Low-impact continuous profiling (JDK 11+)</h6>
+      <ul class="mb-3">
+        <li>Prefer <span class="highlight-blue">Java Flight Recorder (JFR)</span> for live leak hunting (low overhead).</li>
+      </ul>
+      <pre class="language-bash"><code># Start a short JFR capture (2–5 min) with GC/allocation events
+jcmd &lt;pid&gt; JFR.start name=leak settings=profile duration=5m filename=/tmp/leak.jfr
+# Or dump early if you see the issue
+jcmd &lt;pid&gt; JFR.dump  name=leak filename=/tmp/leak_now.jfr</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🧪 If restart is allowed (next deploy)</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">Enable GC logs:</span> <code>-Xlog:gc*:file=/var/log/gc.log:time,uptime,level,tags</code></li>
+        <li><span class="highlight-blue">Enable Native Memory Tracking (NMT):</span> <code>-XX:NativeMemoryTracking=summary</code></li>
+        <li>Then you can inspect native growth: <code>jcmd &lt;pid&gt; VM.native_memory summary</code></li>
+        <li>Always set: <code>-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/log/oom.hprof</code></li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🧩 Analyzing evidence</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">Heap dump with MAT/JMC/YourKit:</span> 
+          <ul>
+            <li>Open Dominator Tree → find largest retainers.</li>
+            <li>Use <b>Path to GC Roots</b> (exclude weak/soft) to see why they’re kept.</li>
+            <li>Compare two dumps over time → classes/collections that monotonically grow are suspects.</li>
+          </ul>
+        </li>
+        <li><span class="highlight-blue">JFR:</span> Allocation flame graphs, object statistics, GC pauses, thread counts, class load/unload.</li>
+        <li><span class="highlight-blue">GC logs:</span> rising old-gen occupancy after Full GC, frequent promotion failure, long concurrent cycles.</li>
+        <li><span class="highlight-blue">NMT:</span> “Internal,” “Class,” “Thread,” “Arena,” “Direct” categories to spot native leaks.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🕵️ Common leak patterns & fixes</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">Unbounded caches/collections:</span> 
+          <ul>
+            <li>Fix: use bounded caches (e.g., Caffeine <code>maximumSize</code>/<code>expireAfter*</code>), remove ad-hoc <code>Map</code> caches.</li>
+            <li>For <code>ConcurrentHashMap</code> counters, prefer <code>LongAdder</code> and remove stale keys.</li>
+          </ul>
+        </li>
+        <li><span class="highlight-blue">Listener / callback leaks:</span> event buses, observers, WebSocket sessions not deregistered.
+          <br/>Fix: always unregister in <code>finally</code>; use try-with-resources style lifecycles.</li>
+        <li><span class="highlight-blue">ThreadLocal leaks (esp. with pools):</span> values live as long as the thread.
+          <br/>Fix: <code>try { … } finally { threadLocal.remove(); }</code>; minimize ThreadLocal scope.</li>
+        <li><span class="highlight-blue">ClassLoader/Metaspace leaks:</span> custom loaders, reloading frameworks keep strong refs (static singletons, caches).
+          <br/>Fix: clear static refs in unload hooks; avoid caching <code>Class</code>/reflection artifacts across loaders; verify classes are unloadable in dumps.</li>
+        <li><span class="highlight-blue">Direct/Native memory leaks:</span> Netty <code>ByteBuf</code> not released, huge <code>MappedByteBuffer</code>, JNI.
+          <br/>Fix: ensure <code>release()</code> on buffers; cap with <code>-XX:MaxDirectMemorySize</code>; use NMT to pinpoint.</li>
+        <li><span class="highlight-blue">I/O/resource leaks:</span> streams/result sets not closed; image/zip loaders caching.
+          <br/>Fix: always close via try-with-resources; consider connection pool caps & leaks detection.</li>
+        <li><span class="highlight-blue">Queues/futures accumulation:</span> executor queues with no back-pressure; never consumed <code>CompletableFuture</code> chains.
+          <br/>Fix: bound queues; timeouts; cancel stale tasks; monitor queue sizes.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🛠️ Concrete remediation playbook</h6>
+      <ol class="mb-3">
+        <li><b>Confirm leak:</b> Use <code>jstat</code>/<code>JFR</code> to see rising Old Gen post-GC.</li>
+        <li><b>Capture data:</b> <code>GC.class_histogram</code>, short JFR, then one heap dump (off-peak if large).</li>
+        <li><b>Identify retainer:</b> MAT Dominator Tree → “Path to GC Roots” for the top suspect.</li>
+        <li><b>Patch quickly:</b> 
+          <ul>
+            <li>Add bounds/TTL to caches; purge oversized maps.</li>
+            <li>Add <code>finally { threadLocal.remove(); }</code> & deregister listeners.</li>
+            <li>Cap direct memory; fix buffer releases; close I/O.</li>
+          </ul>
+        </li>
+        <li><b>Deploy & verify:</b> watch post-GC baseline, allocation/promotion rate, and RSS.</li>
+        <li><b>Backstop:</b> configure <code>-XX:+HeapDumpOnOutOfMemoryError</code>, GC logs, NMT for the next incident.</li>
+      </ol>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">📦 Useful JVM flags (cheat sheet)</h6>
+      <pre class="language-bash"><code># Logging & safety
+-Xlog:gc*:file=/var/log/gc.log:time,uptime,level,tags
+-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/log/oom.hprof
+-XX:+ExitOnOutOfMemoryError
+-XX:NativeMemoryTracking=summary   # needs restart to enable
+-XX:MaxDirectMemorySize=512m       # cap direct buffers (tune for your app)</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">📝 Quick Summary</h6>
+      <ul>
+        <li>Use live tools first (<code>jstat</code>, <code>jcmd</code>, <b>JFR</b>) to confirm a leak without restarting.</li>
+        <li>Take a <b>heap dump</b> only when necessary and analyze Dominators + GC Roots to find the retainer.</li>
+        <li>Most leaks come from <b>unbounded caches</b>, <b>ThreadLocal</b> misuse, <b>listeners</b>, <b>class loaders</b>, or <b>direct/native memory</b>.</li>
+        <li>Fix by <b>bounding</b>, <b>removing strong refs</b>, <b>closing resources</b>, and <b>capping native/direct</b> memory.</li>
+        <li>Verify with post-deploy baselines; keep GC logs/NMT/JFR enabled in your SRE toolbox.</li>
+      </ul>
+
+      <p class="mt-3"><span class="highlight-blue">Rule of thumb:</span> Prove the leak with data → find the retainer (dominator) → remove the strong reference or bound it → 
+        verify post-GC baseline and RSS. Avoid “just increase heap” unless accompanied by a real fix.</p>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#gcCmsG1ZgcQ1">
+      Explain differences between CMS, G1GC, and ZGC – when would you choose each in production? 
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="gcCmsG1ZgcQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p><span class="highlight-blue">Goal of JVM GC:</span> Reclaim heap memory automatically while balancing 
+        <em>throughput</em> (do more work per unit time), <em>latency</em> (shorter GC pauses), and <em>footprint</em> (memory efficiency). 
+        CMS, G1, and ZGC represent different generations of low-latency collectors.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🕰️ 1. CMS — Concurrent Mark Sweep (Legacy, JDK 8)</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">Phases:</span> Initial Mark (STW) → Concurrent Mark → Remark (STW) → Concurrent Sweep.</li>
+        <li><span class="highlight-blue">Pause profile:</span> Shorter pauses during marking; no compaction → risk of fragmentation.</li>
+        <li><span class="highlight-blue">Pros:</span> Low-pause collector in Java 6–8 era; good for <em>latency-sensitive apps</em> before G1/ZGC.</li>
+        <li><span class="highlight-blue">Cons:</span> Fragmentation, Full GC fallback (stop-the-world, expensive), heavy tuning needed.</li>
+        <li><span class="highlight-blue">Status:</span> Deprecated JDK 9, removed JDK 14.</li>
+      </ul>
+
+      <p class="highlight-yellow">Typical CMS flags (Java 8 only):</p>
+      <pre class="language-bash"><code>-XX:+UseConcMarkSweepGC -XX:+CMSClassUnloadingEnabled 
+-XX:CMSInitiatingOccupancyFraction=70 -XX:+UseCMSInitiatingOccupancyOnly</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🧩 2. G1GC — Garbage-First (Default since JDK 9)</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">Heap model:</span> Region-based heap (1–32 MB regions); young/old are logical sets of regions.</li>
+        <li><span class="highlight-blue">Collection:</span> Evacuation compacts memory incrementally → <em>less fragmentation</em>.</li>
+        <li><span class="highlight-blue">Pause targeting:</span> Tries to meet <code>-XX:MaxGCPauseMillis</code> (~200ms default) by selecting regions.</li>
+        <li><span class="highlight-blue">Pros:</span> Predictable pauses, incremental compaction, fewer tuning knobs, good balance of throughput & latency.</li>
+        <li><span class="highlight-blue">Cons:</span> More CPU/memory overhead than ParallelGC; not true sub-10ms latency.</li>
+        <li><span class="highlight-blue">Status:</span> Default GC in JDK 11+, well-supported, production safe.</li>
+      </ul>
+
+      <p class="highlight-yellow">Typical G1 setup:</p>
+      <pre class="language-bash"><code>-XX:+UseG1GC -Xms4g -Xmx4g 
+-XX:MaxGCPauseMillis=100 
+-XX:InitiatingHeapOccupancyPercent=30 
+-Xlog:gc*:file=gc.log:time,uptime,tid,level</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">⚡ 3. ZGC — Z Garbage Collector (JDK 11+, stable in 15+)</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">Heap model:</span> Region-based + colored pointers; concurrent relocation with load barriers.</li>
+        <li><span class="highlight-blue">Pause profile:</span> <em>Ultra-low pauses</em>, typically &lt; 10ms, independent of heap size (up to multiple TB).</li>
+        <li><span class="highlight-blue">Pros:</span> True low-latency GC, scales to very large heaps, minimal tuning needed.</li>
+        <li><span class="highlight-blue">Cons:</span> Slightly lower throughput vs. G1, higher CPU overhead due to barriers.</li>
+        <li><span class="highlight-blue">Status:</span> Production-ready in JDK 15+, recommended for <em>latency-critical systems</em>.</li>
+      </ul>
+
+      <p class="highlight-yellow">Enable ZGC:</p>
+      <pre class="language-bash"><code>java -XX:+UseZGC -Xms8g -Xmx8g -XX:MaxGCPauseMillis=5 -Xlog:gc*</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">📊 Head-to-Head Comparison</h6>
+      <table class="table table-dark table-bordered">
+        <thead>
+          <tr>
+            <th>Collector</th>
+            <th>Pause Time</th>
+            <th>Compaction</th>
+            <th>Heap Size</th>
+            <th>Status</th>
+            <th>Use Case</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>CMS</td>
+            <td>Low (but unpredictable)</td>
+            <td>No (risk of fragmentation)</td>
+            <td>GBs</td>
+            <td>Removed in JDK 14</td>
+            <td>Legacy Java 8 apps needing low latency</td>
+          </tr>
+          <tr>
+            <td>G1GC</td>
+            <td>Targeted (50–200ms)</td>
+            <td>Incremental compaction</td>
+            <td>10s–100s GB</td>
+            <td>Default since JDK 9</td>
+            <td>General-purpose, balanced throughput/latency</td>
+          </tr>
+          <tr>
+            <td>ZGC</td>
+            <td>&lt; 10ms (predictable)</td>
+            <td>Concurrent relocation (no long STW)</td>
+            <td>Multi-TB</td>
+            <td>Stable JDK 15+</td>
+            <td>Latency-critical, huge heap apps (fintech, trading, SaaS)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">📝 When to choose what?</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">CMS:</span> Only if stuck on Java 8 legacy systems that can’t migrate. Plan migration soon.</li>
+        <li><span class="highlight-blue">G1GC:</span> Default choice for most server-side apps. Great balance for web services, batch jobs, microservices.</li>
+        <li><span class="highlight-blue">ZGC:</span> Choose when <b>ultra-low latency (&lt;10ms)</b> and/or <b>huge heaps (100s GB–TB)</b> are requirements. Ideal for trading, gaming, real-time analytics.</li>
+      </ul>
+
+      <p class="mt-3"><span class="highlight-blue">Rule of thumb:</span> 
+        Start with <b>G1GC</b> (default, well-tuned for general workloads).  
+        Stick with <b>CMS</b> only on Java 8 if migration isn’t possible.  
+        Move to <b>ZGC</b> when you hit latency SLAs that G1 cannot meet or need massive heaps with predictable pauses.</p>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#fjpVsLoomQ1">
+      How would you design a high-throughput system using ForkJoinPool vs Virtual Threads (Project Loom)? 
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="fjpVsLoomQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p><span class="highlight-blue">Context:</span> You’re building a high-throughput service. You must decide between 
+        <b>ForkJoinPool (FJP)</b> (work-stealing, great for CPU-bound parallelism) and <b>Virtual Threads (Loom)</b> (millions of cheap threads, ideal for I/O-bound concurrency). 
+        Often the best design <em>combines both</em>: Loom for request-level concurrency + FJP for CPU hotspots.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🔎 Mental model</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">ForkJoinPool:</span> Few OS threads (~#cores). Tasks split/steal. 
+          <em>Do not block</em> them on I/O; keep them busy with CPU work. If you must block → use <code>ManagedBlocker</code>.</li>
+        <li><span class="highlight-blue">Virtual Threads:</span> Thread-per-task style without the classic thread cost. 
+          Blocking I/O <em>parks</em> the virtual thread and releases the carrier → scalable I/O concurrency.</li>
+        <li><span class="highlight-blue">Throughput strategy:</span> Bound the few scarce resources (CPU, DB connections, rate limits), 
+          let everything else be cheap & concurrent.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🧱 Architecture patterns</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">I/O-heavy microservice (HTTP/DB/cache calls):</span> Use <b>virtual thread per request</b>. 
+          For fan-out calls, use <b>Structured Concurrency</b>.</li>
+        <li><span class="highlight-blue">CPU-bound compute (analytics, scoring, transforms):</span> Use a <b>dedicated FJP</b> sized ≈ cores 
+          (or a fixed pool) and run pure CPU tasks there; avoid blocking.</li>
+        <li><span class="highlight-blue">Mixed workload:</span> Accept on a virtual thread → split CPU chunk to an FJP task → await result → continue on the same virtual thread.</li>
+      </ul>
+
+      <p class="highlight-yellow">Loom (virtual threads) — request-per-thread with fan-out using StructuredTaskScope:</p>
+      <pre class="language-java"><code>import java.net.http.*;
+import java.time.Duration;
+import java.util.concurrent.*;
+import java.util.concurrent.StructuredTaskScope;
+
+class Aggregator {
+  private final HttpClient http = HttpClient.newHttpClient(); // blocking send() is fine on virtual threads
+
+  Response handle(Request req) throws Exception {
+    try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+      Future&lt;HttpResponse&lt;String&gt;&gt; a = scope.fork(() -&gt; http.send(req.a(), HttpResponse.BodyHandlers.ofString()));
+      Future&lt;HttpResponse&lt;String&gt;&gt; b = scope.fork(() -&gt; http.send(req.b(), HttpResponse.BodyHandlers.ofString()));
+
+      scope.joinUntil(Instant.now().plus(Duration.ofMillis(300))); // deadline / timeout
+      scope.throwIfFailed();
+
+      return combine(a.resultNow().body(), b.resultNow().body());
+    }
+  }
+}
+
+public class Server {
+  public static void main(String[] args) throws Exception {
+    try (var exec = Executors.newVirtualThreadPerTaskExecutor()) {
+      // Submit each inbound request as its own virtual thread task:
+      acceptLoop(req -&gt; exec.submit(() -&gt; new Aggregator().handle(req)));
+    }
+  }
+}</code></pre>
+
+      <ul class="mb-3">
+        <li>Simple synchronous code; no reactive complexity. Millions of concurrent tasks possible (memory permitting).</li>
+        <li><b>Bound scarce resources:</b> semaphore around DB pool, rate limiter for downstreams; threads are not the limit anymore.</li>
+      </ul>
+
+      <p class="highlight-yellow">FJP — CPU hot path with work-stealing (divide & conquer):</p>
+      <pre class="language-java"><code>import java.util.concurrent.*;
+
+class SumTask extends RecursiveTask&lt;Long&gt; {
+  private final long[] arr; private final int lo, hi; static final int THRESH = 1_000;
+  SumTask(long[] a, int lo, int hi) { this.arr = a; this.lo = lo; this.hi = hi; }
+
+  protected Long compute() {
+    if (hi - lo &lt;= THRESH) {
+      long s = 0; for (int i = lo; i &lt; hi; i++) s += arr[i]; return s;
+    }
+    int mid = (lo + hi) &gt;&gt; 1;
+    SumTask left = new SumTask(arr, lo, mid);
+    SumTask right = new SumTask(arr, mid, hi);
+    left.fork();
+    long r = right.compute();   // compute one half
+    long l = left.join();       // join the other
+    return l + r;
+  }
+}
+
+class CpuService {
+  private final ForkJoinPool pool = new ForkJoinPool(Runtime.getRuntime().availableProcessors());
+  long sum(long[] a) { return pool.invoke(new SumTask(a, 0, a.length)); }
+}</code></pre>
+
+      <ul class="mb-3">
+        <li>Keep tasks <b>pure CPU</b>. If a task may block, use <code>ForkJoinPool.managedBlock(...)</code> to let the pool compensate.</li>
+        <li>Avoid using the <b>common</b> FJP for server logic (parallel streams can interfere). Create a dedicated pool.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🧪 Putting it together (production recipe)</h6>
+      <ol class="mb-3">
+        <li><b>Entry</b>: Accept each request on a <b>virtual thread</b> (simple thread-per-request model).</li>
+        <li><b>Fan-out I/O</b>: Call downstreams in parallel via <b>StructuredTaskScope</b> with deadlines, fallbacks, and cancellation.</li>
+        <li><b>CPU hotspot</b>: Offload to a <b>dedicated FJP</b> (or fixed pool) sized ≈ cores; return results back to the virtual thread.</li>
+        <li><b>Backpressure</b>: Bound DB connections, queue lengths, and per-client QPS. Threads are cheap, <em>resources aren’t</em>.</li>
+        <li><b>Observability</b>: Track latency budgets, FJP queue lengths, virtual-thread counts, carrier thread utilization; enable GC logs & JFR.</li>
+      </ol>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">⚠️ Pitfalls & how to avoid them</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">Virtual thread pinning:</span> A v-thread is <em>pinned</em> (can’t unmount) when blocking while holding a monitor 
+          (<code>synchronized</code>) or during certain native calls. 
+          <br/>Avoid long-running/blocking I/O inside <code>synchronized</code>; prefer <code>ReentrantLock</code> or move blocking outside the critical section. 
+          <br/><code>-Djdk.tracePinnedThreads=full</code> helps diagnose.</li>
+        <li><span class="highlight-blue">Unbounded concurrency:</span> Millions of v-threads can overload DBs/downstreams. Use semaphores/bulkheads/rate-limits.</li>
+        <li><span class="highlight-blue">Blocking on FJP:</span> If you must block inside FJP, wrap with <code>ForkJoinPool.managedBlock</code> so the pool can compensate.</li>
+        <li><span class="highlight-blue">Common FJP interference:</span> <code>parallelStream()</code> uses the common pool; segregate it from request pools.</li>
+      </ul>
+
+      <p class="highlight-yellow">ManagedBlocker pattern (if a CPU task must occasionally block):</p>
+      <pre class="language-java"><code>ForkJoinPool.managedBlock(new ForkJoinPool.ManagedBlocker() {
+  volatile boolean done = false;
+  public boolean block() throws InterruptedException {
+    try { someBlockingCall(); } finally { done = true; }
+    return true;
+  }
+  public boolean isReleasable() { return done; }
+});</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🧰 Tuning & ops tips</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">Virtual thread scheduler size:</span> defaults ≈ #cores. Can tweak with 
+          <code>-Djdk.virtualThreadScheduler.parallelism=N</code> (rarely needed).</li>
+        <li><span class="highlight-blue">Thread dumps:</span> V-threads show up normally; use JFR events for blocking, pinning, and allocation profiles.</li>
+        <li><span class="highlight-blue">FJP sizing:</span> <code>new ForkJoinPool(cores)</code> for CPU; measure <em>steal count</em> and <em>queued submissions</em>.</li>
+        <li><span class="highlight-blue">Time budgets:</span> Prefer <code>joinUntil(deadline)</code> / <code>orTimeout</code> over infinite waits; propagate cancellations.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">📊 Quick decision table</h6>
+      <table class="table table-dark table-bordered">
+        <thead>
+          <tr><th>Workload</th><th>Best Fit</th><th>Why</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>I/O-heavy, many concurrent calls</td><td><b>Virtual Threads</b></td><td>Cheap thread-per-request, simple code, natural backpressure with explicit limits.</td></tr>
+          <tr><td>CPU-bound parallel compute</td><td><b>ForkJoinPool</b></td><td>Work-stealing maximizes CPU; minimal context switching; no blocking.</td></tr>
+          <tr><td>Mixed (I/O + CPU bursts)</td><td><b>Loom + FJP</b></td><td>Use v-threads for I/O orchestration; offload compute to a dedicated FJP.</td></tr>
+          <tr><td>Legacy blocking code you can’t rewrite</td><td><b>Virtual Threads</b></td><td>Loom lets you keep synchronous style while scaling concurrency.</td></tr>
+        </tbody>
+      </table>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">📝 Summary</h6>
+      <ul>
+        <li>Use <b>virtual threads</b> as the default for <em>high-concurrency I/O</em> (clean code, great throughput).</li>
+        <li>Use a <b>dedicated ForkJoinPool</b> (or fixed pool) for <em>pure CPU</em> tasks (divide & conquer, SIMD/vectorized ops, parsing).</li>
+        <li>Combine them: v-thread per request + FJP for hotspots, with strict limits around external resources.</li>
+        <li>Measure with JFR; watch pinning, queue depths, timeouts, and downstream saturation.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#falseSharingQ1">
+      Explain false sharing in multi-threading and how to avoid it 
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="falseSharingQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p><span class="highlight-blue">Definition:</span> False sharing occurs when multiple threads update 
+        <b>different variables that happen to lie on the same CPU cache line</b> (typically 64 bytes). 
+        Even though the variables are independent, hardware cache coherence invalidates the entire line 
+        on each write → forcing other cores to reload, leading to massive performance degradation.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">⚠️ Why it hurts</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">Cache-line thrashing:</span> Each update invalidates other cores’ caches, 
+          creating unnecessary coherence traffic.</li>
+        <li><span class="highlight-blue">Symptoms:</span> Throughput collapses under contention, high CPU usage, 
+          but no locks/visible contention in code.</li>
+        <li><span class="highlight-blue">Hard to spot:</span> Variables are logically independent, so leaks only appear 
+          under performance profiling (perf, JFR, async-profiler).</li>
+      </ul>
+
+      <p class="highlight-yellow">Example of false sharing:</p>
+      <pre class="language-java"><code>class Counter {
+  volatile long a = 0; // Thread 1 updates
+  volatile long b = 0; // Thread 2 updates
+}
+// If 'a' and 'b' sit in the same 64-byte cache line → false sharing</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">✅ How to avoid it</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">Padding / spacing:</span> Separate frequently-updated fields so they don’t share a cache line.</li>
+        <li><span class="highlight-blue">@Contended annotation (JDK 8+):</span> Place on fields or classes to instruct the JVM to pad them. 
+          Requires <code>-XX:-RestrictContended</code> JVM flag.</li>
+        <li><span class="highlight-blue">Manual padding:</span> Add dummy long fields around hot variables (old-school technique).</li>
+        <li><span class="highlight-blue">Separate objects:</span> Put hot variables into different objects (heap layout usually prevents cache-line overlap).</li>
+        <li><span class="highlight-blue">Concurrency libraries:</span> Use <code>LongAdder</code>, <code>LongAccumulator</code>, or <code>Striped64</code>-based structures that are 
+          already designed to avoid false sharing.</li>
+      </ul>
+
+      <p class="highlight-yellow">Solution with @Contended:</p>
+      <pre class="language-java"><code>import jdk.internal.vm.annotation.Contended;
+
+class PaddedCounter {
+  @Contended volatile long value = 0;
+}
+// run with: java -XX:-RestrictContended ...</code></pre>
+
+      <p class="highlight-yellow">Solution with manual padding:</p>
+      <pre class="language-java"><code>class PaddedCounter {
+  volatile long value = 0;
+  // Padding to avoid sharing cache line with other fields
+  long p1, p2, p3, p4, p5, p6, p7;
+}</code></pre>
+
+      <p class="highlight-yellow">Better approach — LongAdder:</p>
+      <pre class="language-java"><code>LongAdder counter = new LongAdder();
+counter.increment();       // low-contention update
+long sum = counter.sum();  // aggregate result</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">📝 Quick Summary</h6>
+      <ul>
+        <li><b>False sharing = independent variables on the same cache line → needless coherence traffic.</b></li>
+        <li>Avoid by <b>padding</b>, <b>@Contended</b>, <b>separating objects</b>, or using <b>LongAdder/Accumulators</b>.</li>
+        <li>Always <b>measure</b> before optimizing: use JFR/async-profiler to confirm the issue.</li>
+      </ul>
+
+      <p class="mt-3"><span class="highlight-blue">Rule of thumb:</span> 
+        For counters/metrics → use <code>LongAdder</code>.  
+        For custom data structures → use <code>@Contended</code> (if available) or manual padding.  
+        Don’t micro-optimize unless you <em>prove false sharing</em> with profiling.</p>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#blockingVsLockfreeQ1">
+      Difference between blocking queues and non-blocking (lock-free) data structures in Java 
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="blockingVsLockfreeQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p><span class="highlight-blue">Context:</span> In concurrent programming we often need producer-consumer or 
+        inter-thread handoff. Java provides both <b>blocking queues</b> (with built-in locking/conditions) and 
+        <b>non-blocking (lock-free)</b> queues based on CAS (compare-and-swap).</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">⏸️ Blocking Queues (lock-based)</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">Examples:</span> <code>ArrayBlockingQueue</code>, <code>LinkedBlockingQueue</code>, <code>PriorityBlockingQueue</code>, <code>SynchronousQueue</code>.</li>
+        <li><span class="highlight-blue">Characteristics:</span> 
+          <ul>
+            <li>Internally use locks (<code>ReentrantLock</code>) + conditions (<code>notEmpty</code>, <code>notFull</code>).</li>
+            <li><code>put()</code> and <code>take()</code> <b>block</b> threads until space/data is available.</li>
+            <li>Fairness options supported (e.g., <code>ArrayBlockingQueue</code> with fair lock).</li>
+          </ul>
+        </li>
+        <li><span class="highlight-blue">Pros:</span> 
+          <ul>
+            <li>Straightforward for producer-consumer pipelines.</li>
+            <li>Built-in blocking/backpressure; easy to use in thread pools.</li>
+          </ul>
+        </li>
+        <li><span class="highlight-blue">Cons:</span> 
+          <ul>
+            <li>Lock contention under high concurrency → context switches.</li>
+            <li>Blocking threads consume stack and scheduling overhead.</li>
+          </ul>
+        </li>
+      </ul>
+
+      <p class="highlight-yellow">Example (blocking queue):</p>
+      <pre class="language-java"><code>BlockingQueue&lt;String&gt; queue = new ArrayBlockingQueue<>(100);
+
+Thread producer = new Thread(() -&gt; {
+  try {
+    queue.put("task"); // blocks if full
+  } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+});
+
+Thread consumer = new Thread(() -&gt; {
+  try {
+    String t = queue.take(); // blocks if empty
+    process(t);
+  } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+});</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">⚡ Non-blocking (lock-free) data structures</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">Examples:</span> <code>ConcurrentLinkedQueue</code>, <code>ConcurrentLinkedDeque</code>, 
+          <code>AtomicStampedReference</code>-based stacks, <code>LongAdder</code> counters.</li>
+        <li><span class="highlight-blue">Characteristics:</span> 
+          <ul>
+            <li>Use CAS (compare-and-swap) instead of locks.</li>
+            <li><code>offer()</code>/<code>poll()</code> are <b>non-blocking</b>; they return immediately (null if empty, false if full).</li>
+            <li>Progress guarantee = lock-free (system as a whole makes progress, even if individual threads starve).</li>
+          </ul>
+        </li>
+        <li><span class="highlight-blue">Pros:</span> 
+          <ul>
+            <li>Scale better under high concurrency (no lock convoying).</li>
+            <li>Low-latency operations; threads not parked.</li>
+          </ul>
+        </li>
+        <li><span class="highlight-blue">Cons:</span> 
+          <ul>
+            <li>No built-in blocking/backpressure → need <code>while</code> spin loops or custom conditions.</li>
+            <li>Starvation possible if a thread repeatedly loses CAS race.</li>
+          </ul>
+        </li>
+      </ul>
+
+      <p class="highlight-yellow">Example (lock-free queue):</p>
+      <pre class="language-java"><code>Queue&lt;String&gt; queue = new ConcurrentLinkedQueue<>();
+
+// Producer
+queue.offer("task"); // returns false if it fails (rare)
+
+// Consumer
+String task = queue.poll(); // null if empty
+if (task != null) process(task);</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">📊 Head-to-Head Comparison</h6>
+      <table class="table table-dark table-bordered">
+        <thead>
+          <tr>
+            <th>Aspect</th>
+            <th>Blocking Queue</th>
+            <th>Lock-free Queue</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Implementation</td>
+            <td>Locks + Conditions</td>
+            <td>CAS + atomic ops</td>
+          </tr>
+          <tr>
+            <td>Thread behavior</td>
+            <td>Blocks on empty/full</td>
+            <td>Returns immediately (null/false)</td>
+          </tr>
+          <tr>
+            <td>Throughput</td>
+            <td>Good but may degrade with contention</td>
+            <td>Higher under heavy concurrency</td>
+          </tr>
+          <tr>
+            <td>Fairness</td>
+            <td>Can be configured</td>
+            <td>No fairness guarantee</td>
+          </tr>
+          <tr>
+            <td>Use cases</td>
+            <td>Producer-consumer pipelines, thread pools</td>
+            <td>High-throughput message passing, counters, async queues</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">📝 Summary</h6>
+      <ul>
+        <li><b>Blocking queues</b> → easy-to-use, backpressure, great for classic producer-consumer with bounded buffers.</li>
+        <li><b>Lock-free queues</b> → non-blocking, high-throughput, but caller must handle retries/timeouts.</li>
+        <li>In practice: Use blocking queues for thread pools (<code>ExecutorService</code>), lock-free queues for low-latency, 
+          high-concurrency algorithms (e.g., telemetry, logging, messaging).</li>
+      </ul>
+
+      <p class="mt-3"><span class="highlight-blue">Rule of thumb:</span> If you need <b>coordination + backpressure</b>, choose blocking queues. 
+        If you need <b>max concurrency + low latency</b>, use lock-free data structures.</p>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#hotReloaderQ1">
+      How do you implement a custom ClassLoader for hot-reloading? 
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="hotReloaderQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p><span class="highlight-blue">Idea:</span> Load re-loadable code with a <b>throwaway child ClassLoader</b>. 
+        On change, create a <em>new</em> loader, load fresh classes, swap the instance, and <b>drop all strong references</b> to the old loader so the JVM can unload its classes.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🧠 Design principles</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">Parent (stable ABI):</span> Define shared APIs (interfaces, DTOs) in the parent loader (app classpath).</li>
+        <li><span class="highlight-blue">Child (reloadable impl):</span> Each version is loaded by its own <em>fresh</em> ClassLoader instance.</li>
+        <li><span class="highlight-blue">Swap atomically:</span> Keep a single <code>AtomicReference</code> to the current {loader, instance}. Replace on reload.</li>
+        <li><span class="highlight-blue">No leaks:</span> Never store plugin classes/objects in parent singletons; close old URLClassLoader; stop threads/resources the plugin started.</li>
+        <li><span class="highlight-blue">Parent vs child-first:</span> Parent-first is safer; use <b>child-first</b> only if the plugin must override libs also on the parent path.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">📦 Minimal API contract (lives in parent)</h6>
+      <pre class="language-java"><code>public interface Plugin {
+  String name();
+  String handle(String input);
+}</code></pre>
+
+      <h6 class="mb-2">🧰 Hot reloader with <code>URLClassLoader</code> (parent-first)</h6>
+      <pre class="language-java"><code>import java.net.*; import java.nio.file.*; import java.util.concurrent.atomic.AtomicReference;
+
+public final class HotReloader implements AutoCloseable {
+  public record State(URLClassLoader loader, Plugin instance) {}
+  private final Path jarPath; private final String implClass; private final Class&lt;Plugin&gt; api;
+  private final AtomicReference&lt;State&gt; state = new AtomicReference&lt;&gt;();
+
+  public HotReloader(Path jar, String implClass, Class&lt;Plugin&gt; api) throws Exception {
+    this.jarPath = jar; this.implClass = implClass; this.api = api;
+    reload(); // initial load
+  }
+
+  public Plugin current() { return state.get().instance(); }
+
+  public synchronized void reload() throws Exception {
+    State old = state.get();
+    URLClassLoader cl = new URLClassLoader(new URL[]{ jarPath.toUri().toURL() }, api.getClassLoader());
+    Class&lt;?&gt; clazz = Class.forName(implClass, true, cl);
+    Plugin fresh = api.cast(clazz.getDeclaredConstructor().newInstance());
+    state.set(new State(cl, fresh));
+    if (old != null) old.loader().close(); // releases JAR file handles
+  }
+
+  @Override public void close() throws Exception {
+    State s = state.getAndSet(null);
+    if (s != null) s.loader().close();
+  }
+}</code></pre>
+
+      <p class="mb-2"><span class="highlight-blue">Use:</span> compile plugin into <code>plugin.jar</code> (on disk), load class <code>com.example.PluginImpl</code>:</p>
+      <pre class="language-java"><code>HotReloader reloader = new HotReloader(
+  Paths.get("/opt/plugins/plugin.jar"), "com.example.PluginImpl", Plugin.class);
+
+// serve requests via stable interface:
+String out = reloader.current().handle("hello");</code></pre>
+
+      <h6 class="mb-2">🔁 Auto-reload on file change (WatchService)</h6>
+      <pre class="language-java"><code>import static java.nio.file.StandardWatchEventKinds.*;
+Path jar = Paths.get("/opt/plugins/plugin.jar");
+try (WatchService ws = FileSystems.getDefault().newWatchService()) {
+  jar.getParent().register(ws, ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE);
+  for (;;) {
+    WatchKey key = ws.take();
+    for (WatchEvent&lt;?&gt; ev : key.pollEvents()) {
+      if (jar.getFileName().equals((Path) ev.context())) {
+        try { reloader.reload(); System.out.println("Reloaded"); }
+        catch (Exception e) { e.printStackTrace(); } // keep service alive
+      }
+    }
+    key.reset();
+  }
+}</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🧭 Child-first loader (when plugin must override parent libs)</h6>
+      <pre class="language-java"><code>public class ChildFirstURLClassLoader extends URLClassLoader {
+  public ChildFirstURLClassLoader(URL[] urls, ClassLoader parent) { super(urls, parent); }
+
+  @Override protected Class&lt;?&gt; loadClass(String name, boolean resolve) throws ClassNotFoundException {
+    if (name.startsWith("java.") || name.startsWith("javax.") || name.startsWith("jakarta.")) {
+      return super.loadClass(name, resolve); // always delegate core
+    }
+    synchronized (getClassLoadingLock(name)) {
+      Class&lt;?&gt; c = findLoadedClass(name);
+      if (c == null) {
+        try { c = findClass(name); }                   // try child first
+        catch (ClassNotFoundException ex) { c = super.loadClass(name, resolve); }
+      }
+      if (resolve) resolveClass(c);
+      return c;
+    }
+  }
+}</code></pre>
+
+      <p class="mb-3"><span class="highlight-blue">Note:</span> Prefer parent-first unless you truly need to shadow parent deps; 
+        child-first increases risk of <em>class cast</em> or <em>linkage</em> errors if types get loaded by different loaders.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🧯 Avoid common memory leaks (checklist)</h6>
+      <ul class="mb-3">
+        <li>Don’t keep plugin instances/classes in parent <b>static fields</b>, caches, or singletons.</li>
+        <li><b>Stop threads/executors</b> the plugin started; remove shutdown hooks.</li>
+        <li><b>Deregister</b> things registered by the plugin: JDBC drivers, JMX MBeans, logging appenders, SPI services.</li>
+        <li><b>Clear ThreadLocals</b> created by plugin code; close open I/O/resources.</li>
+        <li>After swap: <code>oldLoader.close()</code> and drop last references → allow GC of old classes.</li>
+      </ul>
+
+      <p class="highlight-yellow">Observe class unloading:</p>
+      <pre class="language-bash"><code>jcmd &lt;pid&gt; GC.run
+jcmd &lt;pid&gt; VM.classloaders
+jcmd &lt;pid&gt; VM.classloader_stats  # old loader should disappear after GC</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🧵 Calling conventions & TCCL</h6>
+      <ul class="mb-3">
+        <li>Expose only the <b>parent API</b> types across the boundary: <code>Plugin</code>, DTOs, exceptions.</li>
+        <li>Wrap execution if frameworks use <b>Thread Context ClassLoader</b> (TCCL):</li>
+      </ul>
+      <pre class="language-java"><code>var state = reloader.state().get();
+ClassLoader cl = state.loader();
+var t = Thread.currentThread();
+ClassLoader prev = t.getContextClassLoader();
+try { t.setContextClassLoader(cl); state.instance().handle(input); }
+finally { t.setContextClassLoader(prev); }</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🧪 Safer swap in a live server</h6>
+      <ul class="mb-3">
+        <li>Guard access with an <b>AtomicReference&lt;Plugin&gt;</b> (or <b>ReadWriteLock</b>): readers use current, writers perform reload.</li>
+        <li>Optionally support <b>quiescence</b>: stop routing new traffic to the old instance; finish in-flight calls; then close.</li>
+        <li>Add <b>versioning</b> (e.g., plugin.jar.2025-09-04-1201) and a symlink <code>plugin.jar</code> → atomic rename reduces partial-write issues.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🚀 Alternatives & advanced</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">Frameworks:</span> Spring Boot Devtools (dev), OSGi (module isolation), Play/JRebel (dev hot swap).</li>
+        <li><span class="highlight-blue">Java 9+ ModuleLayer:</span> You can load plugins into a separate <code>ModuleLayer</code> for extra isolation and then drop the layer to unload.</li>
+      </ul>
+
+      <h6 class="mb-2">📝 Summary</h6>
+      <ul>
+        <li>Put only <b>API</b> in parent; load implementations with a fresh child loader per version.</li>
+        <li>On change: create new loader → new instance → <b>atomic swap</b> → <b>close</b> old loader → <b>clean up</b> resources.</li>
+        <li>Use parent-first by default; switch to child-first only when you must override parent deps.</li>
+        <li>Continuously verify unloading and watch for leaks via JFR/jcmd.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#jvmLowLatencyQ1">
+      How do you tune JVM for a low-latency trading-like system?
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="jvmLowLatencyQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p><span class="highlight-blue">Objective:</span> Minimize tail latency (p99/p999) jitter during market hours. 
+        Strategy: pick a low-pause GC, avoid allocation spikes, warm up JIT & memory, and bound every external resource.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">1) Choose the collector & set realistic pause budgets</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">ZGC (JDK 17+):</span> sub-10ms pauses independent of heap size; best for strict latency SLOs.<br/>
+          <pre class="language-bash"><code>java \
+ -XX:+UseZGC -Xms8g -Xmx8g \
+ -XX:MaxGCPauseMillis=5 \
+ -XX:+AlwaysPreTouch \
+ -Xlog:gc*:file=/var/log/gc.log:time,uptime,level,tags</code></pre>
+        </li>
+        <li><span class="highlight-blue">G1 (default):</span> good balance; don’t expect &lt;10ms under load, aim ~20–50ms.<br/>
+          <pre class="language-bash"><code>java \
+ -XX:+UseG1GC -Xms8g -Xmx8g \
+ -XX:MaxGCPauseMillis=30 \
+ -XX:InitiatingHeapOccupancyPercent=25 \
+ -XX:+AlwaysPreTouch \
+ -Xlog:gc*:file=/var/log/gc.log:time,uptime,level,tags</code></pre>
+        </li>
+        <li><span class="highlight-blue">Heap policy:</span> set <code>-Xms = -Xmx</code> to avoid in-flight expansions; <code>+AlwaysPreTouch</code> to fault pages at start, not during trading.</li>
+        <li><span class="highlight-blue">Disable explicit Full GC:</span> <code>-XX:+DisableExplicitGC</code> so rogue code can’t force STW.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">2) Allocation, object lifetime & GC pressure</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">Minimize allocations on hot paths:</span> avoid boxing, <code>String</code> concatenation, temporary collections; prefer reuse/simple structs.</li>
+        <li><span class="highlight-blue">Prefer direct I/O buffers with pooling:</span> especially with Netty/Aeron; cap off-heap:
+          <code>-XX:MaxDirectMemorySize=1g</code>.</li>
+        <li><span class="highlight-blue">Counters/metrics:</span> use <code>LongAdder</code> to avoid contention and false sharing.</li>
+        <li><span class="highlight-blue">Caches:</span> always bounded (Caffeine <code>maximumSize</code>/<code>expireAfter*</code>) to prevent leak-like growth.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">3) JIT warm-up & code cache</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">Warm up before market open:</span> replay representative traffic so C2 compiles hot methods and profiles stabilize.</li>
+        <li><span class="highlight-blue">Code cache headroom:</span> avoid “CodeCache full” deopts mid-session:
+          <code>-XX:ReservedCodeCacheSize=512m</code> (or larger after measuring).</li>
+        <li><span class="highlight-blue">Tiered compilation:</span> keep defaults (Tiered + C1/C2). Only tweak with evidence; heavy hand-tuning often hurts p99.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">4) Threading, scheduling & safepoint hygiene</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">Dedicated pools:</span> separate I/O vs compute pools; avoid using the common ForkJoinPool for latency-critical work.</li>
+        <li><span class="highlight-blue">Avoid long synchronized blocks on hot paths:</span> prefer fine-grained locks or lock-free algorithms; watch for false sharing.</li>
+        <li><span class="highlight-blue">Safepoint noise:</span> avoid frequent <code>System.gc()</code>, <code>Thread.stop()</code>, or biased-locking era flags (modern JDKs removed it).</li>
+        <li><span class="highlight-blue">Core pinning (ops level):</span> pin critical processes/threads with cgroups/CPU sets; set
+          <code>-XX:ActiveProcessorCount</code> if container CPU limits mislead the JVM.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">5) OS/JVM I/O stack for predictable latency</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">Linux settings (ops):</span> disable Transparent Huge Pages (THP) for jitter; prefer <code>noop</code>/deadline I/O scheduler; isolate CPUs for the engine.</li>
+        <li><span class="highlight-blue">Network:</span> use epoll/kqueue NIO; batch syscalls; tune socket buffers; avoid DNS blocking on hot paths.</li>
+        <li><span class="highlight-blue">Clock & timers:</span> use monotonic time (Java’s <code>System.nanoTime()</code>) for latency budgets, not <code>currentTimeMillis()</code>.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">6) Observability for tail latency</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">JFR always-on, low overhead:</span>
+          <pre class="language-bash"><code>-XX:StartFlightRecording=name=prod,filename=/var/log/app.jfr,dumponexit=true,settings=profile,maxsize=512m,maxage=12h</code></pre>
+          Watch “Garbage Collections”, “Allocation in new TLAB/Outside TLAB”, “Thread Park”, “Socket Read/Write”.</li>
+        <li><span class="highlight-blue">Metrics:</span> export p50/p95/p99/p999, allocation rate (MB/s), GC pause time %, Old-gen occupancy, code cache usage, queue depths.</li>
+        <li><span class="highlight-blue">GC logs:</span> keep rolling logs, parse for concurrent cycle scheduling vs. business spikes.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">7) Failure-proofing & noise reduction</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">Noisy neighbors:</span> isolate the JVM (dedicated cores/memory); avoid co-locating cron/batch on the same host.</li>
+        <li><span class="highlight-blue">OOM behavior:</span> <code>-XX:+ExitOnOutOfMemoryError</code> + fast restart automation; also <code>-XX:+HeapDumpOnOutOfMemoryError</code> off-hours.</li>
+        <li><span class="highlight-blue">Load shedding:</span> rate limits and timeouts so downstream stalls don’t propagate jitter.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">8) Quick decision guide</h6>
+      <table class="table table-dark table-bordered">
+        <thead>
+          <tr><th>Constraint</th><th>Recommendation</th><th>Why</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Strict p99 &lt; 10ms, large heap</td>
+            <td><b>ZGC</b>, <code>-Xms=-Xmx</code>, <code>+AlwaysPreTouch</code></td>
+            <td>Concurrent relocation, tiny STW, stable pauses.</td>
+          </tr>
+          <tr>
+            <td>Balanced latency/throughput</td>
+            <td><b>G1</b> with <code>MaxGCPauseMillis=20–50</code></td>
+            <td>Predictable, fewer knobs; good with moderate heaps.</td>
+          </tr>
+          <tr>
+            <td>Extreme allocation bursts</td>
+            <td>Reduce allocations, pool buffers, cap direct mem</td>
+            <td>GC pressure is the #1 jitter source.</td>
+          </tr>
+          <tr>
+            <td>JIT warmup effects</td>
+            <td>Traffic warmup + larger code cache</td>
+            <td>Avoid mid-session recompiles/deopts.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">📝 Summary</h6>
+      <ul>
+        <li>Pick <b>ZGC</b> for hard low-latency SLOs; otherwise start with <b>G1</b>.</li>
+        <li>Fix allocation hotspots, bound caches, pool direct buffers, and pre-touch memory.</li>
+        <li>Warm up JIT and provision ample code cache; keep JFR on to watch tail latency.</li>
+        <li>Isolate CPU/memory, disable THP, and shield the engine from noisy neighbors.</li>
+      </ul>
+
+      <p class="mt-3"><span class="highlight-blue">Rule of thumb:</span> Get the GC right, keep allocation predictable, warm everything up, 
+        and measure p99/p999 continuously—optimize only what moves those tails.</p>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#springConditionalQ1">
+      Explain how Spring Boot auto-configuration internally uses @ConditionalOnClass & @ConditionalOnMissingBean 
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="springConditionalQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p><span class="highlight-blue">Context:</span> Spring Boot’s <b>auto-configuration</b> creates default beans 
+        based on what is present on the classpath and what you haven’t defined yourself. 
+        It relies heavily on <code>@ConditionalOnClass</code> and <code>@ConditionalOnMissingBean</code> 
+        to activate configuration only when appropriate.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">⚙️ @ConditionalOnClass</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">Purpose:</span> Activates a configuration class only if a certain class is on the classpath.</li>
+        <li><span class="highlight-blue">Why:</span> Prevents <em>ClassNotFoundException</em> and loads beans only when required dependencies exist.</li>
+        <li><span class="highlight-blue">Example:</span> Only configure a <code>JdbcTemplate</code> if JDBC is available.</li>
+      </ul>
+
+      <p class="highlight-yellow">Example snippet:</p>
+      <pre class="language-java"><code>@Configuration
+@ConditionalOnClass(DataSource.class) // applies only if DataSource is on classpath
+public class JdbcTemplateAutoConfiguration {
+
+  @Bean
+  @ConditionalOnMissingBean // only create if user hasn’t defined one
+  public JdbcTemplate jdbcTemplate(DataSource dataSource) {
+    return new JdbcTemplate(dataSource);
+  }
+}</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">⚙️ @ConditionalOnMissingBean</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">Purpose:</span> Prevents overriding user-defined beans. 
+          Auto-config only contributes a default if you haven’t provided one.</li>
+        <li><span class="highlight-blue">Why:</span> Respect user customization. Spring Boot’s philosophy: 
+          “convention over configuration, but don’t fight explicit user config.”</li>
+        <li><span class="highlight-blue">Example:</span> If the app already declares a <code>RestTemplate</code>, 
+          Boot skips its own default bean.</li>
+      </ul>
+
+      <p class="highlight-yellow">Example snippet:</p>
+      <pre class="language-java"><code>@Configuration
+@ConditionalOnClass(RestTemplate.class)
+public class RestTemplateAutoConfiguration {
+
+  @Bean
+  @ConditionalOnMissingBean(RestTemplate.class)
+  public RestTemplate restTemplate(ObjectProvider&lt;RestTemplateBuilder&gt; builder) {
+    return builder.getIfAvailable(RestTemplateBuilder::new).build();
+  }
+}</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">📊 Internal flow during startup</h6>
+      <ol class="mb-3">
+        <li><b>Spring Boot scans</b> <code>META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports</code>
+          (formerly <code>spring.factories</code>) for candidate auto-configurations.</li>
+        <li>Each candidate is annotated with <code>@ConditionalOnClass</code>, <code>@ConditionalOnMissingBean</code>, or others.</li>
+        <li>Spring’s <code>ConditionEvaluator</code> checks classpath & bean factory before loading the configuration.</li>
+        <li>If <code>@ConditionalOnClass</code> fails → configuration is skipped (not loaded at all).</li>
+        <li>If <code>@ConditionalOnClass</code> passes but user has defined a bean → 
+          <code>@ConditionalOnMissingBean</code> suppresses Boot’s default bean.</li>
+        <li>Otherwise → Boot registers the default bean, making it available in the application context.</li>
+      </ol>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">📝 Summary</h6>
+      <ul>
+        <li><code>@ConditionalOnClass</code> → guard auto-config against missing dependencies.</li>
+        <li><code>@ConditionalOnMissingBean</code> → respect user-defined beans; only register defaults when necessary.</li>
+        <li>Together they make Boot’s auto-configuration <b>safe, non-invasive, and extensible</b>.</li>
+      </ul>
+
+      <p class="mt-3"><span class="highlight-blue">Rule of thumb:</span> 
+        Spring Boot uses <code>@ConditionalOnClass</code> to detect capability 
+        and <code>@ConditionalOnMissingBean</code> to back off gracefully. 
+        This combination ensures <em>auto-config works out of the box</em> without overriding explicit user choices.</p>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#springCircularQ1">
+      How would you debug circular dependency issues in a large Spring Boot project?
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="springCircularQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p><span class="highlight-blue">Problem:</span> Two or more beans require each other during creation (A → B → … → A),
+        causing startup failure (e.g., <code>BeanCurrentlyInCreationException</code>, <code>UnsatisfiedDependencyException</code>).
+        Since Spring 5.3 / Boot 2.6+, circular references are <b>disabled by default</b>; you should fix the design, not rely on auto-resolution.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🧭 Quick triage (what to look for in the error)</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">Read the injection chain:</span> the stack/causes list bean names in order. Note the first bean and the last bean before the cycle.</li>
+        <li><span class="highlight-blue">Spot the pattern:</span> field/constructor injection between services, <code>@Bean</code> methods calling each other, or configuration class cross-calls.</li>
+        <li><span class="highlight-blue">Temporary toggle (last resort to get more logs):</span> if your Boot version supports it, set 
+          <code>spring.main.allow-circular-references=true</code> only in a debug profile to let the app start and inspect beans (then revert).</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🔎 Instrumentation & visibility</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">Enable debug report:</span> run with <code>--debug</code> to see auto-config and bean conditions.</li>
+        <li><span class="highlight-blue">Actuator beans view:</span> expose <code>/actuator/beans</code> in a debug profile to inspect dependencies.</li>
+        <li><span class="highlight-blue">Dump dependency graph (test-time):</span> print who-depends-on-whom to locate the loop.</li>
+      </ul>
+
+      <p class="highlight-yellow">Utility to print bean dependencies (run in a context test):</p>
+      <pre class="language-java"><code>import org.springframework.beans.factory.support.DefaultListableBeanFactory;
+import org.springframework.context.ApplicationContext;
+import org.springframework.stereotype.Component;
+
+@Component
+class BeanGraphPrinter {
+  BeanGraphPrinter(ApplicationContext ctx) {
+    DefaultListableBeanFactory f = (DefaultListableBeanFactory) ctx.getAutowireCapableBeanFactory();
+    for (String b : f.getBeanDefinitionNames()) {
+      String[] deps = f.getDependenciesForBean(b);
+      if (deps.length &gt; 0) System.out.println(b + " -&gt; " + String.join(", ", deps));
+    }
+  }
+}</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🧩 Common circular patterns & fixes</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">Service ↔ Service cycles via constructor injection</span>
+          <ul>
+            <li><b>Fix:</b> break the hard edge with <code>Provider&lt;T&gt;</code>/<code>ObjectProvider&lt;T&gt;</code> or <code>@Lazy</code> on one side, then refactor design.</li>
+          </ul>
+          <pre class="language-java"><code>@Service
+class A {
+  private final Provider&lt;B&gt; b; // lazy edge
+  A(Provider&lt;B&gt; b) { this.b = b; }
+  void use() { b.get().doWork(); } // resolved after A is constructed
+}</code></pre>
+        </li>
+
+        <li><span class="highlight-blue">@Bean methods calling each other in <code>@Configuration</code> classes</span>
+          <ul>
+            <li><b>Why:</b> with proxy-bean-methods (CGLIB), method calls return managed singletons; inter-calls during creation can loop.</li>
+            <li><b>Fix:</b> extract shared factory logic; wire dependencies via method parameters; or set <code>@Configuration(proxyBeanMethods = false)</code> and avoid cross-calls.</li>
+          </ul>
+          <pre class="language-java"><code>@Configuration(proxyBeanMethods = false)
+class MyConfig {
+  @Bean Foo foo(Bar bar) { return new Foo(bar); }
+  @Bean Bar bar() { return new Bar(); } // no cross-method call
+}</code></pre>
+        </li>
+
+        <li><span class="highlight-blue">Layering violation (Controller → Service → Repository → Service)</span>
+          <ul><li><b>Fix:</b> split responsibilities; introduce a small <em>port</em> interface in the lower layer and inject that instead of the concrete upper service.</li></ul>
+        </li>
+
+        <li><span class="highlight-blue">Event/listener or AOP advice cycles</span>
+          <ul><li><b>Fix:</b> decouple with application events, message queues, or split the bean providing cross-cutting logic into a separate module.</li></ul>
+        </li>
+
+        <li><span class="highlight-blue">ConfigurationProperties + service usage in config</span>
+          <ul><li><b>Fix:</b> keep <code>@ConfigurationProperties</code> classes POJO-only; don’t inject services into them.</li></ul>
+        </li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🛠️ Techniques to break cycles (tactical)</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">@Lazy on one side:</span> defers resolution until first use (good for large refactors).</li>
+        <li><span class="highlight-blue">Provider/ObjectProvider:</span> inject a handle you can <code>get()</code> later; expresses optional/lazy dependency explicitly.</li>
+        <li><span class="highlight-blue">Setter injection for secondary dependency:</span> keep the primary constructor acyclic; set the optional edge afterward.</li>
+        <li><span class="highlight-blue">Factory/Facade extraction:</span> move shared creation logic into a new bean to re-route the dependency direction.</li>
+        <li><span class="highlight-blue">Events / queues:</span> replace direct call with an event; subscriber processes asynchronously (no direct bean reference).</li>
+      </ul>
+
+      <p class="highlight-yellow">Example using <code>@Lazy</code> to break A ↔ B:</p>
+      <pre class="language-java"><code>@Service class A { A(@Lazy B b) { this.b = b; } private final B b; }
+@Service class B { B(A a) { this.a = a; } private final A a; }</code></pre>
+
+      <p class="highlight-yellow">Example using <code>ObjectProvider</code>:</p>
+      <pre class="language-java"><code>@Service
+class BillingService {
+  private final ObjectProvider&lt;FraudService&gt; fraud;
+  BillingService(ObjectProvider&lt;FraudService&gt; fraud) { this.fraud = fraud; }
+  void bill() { fraud.getIfAvailable(() -&gt; FraudService.noop()).check(); }
+}</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🏗️ Strategic prevention (large codebases)</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">Constructor injection everywhere:</span> fails fast on cycles; makes dependencies explicit.</li>
+        <li><span class="highlight-blue">Modular boundaries:</span> define clear <em>ports & adapters</em> per module; depend inward on interfaces, not outward on concrete services.</li>
+        <li><span class="highlight-blue">Restrict package visibility:</span> keep service impls package-private, expose only APIs.</li>
+        <li><span class="highlight-blue">Smell tests:</span> lightweight context tests per slice (web/service/repo) using <code>@SpringBootTest</code> or <code>@ContextConfiguration</code> to catch cycles early.</li>
+        <li><span class="highlight-blue">Config hygiene:</span> minimize logic inside <code>@Configuration</code>; avoid cross-calling <code>@Bean</code> methods.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🧪 Minimal reproduction for debugging</h6>
+      <ul class="mb-3">
+        <li>Extract just the implicated beans into a tiny test app; reproduce the cycle in isolation.</li>
+        <li>From the error’s chain (A → B → C → A), write a focused <code>@SpringBootTest</code> or <code>@ContextConfiguration(classes = {A.class,B.class,C.class})</code> to iterate quickly.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">📝 Summary</h6>
+      <ul>
+        <li>Read the bean chain in the exception; use Actuator and debug logs to visualize dependencies.</li>
+        <li>Break the cycle tactically with <code>@Lazy</code>, <code>Provider/ObjectProvider</code>, setter injection, or a small factory/facade.</li>
+        <li>Fix the design strategically: enforce constructor injection, modularize with ports/adapters, and keep configuration classes simple.</li>
+        <li>Avoid relying on <code>allow-circular-references</code>; use it only briefly to inspect the graph, then remove.</li>
+      </ul>
+
+      <p class="mt-3"><span class="highlight-blue">Rule of thumb:</span> <b>Cycles indicate a design boundary leak.</b> 
+        Break the immediate loop to restore startup, then refactor the dependency direction so each layer only depends downward or on stable interfaces.</p>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#oauthJwtRotationQ1">
+      Secure Spring Boot with OAuth2 + JWT and key rotation (end-to-end, in detail)
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="oauthJwtRotationQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p><span class="highlight-blue">Goal:</span> Use an <b>Authorization Server (AS)</b> to issue signed JWT access tokens and a <b>Resource Server (RS)</b> (your Spring Boot APIs) to validate them.
+        Add <b>key rotation</b> so signing keys change periodically without breaking live tokens.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🔎 Architecture (high level)</h6>
+      <ul class="mb-3">
+        <li><b>AS</b> (e.g., Spring Authorization Server/Keycloak/Okta): issues <b>JWTs</b> signed with a private key (RS256/ES256).
+          Publishes <code>/.well-known/jwks.json</code> with the current + previous <b>public keys</b>.</li>
+        <li><b>RS</b> (your Boot app): validates incoming JWTs using the AS <b>JWKS URI</b> (kid-based key selection), enforces scopes/authorities.</li>
+        <li><b>Rotation</b>: AS periodically generates a new keypair (new <code>kid</code>), starts signing new tokens with it, but <u>keeps the old public key in JWKS</u> until all old tokens expire.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🧰 Resource Server (Spring Boot 3 / Spring Security 6)</h6>
+      <p class="mb-2">Point your API to the AS JWKS endpoint. Validate issuer/audience/scopes.</p>
+      <pre class="language-java"><code>import org.springframework.context.annotation.Bean;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.oauth2.jwt.*;
+import org.springframework.security.web.SecurityFilterChain;
+
+@org.springframework.context.annotation.Configuration
+class SecurityConfig {
+
+  @Bean
+  SecurityFilterChain api(HttpSecurity http, JwtDecoder decoder) throws Exception {
+    http.csrf(csrf -&gt; csrf.disable());
+    http.authorizeHttpRequests(reg -&gt; reg
+        .requestMatchers("/actuator/health").permitAll()
+        .requestMatchers("/admin/**").hasAuthority("SCOPE_admin")
+        .anyRequest().authenticated());
+    http.oauth2ResourceServer(oauth2 -&gt; oauth2.jwt(jwt -&gt; jwt.decoder(decoder)));
+    return http.build();
+  }
+
+  @Bean
+  JwtDecoder jwtDecoder() {
+    String jwksUri = "https://auth.example.com/.well-known/jwks.json";
+    NimbusJwtDecoder decoder = NimbusJwtDecoder.withJwkSetUri(jwksUri).build();
+    decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer("https://auth.example.com"));
+    return decoder;
+  }
+}</code></pre>
+
+      <p class="highlight-yellow">application.yml (RS):</p>
+      <pre class="language-yaml"><code>spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: https://auth.example.com/.well-known/jwks.json</code></pre>
+
+      <ul class="mb-3">
+        <li><b>How validation works:</b> RS reads JWT header <code>kid</code> → pulls matching public key from JWKS (cached) → verifies signature → checks <code>iss</code>, <code>aud</code>, <code>exp</code>, scopes.</li>
+        <li><b>Rotation-safe:</b> As long as the AS keeps the <u>old public key</u> in JWKS until old tokens die, RS continues to validate seamlessly.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🏦 Authorization Server with rotation (Spring Authorization Server)</h6>
+      <p class="mb-2">Implement a <b>JWKSource</b> that can rotate keys and publish JWKS. Below is a minimal in-memory example (for prod, back this by DB/Vault/KMS):</p>
+      <pre class="language-java"><code>import com.nimbusds.jose.jwk.*;
+import com.nimbusds.jose.jwk.source.*;
+import com.nimbusds.jose.proc.SecurityContext;
+import org.springframework.context.annotation.*;
+import org.springframework.scheduling.annotation.Scheduled;
+
+import java.time.Instant;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+
+@Configuration
+@EnableScheduling
+public class JwkRotationConfig {
+
+  // Keep multiple active keys: current signer + previous (until tokens expire)
+  private final Map&lt;String, RSAKey&gt; activeKeys = new ConcurrentHashMap&lt;&gt;();
+  private volatile String currentKid;
+
+  public JwkRotationConfig() {
+    rotateNow(); // initial key at startup
+  }
+
+  @Bean
+  JWKSource&lt;SecurityContext&gt; jwkSource() {
+    return new ImmutableJWKSet&lt;&gt;(new JWKSet(() -&gt; new ArrayList&lt;&gt;(activeKeys.values())));
+  }
+
+  /** Called by SAS to publish JWKS at /.well-known/jwks.json */
+  @Bean
+  public com.nimbusds.jose.jwk.JWKSet jsonWebKeySet() {
+    return new JWKSet(() -&gt; new ArrayList&lt;&gt;(activeKeys.values()));
+  }
+
+  /** Rotate key periodically (e.g., every 30 days). Keep old keys for token TTL + grace. */
+  @Scheduled(cron = "0 0 0 1 * ?") // monthly at 00:00
+  public void scheduledRotate() { rotateNow(); pruneExpired(); }
+
+  private synchronized void rotateNow() {
+    try {
+      RSAKey newKey = newKey("kid-" + Instant.now().toEpochMilli());
+      activeKeys.put(newKey.getKeyID(), newKey.toPublicJWK().toRSAKey().toPrivateKey() == null ? newKey : newKey);
+      currentKid = newKey.getKeyID();
+    } catch (Exception e) {
+      throw new IllegalStateException("Key rotation failed", e);
+    }
+  }
+
+  private RSAKey newKey(String kid) throws Exception {
+    return new RSAKeyGenerator(2048).keyUse(KeyUse.SIGNATURE).keyID(kid).algorithm(JWSAlgorithm.RS256).generate();
+  }
+
+  /** Implement your own retention policy based on token lifetime (e.g., keep for 8h after last issue). */
+  private void pruneExpired() {
+    // no-op example: in prod, remove keys older than (rotationTime + accessTokenTTL + buffer)
+  }
+
+  /** Helper exposed to your token generator to set 'kid' when signing (SAS does this automatically if wired). */
+  public String currentKid() { return currentKid; }
+}</code></pre>
+
+      <p class="mb-2"><span class="highlight-blue">Notes:</span> Spring Authorization Server will use the provided <code>JWKSource</code> to sign tokens and expose JWKS.
+        When <b>rotate</b> runs, new tokens get a new <code>kid</code>; old public keys remain in JWKS so RS can validate old tokens.</p>
+
+      <p class="highlight-yellow">Example JWKS the AS publishes (simplified):</p>
+      <pre class="language-json"><code>{
+  "keys": [
+    { "kty":"RSA", "kid":"kid-1725400000000", "e":"AQAB", "n":"...base64..." },
+    { "kty":"RSA", "kid":"kid-1722700000000", "e":"AQAB", "n":"...base64..." } // previous key kept until old JWTs expire
+  ]
+}</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🧪 Client flows & scopes</h6>
+      <ul class="mb-3">
+        <li><b>Public clients (SPAs/mobile):</b> Authorization Code with <b>PKCE</b>; short-lived access tokens, refresh tokens with rotation.</li>
+        <li><b>Server-to-server:</b> Client Credentials flow with narrowly-scoped tokens (e.g., <code>scope: orders.read</code>).</li>
+        <li><b>Claims:</b> include <code>iss</code>, <code>sub</code>, <code>aud</code>, <code>exp</code>, <code>scope</code>/authorities. Use audience to target specific RS.</li>
+      </ul>
+
+      <p class="highlight-yellow">Protect endpoints by scope in RS:</p>
+      <pre class="language-java"><code>http.authorizeHttpRequests(reg -&gt; reg
+  .requestMatchers("/orders/**").hasAuthority("SCOPE_orders.read")
+  .requestMatchers(HttpMethod.POST, "/orders/**").hasAuthority("SCOPE_orders.write")
+  .anyRequest().authenticated());</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🔁 Refresh tokens & rotation</h6>
+      <ul class="mb-3">
+        <li>Enable <b>refresh token rotation</b> on AS (each use returns a new refresh token; old one becomes invalid) to limit replay risk.</li>
+        <li>Set short access token TTL (e.g., 5–15 min), refresh TTL per risk (hours/days) with <b>revocation</b> on logout/compromise.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🛡️ Hardening & best practices</h6>
+      <ul class="mb-3">
+        <li><b>Algorithms:</b> Prefer RS256/ES256. Avoid HS256 across services (shared secret sprawl).</li>
+        <li><b>Key custody:</b> Store private keys in HSM/KMS/Vault. Your JWKSource can fetch the current key from KMS alias; rotation just re-points alias.</li>
+        <li><b>JWKS caching:</b> Set <code>Cache-Control</code>/<code>max-age</code> on JWKS responses; keep it low (e.g., 5–10 min). The RS decoder caches keys automatically.</li>
+        <li><b>Issuer/Audience checks:</b> Always validate <code>iss</code> and <code>aud</code>. Reject tokens without expected audience.</li>
+        <li><b>Clock skew:</b> Allow small skew (e.g., 60s) to avoid <code>nbf</code>/<code>exp</code> edge failures across nodes.</li>
+        <li><b>Deprecate keys safely:</b> Only remove an old key from JWKS after the <b>longest</b> access-token TTL + grace (and after you’ve stopped issuing with it).</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🧯 Troubleshooting rotation</h6>
+      <ul class="mb-3">
+        <li><b>Sudden 401s after rotate:</b> RS cache may hold stale JWKS. Ensure JWKS has correct <code>Cache-Control</code>; bump <code>kid</code> and verify both keys present during overlap.</li>
+        <li><b>“No key found for kid”:</b> Token header has unknown <code>kid</code> → AS didn’t publish new JWKS or RS points to wrong URL.</li>
+        <li><b>Signature invalid:</b> Check alg mismatch (e.g., RS256 vs ES256). Ensure no proxy rewrites JWKS JSON.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🧪 Quick end-to-end test</h6>
+      <pre class="language-bash"><code># 1) Get token from AS (example: client credentials)
+curl -s -u client:secret \
+  -d "grant_type=client_credentials&scope=orders.read" \
+  https://auth.example.com/oauth2/token | jq .access_token
+
+# 2) Call your API (RS)
+curl -H "Authorization: Bearer &lt;TOKEN&gt;" https://api.example.com/orders</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">📦 Minimal SAS config (clients + issuer)</h6>
+      <pre class="language-java"><code>@Configuration
+class AuthorizationServerConfig {
+  @Bean
+  SecurityFilterChain authServer(HttpSecurity http) throws Exception {
+    // Applies OAuth 2.0 Authorization Server defaults (endpoints, filters)
+    org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
+    return http.build();
+  }
+
+  @Bean // logical issuer URL used in 'iss' & discovery docs
+  org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings authSettings() {
+    return org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings.builder()
+      .issuer("https://auth.example.com")
+      .build();
+  }
+
+  @Bean // define clients (sample)
+  org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository clients() {
+    var c = org.springframework.security.oauth2.server.authorization.client.RegisteredClient
+      .withId(UUID.randomUUID().toString())
+      .clientId("orders-api")
+      .clientSecret("{noop}secret")
+      .authorizationGrantType(org.springframework.security.oauth2.core.AuthorizationGrantType.CLIENT_CREDENTIALS)
+      .scope("orders.read").scope("orders.write")
+      .build();
+    return new org.springframework.security.oauth2.server.authorization.client.InMemoryRegisteredClientRepository(c);
+  }
+}</code></pre>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">📝 Summary</h6>
+      <ul>
+        <li>RS validates JWTs via <b>JWKS URI</b>; no DB call needed on each request.</li>
+        <li>AS rotates signing keys: <b>new kid</b> for new tokens, <b>keep old public keys</b> in JWKS until old tokens expire.</li>
+        <li>Use <b>short access-token TTL</b>, rotate refresh tokens, validate <code>iss/aud</code>, and secure private keys in KMS/Vault.</li>
+        <li>Set JWKS caching headers and design an overlap period to make rotation invisible to clients.</li>
+      </ul>
+
+      <p class="mt-3"><span class="highlight-blue">Rule of thumb:</span> <b>Rotate keys regularly, overlap JWKS entries, and keep tokens short-lived.</b>
+        With proper issuer/audience checks and JWKS caching, rotation is a no-downtime, no-surprise operation.</p>
+    </div>
+  </div>
+</div>
+<!-- 15) Spring Cloud patterns for service-to-service authentication -->
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q15-s2sAuth">
+      Spring Cloud patterns for service-to-service authentication
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="q15-s2sAuth" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p><span class="highlight-blue">Goal:</span> Authenticate/authorize calls <em>between services</em> without user context, safely at scale.</p>
+
+      <h6 class="mb-2">🔐 Core patterns</h6>
+      <ul class="mb-3">
+        <li><b>mTLS (certificate-based identity):</b> Mesh (Istio/Linkerd) issues short-lived certs (SPIFFE IDs). In Spring (edge services), you can also enforce client certs:
+          <pre class="language-yaml"><code>server:
+  ssl:
+    key-store: classpath:server.p12
+    key-store-password: secret
+    client-auth: need  # require client certificate
+</code></pre>
+          <i>Pros:</i> no tokens on the wire; <i>Cons:</i> app-level authz still needed (who is calling?).</li>
+        <li><b>OAuth2 Client Credentials (JWT per service):</b> Caller gets a JWT from the Authorization Server → calls callee with <code>Authorization: Bearer</code>.
+          <pre class="language-java"><code>// Caller: WebClient with Spring Security OAuth2 client
+@Bean WebClient client(WebClient.Builder b, ReactiveClientRegistrationRepository r, OAuth2AuthorizedClientService s) {
+  var mgr = new AuthorizedClientServiceOAuth2AuthorizedClientManager(r, s);
+  var filter = new ServerOAuth2AuthorizedClientExchangeFilterFunction(mgr);
+  filter.setDefaultClientRegistrationId("orders-service");
+  return b.filter(filter).build();
+}
+// usage: client.get().uri("http://inventory/api").attributes(oauth2AuthorizedClient("orders-service")).retrieve()</code></pre>
+          Callee acts as <b>Resource Server</b> (validates JWT via JWKS).</li>
+        <li><b>Token Relay (user token propagation):</b> Gateway verifies token, then forwards same JWT to downstream (add scopes for service-to-service hop). Good when user context matters.</li>
+        <li><b>Signed requests (HMAC):</b> Hash body+headers with shared secret; simpler infra, but key rotation/distribution gets messy at scale—prefer mTLS/JWT.</li>
+        <li><b>Hybrid:</b> Mesh mTLS for identity + JWT for fine-grained authorization (scopes, tenant, roles).</li>
+      </ul>
+
+      <h6 class="mb-2">🧱 Spring Boot Resource Server (callee)</h6>
+      <pre class="language-yaml"><code>spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: https://auth.internal/.well-known/jwks.json</code></pre>
+      <pre class="language-java"><code>http.authorizeHttpRequests(a -&gt; a
+  .requestMatchers("/actuator/health").permitAll()
+  .requestMatchers("/inventory/**").hasAuthority("SCOPE_inventory.read")
+  .anyRequest().authenticated())
+ .oauth2ResourceServer(o -&gt; o.jwt());</code></pre>
+
+      <h6 class="mb-2">🧰 Ops tips</h6>
+      <ul>
+        <li>Short-lived tokens (5–15m), rotate keys (JWKS) & cache.</li>
+        <li>Gateway validates JWT; mesh enforces mTLS; app checks scopes/tenants.</li>
+        <li>Prefer <b>audience</b> claims per API; deny tokens with missing/incorrect <code>aud</code>.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- 16) Reactive WebFlux vs MVC -->
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q16-reactiveVsMvc">
+      Reactive programming in Spring WebFlux vs traditional MVC
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="q16-reactiveVsMvc" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p><span class="highlight-blue">Threading model:</span> MVC uses a (blocking) servlet thread per request. WebFlux uses a small event-loop (Netty) + reactive backpressure; work scales with I/O, not threads.</p>
+
+      <h6 class="mb-2">📌 When to choose</h6>
+      <ul class="mb-3">
+        <li><b>MVC:</b> heavy blocking I/O (JDBC), lots of synchronous libraries, simpler code, low concurrency.</li>
+        <li><b>WebFlux:</b> high concurrency, many downstream calls, streaming, need for <b>backpressure</b>.</li>
+      </ul>
+
+      <h6 class="mb-2">🧪 Example endpoints</h6>
+      <pre class="language-java"><code>// MVC
+@GetMapping("/users/{id}") User user(@PathVariable long id){ return repo.findById(id); } // blocks JDBC
+
+// WebFlux
+@GetMapping("/users/{id}") Mono&lt;User&gt; user(@PathVariable long id){ return r2dbcRepo.findById(id); } // non-blocking R2DBC
+@GetMapping(value="/stream/prices", produces=MediaType.TEXT_EVENT_STREAM_VALUE)
+Flux&lt;Price&gt; prices(){ return priceFeed.flux().limitRate(256); }</code></pre>
+
+      <h6 class="mb-2">⚠️ Pitfalls</h6>
+      <ul>
+        <li>Don’t call blocking APIs on event loop; offload to <code>boundedElastic()</code> if unavoidable.</li>
+        <li>Backpressure only works end-to-end if all stages honor demand (use WebClient/R2DBC/Reactive drivers).</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- 17) Backpressure handling -->
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q17-backpressure">
+      Enabling backpressure handling in reactive pipelines (Project Reactor/WebFlux)
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="q17-backpressure" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h6 class="mb-2">🔧 Techniques</h6>
+      <ul class="mb-3">
+        <li><b>Rate limit the source:</b> <code>limitRate(n)</code> or <code>Flux.interval(...)</code> with windowing.</li>
+        <li><b>Bound concurrency:</b> <code>flatMap(fn, concurrency, prefetch)</code>; keep <code>concurrency</code> small.</li>
+        <li><b>Overflow strategies:</b> <code>onBackpressureBuffer(cap)</code>, <code>onBackpressureDrop()</code>, <code>onBackpressureLatest()</code>.</li>
+        <li><b>Edge control:</b> set Netty channel write/read options & <code>ResponseBodyEmitter</code> timeouts.</li>
+      </ul>
+
+      <p class="highlight-yellow">Example: drop newest under pressure & bound concurrency</p>
+      <pre class="language-java"><code>Flux&lt;Tick&gt; feed = priceFeed()
+  .onBackpressureLatest()
+  .flatMap(this::enrich, 64)   // at most 64 in-flight
+  .limitRate(256);             // request 256 at a time</code></pre>
+
+      <p class="highlight-yellow">Offload blocking call (rare case):</p>
+      <pre class="language-java"><code>Mono.fromCallable(() -&gt; jdbcCall(id))
+    .subscribeOn(Schedulers.boundedElastic());</code></pre>
+
+      <p>Measure with <b>BlockHound</b> (dev) and JFR to ensure no blocking on event loops.</p>
+    </div>
+  </div>
+</div>
+
+<!-- 18) Programmatic vs Declarative transactions -->
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q18-txMgmt">
+      Programmatic vs declarative transaction management – when to use which?
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="q18-txMgmt" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h6 class="mb-2">✅ Declarative (<code>@Transactional</code>)</h6>
+      <ul class="mb-3">
+        <li>Most use-cases: clear boundaries, retry semantics, propagation, read-only hints.</li>
+        <li>Beware self-invocation (same bean calling its method bypasses proxy) and checked-exception rollback (configure <code>rollbackFor</code> if needed).</li>
+      </ul>
+
+      <h6 class="mb-2">🧰 Programmatic (<code>TransactionTemplate</code>, <code>PlatformTransactionManager</code>)</h6>
+      <ul class="mb-3">
+        <li>When you need <b>multiple transactions</b> inside one method (e.g., commit per batch chunk).</li>
+        <li>When combining different resources with different propagation/timeouts.</li>
+      </ul>
+
+      <p class="highlight-yellow">Per-1k row commit with <code>TransactionTemplate</code>:</p>
+      <pre class="language-java"><code>for (List&lt;Item&gt; chunk : chunks(items, 1000)) {
+  txTemplate.execute(s -&gt; { repo.saveAll(chunk); return null; });
+}</code></pre>
+
+      <p><b>Rule:</b> Start declarative; drop to programmatic for fine-grained control or batch patterns.</p>
+    </div>
+  </div>
+</div>
+
+<!-- 19) Bean lifecycle & graceful termination in Kubernetes -->
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q19-k8sLifecycle">
+      Spring Boot bean lifecycle in Kubernetes (shutdown hooks & graceful termination)
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="q19-k8sLifecycle" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h6 class="mb-2">🔄 Sequence</h6>
+      <ol class="mb-3">
+        <li>K8s sends <b>SIGTERM</b>; kube-proxy stops sending traffic (readiness = false).</li>
+        <li>Spring Boot <b>graceful shutdown</b> stops accepting new requests and waits for active ones to finish.</li>
+        <li>Beans receive <code>ContextClosedEvent</code>, <code>DisposableBean#destroy()</code>, <code>@PreDestroy</code>.</li>
+      </ol>
+
+      <p class="highlight-yellow">application.yml</p>
+      <pre class="language-yaml"><code>server:
+  shutdown: graceful
+spring:
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true</code></pre>
+
+      <p class="mb-2">Implement resource cleanup:</p>
+      <pre class="language-java"><code>@Component
+class ShutdownHooks implements ApplicationListener&lt;ContextClosedEvent&gt; {
+  public void onApplicationEvent(ContextClosedEvent e) { kafkaConsumer.wakeup(); pool.shutdown(); }
+  @PreDestroy void close(){ httpClient.close(); }
+}</code></pre>
+
+      <p class="mb-2">K8s Deployment snippets:</p>
+      <pre class="language-yaml"><code>spec:
+  terminationGracePeriodSeconds: 40
+  template:
+    spec:
+      containers:
+      - name: app
+        lifecycle:
+          preStop:
+            exec: { command: ["sh", "-c", "sleep 5"] } # drain LB</code></pre>
+    </div>
+  </div>
+</div>
+
+<!-- 20) Feature toggles at scale -->
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q20-featureToggles">
+      Feature toggles in Spring Boot at scale (design & ops)
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="q20-featureToggles" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h6 class="mb-2">🔧 Types & design</h6>
+      <ul class="mb-3">
+        <li><b>Release</b> (gradual rollout), <b>Ops</b> (kill-switch), <b>Experiment</b> (A/B), <b>Permission</b> (customer/region).</li>
+        <li>Central service (Unleash/Togglz/FF4J) + SDK in apps; cache in-memory; evaluate per-request (user/tenant/region).</li>
+        <li>Keep toggles short-lived; add owner, expiry date, dashboards & alerts for stale toggles.</li>
+      </ul>
+
+      <p class="highlight-yellow">Unleash example</p>
+      <pre class="language-java"><code>@Component
+class PriceController {
+  private final Unleash unleash;
+  PriceController(Unleash u){ this.unleash = u; }
+
+  @GetMapping("/price")
+  ResponseEntity&lt;?&gt; price(@RequestHeader("Region") String region){
+    var ctx = UnleashContext.builder().addProperty("region", region).build();
+    if (unleash.isEnabled("new-pricing", ctx)) return ResponseEntity.ok(calcV2());
+    return ResponseEntity.ok(calcV1());
+  }
+}</code></pre>
+
+      <ul>
+        <li>Externalize toggle defaults via Config Server; hot-refresh with <code>@RefreshScope</code> if using Spring Cloud Config.</li>
+        <li>For bean-level switches: <code>@ConditionalOnProperty</code> or strategy bean wired by toggle.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- 21) JPA EAGER pitfalls & redesign -->
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q21-eagerPitfalls">
+      JPA: Pitfalls of EAGER fetching in large domain models & redesign strategies
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="q21-eagerPitfalls" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h6 class="mb-2">⚠️ Problems</h6>
+      <ul class="mb-3">
+        <li>Loading huge object graphs unintentionally → memory blowups, long GC, slow serialization.</li>
+        <li>N+1 queries via nested eager associations; cache pollution in L2 cache.</li>
+        <li>Cycles / JSON recursion when exposing entities directly.</li>
+      </ul>
+
+      <h6 class="mb-2">✅ Redesign</h6>
+      <ul class="mb-3">
+        <li>Default <b>LAZY</b>; opt-in fetch with <b>JPQL fetch join</b> or <b>@EntityGraph</b> per use-case.</li>
+        <li>Use <b>DTO projections</b> for read APIs; avoid returning entities.</li>
+        <li>Break large aggregates into smaller roots; replace <code>@OneToMany EAGER</code> with <b>query by id</b> when needed.</li>
+      </ul>
+
+      <p class="highlight-yellow">Examples</p>
+      <pre class="language-java"><code>// EntityGraph
+@EntityGraph(attributePaths = {"items", "customer"})
+Order findById(Long id);
+
+// JPQL fetch join
+@Query("select o from Order o join fetch o.items where o.id = :id")
+Order fetchOrder(@Param("id") Long id);</code></pre>
+    </div>
+  </div>
+</div>
+
+<!-- 22) Dirty checking & batch performance -->
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q22-dirtyChecking">
+      Hibernate dirty checking & batch operations performance
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="q22-dirtyChecking" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p>Hibernate compares current state vs snapshot for each managed entity on flush—expensive with big persistence contexts.</p>
+
+      <h6 class="mb-2">⚠️ Costs</h6>
+      <ul class="mb-3">
+        <li>Large 1st-level cache → high memory & flush time.</li>
+        <li>Unbatched DML → many round-trips.</li>
+      </ul>
+
+      <h6 class="mb-2">✅ Tuning</h6>
+      <ul class="mb-3">
+        <li><code>hibernate.jdbc.batch_size=50</code>, <code>order_inserts=true</code>, <code>order_updates=true</code>.</li>
+        <li>Flush/clear per chunk; use <b>StatelessSession</b> for massive one-off loads (no dirty checking).</li>
+      </ul>
+
+      <p class="highlight-yellow">Chunked write</p>
+      <pre class="language-java"><code>for (int i = 0; i &lt; items.size(); i++) {
+  em.persist(items.get(i));
+  if (i % 50 == 0) { em.flush(); em.clear(); }
+}</code></pre>
+    </div>
+  </div>
+</div>
+
+<!-- 23) Hibernate 2nd-level cache in distributed env -->
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q23-l2cache">
+      Tuning Hibernate 2nd-level cache in a distributed environment
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="q23-l2cache" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h6 class="mb-2">🎯 Strategy</h6>
+      <ul class="mb-3">
+        <li>Pick provider (Infinispan/Hazelcast/Ehcache/Redis). Prefer <b>invalidation</b> over full replication across regions.</li>
+        <li>Choose region concurrency appropriately:
+          <ul>
+            <li><b>read-only</b> for immutable reference data</li>
+            <li><b>nonstrict-read-write</b> for mostly-read</li>
+            <li><b>read-write</b> for concurrent updates (with soft locks)</li>
+          </ul>
+        </li>
+        <li>Use <b>near cache</b> per node + distributed invalidation topic.</li>
+      </ul>
+
+      <p class="highlight-yellow">Example (Ehcache JCache)</p>
+      <pre class="language-yaml"><code>spring.jpa.properties:
+  hibernate.cache.use_second_level_cache: true
+  hibernate.cache.region.factory_class: org.hibernate.cache.jcache.JCacheRegionFactory
+  javax.cache.provider: org.ehcache.jsr107.EhcacheCachingProvider</code></pre>
+
+      <ul>
+        <li>Define cache regions per entity/collection with size & TTL; avoid caching hot write-heavy tables.</li>
+        <li>In multi-region, keep region-local caches; cross-region calls go through APIs or async replication.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- 24) Schema evolution in microservices (Flyway/Liquibase) -->
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q24-schemaEvolution">
+      Schema evolution & migrations in microservices (Flyway/Liquibase)
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="q24-schemaEvolution" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h6 class="mb-2">🏗️ Principles</h6>
+      <ul class="mb-3">
+        <li><b>Own your DB per service</b> (no shared schema); version with Flyway/Liquibase.</li>
+        <li><b>Expand–migrate–contract:</b> add nullable/unused columns first → deploy code writing both → backfill → cut-over reads → drop old.</li>
+        <li>Backward-compatible APIs during rollout; blue/green or canary.</li>
+      </ul>
+
+      <p class="highlight-yellow">Flyway config</p>
+      <pre class="language-yaml"><code>spring.flyway.enabled: true
+spring.flyway.locations: classpath:db/migration</code></pre>
+
+      <p class="mb-2">Long-running backfills: run as <b>idempotent jobs</b> with chunking & checkpoints. Prefer <b>online</b> DDL if DB supports it.</p>
+    </div>
+  </div>
+</div>
+
+<!-- 25) Sharding & partitioning in JPA -->
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q25-sharding">
+      Implementing sharding & partitioning strategies in JPA
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="q25-sharding" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h6 class="mb-2">🧭 Strategies</h6>
+      <ul class="mb-3">
+        <li><b>Horizontal sharding:</b> hash/mod by tenant/customer/region; route writes/reads to shard.</li>
+        <li><b>DB partitioning:</b> native partitions (e.g., PostgreSQL range/hash) for large tables; transparent to JPA.</li>
+      </ul>
+
+      <p class="highlight-yellow">Routing with <code>AbstractRoutingDataSource</code></p>
+      <pre class="language-java"><code>class ShardRoutingDataSource extends AbstractRoutingDataSource {
+  protected Object determineCurrentLookupKey() { return ShardContext.get(); }
+}
+// usage: ShardContext.set("shard-07") before repository call</code></pre>
+
+      <ul>
+        <li>Encode shard in ID (Snowflake/KSUID with region bits) to avoid cross-shard lookups.</li>
+        <li>Cross-shard queries via search/index; avoid distributed JOINs.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- 26) Global distributed transaction across 10+ microservices -->
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q26-globalTx">
+      Implementing a global distributed transaction across 10+ microservices
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="q26-globalTx" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p>Classic 2PC doesn’t scale/reliable on the internet. Use a <b>Saga</b> (orchestration) with <b>idempotent</b> steps + <b>compensations</b>.</p>
+
+      <h6 class="mb-2">🧩 Orchestrated Saga (Temporal/Camunda)</h6>
+      <ul class="mb-3">
+        <li>Coordinator executes steps (reserve inventory → charge payment → create shipment ...). On failure, runs compensations (release inventory, refund).</li>
+        <li>Persist workflow state for retries; use <b>Outbox</b> + broker for reliable messages.</li>
+      </ul>
+
+      <p class="highlight-yellow">Temporal workflow sketch</p>
+      <pre class="language-java"><code>@WorkflowInterface interface OrderSaga { @WorkflowMethod void run(Order o); }
+public class OrderSagaImpl implements OrderSaga {
+  @Override public void run(Order o) {
+    try {
+      Activities.reserve(o);
+      Activities.charge(o);
+      Activities.createShipment(o);
+    } catch (Exception e) {
+      Activities.refund(o);
+      Activities.release(o);
+      throw e;
+    }
+  }
+}</code></pre>
+
+      <ul>
+        <li>Each activity is <b>idempotent</b> (idempotency keys) and supports <b>timeouts</b>.</li>
+        <li>Observability: correlate with trace-id across all steps.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- 27) Saga vs CQRS vs Event Sourcing (Walmart scale) -->
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q27-sagaCqrsEs">
+      Saga, CQRS, and Event Sourcing – when to choose each at Walmart scale
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="q27-sagaCqrsEs" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <table class="table table-dark table-bordered">
+        <thead><tr><th>Pattern</th><th>Use</th><th>Pros</th><th>Cons</th></tr></thead>
+        <tbody>
+          <tr><td><b>Saga</b></td><td>Long-running multi-service flows</td><td>Decoupled, compensations, scalable</td><td>Complexity, eventual consistency</td></tr>
+          <tr><td><b>CQRS</b></td><td>Read-heavy, different read/write models</td><td>Fast reads, scale independently</td><td>Sync logic between models</td></tr>
+          <tr><td><b>Event Sourcing</b></td><td>Auditability, temporal queries</td><td>Complete history, rebuild states</td><td>Storage growth, replays, tooling</td></tr>
+        </tbody>
+      </table>
+
+      <p class="mb-2"><b>Example:</b> Order placement at Black Friday scale → <b>Saga</b> for orchestration; <b>Event Sourcing</b> for critical domains (payments) to audit; <b>CQRS</b> to power product availability/search reads.</p>
+    </div>
+  </div>
+</div>
+
+<!-- 28) Multi-region microservices for Black Friday traffic -->
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q28-multiRegion">
+      Designing multi-region microservices for Black Friday traffic
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="q28-multiRegion" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h6 class="mb-2">🌍 Topology</h6>
+      <ul class="mb-3">
+        <li><b>Active–active</b> regions; DNS/GSLB routes by proximity; circuit-breakers & retries region-aware.</li>
+        <li>Data: <b>read local, write local</b>; async replicate to others. For strong consistency domains, pick a single write region or multi-primary DB with careful conflict rules.</li>
+      </ul>
+
+      <h6 class="mb-2">🧰 Building blocks</h6>
+      <ul class="mb-3">
+        <li>Stateless services; config via central store; feature flags to shed load.</li>
+        <li>Global IDs (Snowflake) with region bits; per-region caches; warm caches pre-event.</li>
+        <li>Autoscaling by queue depth/lag; load shedding; priority queues.</li>
+      </ul>
+
+      <p class="highlight-yellow">Resilience policy (Istio)</p>
+      <pre class="language-yaml"><code>spec:
+  trafficPolicy:
+    connectionPool: { http: { http1MaxPendingRequests: 1000 } }
+    outlierDetection: { consecutive5xx: 5, interval: 5s, baseEjectionTime: 30s }
+  retries: { attempts: 2, perTryTimeout: 200ms }</code></pre>
+    </div>
+  </div>
+</div>
+
+<!-- 29) API Gateway + Service Mesh (Istio/Linkerd) -->
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q29-gatewayMesh">
+      API Gateway + Service Mesh (Istio/Linkerd) for enterprise microservices
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="q29-gatewayMesh" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h6 class="mb-2">🔀 Responsibility split</h6>
+      <ul class="mb-3">
+        <li><b>API Gateway (north–south):</b> auth (OIDC/JWT), rate-limit, WAF, routing, request shaping, token relay.</li>
+        <li><b>Service Mesh (east–west):</b> mTLS, retries/timeouts, traffic shaping, observability, zero-trust within cluster.</li>
+      </ul>
+
+      <p class="highlight-yellow">Gateway → validate JWT, set <code>X-User</code> & scopes; Mesh → enforce mTLS & policies.</p>
+
+      <p class="mb-2">Spring Cloud Gateway snippet</p>
+      <pre class="language-yaml"><code>spring:
+  cloud:
+    gateway:
+      routes:
+      - id: orders
+        uri: http://orders
+        predicates: [ Path=/orders/** ]
+        filters: [ TokenRelay, RequestSize=2MB ]</code></pre>
+    </div>
+  </div>
+</div>
+
+<!-- 30) Idempotency in financial APIs -->
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q30-idempotency">
+      Enforcing idempotency in financial transaction APIs
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="q30-idempotency" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h6 class="mb-2">🔑 Contract</h6>
+      <ul class="mb-3">
+        <li>Client sends <b>Idempotency-Key</b> header (UUID) per unique intent.</li>
+        <li>Server stores (key, request hash, result) atomically; duplicate with same key returns original result.</li>
+      </ul>
+
+      <p class="highlight-yellow">Schema & upsert</p>
+      <pre class="language-sql"><code>create table idem (key varchar(64) primary key, req_hash varchar(64), response jsonb, status text, created_at timestamptz);
+-- insert-once; subsequent inserts fail and are read instead</code></pre>
+
+      <p class="highlight-yellow">Spring service outline</p>
+      <pre class="language-java"><code>@Transactional
+public PaymentResponse charge(PaymentReq req, String idemKey){
+  String h = sha256(req);
+  return idemRepo.findById(idemKey).map(e -&gt; e.toResponse())
+    .orElseGet(() -&gt; {
+      PaymentResponse r = gateway.charge(req); // ensure gateway supports idempotency too
+      idemRepo.save(new IdemEntry(idemKey, h, r));
+      return r;
+    });
+}</code></pre>
+
+      <ul>
+        <li>Set TTL for keys appropriate to business rules; lock on (key) or rely on PK constraint to avoid races.</li>
+        <li>Include <b>resource id</b> in key namespace (e.g., <code>payment:acct:123:key</code>) to avoid cross-API collisions.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#jpaLockingQ1">
+      JPA Concurrency: Optimistic vs Pessimistic Locking (how they work, when to choose, real examples)
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="jpaLockingQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p><span class="highlight-blue">Problem:</span> Prevent lost updates when many requests read→modify→write the same rows.
+        JPA offers two families of locks:</p>
+      <ul>
+        <li><b>Optimistic</b> → detect conflicts <em>at commit</em> using a <code>@Version</code> column, then <b>retry</b>.</li>
+        <li><b>Pessimistic</b> → prevent conflicts by acquiring <em>database locks</em> up front (e.g., <code>SELECT ... FOR UPDATE</code>).</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🔒 Optimistic Locking — version check, fail fast & retry</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">How it works:</span> add a <code>@Version</code> field. JPA includes the version in <code>UPDATE</code>’s <code>WHERE</code> clause.
+          If 0 rows are updated → another tx changed it → <code>OptimisticLockException</code>.</li>
+        <li><span class="highlight-blue">When to use:</span> read-mostly data, short transactions, low to moderate contention, horizontally scaled services.</li>
+        <li><span class="highlight-blue">Lock modes:</span>
+          <code>OPTIMISTIC</code> (check at commit),
+          <code>OPTIMISTIC_FORCE_INCREMENT</code> (also bumps version to “claim” the row).</li>
+        </li>
+        <li><span class="highlight-blue">Pros:</span> no DB blocking, best throughput.</li>
+        <li><span class="highlight-blue">Cons:</span> retries under contention; long transactions increase conflict odds.</li>
+      </ul>
+
+      <p class="highlight-yellow">Entity with version & service retry (inventory decrement)</p>
+      <pre class="language-java"><code>@Entity
+class Product {
+  @Id Long id;
+  @Version Long version;       // int/long/short/Timestamp supported
+  int stock;
+  // getters/setters
+}
+
+public interface ProductRepo extends JpaRepository&lt;Product, Long&gt; { }
+
+@Service
+class OrderService {
+  private final ProductRepo repo;
+  OrderService(ProductRepo repo){ this.repo = repo; }
+
+  @Transactional
+  public void reserve(Long id, int qty) {
+    int attempts = 0;
+    while (true) {
+      try {
+        Product p = repo.findById(id).orElseThrow();
+        if (p.getStock() &lt; qty) throw new IllegalStateException("Insufficient stock");
+        p.setStock(p.getStock() - qty);
+        repo.saveAndFlush(p);              // may throw OptimisticLockException
+        return;                            // success
+      } catch (ObjectOptimisticLockingFailureException | OptimisticLockException e) {
+        if (++attempts &gt; 3) throw e;       // give up after a few tries
+        try { Thread.sleep(10L * attempts); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
+      }
+    }
+  }
+}</code></pre>
+
+      <p class="mb-2">You can also request an optimistic lock explicitly on read:</p>
+      <pre class="language-java"><code>public interface ProductRepo extends JpaRepository&lt;Product, Long&gt; {
+  @Lock(LockModeType.OPTIMISTIC)
+  Optional&lt;Product&gt; findWithLockById(Long id);
+
+  @Lock(LockModeType.OPTIMISTIC_FORCE_INCREMENT)
+  Optional&lt;Product&gt; findAndBumpVersionById(Long id);
+}</code></pre>
+
+      <p class="mb-2"><b>Gotchas:</b> bulk JPQL/SQL updates bypass the 1st-level cache & default version checks;
+        either include the version in the <code>WHERE</code> or re-read entities after bulk ops.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🧱 Pessimistic Locking — block others, serialize the hotspot</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">How it works:</span> JPA translates lock modes to DB row/table locks:
+          <b><code>PESSIMISTIC_READ</code></b> (shared), <b><code>PESSIMISTIC_WRITE</code></b> (exclusive),
+          <b><code>PESSIMISTIC_FORCE_INCREMENT</code></b> (exclusive + version bump).
+          Under the hood: <code>SELECT ... FOR UPDATE[/NOWAIT/SKIP LOCKED]</code> depending on DB.</li>
+        <li><span class="highlight-blue">When to use:</span> hot rows with frequent conflicting updates (wallet balance, single inventory counter),
+          business rule “never oversell”, or when retries are too expensive.</li>
+        <li><span class="highlight-blue">Pros:</span> no lost updates, simpler logic (no retries).</li>
+        <li><span class="highlight-blue">Cons:</span> lower concurrency & risk of deadlocks; requires careful timeouts.</li>
+      </ul>
+
+      <p class="highlight-yellow">Repository method that locks the row (and times out if busy)</p>
+      <pre class="language-java"><code>public interface ProductRepo extends JpaRepository&lt;Product, Long&gt; {
+
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query("select p from Product p where p.id = :id")
+  @QueryHints({
+    @QueryHint(name = "jakarta.persistence.lock.timeout", value = "2000") // 2s (JPA standard)
+    // Hibernate vendor hint: @QueryHint(name = "org.hibernate.lock.timeout", value = "2000")
+  })
+  Product lockForUpdate(@Param("id") Long id);
+}
+
+@Service
+class OrderServicePess {
+  @Transactional
+  public void reserve(Long id, int qty) {
+    Product p = repo.lockForUpdate(id);     // DB-level lock held until commit/rollback
+    if (p.getStock() &lt; qty) throw new IllegalStateException("Insufficient stock");
+    p.setStock(p.getStock() - qty);
+  }
+}</code></pre>
+
+      <p class="mb-2"><b>Timeout semantics:</b> value is milliseconds; <code>0</code> = NOWAIT (fail fast), positive waits up to N ms, negative/infinite depends on provider (often <code>-1</code>).</p>
+      <p class="mb-2"><b>Deadlocks:</b> always acquire locks in a consistent order; keep transactions short.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">📊 Head-to-head</h6>
+      <table class="table table-dark table-bordered">
+        <thead>
+          <tr><th>Aspect</th><th>Optimistic</th><th>Pessimistic</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Conflict handling</td><td>Detects at commit; retry needed</td><td>Prevents by locking rows</td></tr>
+          <tr><td>Throughput</td><td>High (no blocking)</td><td>Lower under contention (blocking)</td></tr>
+          <tr><td>Latency</td><td>Stable until conflicts spike</td><td>Waits/timeout; can deadlock</td></tr>
+          <tr><td>Best for</td><td>Read-mostly, low contention</td><td>Hot counters, strict “no oversell” invariants</td></tr>
+          <tr><td>Requirements</td><td><code>@Version</code> column</td><td>DB supports row locks; careful timeouts</td></tr>
+        </tbody>
+      </table>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🧪 Real-life alternatives that pair well</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">Atomic conditional UPDATE (no locks, single SQL):</span> let the DB enforce invariants.
+          <pre class="language-java"><code>@Modifying
+@Query("update Product p set p.stock = p.stock - :qty " +
+       "where p.id = :id and p.stock &gt;= :qty")
+int tryReserve(@Param("id") Long id, @Param("qty") int qty);
+
+// usage
+int changed = repo.tryReserve(id, qty);
+if (changed == 0) throw new IllegalStateException("Insufficient stock");</code></pre>
+          Works great for counters; avoids holding locks & retries.</li>
+        <li><span class="highlight-blue">Unique/constraint checks:</span> use DB constraints (e.g., unique + upsert) to avoid race conditions on “ensure-one”.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🧭 Choosing the right strategy</h6>
+      <ul class="mb-3">
+        <li><b>Default to Optimistic</b> for most CRUD/business flows; add a small retry with backoff.</li>
+        <li><b>Use Pessimistic</b> on hot, highly contended rows (e.g., decrementing a single inventory bucket, ledger rows) or when business rules forbid retries.</li>
+        <li><b>Hybrid:</b> start optimistic; switch to pessimistic for a specific code path once contention crosses a threshold (observed via <code>OptimisticLockException</code> rate).</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">⚠️ Pitfalls & tips</h6>
+      <ul class="mb-3">
+        <li><b>Bulk updates</b> (<code>@Modifying</code> JPQL/SQL) don’t respect the 1st-level cache & version by default — reload affected entities or include version checks.</li>
+        <li><b>Long transactions</b> increase conflict probability (optimistic) and lock hold time (pessimistic) — keep them short.</li>
+        <li><b>Isolation level</b>: locking is orthogonal; stick to default <code>READ COMMITTED</code> unless you have specific reasons.</li>
+        <li><b>Second-level cache</b>: cache mostly read-only/immutable data; write-heavy entities with locks don’t cache well.</li>
+        <li><b>APIs</b>: expose the <code>version</code> field in write DTOs if clients do read-modify-write; reject mismatched versions with 409 Conflict.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">📝 Summary</h6>
+      <ul>
+        <li><b>Optimistic</b> = detect & retry using <code>@Version</code>; best throughput for typical workloads.</li>
+        <li><b>Pessimistic</b> = block others with DB locks; use on hotspots & strict invariants (set timeouts!).</li>
+        <li>For counters/inventory, consider a <b>single atomic UPDATE</b> pattern — often faster and simpler than either lock.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+
+
+
+    </div><!-- /#walmartAccordion -->
+  </div><!-- /.container -->
+
+  <!-- Bootstrap & Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // Simple search: show/hide each accordion item based on its text
+    function searchQuestions() {
+      const q = document.getElementById("searchBox").value.toLowerCase().trim();
+      const items = document.querySelectorAll("#walmartAccordion .accordion-item");
+      items.forEach((item) => {
+        const text = item.innerText.toLowerCase();
+        item.style.display = text.includes(q) ? "" : "none";
+      });
+    }
+
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        alert("Copied: " + text);
+      }).catch(err => {
+        console.error("Failed to copy:", err);
+      });
+    }
+
+    // Add numbering to accordion buttons
+    document.addEventListener("DOMContentLoaded", function () {
+      const items = document.querySelectorAll("#walmartAccordion .accordion-item");
+      items.forEach((item, index) => {
+        const button = item.querySelector(".accordion-button");
+        if (button && !button.dataset.numbered) {
+          button.dataset.numbered = "true";
+          button.innerHTML = `<span class="fw-bold me-2">${index + 1}.</span> ` + button.innerHTML;
+        }
+      });
+    });
+  </script>
+</body>
+</html>

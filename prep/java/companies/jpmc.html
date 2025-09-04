@@ -95,88 +95,103 @@
 
         <h3 class="text-warning">JPMC</h3>
         <div class="accordion" id="jpmcAccordion">
-            <div class="accordion-item">
+<div class="accordion-item">
   <h2 class="accordion-header">
     <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
-      data-bs-target="#gcCmsVsG1Q1">
-      Explain Garbage Collection (CMS vs G1 GC) <span class="badge bg-info ms-2">hariPrep</span>
+      data-bs-target="#chmContentionQ1">
+      Explain scalability challenges with ConcurrentHashMap under high contention and how to optimize it 
+      <span class="badge bg-info ms-2">hariPrep</span>
     </button>
   </h2>
-  <div id="gcCmsVsG1Q1" class="accordion-collapse collapse">
+  <div id="chmContentionQ1" class="accordion-collapse collapse">
     <div class="accordion-body">
-      <p><span class="highlight-blue">Goal of GC:</span> reclaim heap memory automatically while balancing
-        <em>throughput</em> (doing more work) vs <em>latency</em> (shorter pauses). CMS and G1 both target lower pause times than
-        throughput-oriented collectors.</p>
+
+      <p><span class="highlight-blue">Goal of CHM:</span> provide thread-safe concurrent map with better scalability 
+        than synchronized HashMap. But under <em>high contention</em>, performance bottlenecks appear due to 
+        CAS retries, bin locks, and resizing overhead.</p>
 
       <hr class="text-secondary">
 
-      <h6 class="mb-2">CMS — Concurrent Mark Sweep (Legacy)</h6>
+      <h6 class="mb-2">⚠️ Scalability Challenges</h6>
       <ul class="mb-3">
-        <li><span class="highlight-blue">Where it works:</span> Primarily <em>old generation</em> (young gen usually handled by <code>ParNew</code>).</li>
-        <li><span class="highlight-blue">Phases:</span> Initial Mark (STW) → Concurrent Mark (app runs) → Remark (STW) → Concurrent Sweep (no compaction).</li>
-        <li><span class="highlight-blue">Pros:</span> Short STW pauses during most cycles; good for low-latency on Java 6/7/8 era.</li>
-        <li><span class="highlight-blue">Cons:</span> <em>No compaction</em> → fragmentation; may trigger long Full GC (Serial Old) on promotion failure;
-          more tuning needed; deprecated in JDK 9, <strong>removed in JDK 14</strong>.</li>
-        <li><span class="highlight-blue">Key knobs:</span> <code>-XX:CMSInitiatingOccupancyFraction</code>, <code>-XX:+UseCMSInitiatingOccupancyOnly</code>,
-          <code>-XX:+CMSClassUnloadingEnabled</code>, <code>-XX:ConcGCThreads</code>.</li>
+        <li><span class="highlight-blue">Hot buckets:</span> Many threads update the same bin → CAS retries & bin locks serialize updates.</li>
+        <li><span class="highlight-blue">Remapping bottlenecks:</span> <code>compute</code>/<code>merge</code> lock the bin while the lambda runs. Heavy logic inside = serialization.</li>
+        <li><span class="highlight-blue">Resizing pressure:</span> Too small initial capacity triggers resizes, and threads “help transfer” → cache contention.</li>
+        <li><span class="highlight-blue">Size/counter contention:</span> <code>size()</code> and <code>mappingCount()</code> sum striped counters. High write rates → retries & overhead.</li>
+        <li><span class="highlight-blue">Poor hash codes:</span> Collisions concentrate entries. Even tree bins serialize updates under lock.</li>
       </ul>
 
-      <p class="highlight-yellow">Example CMS flags (Java 8 only):</p>
-      <pre class="language-bash"><code>-XX:+UseConcMarkSweepGC -XX:+CMSClassUnloadingEnabled -XX:CMSInitiatingOccupancyFraction=70 -XX:+UseCMSInitiatingOccupancyOnly</code></pre>
-
       <hr class="text-secondary">
 
-      <h6 class="mb-2">G1 — Garbage-First (Default since JDK 9)</h6>
+      <h6 class="mb-2">🔎 Symptoms in Production</h6>
       <ul class="mb-3">
-        <li><span class="highlight-blue">Region-based heap:</span> Heap split into equal-sized <em>regions</em> (1–32MB). Young/Old are logical sets of regions.</li>
-        <li><span class="highlight-blue">Evacuating & compaction:</span> Copies live objects out of selected regions → compacts continually → <em>little fragmentation</em>.</li>
-        <li><span class="highlight-blue">Concurrent global marking:</span> Finds live data across heap; after marking, performs <em>mixed</em> collections (young + some old regions).</li>
-        <li><span class="highlight-blue">Pause-time targeting:</span> Tries to meet <code>-XX:MaxGCPauseMillis</code> (default ~200ms) by choosing just enough regions each cycle.</li>
-        <li><span class="highlight-blue">Remembered Sets (RSet):</span> Track cross-region references; enable partial collection at the cost of extra memory/CPU.</li>
-        <li><span class="highlight-blue">Humongous objects:</span> ≥ 50% of region size go into contiguous “humongous” regions; avoid many huge arrays if possible.</li>
-        <li><span class="highlight-blue">Key knobs:</span> <code>-XX:MaxGCPauseMillis</code>, <code>-XX:InitiatingHeapOccupancyPercent</code>, <code>-XX:ConcGCThreads</code>,
-          <code>-XX:ParallelGCThreads</code>, (rarely) <code>-XX:G1HeapRegionSize</code>.</li>
+        <li>High CPU with low throughput, threads spinning in CHM internals.</li>
+        <li>Profiles show <code>ConcurrentHashMap$Node</code> or <code>transfer</code> consuming time.</li>
+        <li>Endpoints using <code>size()</code> or heavy <code>compute</code> calls have long-tail latency.</li>
       </ul>
 
-      <p class="highlight-yellow">Typical G1 setup (JDK 11+):</p>
-      <pre class="language-bash"><code>-XX:+UseG1GC -Xms4g -Xmx4g -XX:MaxGCPauseMillis=100 -XX:InitiatingHeapOccupancyPercent=30 -Xlog:gc*:file=gc.log:time,uptime,tid,level</code></pre>
-      <button class="btn btn-sm btn-outline-info mb-3" onclick="copyToClipboard('-XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:InitiatingHeapOccupancyPercent=30 -Xlog:gc*:file=gc.log:time,uptime,tid,level')">Copy G1 flags</button>
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">✅ Optimizations</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">Pre-size the map:</span> Avoid frequent resizes by allocating upfront.
+          <pre class="language-java"><code>int expected = 1_000_000;
+ConcurrentHashMap&lt;K,V&gt; map = new ConcurrentHashMap<>(expected, 0.75f);</code></pre>
+        </li>
+        <li><span class="highlight-blue">Good hash distribution:</span> Ensure <code>hashCode()</code> spreads keys; salt hot keys if needed.</li>
+        <li><span class="highlight-blue">Avoid size()/isEmpty():</span> Track counts separately in hot paths.</li>
+        <li><span class="highlight-blue">Keep remap lambdas light:</span> Do I/O/CPU-heavy work outside <code>compute</code>/<code>merge</code>.</li>
+      </ul>
+
+      <p class="highlight-yellow">Better counters with LongAdder:</p>
+      <pre class="language-java"><code>ConcurrentHashMap&lt;String, LongAdder&gt; counts = new ConcurrentHashMap<>();
+
+void incr(String k) {
+  counts.computeIfAbsent(k, kk -&gt; new LongAdder()).increment();
+}</code></pre>
+
+      <p class="highlight-yellow">Sharding (striped maps) to spread load:</p>
+      <pre class="language-java"><code>final int SHARDS = 64;
+final ConcurrentHashMap&lt;K,V&gt;[] shards =
+  IntStream.range(0, SHARDS)
+           .mapToObj(i -&gt; new ConcurrentHashMap&lt;K,V&gt;())
+           .toArray(ConcurrentHashMap[]::new);
+
+private ConcurrentHashMap&lt;K,V&gt; shard(K key) {
+  int h = key.hashCode();
+  int idx = (h ^ (h &gt;&gt;&gt; 16)) & (SHARDS - 1);
+  return shards[idx];
+}</code></pre>
+
+      <p class="highlight-yellow">Read-mostly optimization:</p>
+      <pre class="language-java"><code>volatile Map&lt;K,V&gt; snapshot = Map.of();
+
+void update(Map&lt;K,V&gt; newData) {
+  snapshot = Map.copyOf(newData);
+}
+
+V get(K k) { return snapshot.get(k); }</code></pre>
 
       <hr class="text-secondary">
 
-      <h6 class="mb-2">Head-to-Head: CMS vs G1</h6>
+      <h6 class="mb-2">📝 Quick Checklist</h6>
       <ul>
-        <li><span class="highlight-blue">Status:</span> CMS is deprecated/removed; G1 is the general-purpose default from JDK 9 onward.</li>
-        <li><span class="highlight-blue">Compaction:</span> CMS = none (fragmentation risk); G1 = incremental compaction via evacuation (stable allocation latency).</li>
-        <li><span class="highlight-blue">Pause control:</span> CMS pauses depend on old-gen shape and remark; G1 actively sizes work to meet <code>MaxGCPauseMillis</code>.</li>
-        <li><span class="highlight-blue">Throughput:</span> Parallel GC may still win raw throughput; G1 balances throughput with predictable pauses better than CMS.</li>
-        <li><span class="highlight-blue">Tuning effort:</span> CMS often needs more manual tuning; G1 usually works well with few flags (adjust pause target + heap size).</li>
-        <li><span class="highlight-blue">Footprint & overhead:</span> G1’s RSets add memory/CPU overhead; CMS risks costly Full GC on promotion failure.</li>
+        <li>✅ Pre-size the map</li>
+        <li>✅ Ensure good <code>hashCode()</code></li>
+        <li>✅ Avoid <code>size()</code> in hot paths</li>
+        <li>✅ Use <code>LongAdder</code>-per-key for counters</li>
+        <li>✅ Shard the map for super-hot keys</li>
+        <li>✅ Keep remap lambdas minimal</li>
+        <li>✅ For read-mostly, use immutable snapshots</li>
       </ul>
 
-      <hr class="text-secondary">
-
-      <h6 class="mb-2">When to choose what?</h6>
-      <ul class="mb-3">
-        <li><span class="highlight-blue">Modern JDK (11+):</span> Prefer <strong>G1</strong> by default for server apps needing predictable pauses.</li>
-        <li><span class="highlight-blue">Ultra-low latency:</span> Consider newer collectors (Shenandoah/ZGC) if you need sub-10ms pauses at large heaps.</li>
-        <li><span class="highlight-blue">Legacy Java 8 apps:</span> If you still run CMS, plan migration to G1 (or Parallel/ Shenandoah backports) to avoid CMS removal.</li>
-      </ul>
-
-      <p class="highlight-yellow">Quick diagnostics:</p>
-      <pre class="language-bash"><code># JDK 9+: rich GC logging
-java -Xlog:gc*:file=gc.log:time,uptime,tid,level -jar app.jar
-
-# On a running JVM
-jcmd &lt;pid&gt; GC.heap_info
-jcmd &lt;pid&gt; GC.run</code></pre>
-
-      <p class="mt-3"><span class="highlight-blue">Rule of thumb:</span> Set <code>-Xms</code> = <code>-Xmx</code>, start with G1 and
-        <code>-XX:MaxGCPauseMillis</code> near your SLO (e.g., 50–150ms), monitor <em>allocation rate</em>, <em>promotion rate</em>, and <em>GC pause percent</em>,
-        then iterate.</p>
+      <p class="mt-3"><span class="highlight-blue">Rule of thumb:</span> ConcurrentHashMap scales well for moderate concurrency, 
+        but under extreme contention you must combine <em>pre-sizing</em>, <em>good hashing</em>, <em>sharding</em>, 
+        and <em>specialized counters</em> to sustain throughput.</p>
     </div>
   </div>
 </div>
+
 
 <div class="accordion-item">
   <h2 class="accordion-header">
