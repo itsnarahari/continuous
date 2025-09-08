@@ -10,6 +10,7 @@ public class ArrayMoveEvenAndOddBeside {
     public static int[] separateEvenOddNumbers(int arr[]) {
         int left = 0;
         int right = arr.length - 1;
+//        int[] inputs = {3, 6, 11, 8, 9, 4, 6, 7, 9, 2};
         for (int i = 0; i < arr.length; i++) {
             while (arr[left] % 2 == 0) {
                 left++;

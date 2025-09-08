@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Walmart Q&A</title>
+
+  <!-- Bootstrap & Prism.js for Syntax Highlighting -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+
+<!-- Add the languages you use -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+
+  <style>
+    body { background-color: #121212; color: white; }
+    .container { max-width: 900px; margin-top: 20px; }
+    .accordion-button { background-color: #343a40; color: white; }
+    .accordion-button:focus { box-shadow: none; }
+    .accordion-button:not(.collapsed) { background-color: #007bff; color: white; }
+    .accordion-body { background-color: #1e1e1e; color: white; }
+    .highlight-yellow { color: #ffcc00; font-weight: bold; }
+    .highlight-blue { color: #4db8ff; font-weight: bold; }
+    pre[class*="language-"] { background: #1e1e1e !important; border-radius: 8px; padding: 12px; }
+
+    /* Search Box Styling */
+    .search-container { margin-bottom: 15px; text-align: center; }
+    .search-input {
+      width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #666;
+      background: #222; color: white; outline: none; font-size: 16px;
+    }
+    .search-input::placeholder { color: #aaa; }
+  </style>
+</head>
+
+<body class="bg-dark text-light">
+<div class="container mt-4">
+  <h3 class="text-center text-warning mb-3">hariPrep – Java/Spring Stack Q&A by Difficulty</h3>
+
+  <div class="accordion" id="techAccordion"></div>
+</div>
+
+<script>
+/* ===== Helpers ===== */
+const badge = (t) => {
+  const map = {
+    "Java": "bg-info",
+    "Spring Boot": "bg-success",
+    "Hibernate/JPA": "bg-primary",
+    "Microservices": "bg-warning text-dark",
+    "Spring Cloud": "bg-secondary",
+    "Design Patterns": "bg-danger"
+  };
+  return `<span class="badge ${map[t]||'bg-light text-dark'} ms-2">${t}</span>`;
+};
+const catColor = { Easy:"text-success", Medium:"text-info", Hard:"text-warning", Tricky:"text-danger" };
+
+function qa(topic, diff, q, a, code) {
+  return { topic, diff, q, a, code };
+}
+
+/* ===== Data (3 easy + 3 medium + 3 hard + 1 tricky per tech) ===== */
+const data = {
+  "Java": [
+    // Easy (3)
+    qa("Java","Easy",
+      "Why is String concatenation in a loop slow, and what should you use instead?",
+      [
+        "Using '+' in a loop creates many intermediate String objects (Strings are immutable).",
+        "→ O(n²) behavior as content grows.",
+        "Use StringBuilder (single buffer, append in O(1) amortized).",
+        "If parallel, use StringBuffer or thread-local StringBuilder."
+      ],
+`// Faster
+StringBuilder sb = new StringBuilder();
+for (String s: list) sb.append(s);
+return sb.toString();`
+    ),
+    qa("Java","Easy",
+      "How do you design an immutable value object (e.g., Money)?",
+      [
+        "Make fields private + final; no setters; defensive copies for mutable fields.",
+        "Validate in constructor; provide withX(...) or builder to create new instances.",
+        "Override equals/hashCode based on value; toString safe.",
+        "Immutability → thread-safe & cache-friendly."
+      ],
+`public final class Money {
+  private final BigDecimal amount;
+  private final Currency currency;
+  private Money(BigDecimal a, Currency c){ this.amount=a; this.currency=c; }
+  public Money plus(Money other){ check(currency.equals(other.currency));
+    return new Money(amount.add(other.amount), currency); }
+  // equals/hashCode by amount & currency
+}`
+    ),
+    qa("Java","Easy",
+      "HashMap vs ConcurrentHashMap—when can CHM still bottleneck?",
+      [
+        "HashMap: not thread-safe; CHM: lock-striping + CAS for concurrency.",
+        "CHM reduces contention but heavy writers on same bin still contend.",
+        "Hot keys, computeIfAbsent ‘thundering herd’ can serialize.",
+        "Use sharding or read-through caches to spread load; avoid giant values."
+      ]
+    ),
+    // Medium (3)
+    qa("Java","Medium",
+      "volatile vs synchronized: what does happens-before guarantee?",
+      [
+        "volatile: visibility + ordering (writes happen-before subsequent reads). No atomicity for compound ops.",
+        "synchronized: mutual exclusion + visibility on lock release/acquire.",
+        "Use AtomicX/StampedLock for specialized cases (e.g., optimistic reads).",
+        "Rule: prefer simple locking; use volatile for publication flags/once-write semantics."
+      ]
+    ),
+    qa("Java","Medium",
+      "CompletableFuture vs Reactor (Mono/Flux): when choose which?",
+      [
+        "CompletableFuture: simple 1-shot async, no backpressure, JDK-only.",
+        "Reactor: streams, backpressure, operators, context propagation.",
+        "HTTP pipeline with many stages → Reactor. Single I/O call → CF is fine.",
+        "Integrate with WebClient (Reactor) or wrap CF in Mono.fromFuture(...) as needed."
+      ]
+    ),
+    qa("Java","Medium",
+      "Class loading vs initialization—what runs when?",
+      [
+        "Loading: bring bytecode; linking: verify/prepare; initialization: run static initializers.",
+        "static { } runs once per class initialization.",
+        "Lazy loading via Class.forName(name, false, loader).",
+        "Be wary of heavy static initializers blocking startup."
+      ]
+    ),
+    // Hard (3)
+    qa("Java","Hard",
+      "Implement a bounded blocking queue—what edge cases matter?",
+      [
+        "Use two Conditions (notEmpty, notFull) with a single ReentrantLock.",
+        "Guard with a while loop (spurious wakeups).",
+        "Signal on put→notEmpty, on take→notFull.",
+        "Consider interrupt handling and fairness; avoid lost signals."
+      ],
+`class BoundedQueue<T>{
+  final ReentrantLock lock=new ReentrantLock();
+  final Condition notFull=lock.newCondition(), notEmpty=lock.newCondition();
+  final Object[] buf; int head=0, tail=0, size=0;
+  BoundedQueue(int n){ buf=new Object[n]; }
+  void put(T x) throws InterruptedException{
+    lock.lock();
+    try{
+      while(size==buf.length) notFull.await();
+      buf[tail]=(Object)x; tail=(tail+1)%buf.length; size++;
+      notEmpty.signal();
+    } finally { lock.unlock(); }
+  }
+  T take() throws InterruptedException{
+    lock.lock();
+    try{
+      while(size==0) notEmpty.await();
+      @SuppressWarnings("unchecked") T x=(T)buf[head];
+      head=(head+1)%buf.length; size--; notFull.signal(); return x;
+    } finally { lock.unlock(); }
+  }
+}`
+    ),
+    qa("Java","Hard",
+      "What is false sharing and how do you mitigate it?",
+      [
+        "Multiple cores write to variables that reside in same cache line → ping-pong invalidations.",
+        "Mitigate via padding (@Contended), separating hot fields, or struct-of-arrays.",
+        "Use LongAdder/Striped counters; avoid sharing hot mutable state.",
+        "Measure with JMH; don't guess."
+      ]
+    ),
+    qa("Java","Hard",
+      "G1 vs ZGC/Shenandoah: how do you pick for low tail latency?",
+      [
+        "G1: regioned, predictable STW goals; good default.",
+        "ZGC/Shenandoah: concurrent moving collectors; very low pauses; higher CPU/memory overhead.",
+        "Choose by p99/p99.9, allocation rate, object size profile, and GC logs.",
+        "Tune heap, region size, pause target; measure before/after."
+      ]
+    ),
+    // Tricky (1)
+    qa("Java","Tricky",
+      "Why can BigDecimal behave ‘unequally’ for equal numbers?",
+      [
+        "BigDecimal.equals() considers scale; 1.0 ≠ 1.00.",
+        "compareTo() ignores scale; 1.0.compareTo(1.00)==0.",
+        "Don’t use BigDecimal as HashMap key if values can differ in scale, or normalize.",
+        "Use compareTo==0 for numeric equality checks."
+      ]
+    )
+  ],
+
+  "Spring Boot": [
+    // Easy
+    qa("Spring Boot","Easy",
+      "@ConfigurationProperties vs @Value—why prefer the former?",
+      [
+        "@ConfigurationProperties binds groups, supports metadata and validation.",
+        "@Value is for single property injection; weaker type-safety.",
+        "Prefer CP for structured config; add @Validated and JSR-380 constraints.",
+        "Enables IDE hints via spring-configuration-metadata."
+      ],
+`@ConfigurationProperties(prefix="payments")
+@Validated
+record PayProps(@NotBlank String mode, @Min(1) int timeoutSec){}`
+    ),
+    qa("Spring Boot","Easy",
+      "Why does @Transactional on a private method often not work?",
+      [
+        "Spring creates proxies around beans; internal self-calls bypass proxy.",
+        "Private methods can’t be proxied via JDK proxies.",
+        "Call through a bean reference (proxy) or use AspectJ LTW.",
+        "Keep transactional boundaries at service layer public methods."
+      ]
+    ),
+    qa("Spring Boot","Easy",
+      "What triggers auto-configuration and how do you override safely?",
+      [
+        "@SpringBootApplication loads META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports.",
+        "@ConditionalOnClass/Bean/MissingBean decide applicability.",
+        "Override by defining your own bean or excluding autoconfig class.",
+        "Use properties to tweak defaults first; custom beans second."
+      ]
+    ),
+    // Medium
+    qa("Spring Boot","Medium",
+      "How to build a custom Spring Boot starter?",
+      [
+        "Create autoconfig module with @AutoConfiguration classes.",
+        "Publish configuration metadata for IDE hints.",
+        "Guard with @Conditional… to avoid surprising users.",
+        "Provide sane defaults; expose properties with prefix."
+      ]
+    ),
+    qa("Spring Boot","Medium",
+      "Liveness vs Readiness with Actuator and K8s—why both?",
+      [
+        "Liveness: is process healthy (no deadlock)? Restart if failing.",
+        "Readiness: can serve traffic (deps up, warmed)? Remove from LB if failing.",
+        "Wire to /actuator/health/liveness|readiness; don’t include expensive checks in liveness.",
+        "Prevent thundering herds by delaying readiness during warmup."
+      ]
+    ),
+    qa("Spring Boot","Medium",
+      "Observability with Micrometer → Prometheus → Grafana: what KPIs?",
+      [
+        "HTTP: RPS, p95/p99 latency, error rate (4xx/5xx).",
+        "JVM: GC pause, allocation rate, heap usage, threads.",
+        "DB: connection pool, query latency, timeouts.",
+        "SLOs + alerts on error budget burn and p99 latency."
+      ]
+    ),
+    // Hard
+    qa("Spring Boot","Hard",
+      "Multitenancy (schema vs DB): how route and migrate?",
+      [
+        "Use AbstractRoutingDataSource to pick DataSource per tenant.",
+        "Flyway/Liquibase per-tenant migrations; isolate failures.",
+        "Pool sizing per tenant; protect noisy neighbors.",
+        "Cache separation and security context propagation."
+      ]
+    ),
+    qa("Spring Boot","Hard",
+      "Graceful shutdown for workers and HTTP servers?",
+      [
+        "Disable new traffic (readiness false), drain queues.",
+        "Stop accepting connections, let inflight complete up to timeout.",
+        "Close pools, flush metrics/logs, halt schedulers.",
+        "Use Spring’s graceful shutdown + custom lifecycle hooks."
+      ]
+    ),
+    qa("Spring Boot","Hard",
+      "Self-invocation and proxies—robust patterns?",
+      [
+        "Move cross-cutting to separate bean; inject and call.",
+        "Or obtain current proxy via AopContext/current bean from context.",
+        "AspectJ LTW for method-level weaving if required.",
+        "Prefer service public methods as boundaries."
+      ]
+    ),
+    // Tricky
+    qa("Spring Boot","Tricky",
+      "Circular dependencies: why constructor injection helps?",
+      [
+        "Constructor injection fails fast → reveals design smell early.",
+        "Field/setter injection hides cycles until runtime.",
+        "Break cycles via @Lazy, eventing, or refactor responsibilities.",
+        "Common fix: split config/bean, introduce ports (interfaces)."
+      ]
+    )
+  ],
+
+  "Hibernate/JPA": [
+    // Easy
+    qa("Hibernate/JPA","Easy",
+      "What is the N+1 select problem and 3 ways to fix it?",
+      [
+        "Accessing child collections lazily per parent causes 1 (parents) + N (children) queries.",
+        "Fix: join fetch in JPQL for needed graph.",
+        "Entity Graphs (NamedEntityGraph) to declare fetch plan.",
+        "@BatchSize for batching lazy loads where join isn’t ideal."
+      ],
+`// Join fetch example
+SELECT o FROM Order o JOIN FETCH o.items WHERE o.id = :id`
+    ),
+    qa("Hibernate/JPA","Easy",
+      "Dirty checking & flush modes: when is SQL generated?",
+      [
+        "On transaction commit or flush, Hibernate compares snapshots.",
+        "FlushMode.AUTO (default) flushes before query/commit; COMMIT flushes only at commit.",
+        "Long sessions can trigger unexpected flushes before queries.",
+        "Use clear/detach for large processing to reduce memory."
+      ]
+    ),
+    qa("Hibernate/JPA","Easy",
+      "equals/hashCode for entities with DB-generated IDs?",
+      [
+        "IDs are null before persist; equals by ID alone breaks for new entities.",
+        "Use business key if stable; or assign UUID at creation.",
+        "If using DB ID, treat transient as unequal and avoid sets until persisted.",
+        "Keep equals consistent across lifecycle."
+      ]
+    ),
+    // Medium
+    qa("Hibernate/JPA","Medium",
+      "Second-level cache: when does it help and harm?",
+      [
+        "Helps for read-mostly, small, stable reference data.",
+        "Harmful with high write rates, soft deletes, or large collections.",
+        "Choose concurrency strategy (read-only, nonstrict, read-write).",
+        "Measure hit ratio; prefer query cache carefully."
+      ]
+    ),
+    qa("Hibernate/JPA","Medium",
+      "Optimistic vs pessimistic locking with examples?",
+      [
+        "Optimistic: @Version column; detect conflicts on commit; retry strategy.",
+        "Pessimistic: SELECT ... FOR UPDATE; blocks others to prevent conflicts.",
+        "Use optimistic for rare contention; pessimistic for hot rows.",
+        "Handle StaleObjectStateException gracefully."
+      ]
+    ),
+    qa("Hibernate/JPA","Medium",
+      "Batch writes at scale without breaking invariants?",
+      [
+        "Enable JDBC batching (hibernate.jdbc.batch_size).",
+        "order_inserts/updates to improve batching efficiency.",
+        "Flush & clear periodically to free memory.",
+        "Maintain business ordering if required (group by aggregate)."
+      ]
+    ),
+    // Hard
+    qa("Hibernate/JPA","Hard",
+      "Mapping composite keys safely?",
+      [
+        "Use @Embeddable + @EmbeddedId for composite key.",
+        "Implement equals/hashCode on key class correctly.",
+        "Beware joins and foreign keys referencing embedded IDs.",
+        "Prefer surrogate keys if feasible; composite keys complicate refactoring."
+      ]
+    ),
+    qa("Hibernate/JPA","Hard",
+      "Soft deletes: pros/cons and implementation choices?",
+      [
+        "Pros: history, recovery; Cons: queries more complex, index bloat.",
+        "Implement via @Where(clause) and/or filters; ensure all reads honor it.",
+        "Cascade rules + orphanRemoval need re-check.",
+        "Consider archive tables and TTL policies."
+      ]
+    ),
+    qa("Hibernate/JPA","Hard",
+      "ETL of huge tables efficiently?",
+      [
+        "Use StatelessSession for bulk operations; avoids first-level cache.",
+        "Fetch in pages (scrollable results), batch size tuned.",
+        "Turn off second-level cache and flush/clear loops.",
+        "Prefer DB-native bulk operations where safe."
+      ]
+    ),
+    // Tricky
+    qa("Hibernate/JPA","Tricky",
+      "orphanRemoval + CascadeType.REMOVE pitfalls?",
+      [
+        "Removing a child from collection with orphanRemoval deletes row.",
+        "If soft deletes are used, this may hard-delete unexpectedly.",
+        "Define clear ownership and lifecycle; test cascades thoroughly.",
+        "Be explicit: remove vs detach semantics."
+      ]
+    )
+  ],
+
+  "Microservices": [
+    // Easy
+    qa("Microservices","Easy",
+      "How to design idempotent POST for payments?",
+      [
+        "Require Idempotency-Key header; store request hash + result.",
+        "On duplicate key, return original response.",
+        "Dedup store TTL matches business window.",
+        "Keyed by (user, operation) to avoid collisions."
+      ]
+    ),
+    qa("Microservices","Easy",
+      "API versioning: URI vs header vs media-type—pick and justify.",
+      [
+        "URI (/v2) is explicit, cache-friendly, easy routing.",
+        "Header/media-type offer cleaner URLs but tooling is harder.",
+        "Prefer URI for public APIs; header/media for internal evolution.",
+        "Deprecation plan & sunset headers are key."
+      ]
+    ),
+    qa("Microservices","Easy",
+      "Rate limiting vs throttling vs backpressure?",
+      [
+        "Rate limit: bound number of requests (token bucket).",
+        "Throttling: slow down responses under load.",
+        "Backpressure: signal producer to reduce emission.",
+        "Apply at client, gateway, and service edges appropriately."
+      ]
+    ),
+    // Medium
+    qa("Microservices","Medium",
+      "Outbox pattern for exactly-once-ish delivery?",
+      [
+        "Write domain data + outbox row in same DB tx.",
+        "Background publisher reads outbox and sends to broker.",
+        "Mark sent with status/sequence; be idempotent on consumer.",
+        "Debezium captures changes if you prefer CDC."
+      ],
+`CREATE TABLE outbox(id BIGSERIAL, agg_id UUID, type TEXT, payload JSONB, status TEXT, created_at TIMESTAMPTZ);`
+    ),
+    qa("Microservices","Medium",
+      "Choreography vs orchestration for order→payment→inventory?",
+      [
+        "Choreography: services react to events; less coupling; harder to reason.",
+        "Orchestration: central saga; clearer control; single coordinator risk.",
+        "Choose by team maturity and failure handling needs.",
+        "Always model compensations and timeouts."
+      ]
+    ),
+    qa("Microservices","Medium",
+      "Consistent pagination across shards during writes?",
+      [
+        "Use stable sort keys (created_at, id) + ‘search-after’ or cursor tokens.",
+        "Don’t use offset for live data; may skip/duplicate.",
+        "Include resume key to continue after inserts.",
+        "Consider snapshot semantics for strong consistency."
+      ]
+    ),
+    // Hard
+    qa("Microservices","Hard",
+      "Tenant isolation across services?",
+      [
+        "Auth includes tenant; propagate via JWT claims.",
+        "Resource quotas, rate-limits per tenant.",
+        "Data partitioning: schema/DB per tenant or partition keys.",
+        "Noise isolation with bulkheads at threadpool/queue levels."
+      ]
+    ),
+    qa("Microservices","Hard",
+      "Safe Blue/Green with DB schema changes?",
+      [
+        "Expand/contract: deploy backward-compatible schema first.",
+        "Write to both old+new columns; read from old.",
+        "Migrate data; flip reads; remove old.",
+        "Automate rollback; feature-flag usage of new fields."
+      ]
+    ),
+    qa("Microservices","Hard",
+      "Exactly-once processing—is it real?",
+      [
+        "In practice, implement at-least-once + idempotency.",
+        "Use dedup keys, conditional writes (upsert), and monotonic sequence checks.",
+        "Design consumers to ignore duplicates.",
+        "Observability to detect replays is essential."
+      ]
+    ),
+    // Tricky
+    qa("Microservices","Tricky",
+      "Partial failure handling without double charges?",
+      [
+        "Generate client-visible idempotency key before starting.",
+        "Persist state transitions; side effects after durable write.",
+        "If uncertain, return 202 + status endpoint; avoid blind retries.",
+        "Timeouts + saga compensations for external calls."
+      ]
+    )
+  ],
+
+  "Spring Cloud": [
+    // Easy
+    qa("Spring Cloud","Easy",
+      "Client-side discovery vs server-side—what changes for you?",
+      [
+        "Client-side (Eureka): client picks instance; needs registry and load-balancer.",
+        "Server-side (K8s): LB/proxy routes; app depends on cluster DNS/endpoints.",
+        "Code: RestTemplate/WebClient with LB vs plain base URL.",
+        "Operational: registry HA vs cluster health."
+      ]
+    ),
+    qa("Spring Cloud","Easy",
+      "Resilience4j basics: what to configure first?",
+      [
+        "Timeouts (don’t rely on defaults), retry count/backoff.",
+        "Circuit breaker thresholds, sliding window.",
+        "Bulkheads (semaphore/threadpool) for isolation.",
+        "Separate configs per dependency criticality."
+      ]
+    ),
+    qa("Spring Cloud","Easy",
+      "How to propagate trace context across async boundaries?",
+      [
+        "Use Sleuth/OpenTelemetry instrumentation.",
+        "Wrap executors to copy context.",
+        "Reactor: use Context and operators that preserve it.",
+        "Add B3/W3C headers to outbound HTTP and messaging."
+      ]
+    ),
+    // Medium
+    qa("Spring Cloud","Medium",
+      "Config hot-reload patterns and safety?",
+      [
+        "Spring Cloud Bus: broadcast refresh events; controlled waves.",
+        "K8s ConfigMap + reload libs; beware inconsistent mixed versions.",
+        "Gate risky refresh behind feature flags.",
+        "Validate new config before switching (canaries)."
+      ]
+    ),
+    qa("Spring Cloud","Medium",
+      "Gateway retries + rate limit example?",
+      [
+        "Retries only on safe idempotent requests or idempotency-keyed operations.",
+        "Rate limiter at route level to protect downstream.",
+        "Add circuit breaker to shed load fast.",
+        "Emit metrics per route for tuning."
+      ],
+`spring:
+  cloud:
+    gateway:
+      routes:
+      - id: api
+        uri: http://downstream
+        predicates: [ Path=/api/** ]
+        filters:
+        - name: Retry
+          args: { retries: 3, statuses: [500, 502, 503], backoff: { firstBackoff: 50ms, maxBackoff: 500ms } }
+        - name: RequestRateLimiter
+          args: { redis-rate-limiter.replenishRate: 50, burstCapacity: 100 }`
+    ),
+    qa("Spring Cloud","Medium",
+      "Logs/metrics/traces correlation with OpenTelemetry?",
+      [
+        "Inject trace/span ids into logs.",
+        "Export metrics with exemplars linked to trace ids.",
+        "Use consistent resource attributes (service.name, version).",
+        "Redact PII in spans; sampling strategy defined centrally."
+      ]
+    ),
+    // Hard
+    qa("Spring Cloud","Hard",
+      "Service-to-service JWT auth with key rotation?",
+      [
+        "Use JWKS endpoint; cache keys with expiry.",
+        "Short-lived tokens; handle clock skew.",
+        "Pin audience/issuer; verify kid → fetch new key on miss.",
+        "Automate rotation and fallback; monitor signature errors."
+      ]
+    ),
+    qa("Spring Cloud","Hard",
+      "Service mesh vs app-level features—how decide?",
+      [
+        "Mesh handles mTLS, retries, telemetry uniformly.",
+        "App-level (Resilience4j) knows business semantics.",
+        "Small team/heterogeneous stack → mesh helps; simple env → app-level ok.",
+        "Avoid duplicating concerns in both layers."
+      ]
+    ),
+    qa("Spring Cloud","Hard",
+      "Tail-based sampling—why and cautions?",
+      [
+        "Keeps only slow/error traces (after seeing full span).",
+        "Great for debugging rare latency spikes.",
+        "Needs collector buffering; more resources.",
+        "Ensure privacy filters before sampling decision."
+      ]
+    ),
+    // Tricky
+    qa("Spring Cloud","Tricky",
+      "Semaphore vs thread-pool bulkhead in reactive apps?",
+      [
+        "Reactor pipelines prefer semaphore (non-blocking).",
+        "Thread-pool bulkhead can break context and add latency.",
+        "Use thread-pool when blocking I/O is unavoidable (isolate it).",
+        "Measure saturation + fallbacks; backpressure first."
+      ]
+    )
+  ],
+
+  "Design Patterns": [
+    // Easy
+    qa("Design Patterns","Easy",
+      "Strategy vs State—what’s the key difference?",
+      [
+        "Strategy: choose algorithm at runtime (behavioral swap).",
+        "State: object changes behavior as its internal state changes.",
+        "Strategy doesn’t own transitions; State does.",
+        "In Java: Strategy via interfaces; State via context + states."
+      ]
+    ),
+    qa("Design Patterns","Easy",
+      "Decorator vs Proxy in Spring terms?",
+      [
+        "Decorator adds behavior transparently (wrapping).",
+        "Proxy controls access/cross-cutting (security, caching).",
+        "Spring AOP creates proxies; decorators are explicit beans.",
+        "Choose decorator for functional augmentation; proxy for cross-cutting."
+      ]
+    ),
+    qa("Design Patterns","Easy",
+      "Factory Method vs Abstract Factory vs Builder?",
+      [
+        "Factory Method: subclass decides which object to create.",
+        "Abstract Factory: create families of related objects.",
+        "Builder: stepwise construction of complex object.",
+        "Use builder for many optional params."
+      ]
+    ),
+    // Medium
+    qa("Design Patterns","Medium",
+      "Hexagonal Architecture in Spring—mapping?",
+      [
+        "Controllers = driving adapters; Repos/Clients = driven adapters.",
+        "Domain services hold business logic; ports are interfaces.",
+        "Dependency rule: adapters depend on domain, not vice-versa.",
+        "Great for testability and swap adapters without touching core."
+      ]
+    ),
+    qa("Design Patterns","Medium",
+      "CQRS with Spring Data—how to handle eventual consistency?",
+      [
+        "Write model updates events; read model projects denormalized views.",
+        "UI uses versioning/progress indicators.",
+        "Rebuild projections on startup from event log.",
+        "Avoid mixing transactional reads with eventually consistent views."
+      ]
+    ),
+    qa("Design Patterns","Medium",
+      "Template Method vs Strategy—testability implications?",
+      [
+        "Template: fixed algorithm steps with hooks; inheritance based.",
+        "Strategy: composition; easier to swap in tests.",
+        "Prefer Strategy to avoid subclass explosion.",
+        "Template fits when steps order is invariant."
+      ]
+    ),
+    // Hard
+    qa("Design Patterns","Hard",
+      "DDD: drawing aggregate boundaries & invariants?",
+      [
+        "Keep transactions within aggregate; enforce invariants inside.",
+        "High cohesion: changes together belong together.",
+        "Avoid cross-aggregate refs in invariants; use domain events.",
+        "Split large aggregates by consistency needs."
+      ]
+    ),
+    qa("Design Patterns","Hard",
+      "Event sourcing + snapshots—operational concerns?",
+      [
+        "Snapshot after N events or time; reduce replay time.",
+        "Immutable event log; migrations via upcasters.",
+        "Projections are rebuildable; store projection version.",
+        "Backfill tools and idempotent handlers are essential."
+      ]
+    ),
+    qa("Design Patterns","Hard",
+      "Anti-corruption layer (ACL) to strangle a monolith?",
+      [
+        "ACL translates models/protocols; isolates domain from legacy quirks.",
+        "Start with reads, then writes; route gradually.",
+        "Contract tests between ACL and legacy.",
+        "Measure dependency reduction over time."
+      ]
+    ),
+    // Tricky
+    qa("Design Patterns","Tricky",
+      "Double-checked locking singleton—what’s the safe way?",
+      [
+        "Use volatile instance to prevent reordering.",
+        "Or use Initialization-on-Demand Holder idiom (best).",
+        "Avoid lazy init if not needed; keep simple.",
+        "Prefer enum singleton for simplicity."
+      ],
+`public class S {
+  private static volatile S i;
+  public static S get(){
+    if(i==null){ synchronized(S.class){ if(i==null) i=new S(); } }
+    return i;
+  }
+}`
+    )
+  ]
+};
+
+/* ===== Render ===== */
+const techOrder = ["Java","Spring Boot","Hibernate/JPA","Microservices","Spring Cloud","Design Patterns"];
+const techAccordion = document.getElementById("techAccordion");
+
+let gid = 0;
+for (const topic of techOrder) {
+  const groupId = `g${gid++}`;
+  techAccordion.innerHTML += `
+    <div class="accordion-item bg-dark text-light">
+      <h2 class="accordion-header" id="${groupId}-h">
+        <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#${groupId}">
+          ${topic} ${badge(topic)}
+        </button>
+      </h2>
+      <div id="${groupId}" class="accordion-collapse collapse">
+        <div class="accordion-body">
+          <div id="${groupId}-content"></div>
+        </div>
+      </div>
+    </div>`;
+  const body = document.getElementById(`${groupId}-content`);
+
+  const items = data[topic];
+  const cats = ["Easy","Medium","Hard","Tricky"];
+  for (const cat of cats) {
+    const subset = items.filter(x => x.diff===cat);
+    if (!subset.length) continue;
+    const subId = `${groupId}-${cat}`;
+    body.innerHTML += `
+      <div class="mb-3">
+        <h5 class="${catColor[cat]}">${cat} <span class="badge bg-dark border">${subset.length}</span></h5>
+        <div class="accordion" id="${subId}"></div>
+      </div>`;
+    const subAcc = document.getElementById(subId);
+    subset.forEach((item, idx) => {
+      const qid = `${subId}-q${idx}`;
+      subAcc.innerHTML += `
+        <div class="accordion-item bg-dark border rounded">
+          <h2 class="accordion-header" id="${qid}-h">
+            <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#${qid}">
+              ${idx+1}) ${item.q} ${badge(item.topic)}
+            </button>
+          </h2>
+          <div id="${qid}" class="accordion-collapse collapse">
+            <div class="accordion-body">
+              <ul class="mb-2">${item.a.map(s=>`<li>${s}</li>`).join("")}</ul>
+              ${item.code ? `<pre class="mb-0"><code class="language-java">${item.code.replaceAll("<","&lt;").replaceAll(">","&gt;")}</code></pre>` : ""}
+            </div>
+          </div>
+        </div>`;
+    });
+  }
+}
+</script>
+
+  <!-- Bootstrap & Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // Simple search: show/hide each accordion item based on its text
+    function searchQuestions() {
+      const q = document.getElementById("searchBox").value.toLowerCase().trim();
+      const items = document.querySelectorAll("#walmartAccordion .accordion-item");
+      items.forEach((item) => {
+        const text = item.innerText.toLowerCase();
+        item.style.display = text.includes(q) ? "" : "none";
+      });
+    }
+
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        alert("Copied: " + text);
+      }).catch(err => {
+        console.error("Failed to copy:", err);
+      });
+    }
+
+    // Add numbering to accordion buttons
+    document.addEventListener("DOMContentLoaded", function () {
+      const items = document.querySelectorAll("#walmartAccordion .accordion-item");
+      items.forEach((item, index) => {
+        const button = item.querySelector(".accordion-button");
+        if (button && !button.dataset.numbered) {
+          button.dataset.numbered = "true";
+          button.innerHTML = `<span class="fw-bold me-2">${index + 1}.</span> ` + button.innerHTML;
+        }
+      });
+    });
+  </script>
+</body>
+</html>

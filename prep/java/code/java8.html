@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Java 8</title>
+
+  <!-- Bootstrap & Prism.js for Syntax Highlighting -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+
+  <style>
+    body {
+      background-color: #121212;
+      color: white;
+    }
+
+    .container {
+      max-width: 900px;
+      margin-top: 20px;
+    }
+
+    .accordion-button {
+      background-color: #343a40;
+      color: white;
+    }
+
+    .accordion-button:focus {
+      box-shadow: none;
+    }
+
+    .accordion-button:not(.collapsed) {
+      background-color: #007bff;
+      color: white;
+    }
+
+    .accordion-body {
+      background-color: #1e1e1e;
+      color: white;
+    }
+
+    .highlight-yellow {
+      color: #ffcc00;
+      /* Yellow */
+      font-weight: bold;
+    }
+
+    .highlight-blue {
+      color: #4db8ff;
+      /* Light blue */
+      font-weight: bold;
+    }
+
+    pre[class*="language-"] {
+      background: #1e1e1e !important;
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    /* Search Box Styling */
+    .search-container {
+      margin-bottom: 15px;
+      text-align: center;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #666;
+      background: #222;
+      color: white;
+      outline: none;
+      font-size: 16px;
+    }
+
+    .search-input::placeholder {
+      color: #aaa;
+    }
+  </style>
+</head>
+
+<body class="bg-dark text-light">
+  <div class="container">
+    <div class="header fw-bold text-center mb-4">Java 8 Streams API</div>
+    <!-- Search Box in a Bootstrap Container -->
+            <div class="search-container">
+      <input type="text" class="search-input form-control" id="searchBox" placeholder="Search questions..."
+        onkeyup="searchQuestions()" />
+    </div>
+<div class="accordion" id="hariPrep">
+
+  <!-- 0) Setup: Shared Model & Sample Data -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q0-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q0">
+        0) Setup: Employee/Order models + sample data
+        <span class="badge bg-warning ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q0" class="accordion-collapse collapse">
+      <div class="accordion-body">
+        <pre class="language-java"><code>// ===== Common model (Java 8) =====
+import java.time.LocalDate;
+import java.util.*;
+
+class Employee {
+  private final int id;
+  private final String name;
+  private final String gender;      // "Male"/"Female"
+  private final int age;
+  private final String department;
+  private final double salary;
+  private final LocalDate joinDate;
+  private final List&lt;String&gt; hobbies;
+
+  Employee(int id, String name, String gender, int age, String department, double salary, LocalDate joinDate, List&lt;String&gt; hobbies) {
+    this.id = id; this.name = name; this.gender = gender;
+    this.age = age; this.department = department; this.salary = salary;
+    this.joinDate = joinDate; this.hobbies = hobbies == null ? Collections.emptyList() : hobbies;
+  }
+  public int getId(){ return id; }
+  public String getName(){ return name; }
+  public String getGender(){ return gender; }
+  public int getAge(){ return age; }
+  public String getDepartment(){ return department; }
+  public double getSalary(){ return salary; }
+  public LocalDate getJoinDate(){ return joinDate; }
+  public List&lt;String&gt; getHobbies(){ return hobbies; }
+
+  @Override public String toString(){
+    return String.format("Emp{id=%d, name=%s, dept=%s, sal=%.2f}", id,name,department,salary);
+  }
+}
+
+class Order {
+  private final String customer;
+  private final double amount;
+  Order(String customer, double amount){ this.customer = customer; this.amount = amount; }
+  public String getCustomer(){ return customer; }
+  public double getAmount(){ return amount; }
+}
+
+class Data {
+  static List&lt;Employee&gt; employees(){
+    return Arrays.asList(
+      new Employee(1,"Aarav","Male",28,"IT",90000,  LocalDate.of(2019,3,10), Arrays.asList("Cricket","Music")),
+      new Employee(2,"Bhavya","Female",31,"HR",65000, LocalDate.of(2016,8,15), Arrays.asList("Reading","Yoga")),
+      new Employee(3,"Chirag","Male",35,"Finance",120000, LocalDate.of(2014,5,20), Arrays.asList("Chess")),
+      new Employee(4,"Diya","Female",26,"IT",78000,   LocalDate.of(2021,1, 5), Arrays.asList("Music","Dance")),
+      new Employee(5,"Eshan","Male",42,"Finance",130000,LocalDate.of(2011,11,1), Arrays.asList("Reading")),
+      new Employee(6,"Farah","Female",29,"Sales",72000, LocalDate.of(2018,7, 2), Arrays.asList("Travel","Music")),
+      new Employee(7,"Gautam","Male",33,"Sales",82000,  LocalDate.of(2017,9, 9), Arrays.asList("Cricket")),
+      new Employee(8,"Harini","Female",38,"HR",98000,   LocalDate.of(2013,2,18), Arrays.asList("Yoga","Dance"))
+    );
+  }
+  static List&lt;Order&gt; orders(){
+    return Arrays.asList(
+      new Order("cust-1",75), new Order("cust-1",50), new Order("cust-2",60),
+      new Order("cust-3",200), new Order("cust-2",55), new Order("cust-3",15)
+    );
+  }
+}
+</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1) Male/Female count -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q1-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q1">
+        1) How many male and female employees?
+        <span class="badge bg-info ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q1" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>import static java.util.stream.Collectors.*;
+import java.util.*;
+
+List&lt;Employee&gt; es = Data.employees();
+Map&lt;String, Long&gt; byGender = es.stream()
+    .collect(groupingBy(Employee::getGender, counting()));
+System.out.println(byGender); // {Female=4, Male=4}</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2) Predicate/Function/Consumer/Supplier demo -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q2-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q2">
+        2) Use Predicate, Function, Consumer, Supplier together
+        <span class="badge bg-success ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q2" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>import java.util.function.*;
+
+List&lt;Employee&gt; es = Data.employees();
+
+Predicate&lt;Employee&gt; highEarner = e -&gt; e.getSalary() &gt;= 100000;
+Function&lt;Employee, String&gt; toName = Employee::getName;
+Supplier&lt;Employee&gt; fallback = () -&gt; new Employee(-1,"NA","NA",0,"NA",0,java.time.LocalDate.now(), null);
+Consumer&lt;String&gt; printer = System.out::println;
+
+Employee chosen = es.stream().filter(highEarner).findFirst().orElseGet(fallback);
+printer.accept("Chosen: " + toName.apply(chosen));</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3) Optional safe fetch -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q3-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q3">
+        3) Optional for null-safe employee fetch by id
+        <span class="badge bg-primary ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q3" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>import java.util.*;
+
+public static Optional&lt;Employee&gt; findById(List&lt;Employee&gt; es, int id){
+  return es.stream().filter(e -&gt; e.getId() == id).findFirst();
+}
+Optional&lt;Employee&gt; maybe = findById(Data.employees(), 3);
+String name = maybe.map(Employee::getName).orElse("Not Found");
+System.out.println(name);</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4) Group words by starting letter (method refs) -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q4-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q4">
+        4) Group words by starting letter (Method References)
+        <span class="badge bg-secondary ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q4" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>import static java.util.stream.Collectors.*;
+import java.util.*;
+
+List&lt;String&gt; words = Arrays.asList("apple","apricot","banana","ball","cat","cricket");
+Map&lt;Character, List&lt;String&gt;&gt; grouped =
+  words.stream().collect(groupingBy(w -&gt; Character.toUpperCase(w.charAt(0))));
+grouped.forEach((k,v) -&gt; System.out.println(k+" -&gt; "+v));</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5) Words start & end same char -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q5-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q5">
+        5) Words that start & end with same character (Streams)
+        <span class="badge bg-info ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q5" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>String s = "Anna went to area and saw civic level radar";
+List&lt;String&gt; result = Arrays.stream(s.split("\\W+"))
+  .filter(w -&gt; !w.isEmpty())
+  .filter(w -&gt; Character.toLowerCase(w.charAt(0)) == Character.toLowerCase(w.charAt(w.length()-1)))
+  .collect(java.util.stream.Collectors.toList());
+System.out.println(result);</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6) Palindromic substrings -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q6-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q6">
+        6) All palindromic substrings (Streams)
+        <span class="badge bg-success ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q6" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>import java.util.*;
+import java.util.stream.*;
+
+String s = "ababa";
+Set&lt;String&gt; palSubs =
+  IntStream.range(0, s.length())
+    .boxed()
+    .flatMap(i -&gt; IntStream.rangeClosed(i+1, s.length())
+        .mapToObj(j -&gt; s.substring(i,j)))
+    .filter(sub -&gt; sub.length() &gt;= 2)
+    .filter(sub -&gt; new StringBuilder(sub).reverse().toString().equals(sub))
+    .collect(Collectors.toCollection(LinkedHashSet::new));
+System.out.println(palSubs);</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7) Anagrams of a word -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q7-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q7">
+        7) Find all anagrams of a word from a list
+        <span class="badge bg-primary ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q7" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>import java.util.*;
+import java.util.stream.*;
+
+String target = "listen";
+String sorted = target.chars().sorted()
+    .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append).toString();
+
+List&lt;String&gt; words = Arrays.asList("enlist","google","inlets","silent","tinsel","stone");
+List&lt;String&gt; anas = words.stream()
+  .filter(w -&gt; w.length() == target.length())
+  .filter(w -&gt; w.chars().sorted()
+    .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append).toString()
+    .equals(sorted))
+  .collect(Collectors.toList());
+System.out.println(anas);</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8) Majority element -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q8-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q8">
+        8) Majority element (&gt; n/2) using Streams
+        <span class="badge bg-secondary ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q8" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>import static java.util.stream.Collectors.*;
+import java.util.*;
+
+int[] arr = {2,2,1,2,3,2,2};
+int n = arr.length;
+Optional&lt;Map.Entry&lt;Integer,Long&gt;&gt; majority =
+  Arrays.stream(arr).boxed()
+    .collect(groupingBy(x -&gt; x, counting()))
+    .entrySet().stream()
+    .filter(e -&gt; e.getValue() &gt; n/2)
+    .findFirst();
+System.out.println(majority.map(Map.Entry::getKey).orElse(null));</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 9) Pairs with target sum -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q9-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q9">
+        9) All pairs with a target sum
+        <span class="badge bg-info ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q9" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>import java.util.*;
+int[] a = {1,5,7,-1,5,3,2,8,7};
+int target = 6;
+Set&lt;Integer&gt; seen = new HashSet&lt;&gt;();
+Set&lt;String&gt; pairs = new LinkedHashSet&lt;&gt;();
+for(int x: a){
+  int y = target - x;
+  if(seen.contains(y)){
+    int min = Math.min(x,y), max = Math.max(x,y);
+    pairs.add(min + "," + max);
+  }
+  seen.add(x);
+}
+System.out.println(pairs); // unique pairs</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 10) Common elements between arrays -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q10-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q10">
+        10) Common elements between two arrays
+        <span class="badge bg-success ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q10" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>import java.util.*;
+import java.util.stream.*;
+
+Integer[] a = {1,2,3,4,5,5};
+Integer[] b = {3,4,4,5,6};
+Set&lt;Integer&gt; setB = new HashSet&lt;&gt;(Arrays.asList(b));
+List&lt;Integer&gt; common = Arrays.stream(a).distinct()
+  .filter(setB::contains).collect(Collectors.toList());
+System.out.println(common);</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 11) First repeated char -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q11-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q11">
+        11) First repeated character in a string
+        <span class="badge bg-primary ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q11" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>import java.util.*;
+import java.util.function.Function;
+import static java.util.stream.Collectors.*;
+
+String s = "swiss";
+Map&lt;Character, Long&gt; freq =
+  s.chars().mapToObj(c -&gt; (char)c)
+   .collect(groupingBy(Function.identity(), LinkedHashMap::new, counting()));
+Character firstRepeated = freq.entrySet().stream()
+  .filter(e -&gt; e.getValue() &gt; 1)
+  .map(Map.Entry::getKey).findFirst().orElse(null);
+System.out.println(firstRepeated);</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 12) Longest word -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q12-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q12">
+        12) Longest word in a sentence
+        <span class="badge bg-secondary ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q12" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>import java.util.*;
+import java.util.Comparator;
+String s = "Java streams are powerful and expressive";
+Optional&lt;String&gt; longest =
+  Arrays.stream(s.split("\\W+")).max(Comparator.comparingInt(String::length));
+System.out.println(longest.orElse(""));</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 13) Highest-paid per department -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q13-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q13">
+        13) Highest-paid employee in each department
+        <span class="badge bg-info ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q13" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>import static java.util.stream.Collectors.*;
+import java.util.*;
+
+List&lt;Employee&gt; es = Data.employees();
+Map&lt;String, Optional&lt;Employee&gt;&gt; topByDept = es.stream()
+  .collect(groupingBy(Employee::getDepartment,
+      maxBy(java.util.Comparator.comparingDouble(Employee::getSalary))));
+topByDept.forEach((d,e) -&gt; System.out.println(d+" -&gt; "+e.orElse(null)));</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 14) Top 3 frequent words -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q14-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q14">
+        14) Top 3 most frequent words from sentences
+        <span class="badge bg-success ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q14" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>import static java.util.stream.Collectors.*;
+import java.util.*;
+import java.util.function.Function;
+
+List&lt;String&gt; sentences = Arrays.asList(
+  "Java is great and Java is powerful",
+  "Streams make Java powerful");
+Map&lt;String, Long&gt; freq =
+  sentences.stream()
+   .flatMap(line -&gt; Arrays.stream(line.toLowerCase().split("\\W+")))
+   .filter(w -&gt; !w.isEmpty())
+   .collect(groupingBy(Function.identity(), counting()));
+
+List&lt;Map.Entry&lt;String,Long&gt;&gt; top3 = freq.entrySet().stream()
+   .sorted((a,b) -&gt; Long.compare(b.getValue(), a.getValue()))
+   .limit(3).collect(toList());
+System.out.println(top3);</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 15) Top 3 frequent integers -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q15-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q15">
+        15) Top 3 frequent integers
+        <span class="badge bg-primary ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q15" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>import static java.util.stream.Collectors.*;
+import java.util.*;
+import java.util.function.Function;
+
+int[] a = {1,2,2,3,3,3,4,4,4,4,2,1,1};
+Map&lt;Integer, Long&gt; freq = Arrays.stream(a).boxed()
+  .collect(groupingBy(Function.identity(), LinkedHashMap::new, counting()));
+List&lt;Integer&gt; top3 = freq.entrySet().stream()
+  .sorted((x,y) -&gt; Long.compare(y.getValue(), x.getValue()))
+  .limit(3).map(Map.Entry::getKey).collect(toList());
+System.out.println(top3);</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 16) First non-repeated word -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q16-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q16">
+        16) First non-repeated word
+        <span class="badge bg-secondary ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q16" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>import static java.util.stream.Collectors.*;
+import java.util.*;
+import java.util.function.Function;
+
+String s = "this is a test this is only a demo";
+String first =
+  Arrays.stream(s.split("\\W+")).map(String::toLowerCase)
+    .collect(groupingBy(Function.identity(), LinkedHashMap::new, counting()))
+    .entrySet().stream()
+    .filter(e -&gt; e.getValue() == 1)
+    .map(Map.Entry::getKey).findFirst().orElse(null);
+System.out.println(first);</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 17) Second highest number -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q17-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q17">
+        17) Second highest number
+        <span class="badge bg-info ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q17" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>import java.util.*;
+List&lt;Integer&gt; nums = Arrays.asList(10,40,20,40,30,50);
+Integer second =
+  nums.stream().distinct()
+    .sorted(java.util.Collections.reverseOrder())
+    .skip(1).findFirst().orElse(null);
+System.out.println(second);</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 18) First non-repeated character -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q18-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q18">
+        18) First non-repeated character
+        <span class="badge bg-success ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q18" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>import static java.util.stream.Collectors.*;
+import java.util.*;
+import java.util.function.Function;
+
+String s = "leetcode";
+Character first =
+  s.chars().mapToObj(c -&gt; (char)c)
+   .collect(groupingBy(Function.identity(), LinkedHashMap::new, counting()))
+   .entrySet().stream()
+   .filter(e -&gt; e.getValue() == 1)
+   .map(Map.Entry::getKey).findFirst().orElse(null);
+System.out.println(first);</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 19) Total order per customer >100 -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q19-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q19">
+        19) Total order amount per customer &gt; 100
+        <span class="badge bg-primary ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q19" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>import static java.util.stream.Collectors.*;
+import java.util.*;
+
+Map&lt;String, Double&gt; totals = Data.orders().stream()
+  .collect(groupingBy(Order::getCustomer, summingDouble(Order::getAmount)));
+totals.entrySet().stream()
+  .filter(e -&gt; e.getValue() &gt; 100)
+  .forEach(System.out::println);</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 20) Department names -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q20-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q20">
+        20) Print all department names
+        <span class="badge bg-secondary ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q20" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>Data.employees().stream()
+  .map(Employee::getDepartment).distinct()
+  .forEach(System.out::println);</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 21) Average age by gender -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q21-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q21">
+        21) Average age of male & female employees
+        <span class="badge bg-info ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q21" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>import static java.util.stream.Collectors.*;
+import java.util.*;
+
+Map&lt;String, Double&gt; avgAge =
+  Data.employees().stream().collect(groupingBy(Employee::getGender, averagingInt(Employee::getAge)));
+System.out.println(avgAge);</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 22) Highest paid overall -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q22-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q22">
+        22) Highest paid employee (org-wide)
+        <span class="badge bg-success ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q22" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>Employee max =
+  Data.employees().stream()
+    .max(java.util.Comparator.comparingDouble(Employee::getSalary))
+    .orElse(null);
+System.out.println(max);</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 23) Joined after 2015 -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q23-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q23">
+        23) Names of employees who joined after 2015
+        <span class="badge bg-primary ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q23" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>java.time.LocalDate cutoff = java.time.LocalDate.of(2015,12,31);
+Data.employees().stream()
+  .filter(e -&gt; e.getJoinDate().isAfter(cutoff))
+  .map(Employee::getName).forEach(System.out::println);</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 24) Count per department -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q24-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q24">
+        24) Count of employees in each department
+        <span class="badge bg-secondary ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q24" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>import static java.util.stream.Collectors.*;
+System.out.println(
+  Data.employees().stream()
+    .collect(groupingBy(Employee::getDepartment, counting()))
+);</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 25) Average salary per dept -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q25-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q25">
+        25) Average salary of each department
+        <span class="badge bg-info ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q25" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>import static java.util.stream.Collectors.*;
+System.out.println(
+  Data.employees().stream()
+    .collect(groupingBy(Employee::getDepartment, averagingDouble(Employee::getSalary)))
+);</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 26) Male/Female count in each department -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q26-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q26">
+        26) Male & Female count per department
+        <span class="badge bg-success ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q26" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>import static java.util.stream.Collectors.*;
+System.out.println(
+  Data.employees().stream()
+    .collect(groupingBy(Employee::getDepartment,
+             groupingBy(Employee::getGender, counting())))
+);</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 27) First Non-Repeating Character (Fresher) -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q27-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q27">
+        27) First Non-Repeating Character (Fresher)
+        <span class="badge bg-primary ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q27" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>// (Same as #18) — shown again for fresher variant
+</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 28) Max & Min in a list (Fresher) -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q28-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q28">
+        28) Maximum & Minimum in a List (Fresher)
+        <span class="badge bg-secondary ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q28" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>List&lt;Integer&gt; nums = Arrays.asList(5,9,1,7,3);
+java.util.IntSummaryStatistics stats =
+  nums.stream().mapToInt(Integer::intValue).summaryStatistics();
+System.out.println("min="+stats.getMin()+", max="+stats.getMax());</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 29) Count occurrences of each word (Experienced) -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q29-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q29">
+        29) Count occurrences of each word (Experienced)
+        <span class="badge bg-info ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q29" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>import static java.util.stream.Collectors.*;
+import java.util.function.Function;
+
+String text = "to be or not to be that is the question";
+System.out.println(
+  Arrays.stream(text.split("\\W+"))
+    .collect(groupingBy(Function.identity(), LinkedHashMap::new, counting()))
+);</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 30) Second highest salary (Experienced) -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q30-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q30">
+        30) Second-Highest Salary (Experienced)
+        <span class="badge bg-success ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q30" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>List&lt;Employee&gt; es = Data.employees();
+Double second =
+  es.stream().map(Employee::getSalary).distinct()
+    .sorted(java.util.Collections.reverseOrder())
+    .skip(1).findFirst().orElse(null);
+System.out.println(second);</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 31) Highest Salary in each dept (Expert) -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q31-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q31">
+        31) Employees with Highest Salary in each Department (Expert)
+        <span class="badge bg-primary ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q31" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>// Same as #13 but prints concrete employee
+import static java.util.stream.Collectors.*;
+import java.util.*;
+
+Map&lt;String, Employee&gt; topEmp =
+  es.stream().collect(groupingBy(Employee::getDepartment,
+    collectingAndThen(
+      maxBy(java.util.Comparator.comparingDouble(Employee::getSalary)),
+      Optional::get)));
+System.out.println(topEmp);</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 32) Second Highest Salary in each dept (Expert) -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q32-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q32">
+        32) Second-Highest Salary in each Department (Expert)
+        <span class="badge bg-secondary ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q32" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>import static java.util.stream.Collectors.*;
+import java.util.*;
+
+Map&lt;String, Optional&lt;Double&gt;&gt; secondByDept =
+  es.stream().collect(groupingBy(Employee::getDepartment,
+    collectingAndThen(
+      mapping(Employee::getSalary,
+        collectingAndThen(
+          collectingAndThen(toList(), list -&gt; {
+            list = new ArrayList&lt;&gt;(new java.util.HashSet&lt;&gt;(list));
+            list.sort(java.util.Collections.reverseOrder());
+            return list;
+          }), list -&gt; list.stream().skip(1).findFirst()
+        )
+      ), x -&gt; x
+    )));
+System.out.println(secondByDept);</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 33) Sort by dept then salary desc -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q33-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q33">
+        33) Sort employees by department, then salary desc
+        <span class="badge bg-info ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q33" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>es.stream()
+  .sorted(java.util.Comparator.comparing(Employee::getDepartment)
+    .thenComparing(java.util.Comparator.comparingDouble(Employee::getSalary).reversed()))
+  .forEach(System.out::println);</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 34) Group employees & avg salary per dept -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q34-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q34">
+        34) Group employees & calculate avg salary per dept
+        <span class="badge bg-success ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q34" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>// (Same as #25, plus listing)
+import static java.util.stream.Collectors.*;
+Map&lt;String, Double&gt; avg =
+  es.stream().collect(groupingBy(Employee::getDepartment, averagingDouble(Employee::getSalary)));
+avg.forEach((d,a) -&gt; System.out.println(d + " : " + a));</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 35) 5 random numbers sorted using forEach -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q35-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q35">
+        35) Print 5 random numbers in sorted order (forEach)
+        <span class="badge bg-primary ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q35" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>new java.util.Random().ints(5, 0, 100)
+  .sorted().forEach(System.out::println);</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 36) Sum of all numbers -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q36-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q36">
+        36) Sum of all numbers in a list
+        <span class="badge bg-secondary ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q36" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>int sum = java.util.Arrays.asList(1,2,3,4,5).stream()
+  .mapToInt(Integer::intValue).sum();
+System.out.println(sum);</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 37) Square, filter >100, average -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q37-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q37">
+        37) Square numbers, keep ≤100, then average
+        <span class="badge bg-info ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q37" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>java.util.OptionalDouble avg =
+  java.util.Arrays.asList(5,8,12,3,11).stream()
+    .map(x -&gt; x*x).filter(x -&gt; x &lt;= 100)
+    .mapToInt(Integer::intValue).average();
+System.out.println(avg.orElse(0));</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 38) Count strings length > 5 -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q38-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q38">
+        38) Count strings with length &gt; 5
+        <span class="badge bg-success ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q38" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>long cnt = java.util.Arrays.asList("alpha","beta","gamma","delta","epsilon")
+  .stream().filter(s -&gt; s.length() &gt; 5).count();
+System.out.println(cnt);</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 39) Remove duplicates from list -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q39-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q39">
+        39) Remove duplicate elements from list
+        <span class="badge bg-primary ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q39" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>java.util.List&lt;Integer&gt; unique =
+  java.util.Arrays.asList(1,2,2,3,3,3,4).stream().distinct()
+    .collect(java.util.stream.Collectors.toList());
+System.out.println(unique);</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 40) Group employees by each hobby -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q40-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q40">
+        40) Group employees by hobby (each hobby)
+        <span class="badge bg-secondary ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q40" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>import static java.util.stream.Collectors.*;
+import java.util.*;
+
+Map&lt;String, List&lt;Employee&gt;&gt; byHobby =
+  Data.employees().stream()
+    .flatMap(e -&gt; e.getHobbies().stream().map(h -&gt; new AbstractMap.SimpleEntry&lt;String,Employee&gt;(h,e)))
+    .collect(groupingBy(Map.Entry::getKey, mapping(Map.Entry::getValue, toList())));
+System.out.println(byHobby);</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 41) Find duplicate integers in list -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q41-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q41">
+        41) Find duplicate elements in integer list
+        <span class="badge bg-info ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q41" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>import static java.util.stream.Collectors.*;
+import java.util.*;
+import java.util.function.Function;
+
+List&lt;Integer&gt; nums = Arrays.asList(1,2,2,3,3,3,4,5,5);
+Set&lt;Integer&gt; dups =
+  nums.stream().collect(groupingBy(Function.identity(), counting()))
+      .entrySet().stream().filter(e -&gt; e.getValue() &gt; 1)
+      .map(Map.Entry::getKey).collect(java.util.stream.Collectors.toSet());
+System.out.println(dups);</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 42) First repeated char using streams -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q42-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q42">
+        42) First repeated character (Stream functions)
+        <span class="badge bg-success ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q42" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>// (Same as #11) shown in stream-only form already.</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 43) StringJoiner explanation + demo -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q43-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q43">
+        43) StringJoiner in Java 8 (prefix/suffix + delimiter)
+        <span class="badge bg-primary ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q43" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>// StringJoiner lets you build a delimited string with optional prefix/suffix.
+java.util.StringJoiner sj = new java.util.StringJoiner(", ", "[", "]");
+sj.add("A").add("B").add("C");
+System.out.println(sj.toString()); // [A, B, C]
+// You can also use String.join(",", list)</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 44) Add prefix & suffix to Strings (map) -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="q44-h">
+      <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#q44">
+        44) Add prefix and suffix to each String (Java 8)
+        <span class="badge bg-secondary ms-2">hariPrep</span>
+      </button>
+    </h2>
+    <div id="q44" class="accordion-collapse collapse">
+      <div class="accordion-body">
+<pre class="language-java"><code>List&lt;String&gt; base = java.util.Arrays.asList("one","two","three");
+String pref = "&lt;&lt;"; String suff = "&gt;&gt;";
+List&lt;String&gt; out = base.stream().map(s -&gt; pref + s + suff)
+  .collect(java.util.stream.Collectors.toList());
+System.out.println(out);</code></pre>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+  </div>
+
+<!-- Bootstrap & Search Script -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+                    document.addEventListener("DOMContentLoaded", function () {
+                    let questionCount = document.querySelectorAll(".accordion-item").length;
+                    document.getElementById("questionCount").innerHTML = `<strong>Total Questions: ${questionCount}</strong>`;
+                });     
+    document.addEventListener("DOMContentLoaded", function () {
+      let items = document.querySelectorAll(".accordion-item");
+
+      items.forEach((item, index) => {
+        let button = item.querySelector(".accordion-button");
+        if (button) {
+          button.innerHTML = `<span class="fw-bold me-2">${index + 1}.</span> ` + button.innerHTML;
+        }
+      });
+    });
+
+    function searchQuestions() {
+      const input = document.getElementById("searchBox").value.toLowerCase();
+      const items = document.querySelectorAll(".accordion-item");
+
+      items.forEach((item) => {
+        const buttonText = item.querySelector(".accordion-button")?.textContent.toLowerCase() || "";
+        const bodyText = item.querySelector(".accordion-body")?.textContent.toLowerCase() || "";
+
+        const combinedText = buttonText + " " + bodyText;
+
+        if (combinedText.includes(input)) {
+          item.style.display = "";
+        } else {
+          item.style.display = "none";
+        }
+      });
+    }
+    function copyToClipboard(text) {
+      navigator.clipboard
+        .writeText(text)
+        .then(() => {
+          alert("Copied: " + text);
+        })
+        .catch((err) => {
+          console.error("Failed to copy:", err);
+        });
+    }
+  </script>
+</body>
+
+</html>

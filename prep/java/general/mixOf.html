@@ -57,6 +57,189 @@
         <div class="accordion-item">
   <h2 class="accordion-header">
     <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#jpaLockingQ1">
+      JPA Concurrency: Optimistic vs Pessimistic Locking (how they work, when to choose, real examples)
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+  <div id="jpaLockingQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+        <a href="https://www.youtube.com/watch?v=lR6y-0RC5cc" target="_blank" class="btn btn-sm btn-outline-light mb-3">Watch Optimistic and Pessimistic Locking On Youtube</a>
+      <p><span class="highlight-blue">Problem:</span> Prevent lost updates when many requests read→modify→write the same rows.
+        JPA offers two families of locks:</p>
+      <ul>
+        <li><b>Optimistic</b> → detect conflicts <em>at commit</em> using a <code>@Version</code> column, then <b>retry</b>.</li>
+        <li><b>Pessimistic</b> → prevent conflicts by acquiring <em>database locks</em> up front (e.g., <code>SELECT ... FOR UPDATE</code>).</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🔒 Optimistic Locking — version check, fail fast & retry</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">How it works:</span> add a <code>@Version</code> field. JPA includes the version in <code>UPDATE</code>’s <code>WHERE</code> clause.
+          If 0 rows are updated → another tx changed it → <code>OptimisticLockException</code>.</li>
+        <li><span class="highlight-blue">When to use:</span> read-mostly data, short transactions, low to moderate contention, horizontally scaled services.</li>
+        <li><span class="highlight-blue">Lock modes:</span>
+          <code>OPTIMISTIC</code> (check at commit),
+          <code>OPTIMISTIC_FORCE_INCREMENT</code> (also bumps version to “claim” the row).</li>
+        </li>
+        <li><span class="highlight-blue">Pros:</span> no DB blocking, best throughput.</li>
+        <li><span class="highlight-blue">Cons:</span> retries under contention; long transactions increase conflict odds.</li>
+      </ul>
+
+      <p class="highlight-yellow">Entity with version & service retry (inventory decrement)</p>
+      <pre class="language-java"><code>@Entity
+class Product {
+  @Id Long id;
+  @Version Long version;       // int/long/short/Timestamp supported
+  int stock;
+  // getters/setters
+}
+
+public interface ProductRepo extends JpaRepository&lt;Product, Long&gt; { }
+
+@Service
+class OrderService {
+  private final ProductRepo repo;
+  OrderService(ProductRepo repo){ this.repo = repo; }
+
+  @Transactional
+  public void reserve(Long id, int qty) {
+    int attempts = 0;
+    while (true) {
+      try {
+        Product p = repo.findById(id).orElseThrow();
+        if (p.getStock() &lt; qty) throw new IllegalStateException("Insufficient stock");
+        p.setStock(p.getStock() - qty);
+        repo.saveAndFlush(p);              // may throw OptimisticLockException
+        return;                            // success
+      } catch (ObjectOptimisticLockingFailureException | OptimisticLockException e) {
+        if (++attempts &gt; 3) throw e;       // give up after a few tries
+        try { Thread.sleep(10L * attempts); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
+      }
+    }
+  }
+}</code></pre>
+
+      <p class="mb-2">You can also request an optimistic lock explicitly on read:</p>
+      <pre class="language-java"><code>public interface ProductRepo extends JpaRepository&lt;Product, Long&gt; {
+  @Lock(LockModeType.OPTIMISTIC)
+  Optional&lt;Product&gt; findWithLockById(Long id);
+
+  @Lock(LockModeType.OPTIMISTIC_FORCE_INCREMENT)
+  Optional&lt;Product&gt; findAndBumpVersionById(Long id);
+}</code></pre>
+
+      <p class="mb-2"><b>Gotchas:</b> bulk JPQL/SQL updates bypass the 1st-level cache & default version checks;
+        either include the version in the <code>WHERE</code> or re-read entities after bulk ops.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🧱 Pessimistic Locking — block others, serialize the hotspot</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">How it works:</span> JPA translates lock modes to DB row/table locks:
+          <b><code>PESSIMISTIC_READ</code></b> (shared), <b><code>PESSIMISTIC_WRITE</code></b> (exclusive),
+          <b><code>PESSIMISTIC_FORCE_INCREMENT</code></b> (exclusive + version bump).
+          Under the hood: <code>SELECT ... FOR UPDATE[/NOWAIT/SKIP LOCKED]</code> depending on DB.</li>
+        <li><span class="highlight-blue">When to use:</span> hot rows with frequent conflicting updates (wallet balance, single inventory counter),
+          business rule “never oversell”, or when retries are too expensive.</li>
+        <li><span class="highlight-blue">Pros:</span> no lost updates, simpler logic (no retries).</li>
+        <li><span class="highlight-blue">Cons:</span> lower concurrency & risk of deadlocks; requires careful timeouts.</li>
+      </ul>
+
+      <p class="highlight-yellow">Repository method that locks the row (and times out if busy)</p>
+      <pre class="language-java"><code>public interface ProductRepo extends JpaRepository&lt;Product, Long&gt; {
+
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query("select p from Product p where p.id = :id")
+  @QueryHints({
+    @QueryHint(name = "jakarta.persistence.lock.timeout", value = "2000") // 2s (JPA standard)
+    // Hibernate vendor hint: @QueryHint(name = "org.hibernate.lock.timeout", value = "2000")
+  })
+  Product lockForUpdate(@Param("id") Long id);
+}
+
+@Service
+class OrderServicePess {
+  @Transactional
+  public void reserve(Long id, int qty) {
+    Product p = repo.lockForUpdate(id);     // DB-level lock held until commit/rollback
+    if (p.getStock() &lt; qty) throw new IllegalStateException("Insufficient stock");
+    p.setStock(p.getStock() - qty);
+  }
+}</code></pre>
+
+      <p class="mb-2"><b>Timeout semantics:</b> value is milliseconds; <code>0</code> = NOWAIT (fail fast), positive waits up to N ms, negative/infinite depends on provider (often <code>-1</code>).</p>
+      <p class="mb-2"><b>Deadlocks:</b> always acquire locks in a consistent order; keep transactions short.</p>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">📊 Head-to-head</h6>
+      <table class="table table-dark table-bordered">
+        <thead>
+          <tr><th>Aspect</th><th>Optimistic</th><th>Pessimistic</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Conflict handling</td><td>Detects at commit; retry needed</td><td>Prevents by locking rows</td></tr>
+          <tr><td>Throughput</td><td>High (no blocking)</td><td>Lower under contention (blocking)</td></tr>
+          <tr><td>Latency</td><td>Stable until conflicts spike</td><td>Waits/timeout; can deadlock</td></tr>
+          <tr><td>Best for</td><td>Read-mostly, low contention</td><td>Hot counters, strict “no oversell” invariants</td></tr>
+          <tr><td>Requirements</td><td><code>@Version</code> column</td><td>DB supports row locks; careful timeouts</td></tr>
+        </tbody>
+      </table>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🧪 Real-life alternatives that pair well</h6>
+      <ul class="mb-3">
+        <li><span class="highlight-blue">Atomic conditional UPDATE (no locks, single SQL):</span> let the DB enforce invariants.
+          <pre class="language-java"><code>@Modifying
+@Query("update Product p set p.stock = p.stock - :qty " +
+       "where p.id = :id and p.stock &gt;= :qty")
+int tryReserve(@Param("id") Long id, @Param("qty") int qty);
+
+// usage
+int changed = repo.tryReserve(id, qty);
+if (changed == 0) throw new IllegalStateException("Insufficient stock");</code></pre>
+          Works great for counters; avoids holding locks & retries.</li>
+        <li><span class="highlight-blue">Unique/constraint checks:</span> use DB constraints (e.g., unique + upsert) to avoid race conditions on “ensure-one”.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">🧭 Choosing the right strategy</h6>
+      <ul class="mb-3">
+        <li><b>Default to Optimistic</b> for most CRUD/business flows; add a small retry with backoff.</li>
+        <li><b>Use Pessimistic</b> on hot, highly contended rows (e.g., decrementing a single inventory bucket, ledger rows) or when business rules forbid retries.</li>
+        <li><b>Hybrid:</b> start optimistic; switch to pessimistic for a specific code path once contention crosses a threshold (observed via <code>OptimisticLockException</code> rate).</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">⚠️ Pitfalls & tips</h6>
+      <ul class="mb-3">
+        <li><b>Bulk updates</b> (<code>@Modifying</code> JPQL/SQL) don’t respect the 1st-level cache & version by default — reload affected entities or include version checks.</li>
+        <li><b>Long transactions</b> increase conflict probability (optimistic) and lock hold time (pessimistic) — keep them short.</li>
+        <li><b>Isolation level</b>: locking is orthogonal; stick to default <code>READ COMMITTED</code> unless you have specific reasons.</li>
+        <li><b>Second-level cache</b>: cache mostly read-only/immutable data; write-heavy entities with locks don’t cache well.</li>
+        <li><b>APIs</b>: expose the <code>version</code> field in write DTOs if clients do read-modify-write; reject mismatched versions with 409 Conflict.</li>
+      </ul>
+
+      <hr class="text-secondary">
+
+      <h6 class="mb-2">📝 Summary</h6>
+      <ul>
+        <li><b>Optimistic</b> = detect & retry using <code>@Version</code>; best throughput for typical workloads.</li>
+        <li><b>Pessimistic</b> = block others with DB locks; use on hotspots & strict invariants (set timeouts!).</li>
+        <li>For counters/inventory, consider a <b>single atomic UPDATE</b> pattern — often faster and simpler than either lock.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+        <div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
       data-bs-target="#sillyQns">
       🔥 Core Java, OOPS, Problem-Solving, Streams, Spring Boot & SQL (Silly Quick Q&A)
       <span class="badge bg-info ms-2">hariPrep</span>
@@ -1140,6 +1323,1375 @@ spec:
     </div>
   </div>
 </div>
+
+        <div class="accordion" id="googleAccordion">
+    <div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#microservicesQ1">
+      What are the key principles of microservices?
+    </button>
+  </h2>
+  <div id="microservicesQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      Microservices principles include:
+      <ul>
+        <li><span class="highlight-blue">Single Responsibility:</span> Each service should focus on a single functionality.</li>
+        <li><span class="highlight-blue">Independently Deployable:</span> Services can be deployed without affecting others.</li>
+        <li><span class="highlight-blue">Decentralized Data Management:</span> Each microservice should manage its own database.</li>
+        <li><span class="highlight-blue">Lightweight Communication:</span> Services should communicate via lightweight protocols like REST or gRPC.</li>
+        <li><span class="highlight-blue">Fault Isolation:</span> Failures in one service should not impact others.</li>
+        <li><span class="highlight-blue">Observability:</span> Logging, monitoring, and tracing should be integrated for better visibility.</li>
+      </ul>
+      <p class="highlight-yellow">Example:</p>
+      <pre class="language-java"><code> 
+        @RestController
+        @RequestMapping("/users")
+        public class UserService {
+          @GetMapping("/{id}")
+          public User getUser(@PathVariable Long id) {
+              return new User(id, "John Doe");
+          }
+        }
+      </code></pre>
+    </div>
+  </div>
+</div>
+
+            <div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#crudVsJpa">
+      CrudRepository vs JpaRepository?
+    </button>
+  </h2>
+  <div id="crudVsJpa" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <p class="highlight-yellow">Both CrudRepository and JpaRepository are used in Spring Data JPA, but they have key differences.</p>
+
+      <p class="highlight-blue">🔹 <strong>CrudRepository</strong> (Basic CRUD Operations)</p>
+      <ul>
+        <li>Provides basic <code>save()</code>, <code>findById()</code>, <code>delete()</code>, <code>exists()</code>, etc.</li>
+        <li>Suitable for simple CRUD operations.</li>
+        <li>Does NOT provide JPA-specific features like pagination or batch operations.</li>
+      </ul>
+
+      <p class="highlight-blue">🔹 <strong>JpaRepository</strong> (Extended JPA Features)</p>
+      <ul>
+        <li>Extends <code>CrudRepository</code> and <code>PagingAndSortingRepository</code>.</li>
+        <li>Provides additional methods like <code>flush()</code>, <code>saveAndFlush()</code>, <code>findAll(Pageable pageable)</code>.</li>
+        <li>Supports batch operations and pagination.</li>
+      </ul>
+
+      <p class="highlight-yellow">💡 Example:</p>
+      <pre class="language-java"><code>
+        import org.springframework.data.repository.CrudRepository;
+        import org.springframework.data.jpa.repository.JpaRepository;
+        import java.util.List;
+
+        // Using CrudRepository
+        public interface EmployeeCrudRepo extends CrudRepository&lt;Employee, Long&gt; {
+            List&lt;Employee&gt; findByName(String name); // Custom query
+        }
+
+        // Using JpaRepository
+        public interface EmployeeJpaRepo extends JpaRepository&lt;Employee, Long&gt; {
+            List&lt;Employee&gt; findByName(String name);
+        }
+      </code></pre>
+
+      <p class="highlight-blue">🔹 When to Use What?</p>
+      <ul>
+        <li><strong>Use <code>CrudRepository</code></strong> when you need only basic CRUD operations.</li>
+        <li><strong>Use <code>JpaRepository</code></strong> when you need batch updates, pagination, or JPA-specific features.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#springAppRun">
+      How does the SpringApplication.run() method work internally?
+    </button>
+  </h2>
+  <div id="springAppRun" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <p class="highlight-yellow">SpringApplication.run() is the entry point of a Spring Boot application. It initializes the application context, loads beans, and starts the embedded server.</p>
+
+      <p class="highlight-blue">🔹 Steps Performed Internally:</p>
+      <ol>
+        <li><strong>Creates a SpringApplication instance</strong>: Determines if it's a web application.</li>
+        <li><strong>Configures environment</strong>: Loads properties from `application.properties` or `application.yml`.</li>
+        <li><strong>Loads Initializers</strong>: Calls `ApplicationContextInitializer` beans.</li>
+        <li><strong>Loads Listeners</strong>: Registers event listeners (e.g., `ApplicationListener`).</li>
+        <li><strong>Creates ApplicationContext</strong>: Loads the appropriate context (`AnnotationConfigServletWebServerApplicationContext` for web apps).</li>
+        <li><strong>Refreshes the ApplicationContext</strong>: Initializes all beans and configurations.</li>
+        <li><strong>Calls CommandLineRunners and ApplicationRunners</strong>: Executes additional startup logic.</li>
+        <li><strong>Starts the embedded server</strong>: (Tomcat, Jetty, etc., for web applications).</li>
+      </ol>
+
+      <p class="highlight-yellow">💡 Example:</p>
+      <pre class="language-java"><code>
+        import org.springframework.boot.SpringApplication;
+        import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+        @SpringBootApplication
+        public class MySpringBootApplication {
+            public static void main(String[] args) {
+                SpringApplication.run(MySpringBootApplication.class, args);
+            }
+        }
+      </code></pre>
+
+      <p class="highlight-blue">🔹 Equivalent Manual Steps (Without SpringApplication.run()):</p>
+      <pre class="language-java"><code>
+        import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+
+        public class ManualSpringBoot {
+            public static void main(String[] args) {
+                AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(MyConfig.class);
+                context.refresh(); // Manually refreshing the context
+                context.start();   // Starting the context
+                context.close();   // Closing when done
+            }
+        }
+      </code></pre>
+
+      <p class="highlight-yellow">💡 Why use SpringApplication.run()?</p>
+      <ul>
+        <li>Encapsulates all **boilerplate startup logic**.</li>
+        <li>Handles **environment setup, listeners, and context refresh** automatically.</li>
+        <li>Manages **embedded server startup** for web applications.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#hashMapInternal">
+      How does HashMap work internally in Java?
+    </button>
+  </h2>
+  <div id="hashMapInternal" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <p class="highlight-yellow">🔹 HashMap is a key-value data structure based on hashing. It provides <strong>O(1) average time complexity</strong> for insert, search, and delete operations.</p>
+
+      <p class="highlight-blue">📌 HashMap Data Structure:</p>
+      <ul>
+        <li>Internally, it is an **array of Node<K, V>** (buckets).</li>
+        <li>Each bucket stores **a linked list** (before Java 8) or **a balanced tree** (after Java 8, when collisions exceed a threshold).</li>
+      </ul>
+
+      <p class="highlight-yellow">🔹 Important Components:</p>
+      <ul>
+        <li><strong>Capacity:</strong> Initial size of the HashMap (default: 16).</li>
+        <li><strong>Load Factor:</strong> Default 0.75 (resizing occurs when 75% of the map is full).</li>
+        <li><strong>Threshold:</strong> `capacity * load factor`, determines when resizing happens.</li>
+      </ul>
+
+      <p class="highlight-blue">🔹 Internal Working of `put(K, V)`:</p>
+      <ol>
+        <li>Computes <strong>hashCode()</strong> of the key.</li>
+        <li>Uses <strong>(hashCode % capacity)</strong> to find the index.</li>
+        <li>If bucket is empty, stores the new entry.</li>
+        <li>If a collision occurs, it stores the entry as:
+          <ul>
+            <li>🔹 **Linked List** (before Java 8).</li>
+            <li>🔹 **Balanced Tree (Red-Black Tree)** (after Java 8, if the chain length > 8).</li>
+          </ul>
+        </li>
+        <li>Resizes the HashMap if the threshold is reached.</li>
+      </ol>
+
+      <p class="highlight-blue">🔹 Example of HashMap Implementation:</p>
+      <pre class="language-java"><code>
+        import java.util.HashMap;
+
+        public class HashMapExample {
+            public static void main(String[] args) {
+                HashMap<String, Integer> map = new HashMap<>();
+                map.put("Alice", 25);
+                map.put("Bob", 30);
+                map.put("Charlie", 35);
+                
+                System.out.println("Age of Bob: " + map.get("Bob")); // 30
+            }
+        }
+      </code></pre>
+
+      <p class="highlight-yellow">🔹 How `get(K)` Works?</p>
+      <ul>
+        <li>Computes the **hashCode()** of the key.</li>
+        <li>Finds the bucket using `(hashCode % capacity)`.</li>
+        <li>Traverses the linked list or tree to find the key.</li>
+        <li>Returns the value if found, else returns `null`.</li>
+      </ul>
+
+      <p class="highlight-blue">🔹 HashMap Performance Optimization:</p>
+      <ul>
+        <li>Use a <strong>good hash function</strong> to minimize collisions.</li>
+        <li>Set an **optimal initial capacity** to reduce resizing overhead.</li>
+        <li>Keep **load factor at 0.75** for the best trade-off between performance and memory usage.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#mapInternal">
+      How does Map work internally in Java?
+    </button>
+  </h2>
+  <div id="mapInternal" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <p class="highlight-yellow">🔹 `Map` is an interface in Java that provides a key-value store.</p>
+
+      <p class="highlight-blue">📌 Different Implementations of `Map`:</p>
+      <ul>
+        <li><strong>🔹 HashMap</strong> → Uses **array + linked list + red-black tree**.</li>
+        <li><strong>🔹 TreeMap</strong> → Uses **Red-Black Tree** (sorted order).</li>
+        <li><strong>🔹 LinkedHashMap</strong> → Uses **Doubly Linked List** (preserves insertion order).</li>
+        <li><strong>🔹 ConcurrentHashMap</strong> → Uses **Segmented Locks for thread safety**.</li>
+      </ul>
+
+      <hr>
+
+      <p class="highlight-blue">🔹 How Does `HashMap` Work Underneath?</p>
+      <ul>
+        <li>Stores data in an <strong>array of Node&lt;K, V&gt;</strong>.</li>
+        <li>Uses <strong>hashCode()</strong> and <strong>(hash % capacity)</strong> to find bucket.</li>
+        <li>Handles **collisions using Linked List (before Java 8)** and **Red-Black Tree (after Java 8, if needed).**</li>
+      </ul>
+
+      <p class="highlight-blue">🔹 Example of `HashMap`:</p>
+      <pre class="language-java"><code>
+        import java.util.HashMap;
+
+        public class HashMapExample {
+            public static void main(String[] args) {
+                HashMap<String, Integer> map = new HashMap<>();
+                map.put("Alice", 25);
+                map.put("Bob", 30);
+                map.put("Charlie", 35);
+                
+                System.out.println("Age of Bob: " + map.get("Bob")); // 30
+            }
+        }
+      </code></pre>
+
+      <hr>
+
+      <p class="highlight-blue">🔹 How Does `TreeMap` Work Underneath?</p>
+      <ul>
+        <li>Stores data in a <strong>Red-Black Tree</strong> (Self-balancing Binary Search Tree).</li>
+        <li>Keeps **keys sorted in natural or custom order**.</li>
+        <li><strong>O(log n) complexity</strong> for insert/search.</li>
+      </ul>
+
+      <p class="highlight-blue">🔹 Example of `TreeMap`:</p>
+      <pre class="language-java"><code>
+        import java.util.TreeMap;
+
+        public class TreeMapExample {
+            public static void main(String[] args) {
+                TreeMap<String, Integer> map = new TreeMap<>();
+                map.put("Alice", 25);
+                map.put("Bob", 30);
+                map.put("Charlie", 35);
+                
+                System.out.println("First Entry: " + map.firstEntry()); // Alice=25
+            }
+        }
+      </code></pre>
+
+      <hr>
+
+      <p class="highlight-blue">🔹 How Does `ConcurrentHashMap` Work?</p>
+      <ul>
+        <li>Uses **segment-based locking** (before Java 8) and **CAS (Compare-And-Swap)** (after Java 8).</li>
+        <li>Provides **thread-safe** operations with **high performance**.</li>
+      </ul>
+
+      <p class="highlight-blue">🔹 Example of `ConcurrentHashMap`:</p>
+      <pre class="language-java"><code>
+        import java.util.concurrent.ConcurrentHashMap;
+
+        public class ConcurrentHashMapExample {
+            public static void main(String[] args) {
+                ConcurrentHashMap<String, Integer> map = new ConcurrentHashMap<>();
+                map.put("Alice", 25);
+                map.put("Bob", 30);
+
+                System.out.println("Alice's Age: " + map.get("Alice"));
+            }
+        }
+      </code></pre>
+
+      <hr>
+
+      <p class="highlight-yellow">🔹 Summary of `Map` Implementations:</p>
+      <table class="table table-dark table-striped">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Data Structure</th>
+            <th>Sorting</th>
+            <th>Thread Safety</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>HashMap</td>
+            <td>Array + Linked List + Red-Black Tree</td>
+            <td>No</td>
+            <td>No</td>
+          </tr>
+          <tr>
+            <td>TreeMap</td>
+            <td>Red-Black Tree</td>
+            <td>Yes</td>
+            <td>No</td>
+          </tr>
+          <tr>
+            <td>LinkedHashMap</td>
+            <td>Linked List + HashMap</td>
+            <td>No</td>
+            <td>No</td>
+          </tr>
+          <tr>
+            <td>ConcurrentHashMap</td>
+            <td>Bucket-based HashMap</td>
+            <td>No</td>
+            <td>Yes</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#jvmMemory">
+      How does Spring Boot Assign Memory in JVM?
+    </button>
+  </h2>
+  <div id="jvmMemory" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <p class="highlight-yellow">🔹 JVM divides memory into different areas:</p>
+      <ul>
+        <li>📌 <strong>Heap Memory</strong> → Stores objects during runtime.</li>
+        <li>📌 <strong>Stack Memory</strong> → Stores method execution data.</li>
+        <li>📌 <strong>Metaspace</strong> → Stores class metadata.</li>
+      </ul>
+
+      <p class="highlight-blue">📌 Default JVM Memory Allocation:</p>
+      <pre class="language-sh"><code>
+        -Xms256m  # Initial heap memory
+        -Xmx1g    # Max heap memory
+      </code></pre>
+
+      <p class="highlight-blue">📌 Customizing JVM Memory in Spring Boot:</p>
+      <pre class="language-sh"><code>
+        java -Xms512m -Xmx2g -jar myapp.jar
+      </code></pre>
+
+      <p class="highlight-yellow">🔹 Memory Area Configurations:</p>
+      <table class="table table-dark table-striped">
+        <thead>
+          <tr>
+            <th>Memory Area</th>
+            <th>Purpose</th>
+            <th>JVM Option</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Heap</td>
+            <td>Stores objects</td>
+            <td>-Xms / -Xmx</td>
+          </tr>
+          <tr>
+            <td>Metaspace</td>
+            <td>Stores class metadata</td>
+            <td>-XX:MetaspaceSize</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p class="highlight-yellow">🔹 Example Java Code to Get Memory Info:</p>
+      <pre class="language-java"><code>
+        public class MemoryInfo {
+            public static void main(String[] args) {
+                Runtime runtime = Runtime.getRuntime();
+                System.out.println("Max Memory: " + runtime.maxMemory());
+                System.out.println("Total Memory: " + runtime.totalMemory());
+                System.out.println("Free Memory: " + runtime.freeMemory());
+            }
+        }
+      </code></pre>
+    </div>
+  </div>
+</div>
+
+
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#memoryExhaustion">
+      What Happens If JVM Memory Limit is Reached?
+    </button>
+  </h2>
+  <div id="memoryExhaustion" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <p class="highlight-yellow">🔹 JVM Behavior When Memory is Exhausted:</p>
+      <ul>
+        <li>📌 <strong>Garbage Collection (GC) tries to free memory</strong>.</li>
+        <li>📌 If GC fails, <strong>OutOfMemoryError</strong> occurs.</li>
+        <li>📌 Application may <strong>crash or slow down</strong>.</li>
+      </ul>
+
+      <p class="highlight-blue">📌 Example: Simulating `OutOfMemoryError`</p>
+      <pre class="language-java"><code>
+        List<int[]> memoryList = new ArrayList<>();
+        while (true) {
+            memoryList.add(new int[1_000_000]); // Allocates 1MB each loop
+        }
+      </code></pre>
+
+      <p class="highlight-yellow">🔹 How to Fix?</p>
+      <ul>
+        <li>✔ <strong>Increase Heap Size</strong>: `-Xmx2g`</li>
+        <li>✔ <strong>Monitor JVM Memory</strong>: `jstat -gc <PID>`</li>
+        <li>✔ <strong>Use Better Garbage Collector</strong>: `-XX:+UseG1GC`</li>
+      </ul>
+
+      <p class="highlight-blue">📌 Configuring JVM Memory:</p>
+      <pre class="language-sh"><code>
+        java -Xms512m -Xmx2g -XX:+UseG1GC -jar myapp.jar
+      </code></pre>
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#metaspaceQuestion">
+      What is Metaspace in JVM and How Does It Affect Spring Boot?
+    </button>
+  </h2>
+  <div id="metaspaceQuestion" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <p class="highlight-yellow">🔹 Metaspace Overview</p>
+      <ul>
+        <li>📌 Stores **class metadata** (class definitions, method details).</li>
+        <li>📌 Replaces **PermGen** from Java 8 onwards.</li>
+        <li>📌 **Dynamically grows** by default.</li>
+      </ul>
+
+      <p class="highlight-blue">📌 What Happens if Metaspace is Full?</p>
+      <ul>
+        <li>📌 JVM throws <code>OutOfMemoryError: Metaspace</code>.</li>
+        <li>📌 Can occur in Spring Boot due to **hot reloading or dynamic proxies**.</li>
+      </ul>
+
+      <p class="highlight-yellow">🔹 How to Prevent Metaspace Issues?</p>
+      <ul>
+        <li>✔ **Set JVM Metaspace Limits**: `-XX:MetaspaceSize=128m -XX:MaxMetaspaceSize=512m`</li>
+        <li>✔ **Enable Class Unloading**: `-XX:+ClassUnloading -XX:+UseG1GC`</li>
+        <li>✔ **Fix ClassLoader Leaks** in Spring Boot.</li>
+      </ul>
+
+      <p class="highlight-blue">📌 Example Code: Simulating Metaspace Exhaustion</p>
+      <pre class="language-java"><code>
+        import net.bytebuddy.ByteBuddy;
+        import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
+        import java.util.ArrayList;
+        import java.util.List;
+
+        public class MetaspaceLeakExample {
+            public static void main(String[] args) {
+                List<Class<?>> classList = new ArrayList<>();
+                while (true) {
+                    classList.add(new ByteBuddy()
+                        .subclass(Object.class)
+                        .make()
+                        .load(MetaspaceLeakExample.class.getClassLoader(),
+                              ClassLoadingStrategy.Default.WRAPPER)
+                        .getLoaded());
+                }
+            }
+        }
+      </code></pre>
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#springStarterQuestion">
+      What Are Spring Boot Starter Dependencies?
+    </button>
+  </h2>
+  <div id="springStarterQuestion" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      
+      <p class="highlight-yellow">🔹 What Are Spring Boot Starters?</p>
+      <ul>
+        <li>📌 **Spring Boot Starters** simplify dependency management.</li>
+        <li>📌 Provide **pre-configured libraries** for various functionalities.</li>
+        <li>📌 Reduce **boilerplate setup** for new projects.</li>
+      </ul>
+
+      <p class="highlight-blue">📌 Commonly Used Spring Boot Starters</p>
+      <table class="table table-dark table-striped">
+        <thead>
+          <tr>
+            <th>Starter Dependency</th>
+            <th>Purpose</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>spring-boot-starter</code></td>
+            <td>Core starter for Spring Boot applications.</td>
+          </tr>
+          <tr>
+            <td><code>spring-boot-starter-web</code></td>
+            <td>For building RESTful web applications.</td>
+          </tr>
+          <tr>
+            <td><code>spring-boot-starter-data-jpa</code></td>
+            <td>Includes Spring Data JPA and Hibernate.</td>
+          </tr>
+          <tr>
+            <td><code>spring-boot-starter-security</code></td>
+            <td>Adds Spring Security for authentication & authorization.</td>
+          </tr>
+          <tr>
+            <td><code>spring-boot-starter-thymeleaf</code></td>
+            <td>For rendering HTML views using Thymeleaf.</td>
+          </tr>
+          <tr>
+            <td><code>spring-boot-starter-test</code></td>
+            <td>Includes JUnit, Mockito, and Spring Test.</td>
+          </tr>
+          <tr>
+            <td><code>spring-boot-starter-actuator</code></td>
+            <td>Provides monitoring and management endpoints.</td>
+          </tr>
+          <tr>
+            <td><code>spring-boot-starter-mail</code></td>
+            <td>Adds JavaMail support for sending emails.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p class="highlight-yellow">🔹 Example Maven Dependencies</p>
+      <pre class="language-xml"><code>
+      <dependency>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-starter-web</artifactId>
+      </dependency>
+      <dependency>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-starter-data-jpa</artifactId>
+      </dependency>
+      </code></pre>
+
+      <p class="highlight-blue">📌 Example Gradle Dependencies</p>
+      <pre class="language-kotlin"><code>
+      dependencies {
+          implementation("org.springframework.boot:spring-boot-starter-web")
+          implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+      }
+      </code></pre>
+
+      <p class="highlight-yellow">🔹 How Spring Boot Starters Work Internally?</p>
+      <ul>
+        <li>✅ **Adds Required Dependencies** → No need to manually add transitive dependencies.</li>
+        <li>✅ **Provides Default Configuration** → Example: <code>spring-boot-starter-web</code> auto-configures an embedded **Tomcat** server.</li>
+        <li>✅ **Enables Auto-Configuration** → Uses <code>@ConditionalOnClass</code>, <code>@ConditionalOnMissingBean</code>, etc., to configure beans dynamically.</li>
+      </ul>
+
+      <p class="highlight-blue">📌 How to Create a Custom Starter?</p>
+      <ol>
+        <li>📌 Create a **new module** with a custom dependency structure.</li>
+        <li>📌 Provide an **auto-configuration class** using <code>@Configuration</code> and <code>@ConditionalOnClass</code>.</li>
+        <li>📌 Register it in **META-INF/spring.factories**.</li>
+        <li>📌 Publish it as a **Maven/Gradle artifact**.</li>
+      </ol>
+
+      <p class="highlight-green">✅ Summary</p>
+      <ul>
+        <li>✔ **Spring Boot starters simplify dependency management** by bundling related dependencies.</li>
+        <li>✔ **Auto-configures required libraries**, reducing manual setup.</li>
+        <li>✔ Common starters include **<code>spring-boot-starter-web</code>**, **<code>spring-boot-starter-data-jpa</code>**, and **<code>spring-boot-starter-security</code>**.</li>
+        <li>✔ No need to manually manage transitive dependencies.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#circularDependencyQuestion">
+      What is Circular Dependency in Spring, and How Do We Fix It?
+    </button>
+  </h2>
+  <div id="circularDependencyQuestion" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      
+      <p class="highlight-yellow">🔹 What is Circular Dependency?</p>
+      <p>🔄 A **circular dependency** occurs when two or more beans depend on each other, causing a loop.</p>
+
+      <p class="highlight-blue">📌 Example of Circular Dependency</p>
+      <pre class="language-java"><code>
+      @Component
+      public class A {
+          private final B b;
+
+          @Autowired
+          public A(B b) {
+              this.b = b;
+          }
+      }
+
+      @Component
+      public class B {
+          private final A a;
+
+          @Autowired
+          public B(A a) {
+              this.a = a;
+          }
+      }
+      </code></pre>
+
+      <p>🛑 **Problem:** When Spring tries to instantiate <code>A</code>, it needs <code>B</code>, which again needs <code>A</code>, causing a cycle.</p>
+
+      <p class="highlight-yellow">🔹 How to Fix Circular Dependency?</p>
+
+      <p class="highlight-blue">📌 1️⃣ Use <code>@Lazy</code> Annotation</p>
+      <p>🔄 Spring will **delay bean initialization** until it's needed.</p>
+      <pre class="language-java"><code>
+      @Component
+      public class A {
+          private final B b;
+
+          @Autowired
+          public A(@Lazy B b) {
+              this.b = b;
+          }
+      }
+      </code></pre>
+
+      <p class="highlight-blue">📌 2️⃣ Use <code>Setter Injection</code> Instead of Constructor Injection</p>
+      <p>🔄 Spring will first instantiate the beans and then set dependencies.</p>
+      <pre class="language-java"><code>
+      @Component
+      public class A {
+          private B b;
+
+          @Autowired
+          public void setB(B b) {
+              this.b = b;
+          }
+      }
+      </code></pre>
+
+      <p class="highlight-blue">📌 3️⃣ Use <code>ObjectFactory</code> or <code>Provider</code> from <code>javax.inject</code></p>
+      <p>🔄 **Lazily loads dependencies** only when required.</p>
+      <pre class="language-java"><code>
+      @Component
+      public class A {
+          private final Provider<B> bProvider;
+
+          @Autowired
+          public A(Provider<B> bProvider) {
+              this.bProvider = bProvider;
+          }
+
+          public void someMethod() {
+              B b = bProvider.get(); // Gets B when needed
+          }
+      }
+      </code></pre>
+
+      <p class="highlight-blue">📌 4️⃣ Refactor Code to Break Circular Dependency</p>
+      <p>🔄 **Introduce a third class** to manage dependencies.</p>
+      <pre class="language-java"><code>
+      @Component
+      public class Mediator {
+          private final A a;
+          private final B b;
+
+          @Autowired
+          public Mediator(A a, B b) {
+              this.a = a;
+              this.b = b;
+          }
+      }
+      </code></pre>
+
+      <p class="highlight-green">✅ Summary</p>
+      <ul>
+        <li>✔ Circular dependency happens when two beans depend on each other.</li>
+        <li>✔ Solutions include **@Lazy, setter injection, Provider, and refactoring code**.</li>
+        <li>✔ The best practice is to **avoid circular dependencies** by **designing components properly**.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#springBootMainMethod">
+      If I have multiple classes with main method in Spring Boot app, how do I specify which main method to run?
+    </button>
+  </h2>
+  <div id="springBootMainMethod" class="accordion-collapse collapse" data-bs-parent="#qaAccordion">
+    <div class="accordion-body">
+      <p>In a Spring Boot application, if you have multiple classes with a <code>main</code> method, you can specify which class should be used as the entry point by following these approaches:</p>
+
+      <p class="highlight-yellow">1️⃣ Specify the Main Class in <code>spring-boot-maven-plugin</code></p>
+      <pre class="language-xml"><code>
+&lt;build&gt;
+    &lt;plugins&gt;
+        &lt;plugin&gt;
+            &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+            &lt;artifactId&gt;spring-boot-maven-plugin&lt;/artifactId&gt;
+            &lt;configuration&gt;
+                &lt;mainClass&gt;com.example.MainClassToRun&lt;/mainClass&gt;
+            &lt;/configuration&gt;
+        &lt;/plugin&gt;
+    &lt;/plugins&gt;
+&lt;/build&gt;
+      </code></pre>
+
+      <p class="highlight-yellow">2️⃣ Use Command Line Argument in <code>java -jar</code></p>
+      <pre class="language-bash"><code>
+java -cp target/myapp.jar com.example.MainClassToRun
+      </code></pre>
+
+      <p class="highlight-yellow">3️⃣ Manually Create a Custom <code>main</code> Method</p>
+      <pre class="language-java"><code>
+public class MainLauncher {
+    public static void main(String[] args) {
+        com.example.MainClassToRun.main(args);
+    }
+}
+      </code></pre>
+
+      <p class="highlight-yellow">4️⃣ Override Spring Boot’s Auto-Configuration in <code>SpringApplication</code></p>
+      <pre class="language-java"><code>
+public class MainLauncher {
+    public static void main(String[] args) {
+        org.springframework.boot.SpringApplication.run(com.example.MainClassToRun.class, args);
+    }
+}
+      </code></pre>
+
+      <p class="highlight-blue"><strong>✅ Best Practice:</strong> If you have multiple main methods for different functionalities (e.g., separate microservices, testing, or CLI applications), explicitly setting the <strong>entry point</strong> via <code>pom.xml</code> or a <strong>wrapper main method</strong> is the recommended approach.</p>
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#virtualIpAws">
+      What is Virtual IP in AWS?
+    </button>
+  </h2>
+  <div id="virtualIpAws" class="accordion-collapse collapse" data-bs-parent="#qaAccordion">
+    <div class="accordion-body">
+      <p>In AWS, a **Virtual IP (VIP)** is an IP address that is not tied to a single physical or virtual network interface but is used for **high availability, load balancing, or failover scenarios**. AWS provides different ways to implement virtual IPs.</p>
+
+      <p class="highlight-yellow">1️⃣ **Using Elastic IPs as Virtual IPs**</p>
+      <p>Elastic IPs (EIP) in AWS can act as virtual IPs by allowing you to move them between instances, ensuring continuity in case of instance failures.</p>
+      <pre class="language-bash"><code>
+# Allocate an Elastic IP
+aws ec2 allocate-address --domain vpc
+
+# Associate Elastic IP with an instance
+aws ec2 associate-address --instance-id i-1234567890abcdef0 --allocation-id eipalloc-12345678
+
+# Reassign Elastic IP to another instance during failover
+aws ec2 associate-address --instance-id i-0987654321abcdef0 --allocation-id eipalloc-12345678
+      </code></pre>
+
+      <p class="highlight-yellow">2️⃣ **Using AWS Network Load Balancer (NLB) for Virtual IPs**</p>
+      <p>A **Network Load Balancer (NLB)** distributes traffic across multiple EC2 instances using a single static IP. This acts as a **virtual IP**, improving high availability.</p>
+      <pre class="language-bash"><code>
+aws elbv2 create-load-balancer --name my-nlb --type network --subnets subnet-12345 subnet-67890
+      </code></pre>
+
+      <p class="highlight-yellow">3️⃣ **AWS Route 53 for Virtual IP Implementation**</p>
+      <p>Instead of a static virtual IP, **Route 53** DNS failover can point a domain to different IPs dynamically based on instance health.</p>
+      <pre class="language-json"><code>
+{
+  "Changes": [
+    {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "vip.example.com",
+        "Type": "A",
+        "TTL": 60,
+        "ResourceRecords": [{ "Value": "203.0.113.10" }]
+      }
+    }
+  ]
+}
+      </code></pre>
+
+      <p class="highlight-yellow">4️⃣ **ENI (Elastic Network Interface) as a Virtual IP**</p>
+      <p>Using **ENIs (Elastic Network Interfaces)**, you can attach a secondary private IP to a different instance, acting as a failover Virtual IP.</p>
+      <pre class="language-bash"><code>
+aws ec2 assign-private-ip-addresses --network-interface-id eni-12345 --private-ip-addresses 10.0.1.100
+      </code></pre>
+
+      <p class="highlight-blue"><strong>✅ Best Practices:</strong> Use **Elastic IPs** for failover, **NLB** for scalable VIPs, **Route 53** for DNS-based redirection, and **ENIs** for high-availability solutions in VPC.</p>
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#interThreadCommunication">
+      What is Inter-Thread Communication in Java?
+    </button>
+  </h2>
+  <div id="interThreadCommunication" class="accordion-collapse collapse" data-bs-parent="#qaAccordion">
+    <div class="accordion-body">
+      <p>**Inter-thread communication** in Java is a mechanism that allows synchronized threads to communicate with each other. It helps avoid busy waiting and improves performance.</p>
+
+      <p class="highlight-yellow">1️⃣ **Methods for Inter-Thread Communication**</p>
+      <ul>
+        <li><strong>wait()</strong> - Causes the current thread to wait until another thread notifies it.</li>
+        <li><strong>notify()</strong> - Wakes up a single thread waiting on the same object's monitor.</li>
+        <li><strong>notifyAll()</strong> - Wakes up all threads waiting on the same object's monitor.</li>
+      </ul>
+
+      <p class="highlight-yellow">2️⃣ **Example of Inter-Thread Communication using wait() & notify()**</p>
+      <pre class="language-java"><code>
+class SharedResource {
+    private int data;
+    private boolean available = false;
+
+    public synchronized void produce(int value) {
+        while (available) { 
+            try { wait(); } catch (InterruptedException e) { e.printStackTrace(); }
+        }
+        data = value;
+        System.out.println("Produced: " + data);
+        available = true;
+        notify();  // Notify consumer
+    }
+
+    public synchronized void consume() {
+        while (!available) { 
+            try { wait(); } catch (InterruptedException e) { e.printStackTrace(); }
+        }
+        System.out.println("Consumed: " + data);
+        available = false;
+        notify(); // Notify producer
+    }
+}
+
+class Producer extends Thread {
+    SharedResource resource;
+    Producer(SharedResource resource) { this.resource = resource; }
+
+    public void run() {
+        for (int i = 1; i <= 5; i++) {
+            resource.produce(i);
+        }
+    }
+}
+
+class Consumer extends Thread {
+    SharedResource resource;
+    Consumer(SharedResource resource) { this.resource = resource; }
+
+    public void run() {
+        for (int i = 1; i <= 5; i++) {
+            resource.consume();
+        }
+    }
+}
+
+public class InterThreadCommunicationExample {
+    public static void main(String[] args) {
+        SharedResource resource = new SharedResource();
+        new Producer(resource).start();
+        new Consumer(resource).start();
+    }
+}
+      </code></pre>
+
+      <p class="highlight-yellow">3️⃣ **How it Works?**</p>
+      <ul>
+        <li>The **Producer** thread produces data and then calls `notify()` to wake up the **Consumer**.</li>
+        <li>The **Consumer** thread waits (`wait()`) until new data is available and then processes it.</li>
+        <li>After consuming, it calls `notify()` to wake up the **Producer** again.</li>
+      </ul>
+
+      <p class="highlight-blue"><strong>✅ Best Practices:</strong> Always call `wait()`, `notify()`, and `notifyAll()` inside a synchronized block to avoid race conditions.</p>
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#springCloud">
+      What is Spring Cloud and how does it help us?
+    </button>
+  </h2>
+  <div id="springCloud" class="accordion-collapse collapse" data-bs-parent="#qaAccordion">
+    <div class="accordion-body">
+      <p>**Spring Cloud** is a framework built on top of Spring Boot that provides tools for building **resilient, scalable, and distributed microservices**. It simplifies service discovery, configuration management, load balancing, and fault tolerance.</p>
+
+      <p class="highlight-yellow">1️⃣ **Key Features of Spring Cloud**</p>
+      <ul>
+        <li><strong>Service Discovery</strong> - Uses Eureka for automatic registration and discovery of microservices.</li>
+        <li><strong>Distributed Configuration</strong> - Uses Spring Cloud Config to manage application settings centrally.</li>
+        <li><strong>API Gateway</strong> - Uses Spring Cloud Gateway to manage API routing, authentication, and security.</li>
+        <li><strong>Resilience & Fault Tolerance</strong> - Uses Resilience4j or Hystrix for circuit breaking and retry mechanisms.</li>
+        <li><strong>Distributed Logging & Tracing</strong> - Uses Sleuth and Zipkin for tracking requests across services.</li>
+      </ul>
+
+      <p class="highlight-yellow">2️⃣ **Example: Implementing Service Discovery with Spring Cloud Eureka**</p>
+      <p><strong>Step 1: Create Eureka Server</strong></p>
+      <pre class="language-java"><code>
+// Add dependencies in pom.xml
+&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-cloud-starter-netflix-eureka-server&lt;/artifactId&gt;
+&lt;/dependency&gt;
+
+@SpringBootApplication
+@EnableEurekaServer
+public class EurekaServerApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(EurekaServerApplication.class, args);
+    }
+}
+      </code></pre>
+
+      <p><strong>Step 2: Register a Microservice with Eureka</strong></p>
+      <pre class="language-java"><code>
+// Add dependencies in pom.xml
+&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-cloud-starter-netflix-eureka-client&lt;/artifactId&gt;
+&lt;/dependency&gt;
+
+@SpringBootApplication
+@EnableEurekaClient
+public class ProductServiceApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(ProductServiceApplication.class, args);
+    }
+}
+
+@RestController
+@RequestMapping("/products")
+public class ProductController {
+    @GetMapping
+    public String getProducts() {
+        return "List of Products";
+    }
+}
+      </code></pre>
+
+      <p><strong>Step 3: Use Eureka to Discover Services</strong></p>
+      <pre class="language-java"><code>
+@LoadBalanced
+@Bean
+public RestTemplate restTemplate() {
+    return new RestTemplate();
+}
+
+@Autowired
+private RestTemplate restTemplate;
+
+public String fetchProducts() {
+    return restTemplate.getForObject("http://PRODUCT-SERVICE/products", String.class);
+}
+      </code></pre>
+
+      <p class="highlight-blue"><strong>✅ Benefits of Spring Cloud:</strong></p>
+      <ul>
+        <li>Reduces **boilerplate code** for microservices.</li>
+        <li>Improves **resilience** with circuit breakers.</li>
+        <li>Enables **dynamic scaling** and service discovery.</li>
+        <li>Enhances **security and API management** with Spring Cloud Gateway.</li>
+      </ul>
+
+      <p class="highlight-yellow">🔹 **Conclusion:** Spring Cloud simplifies the development of distributed systems by providing ready-to-use tools for microservices architecture.</p>
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+    <h2 class="accordion-header">
+        <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#customIdGeneration">
+            How do I generate a custom primary key like "2024ABCD1112A4" in Spring Boot?
+        </button>
+    </h2>
+    <div id="customIdGeneration" class="accordion-collapse collapse" data-bs-parent="#qaAccordion">
+        <div class="accordion-body">
+            <p>
+                To generate a custom ID format like <strong>2024ABCD1112A4</strong> in Spring Boot, you need a custom ID generator.
+                This involves:
+            </p>
+            <ul>
+                <li>Creating a custom Hibernate ID generator</li>
+                <li>Applying it to your entity</li>
+                <li>Generating structured, unique IDs</li>
+            </ul>
+
+            <p><strong>1️⃣ Custom ID Generator Class:</strong></p>
+            <pre class="language-java"><code>
+import org.hibernate.engine.spi.SharedSessionContractImplementor;
+import org.hibernate.id.IdentifierGenerator;
+import java.io.Serializable;
+import java.time.Year;
+import java.util.Random;
+
+public class CustomIdGenerator implements IdentifierGenerator {
+    @Override
+    public Serializable generate(SharedSessionContractImplementor session, Object object) {
+        String year = String.valueOf(Year.now().getValue());
+        String randomLetters = generateRandomLetters(4);
+        String randomNumbers = String.valueOf(1000 + new Random().nextInt(9000));
+        String lastLetter = generateRandomLetters(1);
+        return year + randomLetters + randomNumbers + lastLetter;
+    }
+
+    private String generateRandomLetters(int length) {
+        String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        StringBuilder result = new StringBuilder();
+        Random random = new Random();
+        for (int i = 0; i < length; i++) {
+            result.append(alphabet.charAt(random.nextInt(alphabet.length())));
+        }
+        return result.toString();
+    }
+}
+            </code></pre>
+
+            <p><strong>2️⃣ Apply to Your Entity:</strong></p>
+            <pre class="language-java"><code>
+import jakarta.persistence.*;
+import org.hibernate.annotations.GenericGenerator;
+
+@Entity
+public class User {
+    @Id
+    @GeneratedValue(generator = "custom-id")
+    @GenericGenerator(name = "custom-id", strategy = "com.example.CustomIdGenerator")
+    private String id;
+    
+    private String name;
+    private String email;
+}
+            </code></pre>
+
+            <p><strong>✅ Example Output:</strong></p>
+            <ul>
+                <li>2024ABCD1112A</li>
+                <li>2024XYZP7865B</li>
+                <li>2024LMNO4598C</li>
+            </ul>
+
+            <p><strong>📌 When to Use:</strong></p>
+            <ul>
+                <li>When you need structured, readable IDs instead of UUIDs.</li>
+                <li>When numeric auto-generated IDs are not suitable.</li>
+                <li>For ensuring custom ID formats in databases.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+<div class="accordion-item">
+    <h2 class="accordion-header">
+        <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#customIdGeneration">
+            How do I generate a custom primary key like 2024ABCD1112A4 in Spring Boot?
+        </button>
+    </h2>
+    <div id="customIdGeneration" class="accordion-collapse collapse">
+        <div class="accordion-body">
+            <p>You can generate a custom primary key using a sequence strategy along with custom formatting in Spring Boot.</p>
+
+            <p><strong>🔹 1️⃣ Create a Database Sequence</strong></p>
+            <pre class="language-sql"><code>
+CREATE SEQUENCE user_id_seq START WITH 1000 INCREMENT BY 1;
+            </code></pre>
+
+            <p><strong>🔹 2️⃣ Define Your Entity With a Custom ID</strong></p>
+            <pre class="language-java"><code>
+import jakarta.persistence.*;
+import java.time.Year;
+import java.util.Random;
+
+@Entity
+public class User {
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_seq_gen")
+    @SequenceGenerator(name = "user_seq_gen", sequenceName = "user_id_seq", allocationSize = 1)
+    private Long sequenceId;  // Sequence-based ID
+
+    private String id; // Custom formatted ID
+
+    private String name;
+    private String email;
+
+    @PrePersist
+    public void generateCustomId() {
+        String year = String.valueOf(Year.now().getValue());
+        String randomLetters = generateRandomLetters(4);
+        String lastLetter = generateRandomLetters(1);
+        this.id = year + randomLetters + sequenceId + lastLetter;
+    }
+
+    private String generateRandomLetters(int length) {
+        String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        StringBuilder result = new StringBuilder();
+        Random random = new Random();
+        for (int i = 0; i < length; i++) {
+            result.append(alphabet.charAt(random.nextInt(alphabet.length())));
+        }
+        return result.toString();
+    }
+}
+            </code></pre>
+
+            <p><strong>🔹 3️⃣ How This Works</strong></p>
+            <ul>
+                <li>Uses a database sequence to ensure uniqueness.</li>
+                <li>Appends a four-letter random string.</li>
+                <li>Includes the current year.</li>
+                <li>Ends with a single random letter.</li>
+            </ul>
+
+            <p><strong>🔹 Example Generated IDs:</strong></p>
+            <ul>
+                <li><code>2024ABCD1000X</code></li>
+                <li><code>2024PQRS1001Y</code></li>
+            </ul>
+
+            <p><strong>✅ Advantages:</strong></p>
+            <ul>
+                <li>Ensures unique IDs with a structured format.</li>
+                <li>Predictable sequence numbers from the database.</li>
+                <li>Readable and structured primary keys.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#memoryQ1">
+      What is the difference between PermGen and Metaspace in Java?
+    </button>
+  </h2>
+  <div id="memoryQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <p class="highlight-yellow">PermGen vs Metaspace in Java:</p>
+      <ul>
+        <li><span class="highlight-blue">PermGen (Permanent Generation):</span> 
+          - Used before Java 8 to store **class metadata**, method details, and interned strings. 
+          - Had a **fixed max size** (`-XX:MaxPermSize`), leading to <code>OutOfMemoryError: PermGen Space</code>.
+        </li>
+        <li><span class="highlight-blue">Metaspace:</span> 
+          - Introduced in Java 8 to **replace PermGen**.
+          - Uses **native memory** instead of JVM heap, so it **grows dynamically**.
+          - Controlled via <code>-XX:MaxMetaspaceSize</code> (optional limit).
+        </li>
+      </ul>
+
+      <p class="highlight-yellow">Key Differences:</p>
+      <table class="table table-dark table-striped">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>PermGen (Java 7 & Before)</th>
+            <th>Metaspace (Java 8+)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Storage</td>
+            <td>JVM Heap (Fixed)</td>
+            <td>Native Memory (Dynamic)</td>
+          </tr>
+          <tr>
+            <td>Size Limit</td>
+            <td>Limited (<code>-XX:MaxPermSize</code>)</td>
+            <td>Unlimited (unless restricted with <code>-XX:MaxMetaspaceSize</code>)</td>
+          </tr>
+          <tr>
+            <td>OutOfMemoryError</td>
+            <td>Frequent if full</td>
+            <td>Less common</td>
+          </tr>
+          <tr>
+            <td>Performance</td>
+            <td>Slower due to heap constraints</td>
+            <td>Faster due to native memory usage</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p class="highlight-yellow">Example: Metaspace Memory Leak</p>
+      <pre class="language-java"><code>
+        import java.util.ArrayList;
+        import java.util.List;
+
+        public class MetaspaceLeakExample {
+            public static void main(String[] args) {
+                List<ClassLoader> classLoaders = new ArrayList<>();
+                try {
+                    while (true) {
+                        classLoaders.add(new CustomClassLoader());
+                    }
+                } catch (OutOfMemoryError e) {
+                    System.out.println("Metaspace OutOfMemoryError!");
+                }
+            }
+
+            static class CustomClassLoader extends ClassLoader { }
+        }
+      </code></pre>
+
+      <p class="highlight-yellow">How to Set Metaspace Limit?</p>
+      <pre class="language-bash"><code>
+        java -XX:MaxMetaspaceSize=256m -jar myapp.jar
+      </code></pre>
+
+      <p class="highlight-blue">Conclusion:</p>
+      <ul>
+        <li>PermGen was removed in Java 8 because it caused memory limitations.</li>
+        <li>Metaspace **uses native memory**, making it more flexible and efficient.</li>
+        <li>To prevent excessive growth, you can **limit Metaspace manually**.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#metaspaceQ1">
+      Who controls Metaspace in JVM?
+    </button>
+  </h2>
+  <div id="metaspaceQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <p>Metaspace is managed by both the <span class="highlight-blue">JVM</span> and the <span class="highlight-blue">OS</span>. Below are the key components responsible for its control:</p>
+      
+      <ul>
+        <li><span class="highlight-yellow">JVM's Memory Manager:</span> Requests memory from the OS and manages allocation/deallocation based on class loading/unloading.</li>
+        <li><span class="highlight-yellow">OS Memory Management:</span> Since Metaspace is outside the heap, the OS manages its actual allocation.</li>
+        <li><span class="highlight-yellow">Class Loader & Garbage Collector:</span> JVM removes unused class metadata when classes become unreferenced.</li>
+      </ul>
+
+      <p class="highlight-blue">How to Control Metaspace Growth?</p>
+      <pre class="language-bash"><code>
+      # Set a max limit for Metaspace
+      java -XX:MaxMetaspaceSize=256m -jar myapp.jar
+
+      # Enable garbage collection for class unloading
+      java -XX:+UseG1GC -XX:+ClassUnloadingWithConcurrentMarkSweep
+      </code></pre>
+
+      <p class="highlight-yellow">Key Takeaways:</p>
+      <ul>
+        <li>✅ <strong>JVM</strong> requests and manages Metaspace.</li>
+        <li>✅ <strong>OS</strong> provides the required native memory.</li>
+        <li>✅ <strong>Application Code</strong> can impact Metaspace by controlling class loading/unloading.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#metaspaceQ1">
+      Does Metaspace store all the method area, heap, stack, and all?
+    </button>
+  </h2>
+  <div id="metaspaceQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <p class="highlight-yellow">No, Metaspace does not store all memory areas like the heap, stack, or method area. Here’s how it fits in the JVM memory model:</p>
+
+      <h5 class="text-info">📌 What does Metaspace store?</h5>
+      <ul>
+        <li><span class="highlight-blue">Class Metadata:</span> Information about loaded classes, including methods, fields, and bytecode.</li>
+        <li><span class="highlight-blue">Runtime Constant Pool:</span> Stores constants from class files (e.g., string literals).</li>
+        <li><span class="highlight-blue">Class Method Data:</span> Metadata about methods but <strong>not</strong> the actual method code.</li>
+        <li><span class="highlight-blue">Reflection Objects:</span> Metadata for reflection-based operations.</li>
+      </ul>
+
+      <h5 class="text-danger">❌ What Metaspace does NOT store?</h5>
+      <ul>
+        <li><span class="highlight-blue">Heap (Objects & Data):</span> Stored in the <strong>Young & Old Generation of Heap</strong>.</li>
+        <li><span class="highlight-blue">Stack (Threads' Execution Context):</span> Stored in the <strong>JVM Stack Memory</strong>.</li>
+        <li><span class="highlight-blue">Method Code Execution:</span> Stored in <strong>Code Cache</strong> (for JIT-compiled code).</li>
+      </ul>
+
+      <h5 class="text-warning">📝 JVM Memory Breakdown</h5>
+      <ul>
+        <li><span class="highlight-blue">Heap:</span> Stores objects & data.</li>
+        <li><span class="highlight-blue">Stack:</span> Stores method call frames & local variables.</li>
+        <li><span class="highlight-blue">Metaspace:</span> Stores class metadata.</li>
+        <li><span class="highlight-blue">Code Cache:</span> Stores compiled machine code from JIT.</li>
+        <li><span class="highlight-blue">Direct Memory:</span> Used by NIO buffers.</li>
+      </ul>
+
+      <h5 class="text-success">🏆 Example: Configuring Metaspace in JVM</h5>
+      <pre class="language-bash"><code>
+        java -XX:MaxMetaspaceSize=256m -jar myapp.jar
+      </code></pre>
+      <p>This limits the maximum size Metaspace can grow.</p>
+
+      <h5 class="text-primary">✅ Conclusion</h5>
+      <p>Metaspace <strong>only handles class metadata</strong>, while the <strong>heap, stack, and method area are managed separately</strong> by the JVM.</p>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+        </div>
 
 
 
