@@ -94,6 +94,455 @@
     <div class="accordion" id="googleAccordion">
 
       <div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#forkJoinQ1">
+      Java Fork/Join — how it works, when to use it, and how it differs from Threads / ExecutorService / ThreadPoolExecutor
+    </button>
+  </h2>
+  <div id="forkJoinQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p class="highlight-yellow">
+        <b>Fork/Join</b> is a framework for splitting a big, <b>CPU-bound</b> problem into many small tasks (fork),
+        running them in parallel, and efficiently combining results (join). It uses a <b>work-stealing scheduler</b>
+        designed for fine-grained, recursive parallelism (divide-and-conquer).
+      </p>
+
+      <h5 class="text-info">🧠 Core ideas</h5>
+      <ul>
+        <li><b>RecursiveTask&lt;V&gt;</b> (returns a value) and <b>RecursiveAction</b> (void) represent subproblems.</li>
+        <li>Each worker thread owns a <b>double-ended queue (deque)</b>. It pops from its own end (LIFO) for cache locality.</li>
+        <li>Idle workers <b>steal</b> tasks from the opposite end (FIFO) of other workers’ deques → high utilization.</li>
+        <li>Tasks should be small and mostly non-blocking; use a <b>threshold</b> to stop splitting further.</li>
+      </ul>
+
+      <h5 class="text-success">🧩 Minimal example — parallel sum with threshold</h5>
+      <pre class="language-java"><code>import java.util.concurrent.*;
+
+class SumTask extends RecursiveTask<Long> {
+  private static final int THRESHOLD = 10_000; // tune via profiling
+  private final long[] a; private final int lo, hi;
+  SumTask(long[] a, int lo, int hi) { this.a = a; this.lo = lo; this.hi = hi; }
+
+  @Override protected Long compute() {
+    int len = hi - lo;
+    if (len &lt;= THRESHOLD) {
+      long s = 0; for (int i = lo; i &lt; hi; i++) s += a[i]; return s;
+    }
+    int mid = lo + len/2;
+    SumTask left = new SumTask(a, lo, mid);
+    SumTask right = new SumTask(a, mid, hi);
+    // fork one, compute the other to reduce task overhead
+    left.fork();
+    long r = right.compute();   // compute directly
+    long l = left.join();       // wait for left
+    return l + r;               // combine (join)
+  }
+}
+
+public class Demo {
+  public static void main(String[] args) {
+    long[] arr = new long[10_000_000];
+    for (int i = 0; i &lt; arr.length; i++) arr[i] = i % 100;
+    ForkJoinPool pool = new ForkJoinPool(); // defaults to #cores
+    long sum = pool.invoke(new SumTask(arr, 0, arr.length));
+    System.out.println(sum);
+  }
+}</code></pre>
+
+      <h5 class="text-warning">⚙️ How scheduling differs (work-stealing vs regular pools)</h5>
+      <ul>
+        <li><b>Fork/JoinPool</b> (FJP): many tiny tasks; each worker has a deque; idle workers <b>steal</b> from others → fewer context switches, better locality.</li>
+        <li><b>ThreadPoolExecutor</b> (TPE): typically a shared queue; tasks are not recursively split; great for request/response, I/O, and longer tasks.</li>
+        <li><b>Thread</b>: manual lifecycle & scheduling; heavy to create/tear down; not scalable for thousands of tasks.</li>
+      </ul>
+
+      <h5 class="text-primary">🆚 Fork/Join vs ExecutorService/ThreadPoolExecutor (at a glance)</h5>
+      <ul>
+        <li><b>Use Fork/Join</b> when:
+          <ul>
+            <li>Divide-and-conquer over an in-memory dataset (merge sort, quicksort, scans, tree/graph traversals).</li>
+            <li>Tasks are <b>CPU-bound</b>, short-lived, and can be recursively split + combined.</li>
+          </ul>
+        </li>
+        <li><b>Use ExecutorService / ThreadPoolExecutor</b> when:
+          <ul>
+            <li>Server-style workloads: handling <b>independent</b> requests, I/O, blocking calls (DB/HTTP), long tasks.</li>
+            <li>You need bounded queues, custom rejection policies, scheduling, rate limiting, etc.</li>
+          </ul>
+        </li>
+      </ul>
+
+      <h5 class="text-secondary">🧪 API usage patterns</h5>
+      <pre class="language-java"><code>// 1) Split-then-join (classic)
+left.fork();
+T rightRes = right.compute();
+T leftRes  = left.join();
+
+// 2) help/quiesce: worker helps run other tasks while waiting (implicit in join/invoke)
+pool.invoke(rootTask); // submit + wait
+
+// 3) Batch forking avoids deep stacks when many children:
+invokeAll(sub1, sub2); // internally forks and joins efficiently</code></pre>
+
+      <h5 class="text-danger">🚫 Blocking & the ManagedBlocker escape hatch</h5>
+      <p>Fork/Join expects <b>non-blocking</b> work. If you must block (I/O, locks), use <code>ManagedBlocker</code> so the pool can compensate by adding or waking threads.</p>
+      <pre class="language-java"><code>ForkJoinPool.managedBlock(new ForkJoinPool.ManagedBlocker() {
+  volatile boolean done = false;
+  @Override public boolean block() throws InterruptedException {
+    // e.g., blocking take()
+    item = queue.take(); done = true; return true;
+  }
+  @Override public boolean isReleasable() { return done; }
+});</code></pre>
+
+      <h5 class="text-info">🔧 Tuning & configuration</h5>
+      <ul>
+        <li><b>Pool size:</b> default parallelism ≈ #CPU cores. For pure CPU-bound tasks, that’s usually optimal.</li>
+        <li><b>Threshold:</b> stop splitting when the chunk is small enough; too small → overhead, too big → poor parallelism.</li>
+        <li><b>Common pool:</b> <code>ForkJoinPool.commonPool()</code> is shared (also used by <b>parallel streams</b>); isolate with your own pool to avoid interference.</li>
+        <li><b>Async mode:</b> <code>new ForkJoinPool(parallelism, factory, handler, asyncMode)</code>; async mode can reduce contention in some workloads.</li>
+      </ul>
+
+      <h5 class="text-warning">🌊 Parallel Streams relation</h5>
+      <ul>
+        <li><b>Parallel streams</b> are built on top of the <b>common Fork/JoinPool</b> and Spliterators.</li>
+        <li>They’re concise but less explicit; use your own pool if you need isolation:
+          <pre class="language-java"><code>ForkJoinPool custom = new ForkJoinPool(8);
+custom.submit(() -&gt; list.parallelStream().map(...).toList()).join();</code></pre>
+        </li>
+      </ul>
+
+      <h5 class="text-primary">🆚 Summary table</h5>
+      <ul>
+        <li><b>Work model</b>: FJP = recursive, fine-grained, work-stealing; TPE = coarse, queue-based.</li>
+        <li><b>Best for</b>: FJP = CPU-bound computations; TPE = I/O & request handling.</li>
+        <li><b>Blocking</b>: FJP → avoid (or ManagedBlocker); TPE → fine with timeouts.</li>
+        <li><b>Overhead</b>: FJP has cheap tasks, helps run while waiting; TPE tasks are independent units.</li>
+      </ul>
+
+      <h5 class="text-danger">⚠️ Common pitfalls</h5>
+      <ul>
+        <li>Endless splitting with no threshold → overhead & stack growth.</li>
+        <li>Blocking I/O inside FJP tasks → <b>starvation</b> (unless ManagedBlocker used).</li>
+        <li>Submitting to <b>commonPool</b> while also using parallel streams → contention and unpredictable latency.</li>
+        <li>Forking many children and immediately <code>join()</code> each → serializes; prefer <code>invokeAll()</code> or fork all then join in a loop.</li>
+      </ul>
+
+      <h5 class="text-success">✅ Bottom line</h5>
+      <p>
+        Use <b>Fork/Join</b> for divide-and-conquer, CPU-bound problems where you can split and combine quickly.
+        Use <b>ExecutorService/ThreadPoolExecutor</b> for server workloads, blocking I/O, and coarse tasks.
+        Tune thresholds, keep tasks small & non-blocking, and isolate critical workloads from the common pool.
+      </p>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#functionalInterface">
+      Why does a Functional Interface restrict to only one abstract method?
+    </button>
+  </h2>
+  <div id="functionalInterface" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Definition</h5>
+      <p>
+        A <b>Functional Interface</b> in Java is an interface with exactly <b>one abstract method</b>.  
+        It may have multiple <code>default</code> or <code>static</code> methods, but only one method 
+        must remain abstract.
+      </p>
+
+      <h5 class="text-info">📌 Reason</h5>
+      <ul>
+        <li>Java 8 introduced <b>Lambda Expressions</b> → lambdas provide implementation for the <i>single abstract method</i>.</li>
+        <li>If an interface had more than one abstract method, the compiler could not determine 
+            which one the lambda is targeting.</li>
+        <li>This restriction ensures <b>unambiguous mapping</b> between a lambda expression and the method it implements.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Example of Valid Functional Interface</h5>
+      <pre class="language-java"><code>
+@FunctionalInterface
+public interface MyFunction {
+    int apply(int a, int b);   // single abstract method
+
+    default void log(String msg) {
+        System.out.println("LOG: " + msg);
+    }
+}
+      </code></pre>
+      <p>
+        Here, <code>apply</code> is the only abstract method. Lambdas will implement this method.
+      </p>
+      <pre class="language-java"><code>
+MyFunction sum = (x, y) -&gt; x + y;
+System.out.println(sum.apply(5, 3)); // Output: 8
+      </code></pre>
+
+      <h5 class="text-info">📌 Invalid Case</h5>
+      <pre class="language-java"><code>
+@FunctionalInterface
+public interface Invalid {
+    void m1();
+    void m2();   // ❌ Compiler error: more than one abstract method
+}
+      </code></pre>
+
+      <h5 class="text-info">📌 Conclusion</h5>
+      <p>
+        Functional interfaces restrict to one abstract method because they are designed to be 
+        <b>targets for lambda expressions and method references</b>.  
+        One abstract method = one implementation via lambda → keeps the syntax concise and unambiguous.
+      </p>
+
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#functionalInterfaceInheritance">
+      Functional Interface Inheritance – How it behaves in different cases
+    </button>
+  </h2>
+  <div id="functionalInterfaceInheritance" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Case 1: Child does not declare any new abstract method</h5>
+      <p>
+        If the parent is a functional interface with one abstract method, and the child 
+        <b>just extends it</b> without adding new abstract methods, the child is also a functional interface.
+      </p>
+      <pre class="language-java"><code>
+@FunctionalInterface
+interface Parent {
+    void show();
+}
+
+@FunctionalInterface
+interface Child extends Parent { }  // ✅ Still functional, only one abstract method
+      </code></pre>
+      <p>Here, <code>Child</code> inherits <code>show()</code>. Lambdas can target <code>Child</code> directly.</p>
+      <pre class="language-java"><code>
+Child c = () -&gt; System.out.println("Hello");
+c.show();
+      </code></pre>
+
+      <h5 class="text-info">📌 Case 2: Child redeclares the same method</h5>
+      <p>
+        If the child redeclares the <b>same abstract method signature</b>, it does not count as a new method.  
+        The interface still has only one abstract method, so it’s valid.
+      </p>
+      <pre class="language-java"><code>
+@FunctionalInterface
+interface Parent {
+    void run();
+}
+
+@FunctionalInterface
+interface Child extends Parent {
+    @Override
+    void run();   // ✅ Same signature, still one abstract method
+}
+      </code></pre>
+      <p>
+        Compiler treats this as overriding, not as adding another abstract method.  
+        <code>Child</code> is still functional.
+      </p>
+
+      <h5 class="text-info">📌 Case 3: Child adds a new abstract method</h5>
+      <p>
+        If the child declares a <b>different abstract method</b>, then it has multiple abstract methods.  
+        ❌ It’s no longer a functional interface.
+      </p>
+      <pre class="language-java"><code>
+@FunctionalInterface
+interface Parent {
+    void display();
+}
+
+@FunctionalInterface
+interface Child extends Parent {
+    void print();   // ❌ Error: now there are 2 abstract methods
+}
+      </code></pre>
+      <p>
+        The <code>@FunctionalInterface</code> annotation will cause a compiler error, since 
+        the interface is no longer functional.
+      </p>
+
+      <h5 class="text-info">📌 Case 4: Child adds default or static methods</h5>
+      <p>
+        <code>default</code> and <code>static</code> methods do not count as abstract methods.  
+        The interface remains functional.
+      </p>
+      <pre class="language-java"><code>
+@FunctionalInterface
+interface Parent {
+    void execute();
+}
+
+@FunctionalInterface
+interface Child extends Parent {
+    default void log() { System.out.println("Logging"); }
+    static void info() { System.out.println("Static info"); }
+}
+      </code></pre>
+      <p>
+        Here <code>Child</code> still has only one abstract method (<code>execute()</code>), 
+        so it is a valid functional interface.
+      </p>
+
+      <h5 class="text-info">📌 Case 5: Multiple inheritance conflicts</h5>
+      <p>
+        If a child interface extends two functional interfaces with <b>different abstract methods</b>, 
+        it will end up with multiple abstract methods → ❌ not functional.
+      </p>
+      <pre class="language-java"><code>
+@FunctionalInterface
+interface A {
+    void m1();
+}
+
+@FunctionalInterface
+interface B {
+    void m2();
+}
+
+interface C extends A, B { } // ❌ 2 abstract methods → not functional
+      </code></pre>
+      <p>
+        If both parents declare the <b>same abstract method signature</b>, it’s fine 
+        (diamond problem doesn’t occur here, they collapse into one).
+      </p>
+      <pre class="language-java"><code>
+@FunctionalInterface
+interface A {
+    void test();
+}
+
+@FunctionalInterface
+interface B {
+    void test();
+}
+
+@FunctionalInterface
+interface C extends A, B { } // ✅ only one abstract method: test()
+      </code></pre>
+
+      <h5 class="text-info">📌 Conclusion</h5>
+      <ul>
+        <li>✅ Child with no new abstract methods → still functional.</li>
+        <li>✅ Child overriding the same method → still functional.</li>
+        <li>❌ Child adding a different abstract method → not functional.</li>
+        <li>✅ Child adding <code>default</code> / <code>static</code> → still functional.</li>
+        <li>❌ Multiple inheritance with different abstract methods → not functional.</li>
+        <li>✅ Multiple inheritance with the same abstract method → still functional.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#springReflectionApi">
+      How Reflection API works or helps in Spring Framework?
+    </button>
+  </h2>
+  <div id="springReflectionApi" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What is Reflection API?</h5>
+      <p>
+        Reflection in Java is a feature of the <code>java.lang.reflect</code> package that allows 
+        inspection and modification of classes, methods, fields, and constructors at runtime, 
+        even if you don’t know their names at compile-time.
+      </p>
+      <pre class="language-java"><code>
+Class&lt;?&gt; clazz = Class.forName("com.example.User");
+for (Method m : clazz.getDeclaredMethods()) {
+    System.out.println(m.getName());
+}
+      </code></pre>
+      <p>Here, we dynamically load a class by name and inspect its methods.</p>
+
+      <h5 class="text-info">📌 How Reflection Helps Spring?</h5>
+      <ul>
+        <li><b>Dependency Injection:</b> Spring uses reflection to inject values into private fields 
+            or call setters without needing direct access.</li>
+        <li><b>Annotation Processing:</b> Annotations like <code>@Autowired</code>, 
+            <code>@Transactional</code>, <code>@Component</code> are discovered at runtime using reflection.</li>
+        <li><b>Bean Instantiation:</b> Spring dynamically creates bean objects using constructors via reflection.</li>
+        <li><b>Proxy & AOP:</b> Reflection is used to inspect method signatures and apply advice 
+            (e.g., logging, transaction management).</li>
+        <li><b>Configuration-less Programming:</b> You don’t have to manually wire everything — Spring 
+            reflects on classes to auto-detect beans and their dependencies.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Example: Dependency Injection with Reflection</h5>
+      <pre class="language-java"><code>
+public class UserService {
+    private UserRepository repo; // no setter
+
+    public void setRepo(UserRepository repo) {
+        this.repo = repo;
+    }
+}
+
+// Spring internally
+Field field = UserService.class.getDeclaredField("repo");
+field.setAccessible(true);
+field.set(userServiceObj, repoInstance); // injects dependency
+      </code></pre>
+      <p>
+        Even though <code>repo</code> may be private, Spring can set it using reflection.
+      </p>
+
+      <h5 class="text-info">📌 Example: Reading Annotations</h5>
+      <pre class="language-java"><code>
+for (Method method : MyService.class.getDeclaredMethods()) {
+    if (method.isAnnotationPresent(Transactional.class)) {
+        System.out.println("Method " + method.getName() + " is transactional");
+    }
+}
+      </code></pre>
+      <p>
+        Spring scans classes for annotations at runtime to apply features like transactions, caching, etc.
+      </p>
+
+      <h5 class="text-info">📌 Benefits in Spring</h5>
+      <ul>
+        <li>Dynamic: No need for compile-time knowledge of classes.</li>
+        <li>Flexible: Enables IoC, AOP, proxies, and annotation-driven development.</li>
+        <li>Reduces Boilerplate: Developers don’t need to manually wire or configure everything.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Downsides</h5>
+      <ul>
+        <li>Reflection is slower than direct access (but Spring optimizes with caching).</li>
+        <li>Less type safety (runtime errors possible).</li>
+        <li>Can break encapsulation by accessing private fields/methods.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Conclusion</h5>
+      <p>
+        Reflection is the backbone of many Spring features like Dependency Injection, AOP, 
+        annotation processing, and bean instantiation. Without Reflection, Spring could not 
+        provide such a high level of flexibility and configuration-free development.
+      </p>
+
+    </div>
+  </div>
+</div>
+
+
+      <div class="accordion-item">
         <h2 class="accordion-header">
           <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
             data-bs-target="#java17features">

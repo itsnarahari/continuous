@@ -3417,6 +3417,1176 @@ function SearchBox() {
   </div>
 </div>
 
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#reactClassVsFuncQ1">
+      React: Class Components vs Functional Components — and when to choose Hooks?
+    </button>
+  </h2>
+  <div id="reactClassVsFuncQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <p class="highlight-yellow">Modern React favors <strong>functional components with Hooks</strong> for most use-cases. Class components remain for legacy code and <strong>Error Boundaries</strong>.</p>
+
+      <h5 class="text-info">📌 Conceptual Differences</h5>
+      <ul>
+        <li><b>Syntax & mental model</b>: Classes use <code>this</code>, lifecycle methods, and <code>setState</code>. Functions use plain JS functions and Hooks.</li>
+        <li><b>State</b>: Class → <code>this.state</code> + <code>this.setState()</code>. Function → <code>useState</code>, <code>useReducer</code>.</li>
+        <li><b>Lifecycle</b>: Class → <code>componentDidMount/DidUpdate/WillUnmount</code>. Function → <code>useEffect</code>/<code>useLayoutEffect</code>.</li>
+        <li><b>Reusability</b>: Classes rely on HOCs/render props; Functions use <b>custom hooks</b> (cleaner composition).</li>
+        <li><b>Error boundaries</b>: As of now, only <b>class components</b> can define error boundaries (<code>componentDidCatch</code>/<code>getDerivedStateFromError</code>).</li>
+        <li><b>Performance</b>: Functional components are leaner; hooks like <code>useMemo</code>/<code>useCallback</code> help control re-renders.</li>
+      </ul>
+
+      <h5 class="text-warning">🧩 Side-by-side Example</h5>
+      <div class="row g-3">
+        <div class="col-lg-6">
+          <pre class="language-js"><code>// Class component
+class Counter extends React.Component {
+  state = { count: 0 };
+  componentDidMount() { document.title = `Count: ${this.state.count}`; }
+  componentDidUpdate() { document.title = `Count: ${this.state.count}`; }
+  componentWillUnmount() { /* cleanup */ }
+  render() {
+    return &lt;button onClick={() =&gt; this.setState({count: this.state.count + 1})}&gt;
+      {this.state.count}
+    &lt;/button&gt;;
+  }
+}</code></pre>
+        </div>
+        <div class="col-lg-6">
+          <pre class="language-js"><code>// Functional component with Hooks
+function Counter() {
+  const [count, setCount] = React.useState(0);
+  React.useEffect(() =&gt; {
+    document.title = `Count: ${count}`;
+    return () =&gt; { /* cleanup */ };
+  }, [count]);
+  return &lt;button onClick={() =&gt; setCount(c =&gt; c + 1)}&gt;{count}&lt;/button&gt;;
+}</code></pre>
+        </div>
+      </div>
+
+      <h5 class="text-success">🪝 When to Choose Hooks (Recommended)</h5>
+      <ul>
+        <li><b>New components</b>: default to functional + hooks.</li>
+        <li><b>Logic reuse</b>: extract to <b>custom hooks</b> (<code>useAuth</code>, <code>useFetch</code>, etc.) instead of HOCs.</li>
+        <li><b>Complex state</b>: prefer <code>useReducer</code> over deeply nested <code>useState</code>.</li>
+        <li><b>Refs & instance vars</b>: use <code>useRef</code> for mutable values that don’t trigger re-renders.</li>
+        <li><b>Performance</b>: use <code>React.memo</code>, <code>useMemo</code>, <code>useCallback</code> to avoid unnecessary renders on hot paths.</li>
+      </ul>
+
+      <h5 class="text-primary">🏷️ When to Keep/Use Class Components</h5>
+      <ul>
+        <li><b>Error boundaries</b> that catch descendant render errors (wrap your functional tree with a class boundary).</li>
+        <li><b>Legacy codebases</b> where migration risk is high—introduce hooks gradually for new parts.</li>
+      </ul>
+      <pre class="language-js"><code>// Minimal Error Boundary (class-only)
+class ErrorBoundary extends React.Component {
+  state = { hasError: false };
+  static getDerivedStateFromError() { return { hasError: true }; }
+  componentDidCatch(err, info) { console.error('EB:', err, info); }
+  render() { return this.state.hasError ? &lt;h4&gt;Something broke.&lt;/h4&gt; : this.props.children; }
+}</code></pre>
+
+      <h5 class="text-secondary">🧠 Lifecycle ↔ Hook Mapping</h5>
+      <ul>
+        <li><code>componentDidMount</code> → <code>useEffect(fn, [])</code></li>
+        <li><code>componentDidUpdate</code> → <code>useEffect(fn, [deps])</code></li>
+        <li><code>componentWillUnmount</code> → return cleanup from <code>useEffect</code></li>
+        <li><code>getSnapshotBeforeUpdate</code> / layout work → <code>useLayoutEffect</code></li>
+        <li>Instance fields → <code>useRef</code></li>
+      </ul>
+
+      <h5 class="text-danger">⚠️ Common Pitfalls with Hooks</h5>
+      <ul>
+        <li>Missing dependency arrays → stale values or infinite loops. Use ESLint <code>react-hooks/exhaustive-deps</code>.</li>
+        <li>Expensive calculations inside render → wrap in <code>useMemo</code>.</li>
+        <li>Anonymous functions/objects as props causing rerenders → stabilize with <code>useCallback</code>/<code>useMemo</code> or move up.</li>
+      </ul>
+
+      <h5 class="text-info">🧪 Small Examples</h5>
+      <pre class="language-js"><code>// Custom hook: window size
+function useWindowSize() {
+  const [size, setSize] = React.useState({w: window.innerWidth, h: window.innerHeight});
+  React.useEffect(() =&gt; {
+    const onR = () =&gt; setSize({w: window.innerWidth, h: window.innerHeight});
+    window.addEventListener('resize', onR);
+    return () =&gt; window.removeEventListener('resize', onR);
+  }, []);
+  return size;
+}
+
+// Memoization to avoid heavy recompute
+const expensive = (n) =&gt; { /* ... */ return n; };
+function Demo({n}) {
+  const val = React.useMemo(() =&gt; expensive(n), [n]);
+  return &lt;div&gt;{val}&lt;/div&gt;;
+}</code></pre>
+
+      <h5 class="text-success">✅ Bottom line</h5>
+      <p>Prefer <strong>functional components with Hooks</strong> for new work. Keep a small <strong>class error boundary</strong> at the app boundary or retain classes where migration risk is not worth it.</p>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#reactReconQ1">
+      How does React’s reconciliation / virtual DOM work?
+    </button>
+  </h2>
+  <div id="reactReconQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <p class="highlight-yellow">
+        React builds a lightweight <b>virtual tree</b> of UI (elements) and compares it to the previous one. 
+        It computes the <b>minimal set of changes</b> and applies them to the real DOM efficiently. 
+        Since React 16+, this is implemented by the <b>Fiber</b> architecture.
+      </p>
+
+      <h5 class="text-info">🧠 Mental Model</h5>
+      <ul>
+        <li>Your component returns <code>elements</code> (plain objects describing UI).</li>
+        <li>React creates a <b>Fiber tree</b> (one Fiber per element) to track work, props, state, lanes/priority.</li>
+        <li>On state/prop change, React <b>renders</b> a new tree and <b>diffs</b> it with the previous tree → produces mutations.</li>
+        <li>Mutations are applied in the <b>commit phase</b> (DOM updates, refs, lifecycle/effects).</li>
+      </ul>
+
+      <h5 class="text-warning">🧵 Two Phases (Fiber)</h5>
+      <ul>
+        <li><b>Render phase</b> (reconciliation): can be interrupted/paused; computes a new Fiber tree and a list of DOM ops.</li>
+        <li><b>Commit phase</b>: synchronous; applies DOM updates, runs <code>useLayoutEffect</code>/<code>componentDidMount/Update</code>, then schedules <code>useEffect</code>.</li>
+      </ul>
+
+      <h5 class="text-success">🔍 Diffing Rules (Reconciliation)</h5>
+      <ul>
+        <li><b>Same type element</b> (e.g., <code>&lt;button&gt;</code> → <code>&lt;button&gt;</code>): update props; keep DOM node; update children.</li>
+        <li><b>Different type</b> (<code>&lt;button&gt;</code> → <code>&lt;div&gt;</code>): replace DOM node; unmount old subtree; mount new.</li>
+        <li><b>Lists use keys</b>: keys identify item identity across renders. React matches by <code>key</code> first, then by index if missing.</li>
+      </ul>
+
+      <pre class="language-js"><code>// Good keys: stable IDs from data
+items.map(item =&gt; &lt;Row key={item.id} data={item} /&gt;)
+
+// Bad: index as key (causes wrong reuse on insert/remove)
+items.map((item, i) =&gt; &lt;Row key={i} data={item} /&gt;)</code></pre>
+
+      <h5 class="text-danger">🧩 Key Effects (Mount vs Update)</h5>
+      <pre class="language-js"><code>// Reordering with stable keys → updates/moves DOM nodes, state preserved per key
+[ {id:1}, {id:2} ]  → [ {id:2}, {id:1} ]
+
+// Changing a component's key forces remount (state reset)
+&lt;Form key={userId} /&gt; // new userId ⇒ new Form state</code></pre>
+
+      <h5 class="text-primary">⚡ Batching & Priorities (Concurrent React)</h5>
+      <ul>
+        <li>Multiple state updates in the same tick are <b>batched</b> to reduce renders.</li>
+        <li>Concurrent features assign <b>priorities (lanes)</b>: urgent updates (typing/clicks) vs. transitions (non-urgent UI).</li>
+      </ul>
+      <pre class="language-js"><code>// Deprioritize expensive UI updates
+const [isPending, startTransition] = React.useTransition();
+startTransition(() =&gt; setSearchQuery(q)); // can be interrupted/yielded</code></pre>
+
+      <h5 class="text-secondary">🧭 When Does React Re-render?</h5>
+      <ul>
+        <li>Parent re-renders → children re-render by default (because new props).</li>
+        <li><code>React.memo(Component)</code> skips re-render if props are shallow-equal.</li>
+        <li><code>useMemo</code>/<code>useCallback</code> stabilize values/functions passed to children.</li>
+      </ul>
+      <pre class="language-js"><code>const Child = React.memo(function Child({onClick, data}) { /* ... */ });
+
+const onClick = React.useCallback(() =&gt; doThing(id), [id]);
+const expensive = React.useMemo(() =&gt; compute(data), [data]);
+&lt;Child onClick={onClick} data={expensive} /&gt;</code></pre>
+
+      <h5 class="text-info">🧪 Example Reconciliation Walkthrough</h5>
+      <pre class="language-js"><code>// prev render
+&lt;ul&gt;
+  &lt;li key="a"&gt;A&lt;/li&gt;
+  &lt;li key="b"&gt;B&lt;/li&gt;
+&lt;/ul&gt;
+
+// next render (insert C between A and B)
+&lt;ul&gt;
+  &lt;li key="a"&gt;A&lt;/li&gt;
+  &lt;li key="c"&gt;C&lt;/li&gt;
+  &lt;li key="b"&gt;B&lt;/li&gt;
+&lt;/ul&gt;
+
+// React matches by key:
+// "a" → update in place
+// "b" moves to index 2
+// "c" is inserted at index 1</code></pre>
+
+      <h5 class="text-warning">🧯 Effects Order & Lifecycles</h5>
+      <ul>
+        <li><code>useLayoutEffect</code>: runs synchronously after DOM mutations, before paint (measure/layout).</li>
+        <li><code>useEffect</code>: runs after paint (non-blocking side effects, data fetching, subscriptions).</li>
+        <li>On unmount or key change, cleanup functions run before the node is removed/replaced.</li>
+      </ul>
+
+      <h5 class="text-danger">⚠️ Common Pitfalls</h5>
+      <ul>
+        <li>Using <b>index as key</b> in dynamic lists → visual glitches, wrong state association.</li>
+        <li>Creating new objects/functions every render passed to memoized children → defeats memoization.</li>
+        <li>Heavy work in render/effects → jank; memoize or move off main thread (Web Worker) when needed.</li>
+        <li>Accidentally changing a component’s <b>key</b> on every render → constant remounts.</li>
+      </ul>
+
+      <h5 class="text-success">✅ Practical Tips</h5>
+      <ul>
+        <li>Always use <b>stable keys</b> from domain IDs.</li>
+        <li>Wrap pure presentational children with <code>React.memo</code>; pass stable props via <code>useMemo</code>/<code>useCallback</code>.</li>
+        <li>For large lists, use <b>windowing</b> (react-window/react-virtualized).</li>
+        <li>Use <b>transitions</b> (<code>useTransition</code>/<code>useDeferredValue</code>) to keep typing responsive during expensive updates.</li>
+      </ul>
+
+      <p class="highlight-blue"><b>Bottom line:</b> Reconciliation compares element trees (via keys/type) to compute minimal DOM mutations. Fiber lets React schedule, pause, and prioritize work so your UI stays responsive.</p>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#reactGlobalStateQ1">
+      React Global State — Context API vs Redux (and what to use when)
+    </button>
+  </h2>
+  <div id="reactGlobalStateQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <p class="highlight-yellow">
+        First separate <b>local UI state</b> (component-only), <b>client global state</b> (app-wide UI prefs, cart, auth),
+        and <b>server state</b> (data from an API with caching/invalidation). Use the <b>simplest tool</b> that fits:
+        Context for small/medium client state, Redux Toolkit for complex cross-cutting state, and
+        <b>TanStack Query</b> (React Query) for server state.
+      </p>
+
+      <h5 class="text-info">📌 When Context API is a good fit</h5>
+      <ul>
+        <li>Small-to-medium apps; a few global concerns (theme, auth session, cart badge).</li>
+        <li>Writes are <b>infrequent</b> and state shape is simple.</li>
+        <li>You can split by domains (AuthContext, ThemeContext, CartContext) to avoid blanket re-renders.</li>
+      </ul>
+
+      <pre class="language-js"><code>// Context + useReducer pattern (split state & dispatch to reduce re-renders)
+import React from "react";
+
+const CartStateCtx = React.createContext(null);
+const CartDispatchCtx = React.createContext(null);
+
+function cartReducer(state, action) {
+  switch (action.type) {
+    case "add": {
+      const { id } = action.item;
+      const qty = (state.items[id]?.qty || 0) + 1;
+      return { ...state, items: { ...state.items, [id]: { ...action.item, qty } } };
+    }
+    case "remove": {
+      const s = { ...state.items }; delete s[action.id];
+      return { ...state, items: s };
+    }
+    default: return state;
+  }
+}
+
+export function CartProvider({ children }) {
+  const [state, dispatch] = React.useReducer(cartReducer, { items: {} });
+  // Memoizing only the state object reference won't block re-render of all consumers; split contexts does.
+  return (
+    &lt;CartDispatchCtx.Provider value={dispatch}&gt;
+      &lt;CartStateCtx.Provider value={state}&gt;{children}&lt;/CartStateCtx.Provider&gt;
+    &lt;/CartDispatchCtx.Provider&gt;
+  );
+}
+
+export function useCart() {
+  const ctx = React.useContext(CartStateCtx);
+  if (!ctx) throw new Error("useCart must be inside CartProvider");
+  return ctx;
+}
+export function useCartDispatch() {
+  const ctx = React.useContext(CartDispatchCtx);
+  if (!ctx) throw new Error("useCartDispatch must be inside CartProvider");
+  return ctx;
+}
+
+// Usage
+function AddToCartButton({ item }) {
+  const dispatch = useCartDispatch();
+  return &lt;button onClick={() =&gt; dispatch({ type: "add", item })}&gt;Add&lt;/button&gt;;
+}
+
+function CartBadge() {
+  const { items } = useCart();
+  const count = React.useMemo(() =&gt; Object.values(items).reduce((a, b) =&gt; a + b.qty, 0), [items]);
+  return &lt;span&gt;{count}&lt;/span&gt;;
+}</code></pre>
+
+      <p class="highlight-blue">⚠️ Context caveat: When the <code>value</code> changes, <b>all consumers re-render</b>. Split per domain and derive data in components to keep renders cheap.</p>
+
+      <h5 class="text-warning">📌 When Redux Toolkit (RTK) is the better choice</h5>
+      <ul>
+        <li>Large apps; many features editing shared data; frequent writes; need <b>devtools, time-travel, middleware</b>.</li>
+        <li>Complex workflows (undo/redo, optimistic updates), cross-cutting policies (analytics, auth refresh).</li>
+        <li>Pair with <b>RTK Query</b> for server-state fetching/caching/invalidation.</li>
+      </ul>
+
+      <pre class="language-js"><code>// Redux Toolkit slice + store + usage
+import { configureStore, createSlice, createSelector } from "@reduxjs/toolkit";
+import { Provider, useDispatch, useSelector, shallowEqual } from "react-redux";
+
+const cartSlice = createSlice({
+  name: "cart",
+  initialState: { items: {} },
+  reducers: {
+    add(state, action) {
+      const { id } = action.payload;
+      const curr = state.items[id];
+      state.items[id] = { ...action.payload, qty: (curr?.qty || 0) + 1 }; // Immer lets you "mutate"
+    },
+    remove(state, action) { delete state.items[action.payload]; }
+  }
+});
+export const { add, remove } = cartSlice.actions;
+
+export const store = configureStore({ reducer: { cart: cartSlice.reducer } });
+
+// Memoized selector (recomputes only when inputs change)
+const selectItems = (state) =&gt; state.cart.items;
+export const selectCount = createSelector([selectItems], (items) =&gt;
+  Object.values(items).reduce((a, b) =&gt; a + b.qty, 0)
+);
+
+// Components
+function CartBadge() {
+  const count = useSelector(selectCount); // memoized, minimal re-render
+  return &lt;span&gt;{count}&lt;/span&gt;;
+}
+function AddToCartButton({ item }) {
+  const dispatch = useDispatch();
+  return &lt;button onClick={() =&gt; dispatch(add(item))}&gt;Add&lt;/button&gt;;
+}
+
+// App root
+export default function App() {
+  return &lt;Provider store={store}&gt;&lt;CartBadge /&gt;&lt;/Provider&gt;;
+}</code></pre>
+
+      <pre class="language-js"><code>// RTK Query for server-state (fetching, cache, invalidation)
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+
+export const api = createApi({
+  reducerPath: "api",
+  baseQuery: fetchBaseQuery({ baseUrl: "/api" }),
+  tagTypes: ["User"],
+  endpoints: (b) =&gt; ({
+    getUser: b.query({ query: (id) =&gt; `users/${id}`, providesTags: (r, e, id) =&gt; [{ type: "User", id }] }),
+    updateUser: b.mutation({
+      query: ({ id, ...patch }) =&gt; ({ url: `users/${id}`, method: "PATCH", body: patch }),
+      invalidatesTags: (r, e, { id }) =&gt; [{ type: "User", id }]
+    })
+  })
+});
+export const { useGetUserQuery, useUpdateUserMutation } = api;</code></pre>
+
+      <h5 class="text-primary">🗂️ Don’t put server state into Redux/Context unnecessarily</h5>
+      <ul>
+        <li>Server state changes often, has caching, background refresh, and stale-while-revalidate needs.</li>
+        <li>Use <b>TanStack Query</b> (React Query) or RTK Query to manage it; keep Redux/Context for <b>client-only state</b> (UI prefs, wizard step, cart before checkout).</li>
+      </ul>
+
+      <h5 class="text-secondary">🧰 Lightweight alternatives</h5>
+      <ul>
+        <li><b>Zustand</b>: small, selector-based store using <code>useSyncExternalStore</code>; great perf & DX.</li>
+        <li><b>Jotai</b> / <b>Recoil</b>: atom-based state; fine-grained updates, good for complex trees.</li>
+      </ul>
+
+      <h5 class="text-danger">⚠️ Common pitfalls</h5>
+      <ul>
+        <li>Using Context as a single “god provider” → every change re-renders the app.</li>
+        <li>Storing server responses in Redux/Context without cache policies → stale data & manual invalidation pain.</li>
+        <li>Overusing hooks like <code>useMemo</code>/<code>useCallback</code> globally; memo only on hot paths.</li>
+      </ul>
+
+      <h5 class="text-success">✅ Decision guide</h5>
+      <ul>
+        <li><b>Tiny/medium app, few globals</b> → Context + useReducer, split by domain.</li>
+        <li><b>Large app, many writers, need devtools/middleware</b> → Redux Toolkit (+ RTK Query for server state).</li>
+        <li><b>Performance-sensitive slices with many updates</b> → Zustand/Jotai/Recoil.</li>
+        <li><b>Remote data</b> (CRUD, caching, sync) → TanStack Query or RTK Query; keep client state separate.</li>
+      </ul>
+
+      <p class="highlight-blue"><b>Bottom line:</b> Prefer Context for simple, low-churn client state; choose Redux Toolkit for complex, high-churn shared state and ecosystem features; and always manage server state with a data-fetching library designed for it.</p>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#fePerfQ1">
+      Frontend Performance: lazy loading, code splitting, memoization (hariPrep)
+    </button>
+  </h2>
+  <div id="fePerfQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <p class="highlight-yellow">
+        Goal: <b>ship less JS</b>, <b>execute less work</b>, <b>paint fewer pixels</b>. Use route-/component-level code splitting,
+        defer non-critical work, and control re-renders with memoization & stable props.
+      </p>
+
+      <h5 class="text-info">🧭 1) Route-level code splitting (React Router + <code>React.lazy</code>)</h5>
+      <pre class="language-js"><code>// AppRoutes.jsx
+import { Suspense, lazy } from "react";
+const Home = lazy(() =&gt; import(/* webpackChunkName: "home" */ "./pages/Home"));
+const Product = lazy(() =&gt; import(/* webpackChunkName: "product" */ "./pages/Product"));
+
+export default function AppRoutes() {
+  return (
+    &lt;Suspense fallback={&lt;div className="p-3"&gt;Loading…&lt;/div&gt;}&gt;
+      &lt;Routes&gt;
+        &lt;Route path="/" element={&lt;Home /&gt;} /&gt;
+        &lt;Route path="/p/:id" element={&lt;Product /&gt;} /&gt;
+      &lt;/Routes&gt;
+    &lt;/Suspense&gt;
+  );
+}</code></pre>
+
+      <h5 class="text-warning">🧩 2) Component-level lazy loading (heavy widgets only when needed)</h5>
+      <pre class="language-js"><code>// Lazy-load a chart only when visible
+import { lazy, Suspense } from "react";
+const SalesChart = lazy(() =&gt; import(/* webpackChunkName: "chart" */ "./components/SalesChart"));
+
+export function Dashboard() {
+  const [show, setShow] = React.useState(false);
+  return (
+    &lt;section&gt;
+      &lt;button onClick={() =&gt; setShow(true)}&gt;Show Chart&lt;/button&gt;
+      {show &amp;&amp; (
+        &lt;Suspense fallback={&lt;div&gt;Loading chart…&lt;/div&gt;}&gt;
+          &lt;SalesChart /&gt;
+        &lt;/Suspense&gt;
+      )}
+    &lt;/section&gt;
+  );
+}</code></pre>
+
+      <h5 class="text-success">🗂️ 3) Smart prefetch/preload (speed up next navigation)</h5>
+      <ul>
+        <li><b>Prefetch</b> likely next routes on idle; <b>preload</b> if definitely needed soon.</li>
+      </ul>
+      <pre class="language-js"><code>// Prefetch module on hover/idle
+const Product = lazy(() =&gt; import(/* webpackPrefetch: true */ "./pages/Product"));
+const prefetchProduct = () =&gt; import(/* webpackPrefetch: true */ "./pages/Product");</code></pre>
+      <pre class="language-html"><code>&lt;!-- Preload critical font/css; preconnect to APIs/CDN --&gt;
+&lt;link rel="preconnect" href="https://cdn.example.com" crossorigin&gt;
+&lt;link rel="preload" as="style" href="/critical.css"&gt;</code></pre>
+
+      <h5 class="text-danger">🧠 4) Memoization: prevent useless re-renders</h5>
+      <pre class="language-js"><code>// 4a) React.memo for pure presentational children
+const Row = React.memo(function Row({ item, onClick }) {
+  return &lt;li onClick={() =&gt; onClick(item.id)}&gt;{item.name}&lt;/li&gt;;
+});
+
+// 4b) useCallback to stabilize handlers passed down
+function List({ items }) {
+  const onClick = React.useCallback((id) =&gt; {/* ... */}, []); // deps: stable
+  return &lt;ul&gt;{items.map(it =&gt; &lt;Row key={it.id} item={it} onClick={onClick} /&gt;)}&lt;/ul&gt;;
+}
+
+// 4c) useMemo for expensive calculations
+const total = React.useMemo(() =&gt; items.reduce((a,b)=&gt;a+b.price,0), [items]);</code></pre>
+      <p class="highlight-blue">Tip: Memo only on hot paths. Unstable props (new objects/functions each render) defeat memoization.</p>
+
+      <h5 class="text-primary">📦 5) Code-splitting hygiene (tree-shake & bundle-analyze)</h5>
+      <pre class="language-js"><code>// Import only what's used (tree-shakable libs)
+import pick from "lodash-es/pick";          // ✅ good
+// import _ from "lodash";                  // ❌ pulls whole lib
+
+// Package.json: ensure ESM builds are used
+{ "sideEffects": false, "type": "module" }</code></pre>
+      <pre class="language-bash"><code># Run a bundle analyzer to find big chunks
+vite-bundle-visualizer
+webpack-bundle-analyzer
+npx source-map-explorer dist/*.js</code></pre>
+
+      <h5 class="text-secondary">🖼️ 6) Images & media (often biggest wins)</h5>
+      <pre class="language-html"><code>&lt;img
+  src="/img/hero-800.avif"
+  srcset="/img/hero-400.avif 400w, /img/hero-800.avif 800w, /img/hero-1600.avif 1600w"
+  sizes="(max-width: 600px) 90vw, 1200px"
+  loading="lazy" decoding="async" alt="Hero" /&gt;</code></pre>
+      <ul>
+        <li>Use <b>AVIF/WebP</b>, correct <b>sizes/srcset</b>, <b>loading="lazy"</b>, and <b>decoding="async"</b>.</li>
+        <li>Serve via CDN with <b>width/format</b> params. Avoid shipping 4K to mobile.</li>
+      </ul>
+
+      <h5 class="text-info">📜 7) Lists & rendering work (virtualize + window)</h5>
+      <pre class="language-js"><code>// react-window example
+import { FixedSizeList as List } from "react-window";
+&lt;List height={400} width={600} itemCount={rows.length} itemSize={42}&gt;
+ {({ index, style }) =&gt; &lt;div style={style}&gt;{rows[index].name}&lt;/div&gt;}
+&lt;/List&gt;</code></pre>
+
+      <h5 class="text-warning">⚡ 8) Avoid layout thrash (measure then mutate)</h5>
+      <pre class="language-js"><code>// Batch DOM reads/writes; use rAF; prefer transform/opacity for animations
+requestAnimationFrame(() =&gt; {
+  box.style.transform = "translateY(8px)";  // doesn't trigger layout
+  box.style.opacity = "0.9";
+});</code></pre>
+      <pre class="language-css"><code>/* Contain complex widgets to limit reflow scope */
+.card { contain: content; will-change: transform; }</code></pre>
+
+      <h5 class="text-success">🌐 9) Network & execution: ship less, sooner</h5>
+      <ul>
+        <li>HTTP/2/3, gzip/br compression; long-TTL immutable assets (<code>filename.[hash].js</code>).</li>
+        <li>Inline only the critical CSS; defer the rest (<code>&lt;link rel="preload" as="style"&gt;</code> then apply).</li>
+        <li>Use <b>defer</b> on non-critical scripts: <code>&lt;script src="..." defer&gt;&lt;/script&gt;</code>.</li>
+      </ul>
+
+      <h5 class="text-danger">🧵 10) Concurrency helpers (React 18+)</h5>
+      <pre class="language-js"><code>// Keep typing responsive while filtering a big list
+const [isPending, startTransition] = React.useTransition();
+function onSearch(q) {
+  startTransition(() =&gt; setQuery(q)); // low-priority
+}</code></pre>
+      <pre class="language-js"><code>// Defer heavy derived value from a fast-changing input
+const deferred = React.useDeferredValue(query);</code></pre>
+
+      <h5 class="text-secondary">🔍 11) Idle/visibility-based loading (IntersectionObserver)</h5>
+      <pre class="language-js"><code>// Lazy init a heavy module when a placeholder becomes visible
+function LazyWidgetPlaceholder() {
+  const ref = React.useRef(null);
+  const [ready, setReady] = React.useState(false);
+  React.useEffect(() =&gt; {
+    const io = new IntersectionObserver(([e]) =&gt; {
+      if (e.isIntersecting) { setReady(true); io.disconnect(); }
+    });
+    io.observe(ref.current);
+    return () =&gt; io.disconnect();
+  }, []);
+  return &lt;div ref={ref}&gt;{ready ? &lt;HeavyWidget /&gt; : "…" }&lt;/div&gt;;
+}</code></pre>
+
+      <h5 class="text-primary">🧪 12) Measure & enforce budgets</h5>
+      <pre class="language-bash"><code># Lighthouse CI (PR gate)
+lhci autorun --collect.staticDistDir=dist
+
+# Web Vitals in-app
+import { onCLS, onFID, onLCP } from 'web-vitals';
+onLCP(console.log); onFID(console.log); onCLS(console.log);</code></pre>
+      <pre class="language-json"><code>{
+  "performanceBudget": {
+    "maxTotalJS": "200 KB",
+    "maxMainThreadTime": 2000
+  }
+}</code></pre>
+
+      <h5 class="text-danger">⚠️ Common pitfalls</h5>
+      <ul>
+        <li>One giant “vendor” chunk; prefer <b>splitChunks</b> by route/feature.</li>
+        <li>Index as key in lists → unnecessary re-mounts.</li>
+        <li>Recomputing selectors in render; memoize derived data.</li>
+        <li>Over-memoization (complex compares can cost more than re-render).</li>
+        <li>Bundling moment.js/locales accidentally; prefer <b>date-fns</b>/<b>Intl</b>.</li>
+      </ul>
+
+      <h5 class="text-success">✅ Bottom line</h5>
+      <p>
+        Split by route/feature, lazy-load heavy UI, memoize hot paths with stable props,
+        virtualize large lists, and keep images lean. Measure with Web Vitals & bundle analyzers,
+        then iterate with clear performance budgets.
+      </p>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#reactAsyncQ1">
+      React: Handling async API calls — promises, async/await, errors, loading states (hariPrep)
+    </button>
+  </h2>
+  <div id="reactAsyncQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <p class="highlight-yellow">
+        Core ideas: keep <b>loading / error / data</b> explicit, cancel stale requests, handle retries, and avoid updating unmounted components.
+      </p>
+
+      <h5 class="text-info">1) Basics: Promises &amp; async/await (event handlers)</h5>
+      <pre class="language-js"><code>// Using promises
+function SaveButton({ payload }) {
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState(null);
+
+  const save = () =&gt; {
+    setLoading(true); setError(null);
+    fetch("/api/items", { method:"POST", body: JSON.stringify(payload), headers:{ "Content-Type":"application/json" } })
+      .then(r =&gt; r.ok ? r.json() : Promise.reject({ status:r.status, msg:"Bad response" }))
+      .then(() =&gt; {/* success UI */})
+      .catch((e) =&gt; setError(e.msg || e.message))
+      .finally(() =&gt; setLoading(false));
+  };
+
+  return &lt;button disabled={loading} onClick={save}&gt;{loading ? "Saving..." : "Save"}&lt;/button&gt;;
+}</code></pre>
+      <pre class="language-js"><code>// Using async/await (cleaner)
+function SaveButtonA({ payload }) {
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState(null);
+
+  const save = async () =&gt; {
+    try {
+      setLoading(true); setError(null);
+      const res = await fetch("/api/items", { method:"POST", body: JSON.stringify(payload), headers:{ "Content-Type":"application/json" } });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      // use json
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return &lt;&gt;
+    &lt;button disabled={loading} onClick={save}&gt;{loading ? "Saving..." : "Save"}&lt;/button&gt;
+    {error &amp;&amp; &lt;div className="text-danger small"&gt;{error}&lt;/div&gt;}
+  &lt;/&gt;;
+}</code></pre>
+
+      <h5 class="text-warning">2) Fetch on mount / param change with cancellation</h5>
+      <pre class="language-js"><code>function UserView({ id }) {
+  const [data, setData] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(null);
+
+  React.useEffect(() =&gt; {
+    const ctrl = new AbortController();
+    let alive = true; // stale response guard
+
+    (async () =&gt; {
+      try {
+        setLoading(true); setError(null);
+        const res = await fetch(`/api/users/${id}`, { signal: ctrl.signal });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        if (alive) setData(json);
+      } catch (e) {
+        if (e.name !== "AbortError" &amp;&amp; alive) setError(e.message);
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+
+    return () =&gt; { alive = false; ctrl.abort(); };
+  }, [id]);
+
+  if (loading) return &lt;SkeletonUser /&gt;;
+  if (error) return &lt;ErrorState retryText="Retry" onRetry={() =&gt; {/* trigger by changing key/state */}} /&gt;;
+  return &lt;UserCard user={data} /&gt;;
+}</code></pre>
+
+      <h5 class="text-success">3) Reusable hook: <code>useRequest</code> (data, error, loading, refetch)</h5>
+      <pre class="language-js"><code>function useRequest(url, opts = {}) {
+  const [data, setData] = React.useState(null);
+  const [error, setError] = React.useState(null);
+  const [loading, setLoading] = React.useState(false);
+  const [version, bump] = React.useState(0); // to force refetch
+
+  const refetch = React.useCallback(() =&gt; bump(v =&gt; v + 1), []);
+  React.useEffect(() =&gt; {
+    const ctrl = new AbortController();
+    let alive = true;
+    (async () =&gt; {
+      try {
+        setLoading(true); setError(null);
+        const res = await fetch(url, { ...opts, signal: ctrl.signal });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        if (alive) setData(json);
+      } catch (e) {
+        if (e.name !== "AbortError" &amp;&amp; alive) setError(e.message);
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () =&gt; { alive = false; ctrl.abort(); };
+  }, [url, JSON.stringify(opts), version]); // keep opts stable in caller ideally
+
+  return { data, error, loading, refetch };
+}
+
+// Usage
+function Products() {
+  const { data, error, loading, refetch } = useRequest("/api/products?limit=50");
+  if (loading) return &lt;Spinner /&gt;;
+  if (error) return &lt;ErrorState onRetry={refetch} /&gt;;
+  return &lt;Grid items={data}/&gt;;
+}</code></pre>
+
+      <h5 class="text-primary">4) Retry with exponential backoff (transient failures)</h5>
+      <pre class="language-js"><code>async function fetchWithRetry(input, init, { retries = 3, base = 300 } = {}) {
+  let last;
+  for (let i = 0; i &lt;= retries; i++) {
+    try {
+      const res = await fetch(input, init);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res;
+    } catch (e) {
+      last = e;
+      if (i === retries) break;
+      await new Promise(r =&gt; setTimeout(r, base * 2 ** i + Math.random() * 100));
+    }
+  }
+  throw last;
+}</code></pre>
+
+      <h5 class="text-secondary">5) Parallel calls, allSettled, and racing</h5>
+      <pre class="language-js"><code>// Parallel & continue even if one fails
+const [u, posts] = await Promise.allSettled([
+  fetchJSON(`/api/users/${id}`), fetchJSON(`/api/users/${id}/posts`)
+]);
+if (u.status === "fulfilled") setUser(u.value);
+if (posts.status === "fulfilled") setPosts(posts.value);
+
+// Race (first-fastest), then cancel the slower one
+const ctrl = new AbortController();
+const fast = Promise.race([
+  fetch(`/api/a`, { signal: ctrl.signal }),
+  fetch(`/api/b`, { signal: ctrl.signal })
+]);
+fast.finally(() =&gt; ctrl.abort());</code></pre>
+
+      <h5 class="text-danger">6) Optimistic updates &amp; rollback (forms)</h5>
+      <pre class="language-js"><code>function useOptimisticTodos() {
+  const [todos, setTodos] = React.useState([]);
+  const addTodo = async (title) =&gt; {
+    const temp = { id: `tmp-${Date.now()}`, title };
+    setTodos(ts =&gt; [temp, ...ts]); // optimistic
+    try {
+      const res = await fetch("/api/todos", { method:"POST", body: JSON.stringify({ title }), headers:{ "Content-Type":"application/json" } });
+      if (!res.ok) throw new Error("Create failed");
+      const saved = await res.json();
+      setTodos(ts =&gt; ts.map(t =&gt; t.id === temp.id ? saved : t));
+    } catch (e) {
+      setTodos(ts =&gt; ts.filter(t =&gt; t.id !== temp.id)); // rollback
+      throw e;
+    }
+  };
+  return { todos, addTodo };
+}</code></pre>
+
+      <h5 class="text-info">7) Loading UX patterns</h5>
+      <ul>
+        <li>Skeletons for lists/cards; disable buttons during submit; show progress for long ops.</li>
+        <li>Preserve previous data while refetching to prevent UI jumps (keep previous result in state).</li>
+      </ul>
+      <pre class="language-js"><code>// Keep previous data while refetching (stale-while-revalidate feel)
+const [data, setData] = React.useState(null);
+const [fetching, setFetching] = React.useState(false);
+async function refetch() {
+  setFetching(true);
+  try { const res = await fetch("/api/items"); setData(await res.json()); }
+  finally { setFetching(false); }
+}
+return &lt;&gt; {fetching &amp;&amp; &lt;SmallSpinner /&gt;} &lt;List data={data} /&gt; &lt;/&gt;;</code></pre>
+
+      <h5 class="text-warning">8) Prefer a server-state library when possible</h5>
+      <pre class="language-js"><code>// TanStack Query (React Query) minimal example
+import { useQuery, useMutation, QueryClient, QueryClientProvider } from "@tanstack/react-query";
+const qc = new QueryClient();
+
+function Products() {
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ["products", 50],
+    queryFn: () =&gt; fetch("/api/products?limit=50").then(r =&gt; r.json()),
+    staleTime: 30_000
+  });
+  if (isLoading) return &lt;Spinner /&gt;;
+  if (isError) return &lt;ErrorState onRetry={refetch} /&gt;;
+  return &lt;Grid items={data} /&gt;;
+}
+
+function App(){ return &lt;QueryClientProvider client={qc}&gt;&lt;Products /&gt;&lt;/QueryClientProvider&gt;; }</code></pre>
+
+      <h5 class="text-danger">9) Common pitfalls</h5>
+      <ul>
+        <li>Updating state after unmount (fix with AbortController / guards).</li>
+        <li>Swallowing errors silently (always surface to UI or logger).</li>
+        <li>Racing responses overwriting fresh data (use request counters/guards or library-managed dedupe).</li>
+        <li>Recreating fetch options/handlers every render (memoize or lift state).</li>
+      </ul>
+
+      <h5 class="text-success">✅ Bottom line</h5>
+      <p>
+        Model <b>data/error/loading</b> explicitly, cancel stale requests, retry transient errors with backoff,
+        keep UX responsive with skeletons and optimistic updates, and consider <b>TanStack Query</b> for server state.
+      </p>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#scale10xBackendQ1">
+      Backend: Scale an existing app to handle 10× load — caching, partitioning, DB scaling, horizontal & vertical scaling
+    </button>
+  </h2>
+  <div id="scale10xBackendQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <p class="highlight-yellow">
+        Strategy: <b>measure → remove waste → add cache → separate reads/writes → make slow work async → scale horizontally</b>.
+        Keep the app <b>stateless</b>, protect dependencies with <b>backpressure</b>, and evolve data with <b>partitioning/sharding</b> when needed.
+      </p>
+
+      <h5 class="text-info">1) Baseline & capacity math</h5>
+      <ul>
+        <li>Find the current bottleneck (CPU, DB QPS, external APIs, GC, thread pools). Track p50/p95/p99, QPS, error rate.</li>
+        <li>Use Little’s Law: <code>Concurrency ≈ Throughput × Latency</code> to size pools. E.g., 400 RPS @ 100 ms → 40 concurrent.</li>
+      </ul>
+
+      <h5 class="text-success">2) Caching: multi-layer (biggest 10× win)</h5>
+      <ul>
+        <li><b>Edge/CDN</b> for static + cacheable GETs (ETag/Last-Modified).</li>
+        <li><b>App cache</b> (Caffeine) for micro-hot keys (ms latency, per-instance).</li>
+        <li><b>Redis</b> for cross-node hot data, tokens, rate limits, and request coalescing.</li>
+      </ul>
+      <pre class="language-yaml"><code># Spring Boot cache stack: Caffeine (L1) + Redis (L2)
+spring:
+  cache:
+    cache-names: user_profile, product, perms
+    caffeine.spec: maximumSize=20000,expireAfterWrite=5m
+  data:
+    redis:
+      host: REDIS_HOST
+      timeout: 200ms
+</code></pre>
+      <pre class="language-java"><code>// L1+L2 cache example
+@Cacheable(cacheNames = "user_profile", key = "#id", unless = "#result == null")
+public UserProfileDto getUser(long id) { return repo.fetchUserProfile(id); }
+
+// Prevent dogpiles: single flight per key (simple)
+ConcurrentHashMap&lt;String, CompletableFuture&lt;T&gt;&gt; inFlight = new ConcurrentHashMap<>();
+public T cachedOnce(String key, Supplier&lt;T&gt; loader) {
+  return inFlight.computeIfAbsent(key, k -&gt; CompletableFuture.supplyAsync(loader))
+                 .whenComplete((r, e) -&gt; inFlight.remove(key)).join();
+}
+</code></pre>
+      <pre class="language-nginx"><code># CDN/edge: cache GETs with ETag/TTL & serve stale on origin errors
+location /v1/items {
+  proxy_cache api_cache; proxy_cache_valid 200 5m; proxy_cache_use_stale error timeout updating;
+  add_header X-Cache $upstream_cache_status;
+}
+</code></pre>
+
+      <h5 class="text-warning">3) Database scaling (order: optimize → read scale → partition → shard)</h5>
+      <ul>
+        <li><b>Optimize queries/indexes</b>: projections, pagination, avoid N+1; add composite indexes that match WHERE + ORDER BY.</li>
+        <li><b>Read replicas</b>: route <em>consistent-enough</em> reads to replicas; writes stay on primary.</li>
+        <li><b>Partition</b> large tables (time-range or hash) to keep indexes small and vacuum fast.</li>
+        <li><b>Shard</b> by tenant/user when a single primary can’t keep up (requires app routing & cross-shard ops design).</li>
+      </ul>
+      <pre class="language-sql"><code>-- Postgres: time-partition by month (native declarative)
+CREATE TABLE events (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL,
+  ts TIMESTAMPTZ NOT NULL DEFAULT now(),
+  payload JSONB
+) PARTITION BY RANGE (ts);
+
+CREATE TABLE events_2025_09 PARTITION OF events
+  FOR VALUES FROM ('2025-09-01') TO ('2025-10-01');
+
+-- Cover read patterns
+CREATE INDEX CONCURRENTLY idx_events_user_ts ON events_2025_09 (user_id, ts DESC);
+</code></pre>
+      <pre class="language-java"><code>// Simple read/write splitting via AbstractRoutingDataSource
+class RwLookup extends AbstractRoutingDataSource {
+  private static final ThreadLocal&lt;String&gt; ctx = new ThreadLocal&lt;&gt;();
+  static void readOnly() { ctx.set("ro"); }
+  static void write()    { ctx.set("rw"); }
+  @Override protected Object determineCurrentLookupKey() { return ctx.get() == null ? "rw" : ctx.get(); }
+}
+// Usage
+@Transactional(readOnly = true)
+public List&lt;Order&gt; listOrders(...) { RwLookup.readOnly(); return repo.find...; }
+</code></pre>
+
+      <h5 class="text-danger">4) Horizontal & vertical scaling</h5>
+      <ul>
+        <li><b>Stateless app</b>: JWT or Redis session; no sticky sessions. Scale instances behind an LB.</li>
+        <li><b>Right-size</b>: lift CPU/heap until diminishing returns; then add nodes. Keep GC healthy (G1/GenZGC, short pauses).</li>
+        <li><b>Pools</b>: Tomcat maxThreads, Hikari maxPool, HTTP client pools sized by true blocking concurrency.</li>
+      </ul>
+      <pre class="language-yaml"><code>server:
+  tomcat.threads.max: 300
+  http2.enabled: true
+spring:
+  datasource.hikari:
+    maximum-pool-size: 50
+    leak-detection-threshold: 30000
+  jpa.open-in-view: false
+</code></pre>
+
+      <h5 class="text-primary">5) Make slow work async (queues) — protect p95</h5>
+      <ul>
+        <li>Turn POST/PUT heavy ops into <b>enqueue + 202 Accepted</b>; process via workers (Kafka/SQS/RabbitMQ).</li>
+        <li>Use <b>Outbox</b> pattern for exactly-once side effects; consume with CDC (e.g., Debezium).</li>
+        <li>Add <b>idempotency keys</b> on write APIs.</li>
+      </ul>
+      <pre class="language-sql"><code>-- Outbox table (single-writer DB; consumed by worker)
+CREATE TABLE outbox (
+  id BIGSERIAL PRIMARY KEY,
+  topic TEXT NOT NULL,
+  payload JSONB NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  processed_at TIMESTAMPTZ
+);
+</code></pre>
+      <pre class="language-java"><code>// Controller: enqueue and return quickly
+@PostMapping("/v1/orders")
+public ResponseEntity&lt;?&gt; create(@RequestBody NewOrder req, @RequestHeader("Idempotency-Key") String idem) {
+  outboxService.stage("orders.created", Map.of("order", req, "idem", idem));
+  return ResponseEntity.accepted().body(Map.of("status","queued"));
+}
+</code></pre>
+
+      <h5 class="text-secondary">6) Backpressure: rate limits, timeouts, bulkheads, retries</h5>
+      <ul>
+        <li><b>Rate limit</b> per API key/IP (Redis token bucket) to shed load earlier than DB saturation.</li>
+        <li><b>Timeouts</b> everywhere (DB/HTTP); <b>circuit breakers</b> for flaky downstreams.</li>
+        <li><b>Bulkheads</b>: separate executor pools for slow paths so hot paths stay healthy.</li>
+      </ul>
+      <pre class="language-yaml"><code># Resilience4j example
+resilience4j:
+  circuitbreaker:
+    instances:
+      externalApi:
+        slidingWindowSize: 50
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+  timelimiter:
+    instances.externalApi.timeoutDuration: 800ms
+</code></pre>
+      <pre class="language-java"><code>// Redis token bucket (simple minute window)
+public boolean allow(String key, int limitPerMin) {
+  String k = "rl:"+key+":"+Instant.now().getEpochSecond()/60;
+  Long v = redis.opsForValue().increment(k);
+  if (v == 1) redis.expire(k, Duration.ofMinutes(2));
+  return v &lt;= limitPerMin;
+}
+</code></pre>
+
+      <h5 class="text-info">7) Data model & access patterns</h5>
+      <ul>
+        <li>Return <b>projections/DTOs</b>, not entire entities; <b>paginate</b> large lists; avoid N+1 via fetch joins or tailored queries.</li>
+        <li><b>Pre-compute</b> aggregates (materialized views / summary tables) updated via outbox/cron.</li>
+        <li>Design <b>shard/partition keys</b> from day 0: userId/tenantId or time for append-heavy data.</li>
+      </ul>
+      <pre class="language-java"><code>// Projection query (JPA)
+@Query("select new com.app.UserSummary(u.id, u.name, count(o)) from User u join u.orders o where u.id = :id group by u.id, u.name")
+UserSummary fetchSummary(@Param("id") long id);
+</code></pre>
+
+      <h5 class="text-warning">8) Observability to survive 10×</h5>
+      <ul>
+        <li>Micrometer + tracing (OTel). Dashboards: p95 latency per endpoint, RPS, DB QPS, pool wait time, queue lag, cache hit rate.</li>
+        <li>Alerts: 5xx spike, DB connection waits &gt; 50 ms, cache hit &lt; 80%, queue lag &gt; N seconds.</li>
+      </ul>
+
+      <h5 class="text-danger">9) Rollout plan (safest path to 10×)</h5>
+      <ol>
+        <li><b>Week 0–1</b>: profile & index; add CDN/ETag; enable Redis/Caffeine; fix N+1; shrink payloads.</li>
+        <li><b>Week 1–2</b>: add read replica routing; raise/align pools; add rate limiting + circuit breakers.</li>
+        <li><b>Week 2–3</b>: move slow writes to queue + outbox; add workers; precompute hot aggregates.</li>
+        <li><b>Week 3+</b>: partition large tables; consider sharding for highest-traffic domains; autoscale app nodes.</li>
+      </ol>
+
+      <h5 class="text-success">✅ Bottom line</h5>
+      <p>
+        Get most of the 10× by <b>caching smartly</b>, <b>splitting reads/writes</b>, and <b>asynchrony</b>.
+        Partition when tables grow, and shard only after you’ve squeezed single-primary + replicas.
+        Keep services stateless, guard dependencies with backpressure, and scale out behind an LB.
+      </p>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#haFtQ1">
+      Backend: Ensuring High Availability (HA) & Fault Tolerance (FT) — patterns, configs, and drills (hariPrep)
+    </button>
+  </h2>
+  <div id="haFtQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <p class="highlight-yellow">
+        HA keeps the service <b>up</b> during failures; FT keeps it <b>functional</b> (maybe degraded). 
+        Strategy: <b>eliminate single points</b>, <b>isolate blast radius</b>, <b>automate failover</b>, and <b>continuously test</b>.
+      </p>
+
+      <h5 class="text-info">1) Availability targets & failure modes</h5>
+      <ul>
+        <li><b>SLO/SLAs</b>: e.g., 99.9% monthly ⇒ ≤ 43m downtime. Define <b>RTO/RPO</b> for DR (e.g., RTO 30m, RPO 5m).</li>
+        <li>Enumerate failures: node crash, AZ outage, dependency down, thundering herd, deploy rollback, data corruption.</li>
+        <li>Design for <b>graceful degradation</b> (serve cached/partial responses) vs hard failures.</li>
+      </ul>
+
+      <h5 class="text-success">2) Redundancy & health-based routing</h5>
+      <ul>
+        <li><b>Multi-AZ</b> minimum; multi-region (active-passive/active-active) for higher tiers.</li>
+        <li>LB with <b>health checks</b>, outlier detection, and <b>connection draining</b>.</li>
+        <li>Run ≥2 instances per service; avoid sticky sessions (stateless + shared cache).</li>
+      </ul>
+      <pre class="language-nginx"><code># Nginx upstream with passive health checks & failover
+upstream app {
+  zone app 64k;
+  server app-1:8080 max_fails=3 fail_timeout=10s;
+  server app-2:8080 max_fails=3 fail_timeout=10s;
+  keepalive 512;
+}
+server {
+  location / {
+    proxy_pass http://app;
+    proxy_next_upstream error timeout http_502 http_503 http_504;
+  }
+}</code></pre>
+
+      <h5 class="text-warning">3) Kubernetes readiness/liveness & rollout safety</h5>
+      <pre class="language-yaml"><code>apiVersion: apps/v1
+kind: Deployment
+spec:
+  replicas: 3
+  strategy:
+    rollingUpdate: { maxUnavailable: 1, maxSurge: 1 }
+  template:
+    spec:
+      containers:
+      - name: app
+        image: app:stable
+        readinessProbe:
+          httpGet: { path: /actuator/health/readiness, port: 8080 }
+          periodSeconds: 5
+        livenessProbe:
+          httpGet: { path: /actuator/health/liveness, port: 8080 }
+          failureThreshold: 3
+        lifecycle:
+          preStop: { exec: { command: ["sh","-c","sleep 5"] } }  # drain</code></pre>
+
+      <h5 class="text-danger">4) Fault tolerance in code: timeouts, retries, circuit breakers, bulkheads</h5>
+      <ul>
+        <li>Always set <b>timeouts</b> (connect/read/write). Use <b>bounded retries</b> with jitter; never infinite.</li>
+        <li><b>Circuit breakers</b> around flaky dependencies; <b>bulkheads</b> (separate pools) for slow paths.</li>
+        <li><b>Idempotency</b> on write APIs + <b>outbox</b> for at-least-once events.</li>
+      </ul>
+      <pre class="language-yaml"><code># Spring Boot + Resilience4j
+resilience4j:
+  circuitbreaker:
+    instances.payment:
+      slidingWindowSize: 50
+      failureRateThreshold: 50
+      waitDurationInOpenState: 10s
+  retry:
+    instances.payment:
+      maxAttempts: 3
+      waitDuration: 200ms
+      retryExceptions: [ java.io.IOException, java.net.SocketTimeoutException ]
+  timelimiter:
+    instances.payment.timeoutDuration: 800ms</code></pre>
+      <pre class="language-java"><code>// Example with annotations
+@CircuitBreaker(name="payment", fallbackMethod="fallback")
+@Retry(name="payment")
+@TimeLimiter(name="payment")
+public CompletableFuture&lt;PaymentRes&gt; charge(PaymentReq req) { /* ... */ }
+
+private CompletableFuture&lt;PaymentRes&gt; fallback(PaymentReq req, Throwable t){
+  return CompletableFuture.completedFuture(PaymentRes.degraded("queued"));
+}</code></pre>
+
+      <h5 class="text-primary">5) Data-layer HA: replicas, quorum, partitioning</h5>
+      <ul>
+        <li><b>Relational</b>: managed Postgres/MySQL with synchronous replicas (same region) + async cross-region DR.</li>
+        <li><b>NoSQL</b> (quorum-based): choose consistency/latency per request (R/W quorum, e.g., <code>LOCAL_QUORUM</code>).</li>
+        <li><b>Partition/Shard</b> to reduce blast radius; route by tenant/user/time. Avoid cross-shard transactions on hot paths.</li>
+      </ul>
+      <pre class="language-sql"><code>-- Postgres: brief idea (managed services recommended)
+-- Synchronous replica for HA (same-region); async replica for DR
+-- Promote replica on failover; apps use read-only endpoints for reads.</code></pre>
+      <pre class="language-bash"><code># Redis Sentinel (keeps cache/locks available)
+sentinel monitor mymaster 10.0.0.12 6379 2
+sentinel down-after-milliseconds mymaster 5000
+sentinel failover-timeout mymaster 60000</code></pre>
+
+      <h5 class="text-secondary">6) Queues & async durability</h5>
+      <ul>
+        <li>Use <b>durable queues</b> (SQS/Kafka/RabbitMQ) with replication; enable <b>DLQ</b> for poison messages.</li>
+        <li><b>Transactional outbox</b> (DB table + CDC) to avoid dual-write inconsistencies.</li>
+      </ul>
+      <pre class="language-sql"><code>CREATE TABLE outbox (
+  id BIGSERIAL PRIMARY KEY,
+  topic TEXT NOT NULL,
+  payload JSONB NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  processed_at TIMESTAMPTZ
+);</code></pre>
+
+      <h5 class="text-info">7) Statelessness, config, and feature flags</h5>
+      <ul>
+        <li>Keep services <b>stateless</b>; store sessions in cookies/JWT or shared stores.</li>
+        <li>Use <b>feature flags</b> to disable risky features during incidents (degrade instead of dying).</li>
+        <li>Immutable infra: blue/green or canary deploys; fast rollbacks.</li>
+      </ul>
+
+      <h5 class="text-warning">8) Backups, DR, and immutability</h5>
+      <ul>
+        <li>Automated, <b>encrypted</b> backups; routine integrity tests & <b>restore drills</b>.</li>
+        <li><b>RTO/RPO</b> defined and tested. Store infra as code (Terraform) for quick rebuilds.</li>
+      </ul>
+      <pre class="language-yaml"><code># Sample DR runbook (excerpt)
+RPO: 5m | RTO: 30m
+Steps:
+  1) Promote read-replica in Region-B (script: dr/promote.sh)
+  2) Flip DNS (TTL 30s) to Region-B LB
+  3) Rehydrate caches; scale workers x2; verify canary checks
+  4) Announce partial-degraded, then clear when stable</code></pre>
+
+      <h5 class="text-danger">9) Observability & auto-remediation</h5>
+      <ul>
+        <li>SLIs: availability, p95 latency, error rate, saturation (CPU, pool waits), queue lag, replica lag.</li>
+        <li>Auto-remediation: scale up on queue lag; recycle unhealthy pods; rotate instances with high error rates.</li>
+      </ul>
+      <pre class="language-yaml"><code># Micrometer/Prometheus: alert examples (pseudo)
+ALERT HighErrorRate IF sum(rate(http_server_errors[5m])) / sum(rate(http_requests[5m])) &gt; 0.02 FOR 10m
+ALERT DBConnWait  IF histogram_quantile(0.95, sum(rate(hikaricp_connections_acquired_seconds_bucket[5m])) by (le)) &gt; 0.05</code></pre>
+
+      <h5 class="text-secondary">10) Capacity & overload protection</h5>
+      <ul>
+        <li>Rate limit (per IP/user/key); <b>token bucket</b> in Redis; return 429 early.</li>
+        <li><b>Adaptive concurrency</b>: shed low-priority traffic when saturation is high.</li>
+        <li>Queue and drop noncritical work; serve stale from cache on origin failure.</li>
+      </ul>
+
+      <h5 class="text-primary">11) Chaos & game days</h5>
+      <ul>
+        <li>Inject failures (kill pods, cut network, increase latency) in staging & controlled prod windows.</li>
+        <li>Keep <b>runbooks</b> up to date; practice paging & handoffs.</li>
+      </ul>
+
+      <h5 class="text-success">✅ Quick checklist</h5>
+      <ul>
+        <li>≥2 instances per service, multi-AZ; health-checked LB; stateless.</li>
+        <li>Timeouts + bounded retries + circuit breakers + bulkheads on all external calls.</li>
+        <li>DB with replicas; tested failover; backups w/ verified restores; outbox + DLQ.</li>
+        <li>Observability dashboards + alerts; autoscaling; feature flags for degrade.</li>
+        <li>Regular chaos drills; documented RTO/RPO and DR runbooks.</li>
+      </ul>
+
+      <p class="highlight-blue"><b>Bottom line:</b> Design for failure as the norm. Redundancy + isolation + automated failover keep you available; 
+        timeouts/retries/circuits & graceful degradation keep you useful; DR drills ensure you can recover when the worst happens.</p>
+    </div>
+  </div>
+</div>
+
 
 
 

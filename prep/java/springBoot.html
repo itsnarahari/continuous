@@ -95,6 +95,337 @@
     <div class="accordion" id="googleAccordion">
 
       <div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#springMultithreading">
+      Multithreading in Spring with Examples
+    </button>
+  </h2>
+  <div id="springMultithreading" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      
+      <h5 class="text-info">📌 1. Using @Async Annotation</h5>
+      <p>Spring provides the <code>@Async</code> annotation to run methods asynchronously on a separate thread pool. 
+         Requires <code>@EnableAsync</code> in the configuration.</p>
+      <pre class="language-java"><code>
+@Configuration
+@EnableAsync
+public class AsyncConfig {
+    @Bean(name = "appExecutor")
+    public Executor taskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(5);
+        executor.setMaxPoolSize(20);
+        executor.setQueueCapacity(100);
+        executor.setThreadNamePrefix("async-");
+        executor.initialize();
+        return executor;
+    }
+}
+
+@Service
+public class ReportService {
+    @Async("appExecutor")
+    public CompletableFuture&lt;String&gt; generateReport(int reportId) throws InterruptedException {
+        System.out.println(Thread.currentThread().getName() + " generating report " + reportId);
+        Thread.sleep(2000);
+        return CompletableFuture.completedFuture("Report " + reportId + " done");
+    }
+}
+      </code></pre>
+      <p>This way, multiple reports can be generated in parallel using threads from the pool.</p>
+
+      <h5 class="text-info">📌 2. Using TaskExecutor Interface</h5>
+      <p>Spring’s <code>TaskExecutor</code> abstraction can be used directly to submit tasks for execution.</p>
+      <pre class="language-java"><code>
+@Autowired
+private TaskExecutor taskExecutor;
+
+public void processTasks() {
+    for (int i = 0; i &lt; 5; i++) {
+        int taskId = i;
+        taskExecutor.execute(() -&gt; {
+            System.out.println("Running task " + taskId + " on " 
+                               + Thread.currentThread().getName());
+        });
+    }
+}
+      </code></pre>
+
+      <h5 class="text-info">📌 3. Scheduling with @Scheduled</h5>
+      <p>Spring also allows scheduling background jobs that run on a thread pool using <code>@Scheduled</code>.</p>
+      <pre class="language-java"><code>
+@Configuration
+@EnableScheduling
+public class SchedulerConfig { }
+
+@Component
+public class MyScheduler {
+    @Scheduled(fixedRate = 5000)
+    public void doTask() {
+        System.out.println("Scheduled task executed by " 
+                           + Thread.currentThread().getName());
+    }
+}
+      </code></pre>
+
+      <h5 class="text-info">📌 4. Reactive Approach</h5>
+      <p>With Spring WebFlux and Project Reactor, concurrency is achieved using non-blocking I/O and schedulers.</p>
+      <pre class="language-java"><code>
+@GetMapping("/users")
+public Flux&lt;User&gt; getUsers() {
+    return userService.findAll()
+                      .subscribeOn(Schedulers.boundedElastic())
+                      .map(user -&gt; transform(user));
+}
+      </code></pre>
+      <p>This is useful for highly scalable, event-driven applications.</p>
+
+      <h5 class="text-info">📌 Conclusion</h5>
+      <p>Multithreading in Spring can be achieved with <code>@Async</code>, 
+         <code>TaskExecutor</code>, <code>@Scheduled</code>, and reactive programming. 
+         The choice depends on whether you need background jobs, concurrent task execution, 
+         or large-scale non-blocking APIs.</p>
+
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#springBoot3MtBestPractices">
+      Spring Boot 3 Multithreading – Best Practices (with Examples)
+    </button>
+  </h2>
+  <div id="springBoot3MtBestPractices" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 1. Always use a Named, Tuned Thread Pool</h5>
+      <p>Prefer <code>ThreadPoolTaskExecutor</code> over raw threads. Tune core/max/queue and use a clear prefix for logs.</p>
+      <pre class="language-java"><code>
+@Configuration
+@EnableAsync
+public class AsyncConfig {
+  @Bean("appExecutor")
+  public ThreadPoolTaskExecutor appExecutor() {
+    ThreadPoolTaskExecutor ex = new ThreadPoolTaskExecutor();
+    ex.setCorePoolSize(Runtime.getRuntime().availableProcessors() * 2);
+    ex.setMaxPoolSize(ex.getCorePoolSize() * 2);
+    ex.setQueueCapacity(1000); // keep large enough for bursts; set to 0 for direct handoff
+    ex.setKeepAliveSeconds(60);
+    ex.setThreadNamePrefix("app-async-");
+    ex.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+    ex.setWaitForTasksToCompleteOnShutdown(true);
+    ex.setAwaitTerminationSeconds(30);
+    ex.initialize();
+    return ex;
+  }
+}
+      </code></pre>
+      <p><b>Tip:</b> For CPU-bound work: small pools (≈ 2×CPU). For I/O-bound: larger pools, but monitor!</p>
+
+      <h5 class="text-info">📌 2. Handle Exceptions Properly</h5>
+      <p>Use <code>CompletableFuture</code> handling or a global <code>AsyncUncaughtExceptionHandler</code> for <code>void</code> methods.</p>
+      <pre class="language-java"><code>
+@Service
+public class InvoiceService {
+  @Async("appExecutor")
+  public CompletableFuture&lt;String&gt; generate(Long id) {
+    return CompletableFuture.supplyAsync(() -&gt; doWork(id))
+      .handle((ok, ex) -&gt; ex == null ? ok : "FAILED:" + ex.getMessage());
+  }
+}
+
+@Configuration
+class AsyncErrHandlerConfig implements AsyncConfigurer {
+  @Override public Executor getAsyncExecutor() { return null; } // use bean above
+  @Override public AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler() {
+    return (ex, method, params) -&gt; {
+      // log + alert
+    };
+  }
+}
+      </code></pre>
+
+      <h5 class="text-info">📌 3. Beware of Self-Invocation (Proxy Gotcha)</h5>
+      <p><code>@Async</code> works via proxies. Calling an <code>@Async</code> method from the same class won’t go async.</p>
+      <pre class="language-java"><code>
+@Service
+public class A {
+  @Async public CompletableFuture&lt;Void&gt; task(){ /*...*/ return CompletableFuture.completedFuture(null); }
+
+  public void wrong() { this.task(); }        // ❌ won't be async
+}
+
+@Service
+@RequiredArgsConstructor
+public class B {
+  private final A a;
+  public void right() { a.task(); }           // ✅ goes through proxy
+}
+      </code></pre>
+
+      <h5 class="text-info">📌 4. Don’t Mix @Transactional with @Async Blindly</h5>
+      <p>Transactions don’t flow across thread boundaries. Start a new transaction if needed.</p>
+      <pre class="language-java"><code>
+@Service
+public class OrderService {
+  @Async
+  @Transactional // starts a brand-new TX in async thread
+  public CompletableFuture&lt;Void&gt; persistAsync(Order o) { /* save */ return CompletableFuture.completedFuture(null); }
+}
+      </code></pre>
+
+      <h5 class="text-info">📌 5. Propagate Context (MDC, Security, Locale, Request)</h5>
+      <p>Use a <code>TaskDecorator</code> to copy MDC / SecurityContext to worker threads for consistent logging & auditing.</p>
+      <pre class="language-java"><code>
+@Component
+class MdcTaskDecorator implements TaskDecorator {
+  @Override public Runnable decorate(Runnable r) {
+    Map&lt;String, String&gt; ctx = MDC.getCopyOfContextMap();
+    SecurityContext sc = SecurityContextHolder.getContext();
+    return () -&gt; {
+      try {
+        if (ctx != null) MDC.setContextMap(ctx);
+        SecurityContextHolder.setContext(sc);
+        r.run();
+      } finally {
+        MDC.clear();
+        SecurityContextHolder.clearContext();
+      }
+    };
+  }
+}
+
+@Configuration
+class ExecWithDecorator {
+  @Bean("decoratedExecutor")
+  public ThreadPoolTaskExecutor ex(MdcTaskDecorator decorator){
+    ThreadPoolTaskExecutor ex = new ThreadPoolTaskExecutor();
+    ex.setCorePoolSize(8); ex.setMaxPoolSize(32); ex.setQueueCapacity(500);
+    ex.setTaskDecorator(decorator);
+    ex.setThreadNamePrefix("dec-async-");
+    ex.initialize(); return ex;
+  }
+}
+      </code></pre>
+
+      <h5 class="text-info">📌 6. Timeouts, Retries, Bulkheads, Circuit Breakers</h5>
+      <p>Protect threads with timeouts and resilience patterns.</p>
+      <pre class="language-java"><code>
+// application.yml
+resilience4j:
+  timelimiter:
+    instances:
+      extCall: { timeout-duration: 2s }
+  retry:
+    instances:
+      extCall: { max-attempts: 3, wait-duration: 200ms }
+  bulkhead:
+    instances:
+      extCall: { max-concurrent-calls: 20, max-wait-duration: 0 }
+
+// Service
+@TimeLimiter(name="extCall")
+@Retry(name="extCall")
+@Bulkhead(name="extCall", type=Bulkhead.Type.THREADPOOL)
+public CompletableFuture&lt;String&gt; callExternal() {
+  return CompletableFuture.supplyAsync(this::httpCall);
+}
+      </code></pre>
+
+      <h5 class="text-info">📌 7. Avoid Blocking in Reactive Pipelines</h5>
+      <p>For WebFlux/Reactor, keep it non-blocking; offload occasional blocking to bounded elastic.</p>
+      <pre class="language-java"><code>
+@GetMapping("/files/{id}")
+public Mono&lt;String&gt; readFile(@PathVariable String id) {
+  return Mono.fromCallable(() -&gt; blockingRead(id))
+             .subscribeOn(Schedulers.boundedElastic()); // isolate blocking
+}
+      </code></pre>
+
+      <h5 class="text-info">📌 8. Combine Async Tasks Safely</h5>
+      <p>Use <code>CompletableFuture.allOf/anyOf</code> and compose chains with <code>thenCompose/thenCombine</code>.</p>
+      <pre class="language-java"><code>
+CompletableFuture&lt;User&gt; u = userSvc.fetch(id);
+CompletableFuture&lt;List&lt;Order&gt;&gt; o = orderSvc.listFor(id);
+
+return u.thenCombine(o, (user, orders) -&gt; toDto(user, orders))
+        .orTimeout(2, TimeUnit.SECONDS)
+        .exceptionally(ex -&gt; fallback());
+      </code></pre>
+
+      <h5 class="text-info">📌 9. Use Scheduling Responsibly</h5>
+      <p>Isolate schedulers from request executors; give them their own pool.</p>
+      <pre class="language-java"><code>
+@Configuration
+@EnableScheduling
+class SchedCfg implements SchedulingConfigurer {
+  @Override public void configureTasks(ScheduledTaskRegistrar reg) {
+    ThreadPoolTaskScheduler sch = new ThreadPoolTaskScheduler();
+    sch.setPoolSize(4);
+    sch.setThreadNamePrefix("sched-");
+    sch.initialize();
+    reg.setTaskScheduler(sch);
+  }
+}
+      </code></pre>
+
+      <h5 class="text-info">📌 10. Monitor & Alert (Micrometer + Actuator)</h5>
+      <p>Expose metrics and watch queue depths, active threads, task rejection counts.</p>
+      <pre class="language-java"><code>
+// Bind pool metrics
+@Bean
+MeterBinder poolMetrics(@Qualifier("appExecutor") ThreadPoolTaskExecutor ex) {
+  return registry -&gt; {
+    new ExecutorServiceMetrics(ex.getThreadPoolExecutor(), "appExecutor", Collections.emptyList()).bindTo(registry);
+  };
+}
+      </code></pre>
+      <p><b>Tip:</b> Also log pool sizes periodically; alert on sustained saturation.</p>
+
+      <h5 class="text-info">📌 11. Choose the Right Rejection Policy</h5>
+      <p><code>CallerRuns</code> provides backpressure; <code>AbortPolicy</code> fails fast; <code>Discard/DiscardOldest</code> drop load. Pick per endpoint/SLA.</p>
+      <pre class="language-java"><code>
+ex.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy()); // backpressure to callers
+      </code></pre>
+
+      <h5 class="text-info">📌 12. Graceful Shutdown</h5>
+      <p>Drain queues and finish in-flight tasks during shutdown (k8s preStop hooks, SIGTERM).</p>
+      <pre class="language-java"><code>
+@Bean
+SmartLifecycle graceful(@Qualifier("appExecutor") ThreadPoolTaskExecutor ex) {
+  return new SmartLifecycle() {
+    private volatile boolean running = false;
+    @Override public void start() { running = true; }
+    @Override public void stop() {
+      ex.setWaitForTasksToCompleteOnShutdown(true);
+      ex.shutdown(); // ensure queued tasks complete
+      running = false;
+    }
+    @Override public boolean isRunning() { return running; }
+    @Override public int getPhase() { return Integer.MAX_VALUE; } // stop last
+  };
+}
+      </code></pre>
+
+      <h5 class="text-info">📌 Quick Checklist</h5>
+      <ul>
+        <li>✅ Separate executors per workload (HTTP, async tasks, scheduled jobs).</li>
+        <li>✅ Propagate MDC/Security; standardize log fields.</li>
+        <li>✅ Apply timeouts/retries/bulkheads/circuits for remote calls.</li>
+        <li>✅ Size pools by workload; monitor saturation and rejections.</li>
+        <li>✅ Avoid self-invocation; don’t assume TX/Request context flows across threads.</li>
+        <li>✅ Prefer non-blocking I/O in WebFlux; offload rare blocking carefully.</li>
+        <li>✅ Test concurrency paths (stress tests) before prod.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+      <div class="accordion-item">
         <h2 class="accordion-header">
           <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
             data-bs-target="#spring3features">

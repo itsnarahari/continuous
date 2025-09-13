@@ -9,6 +9,12 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class SeptemberTest {
+    public SeptemberTest(){
+        System.out.println("public");
+    }
+    private SeptemberTest(String str){
+        System.out.println("private");
+    }
     public static void main(String[] args) {
 
 //        Problem: Given a list of words, group them by their length using Java 8 Streams.
