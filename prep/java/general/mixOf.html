@@ -2685,6 +2685,356 @@ public class User {
     </div>
   </div>
 </div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#perfQ1">
+      You inherit a Spring Boot service that takes 20s to respond under load. How do you approach performance tuning?
+    </button>
+  </h2>
+  <div id="perfQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <p class="highlight-yellow">Performance tuning is a <strong>systematic process</strong>. Don’t guess — measure, baseline, then fix bottlenecks one by one.</p>
+
+      <h5 class="text-info">📌 Step 1: Baseline & Measure</h5>
+      <ul>
+        <li>Define <strong>SLOs</strong> (e.g., p95 latency &lt; 500ms at 200 RPS).</li>
+        <li>Reproduce with <strong>load testing tools</strong> (JMeter, k6, wrk).</li>
+        <li>Capture CPU, memory, GC, thread dumps, DB latency, and response times.</li>
+      </ul>
+      <pre class="language-bash"><code>wrk -t8 -c256 -d2m --latency https://svc/api/resource</code></pre>
+
+      <h5 class="text-warning">📌 Step 2: Add Observability</h5>
+      <ul>
+        <li>Enable <strong>Micrometer + Prometheus</strong> for metrics.</li>
+        <li>Use <strong>OpenTelemetry tracing</strong> to see slow hops (DB, HTTP calls).</li>
+        <li>Add structured logs with correlation IDs & elapsed times.</li>
+      </ul>
+      <pre class="language-yaml"><code>management.endpoints.web.exposure.include: health,info,prometheus,metrics,threaddump
+management.tracing.sampling.probability: 0.2</code></pre>
+
+      <h5 class="text-success">📌 Step 3: Check Infrastructure & Threading</h5>
+      <ul>
+        <li>Tune <strong>Tomcat/Undertow threads</strong> & connection pools.</li>
+        <li>Enable HTTP/2, compression, keep-alive.</li>
+        <li>Watch for blocked threads & queue backlogs.</li>
+      </ul>
+      <pre class="language-properties"><code>server.tomcat.threads.max=200
+server.http2.enabled=true
+server.compression.enabled=true</code></pre>
+
+      <h5 class="text-danger">📌 Step 4: Database & JPA</h5>
+      <ul>
+        <li>Find & fix <strong>slow SQL</strong> (indexes, missing joins, N+1 issues).</li>
+        <li>Use <strong>projections/pagination</strong> instead of fetching full entities.</li>
+        <li>Size <strong>HikariCP pool</strong> correctly (monitor waits).</li>
+      </ul>
+      <pre class="language-properties"><code>spring.datasource.hikari.maximum-pool-size=50
+spring.jpa.open-in-view=false</code></pre>
+
+      <h5 class="text-primary">📌 Step 5: JVM & GC</h5>
+      <ul>
+        <li>Check <strong>GC logs</strong> for long pauses.</li>
+        <li>Set correct heap sizes & GC type (G1GC recommended).</li>
+      </ul>
+      <pre class="language-bash"><code>java -Xms1g -Xmx1g -XX:+UseG1GC -jar app.jar</code></pre>
+
+      <h5 class="text-success">✅ Conclusion</h5>
+      <p>Always <strong>measure → identify bottleneck → tune → re-test</strong>. Don’t shotgun changes. Optimize the slowest hop (DB, thread pools, GC, or external API) and validate improvements.</p>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#fiveHundredsQ1">
+      Users report intermittent 500 errors in prod, but logs look clean. How do you debug this?
+    </button>
+  </h2>
+  <div id="fiveHundredsQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <p class="highlight-yellow">Treat it like a <strong>black-box failure</strong>: prove the 500s exist, correlate each one to a request, then surface the root cause that your current logging misses.</p>
+
+      <h5 class="text-info">📌 Step 1: Prove & localize — are 500s from the app or the edge?</h5>
+      <ul>
+        <li>Check <strong>edge access logs</strong> (LB/Ingress/Nginx) for <code>status=500</code> and upstream status/latency.</li>
+        <li>Enable <strong>Tomcat/Undertow access logs</strong> to confirm app actually returned 500 (not 502/504 mapped).</li>
+        <li>Capture a few <strong>raw HTTP transcripts</strong> (curl with <code>-v</code> or a proxy) to get headers for correlation.</li>
+      </ul>
+      <pre class="language-yaml"><code># application.yaml
+server.tomcat.accesslog.enabled: true
+server.tomcat.accesslog.pattern: '%t %a "%r" %s %D trace=%{X-B3-TraceId}o span=%{X-B3-SpanId}o'
+management.endpoints.web.exposure.include: health,info,metrics,threaddump,heapdump,prometheus</code></pre>
+
+      <h5 class="text-warning">📌 Step 2: Correlate every 500 with a request (MDC, trace IDs)</h5>
+      <ul>
+        <li>Inject/propagate a <strong>correlation ID</strong> (X-Request-Id) into MDC; log it in every line.</li>
+        <li>Turn on <strong>Micrometer + OpenTelemetry</strong> to see the failing span and its downstream hops.</li>
+      </ul>
+      <pre class="language-java"><code>// Correlation filter (Servlet) — add to your config
+@Component
+public class CorrelationFilter extends OncePerRequestFilter {
+  @Override protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
+      throws IOException, ServletException {
+    String cid = Optional.ofNullable(req.getHeader("X-Request-Id"))
+        .orElse(UUID.randomUUID().toString().replace("-", ""));
+    MDC.put("cid", cid);
+    res.addHeader("X-Request-Id", cid);
+    try { chain.doFilter(req, res); } finally { MDC.remove("cid"); }
+  }
+}</code></pre>
+      <pre class="language-yaml"><code># Log pattern includes correlation & trace ids
+logging.pattern.level: '%5p [cid:%X{cid}] [trace:%X{traceId:-} span:%X{spanId:-}]'</code></pre>
+
+      <h5 class="text-danger">📌 Step 3: Make 500s loud — log root cause once, not spam</h5>
+      <ul>
+        <li>Centralize exception logging with <strong>@ControllerAdvice</strong> (handle generic Throwable).</li>
+        <li>Return <strong>ProblemDetails</strong> to clients (Spring 6) but log full stack with request context.</li>
+        <li>Sample error payloads (1–5%) to avoid PII spillage.</li>
+      </ul>
+      <pre class="language-java"><code>@RestControllerAdvice
+public class GlobalErrors {
+  private static final Logger log = LoggerFactory.getLogger(GlobalErrors.class);
+
+  @ExceptionHandler(Throwable.class)
+  public ResponseEntity&lt;ProblemDetail&gt; onAny(Throwable ex, HttpServletRequest req) {
+    var pd = ProblemDetail.forStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+    pd.setTitle("Internal Server Error");
+    pd.setDetail("Unexpected failure");
+    pd.setProperty("cid", MDC.get("cid"));
+    // one structured line per 500
+    log.error("500 {} {} query={} ua={} ip={} ex={}",
+        req.getMethod(), req.getRequestURI(), req.getQueryString(),
+        req.getHeader("User-Agent"), req.getRemoteAddr(), ex.toString(), ex);
+    return ResponseEntity.status(500).body(pd);
+  }
+}</code></pre>
+
+      <h5 class="text-primary">📌 Step 4: Catch silent classes of failures</h5>
+      <ul>
+        <li><strong>Async exceptions</strong> (CompletableFuture / @Async) — attach <code>exceptionally</code> and log.</li>
+        <li><strong>WebClient/RestTemplate</strong> — add filters/interceptors to log non-2xx & timeouts.</li>
+        <li><strong>Deserialization</strong> (Jackson) — unknown properties, enum coercions: turn on FAIL_ON_INVALID_SUBTYPE and log.</li>
+        <li><strong>Thread pool rejections</strong> (TaskExecutor) — add a custom RejectedExecutionHandler with logging.</li>
+        <li><strong>Transaction rollbacks</strong> swallowed inside proxies — enable <code>org.springframework.transaction</code> DEBUG for a short window.</li>
+      </ul>
+      <pre class="language-java"><code>// WebClient filter (logs 4xx/5xx and slow calls)
+@Bean WebClient webClient() {
+  return WebClient.builder()
+    .filter((req, next) -&gt; {
+      long t0 = System.nanoTime();
+      return next.exchange(req).doOnNext(res -&gt; {
+        long ms = (System.nanoTime()-t0)/1_000_000;
+        if (res.statusCode().isError() || ms &gt; 1000) {
+          log.warn("HTTP {} {} - status={} in {}ms cid={}",
+              req.method(), req.url(), res.statusCode().value(), ms, MDC.get("cid"));
+        }
+      });
+    })
+    .build();
+}</code></pre>
+
+      <h5 class="text-success">📌 Step 5: Timeouts & pools — 500s that are actually timeouts</h5>
+      <ul>
+        <li>Set <strong>client/server timeouts</strong> explicitly (connect/read/write) and log when they fire.</li>
+        <li>Watch <strong>HikariCP wait time</strong> and <strong>thread pool queue length</strong> spikes around 500s.</li>
+      </ul>
+      <pre class="language-yaml"><code># Hikari & HTTP client timeouts
+spring.datasource.hikari.maximum-pool-size: 30
+spring.datasource.hikari.leak-detection-threshold: 30000
+spring.webflux.connection-timeout: 5000
+spring.mvc.async.request-timeout: 5000</code></pre>
+
+      <h5 class="text-secondary">📌 Step 6: Observe at failure time — dumps & sampling</h5>
+      <ul>
+        <li>On 5xx spike: trigger <strong>thread dump</strong> + <strong>heap dump</strong> via Actuator (locked threads, deadlocks).</li>
+        <li>Enable <strong>error sampling</strong> to store the <em>next 20 failures</em> with full context (headers, body sizes, not PII).</li>
+      </ul>
+      <pre class="language-bash"><code># capture live when 500% rises
+curl -s http://host/actuator/threaddump &gt; tdump-$(date +%s).txt</code></pre>
+
+      <h5 class="text-warning">📌 Step 7: Reproduce & isolate with chaos/load</h5>
+      <ul>
+        <li>Replay suspicious traffic (same headers/payload sizes) with k6/JMeter at low RPS to catch the 500 deterministically.</li>
+        <li>Introduce <strong>fault injection</strong> (delay/downstream 500) to see if your app surfaces as 500 or handles gracefully.</li>
+      </ul>
+
+      <h5 class="text-success">✅ Quick checklist (common culprits)</h5>
+      <ul>
+        <li>Edge returning 500 due to <strong>upstream conn resets</strong> → check keep-alive/timeout mismatch.</li>
+        <li><strong>Pool starvation</strong> (DB/HTTP/Executor) → look for spikes in wait time / queue length.</li>
+        <li><strong>Serialization</strong> errors on specific payloads (BigDecimal, dates, enums) → enable Jackson failure logging.</li>
+        <li><strong>Async</strong> exceptions not reaching the main logger.</li>
+        <li><strong>OOM kill / container restarts</strong> → gaps in logs; confirm with container/runtime events.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#tenMillionQ1">
+      You’re asked to design a backend for 10M+ requests/day with a tight budget. What’s your plan?
+    </button>
+  </h2>
+  <div id="tenMillionQ1" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <p class="highlight-yellow">Optimize for <strong>simplicity, statelessness, and cache hits</strong>. Start with one lean service + CDN + DB + cache, then scale out only what hurts.</p>
+
+      <h5 class="text-info">📌 1) Traffic math & SLOs</h5>
+      <ul>
+        <li><strong>Volume:</strong> 10M/day ≈ <b>116 RPS avg</b>, plan for 10× spikes → <b>~1.2k RPS</b> peak.</li>
+        <li><strong>SLO:</strong> p95 &lt; 300–500 ms, 99.9% availability, error &lt; 0.5%.</li>
+        <li><strong>Payloads:</strong> JSON ≤ 100 KB; if bigger, presign to object storage.</li>
+      </ul>
+
+      <h5 class="text-warning">📌 2) High-level architecture (MVP → scale)</h5>
+      <pre><code>Client → CDN/Edge Cache → API Gateway → App (Spring Boot, stateless)
+                                   ↘︎  Redis (cache, rate limit)
+                                   ↘︎  Postgres (primary + read-replica)
+                                   ↘︎  Object Storage (media)
+                                   ↘︎  Queue (async jobs; e.g., SQS/Kafka-lite)</code></pre>
+      <ul>
+        <li><strong>Keep the app stateless</strong> (JWT sessions, no sticky sessions).</li>
+        <li><strong>Redis first</strong> for hot reads + token/rate limits; <strong>Postgres</strong> for system of record.</li>
+        <li><strong>Async</strong> anything slow (emails, webhooks, reports) via queue + worker.</li>
+        <li><strong>CDN</strong> for static & GET caching (surprisingly large savings).</li>
+      </ul>
+
+      <h5 class="text-success">📌 3) Cost-first choices</h5>
+      <ul>
+        <li><strong>Compute:</strong> 2–4 small VMs (auto-scale), 1 worker; consider spot/preemptible for workers.</li>
+        <li><strong>DB:</strong> One managed Postgres (db.tiny) + 1 read-replica later. Use <em>pg_partman</em> or partitioning if needed.</li>
+        <li><strong>Cache:</strong> 1 small managed Redis; scale vertically before horizontally.</li>
+        <li><strong>Storage:</strong> Object-store for files; serve via CDN (long TTLs).</li>
+        <li><strong>Observability:</strong> Prometheus-like + cheap log storage w/ short retention (7–14d).</li>
+      </ul>
+
+      <h5 class="text-primary">📌 4) Data & APIs (example)</h5>
+      <pre class="language-sql"><code>-- Postgres: users & requests (append-only)
+CREATE TABLE users (
+  id BIGSERIAL PRIMARY KEY,
+  email CITEXT UNIQUE NOT NULL,
+  name TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE user_requests (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT REFERENCES users(id),
+  type TEXT NOT NULL,
+  payload JSONB,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+-- Index for common lookups
+CREATE INDEX CONCURRENTLY idx_user_requests_user_time ON user_requests(user_id, created_at DESC);</code></pre>
+
+      <pre class="language-http"><code>GET   /v1/users/{id}         # cacheable, ETag/Last-Modified
+POST  /v1/requests            # write-path, enqueue async work
+GET   /v1/requests?user=...   # paginated, hits read-replica
+POST  /v1/uploads/presign     # client uploads to object-store</code></pre>
+
+      <h5 class="text-danger">📌 5) Performance levers</h5>
+      <ul>
+        <li><strong>Cache strategy:</strong> 1) CDN for GETs (TTL 5–30m), 2) Redis for user profiles/permissions (TTL 5–10m), 3) App-level @Cacheable for computed views.</li>
+        <li><strong>DB load:</strong> Prefer <em>projections</em>, pagination, composite indexes; batch writes; avoid N+1.</li>
+        <li><strong>Concurrency:</strong> size threadpools with Little’s Law; use WebClient for outbound IO.</li>
+        <li><strong>Backpressure:</strong> rate-limit per-IP/user; shed load with 429 before saturating.</li>
+      </ul>
+
+      <h5 class="text-secondary">📌 6) Spring Boot snippets</h5>
+      <pre class="language-yaml"><code># application.yaml (essential)
+server:
+  tomcat:
+    threads:
+      max: 200
+  http2:
+    enabled: true
+  compression:
+    enabled: true
+    mime-types: application/json,text/plain,text/html
+spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 30
+  jpa:
+    open-in-view: false
+  cache:
+    type: redis
+  redis:
+    host: REDIS_HOST
+management:
+  endpoints:
+    web.exposure.include: "health,info,prometheus,metrics,threaddump"</code></pre>
+
+      <pre class="language-java"><code>// Cacheable read (hot path)
+@Cacheable(value = "user_profile", key = "#id", unless = "#result == null")
+public UserProfileDto getProfile(long id) { return repo.fetchProfile(id); }
+
+// Rate limiter (simple Redis token bucket)
+@Service
+public class RateLimiter {
+  private final StringRedisTemplate rt;
+  public RateLimiter(StringRedisTemplate rt){ this.rt=rt; }
+  public boolean allow(String key, int limitPerMin) {
+    String k = "rl:"+key+":"+Instant.now().getEpochSecond()/60;
+    Long v = rt.opsForValue().increment(k);
+    if (v == 1) rt.expire(k, Duration.ofMinutes(2));
+    return v &lt;= limitPerMin;
+  }
+}</code></pre>
+
+      <pre class="language-nginx"><code># Edge/nginx cheap protection
+limit_req_zone $binary_remote_addr zone=perip:10m rate=30r/s;
+server {
+  location / {
+    limit_req zone=perip burst=30 nodelay;
+    proxy_set_header X-Request-Id $request_id;
+    proxy_read_timeout 5s;
+  }
+}</code></pre>
+
+      <h5 class="text-info">📌 7) Queue & async</h5>
+      <ul>
+        <li>POST writes → <strong>enqueue</strong> for heavy processing; respond 202 + status endpoint.</li>
+        <li>Worker uses <strong>idempotency keys</strong> to avoid duplicates.</li>
+      </ul>
+      <pre class="language-java"><code>// Controller (write path)
+@PostMapping("/v1/requests")
+public ResponseEntity&lt;Map&lt;String,Object&gt;&gt; submit(@RequestBody Req r, @RequestHeader("Idempotency-Key") String idem) {
+  queue.send(new Job(r, idem));  // async
+  return ResponseEntity.accepted().body(Map.of("status","queued"));
+}</code></pre>
+
+      <h5 class="text-warning">📌 8) Observability & ops</h5>
+      <ul>
+        <li><strong>SLI dashboards:</strong> p50/p95/p99 latency, error rate, RPS, DB QPS, Redis hits, CPU, GC.</li>
+        <li><strong>Budget alarms:</strong> 1) CDN egress jumps, 2) DB storage, 3) 5xx spikes, 4) queue lag.</li>
+        <li><strong>Blue/green</strong> or rolling deploy; feature flags for risky changes.</li>
+      </ul>
+
+      <h5 class="text-success">📌 9) Cost playbook (order of wins)</h5>
+      <ol>
+        <li><strong>CDN + long TTL</strong> on cacheable GETs (biggest cost/RPS reduction).</li>
+        <li><strong>Redis hit rate &gt; 85%</strong> for hot reads → shrink DB load.</li>
+        <li><strong>Batch writes</strong> & concise payloads (cut DB & network).</li>
+        <li><strong>Autoscale on CPU/RPS</strong>; right-size DB vertically before replicas.</li>
+        <li><strong>Object-store + presigned URLs</strong> for uploads/downloads.</li>
+      </ol>
+
+      <h5 class="text-primary">✅ Rollout plan (weeks 0–3)</h5>
+      <ul>
+        <li><b>W0:</b> Single region, 2 app nodes + 1 worker, Redis small, Postgres small, CDN in front.</li>
+        <li><b>W1:</b> Add read-replica, move heavy jobs async, tune indexes, add dashboards/alerts.</li>
+        <li><b>W2–3:</b> Rate limiters, shard hot keys, add autoscaling, resilience tests, chaos drills.</li>
+      </ul>
+
+      <p class="highlight-blue"><strong>Bottom line:</strong> Keep the core simple, maximize cache & CDN, push heavy work async, and spend only where measurements force you to.</p>
+    </div>
+  </div>
+</div>
+
 
 
 
@@ -2692,11 +3042,6 @@ public class User {
 
 
         </div>
-
-
-
-
-
 </div>
 
 
