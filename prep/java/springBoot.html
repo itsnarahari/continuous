@@ -194,6 +194,1548 @@ public Flux&lt;User&gt; getUsers() {
 <div class="accordion-item">
   <h2 class="accordion-header">
     <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#shedLockSpringBoot">
+      🔒 ShedLock in Spring Boot 3
+    </button>
+  </h2>
+  <div id="shedLockSpringBoot" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      
+      <h5 class="text-info">📌 1. What is ShedLock?</h5>
+      <p>
+        In a distributed Spring Boot application, scheduled jobs using <code>@Scheduled</code> 
+        may run on <b>all instances</b> of the service, leading to duplicate execution.  
+        <br><br>
+        <b>ShedLock</b> solves this problem by ensuring that a scheduled task runs on 
+        <u>only one instance at a time</u>, while other instances skip execution.
+      </p>
+
+      <h5 class="text-info">📌 2. How ShedLock Works</h5>
+      <p>
+        ShedLock uses a <b>shared store</b> (like DB, Redis, Mongo, etc.) to keep lock information.  
+        Before executing a task, it tries to acquire a lock in the store.  
+        If successful → task runs.  
+        If not → task is skipped on that instance.
+      </p>
+
+      <h5 class="text-info">📌 3. Setup in Spring Boot 3</h5>
+      <p>Add dependency in <code>pom.xml</code>:</p>
+      <pre class="language-xml"><code>
+&lt;dependency&gt;
+    &lt;groupId&gt;net.javacrumbs.shedlock&lt;/groupId&gt;
+    &lt;artifactId&gt;shedlock-spring&lt;/artifactId&gt;
+    &lt;version&gt;5.13.0&lt;/version&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;net.javacrumbs.shedlock&lt;/groupId&gt;
+    &lt;artifactId&gt;shedlock-provider-jdbc-template&lt;/artifactId&gt;
+    &lt;version&gt;5.13.0&lt;/version&gt;
+&lt;/dependency&gt;
+      </code></pre>
+
+      <p>Enable ShedLock in a config class:</p>
+      <pre class="language-java"><code>
+@Configuration
+@EnableScheduling
+@EnableSchedulerLock(defaultLockAtMostFor = "PT30S")
+public class SchedulerConfig {
+
+    @Bean
+    public LockProvider lockProvider(DataSource dataSource) {
+        return new JdbcTemplateLockProvider(
+            JdbcTemplateLockProvider.Configuration.builder()
+                .withJdbcTemplate(new JdbcTemplate(dataSource))
+                .usingDbTime() // Works in distributed systems
+                .build()
+        );
+    }
+}
+      </code></pre>
+
+      <h5 class="text-info">📌 4. Using ShedLock with @Scheduled</h5>
+      <p>Now annotate scheduled methods with <code>@SchedulerLock</code>:</p>
+      <pre class="language-java"><code>
+@Component
+public class MyJob {
+
+    @Scheduled(cron = "0 */1 * * * ?")
+    @SchedulerLock(name = "myTask", 
+                   lockAtMostFor = "PT30S", 
+                   lockAtLeastFor = "PT10S")
+    public void runTask() {
+        System.out.println("Running job at " + LocalDateTime.now());
+    }
+}
+      </code></pre>
+      <p>
+        ✅ <code>lockAtMostFor</code>: maximum lock duration (safety in case job crashes). <br>
+        ✅ <code>lockAtLeastFor</code>: ensures task does not re-run too quickly.
+      </p>
+
+      <h5 class="text-info">📌 5. Real-Time Use Cases</h5>
+      <ul>
+        <li>Cleanup jobs (DB cleanup, cache eviction)</li>
+        <li>Batch processing (send email/SMS, generate reports)</li>
+        <li>Integration jobs (sync with 3rd party APIs)</li>
+      </ul>
+
+      <h5 class="text-info">📌 Conclusion</h5>
+      <p>
+        ShedLock is essential when using <code>@Scheduled</code> in a cluster.  
+        It guarantees that <b>only one instance executes</b> a job at a time, 
+        preventing duplication and ensuring consistency.
+      </p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#hibernateDialect">
+      ⚙️ Hibernate Dialect in Spring Boot – What & Why?
+    </button>
+  </h2>
+  <div id="hibernateDialect" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      
+      <h5 class="text-info">📌 1. What is Hibernate Dialect?</h5>
+      <p>
+        <b>Dialect</b> in Hibernate is a class that tells Hibernate how to generate 
+        SQL queries for a specific database.  
+        Each database (MySQL, PostgreSQL, Oracle, SQL Server, etc.) has its own 
+        SQL syntax and special features.  
+        <br><br>
+        Example:  
+        <code>LIMIT</code> in MySQL vs <code>TOP</code> in SQL Server vs <code>ROWNUM</code> in Oracle.
+      </p>
+
+      <h5 class="text-info">📌 2. Why is it Necessary?</h5>
+      <ul>
+        <li>✅ Ensures Hibernate generates <b>database-specific SQL</b>.</li>
+        <li>✅ Handles differences in data types (e.g., VARCHAR vs NVARCHAR).</li>
+        <li>✅ Maps Hibernate functions to DB-specific functions (e.g., current_timestamp, concat).</li>
+        <li>✅ Optimizes DDL generation (table creation, sequences, auto-increment, etc.).</li>
+      </ul>
+
+      <h5 class="text-info">📌 3. How to Configure in Spring Boot?</h5>
+      <p>In <code>application.properties</code>:</p>
+      <pre class="language-properties"><code>
+spring.jpa.database-platform=org.hibernate.dialect.MySQL8Dialect
+      </code></pre>
+
+      <p>Or for PostgreSQL:</p>
+      <pre class="language-properties"><code>
+spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
+      </code></pre>
+
+      <p>
+        🔹 If not set, Hibernate tries to <b>auto-detect</b> the dialect based on JDBC driver, 
+        but it may not always be optimal → better to configure explicitly.
+      </p>
+
+      <h5 class="text-info">📌 4. Example</h5>
+      <p>Consider a query with pagination:</p>
+      <ul>
+        <li><b>MySQL Dialect</b> → <code>SELECT * FROM users LIMIT 10 OFFSET 20</code></li>
+        <li><b>Oracle Dialect</b> → <code>SELECT * FROM (SELECT u.*, ROWNUM r FROM users u) WHERE r BETWEEN 21 AND 30</code></li>
+        <li><b>SQL Server Dialect</b> → <code>SELECT TOP 10 * FROM users ORDER BY id OFFSET 20 ROWS</code></li>
+      </ul>
+      <p>
+        👉 Without the correct Dialect, Hibernate would generate invalid SQL for your DB.
+      </p>
+
+      <h5 class="text-info">📌 5. Common Dialects</h5>
+      <ul>
+        <li><code>org.hibernate.dialect.MySQL8Dialect</code></li>
+        <li><code>org.hibernate.dialect.PostgreSQLDialect</code></li>
+        <li><code>org.hibernate.dialect.Oracle12cDialect</code></li>
+        <li><code>org.hibernate.dialect.SQLServerDialect</code></li>
+        <li><code>org.hibernate.dialect.H2Dialect</code> (for testing)</li>
+      </ul>
+
+      <h5 class="text-info">📌 Conclusion</h5>
+      <p>
+        Hibernate Dialect is the <b>bridge between Hibernate and your database</b>.  
+        It ensures Hibernate generates the correct SQL syntax, handles pagination, data types, 
+        and DDL operations. Without it, you risk portability issues or runtime SQL errors.
+      </p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#futureVsCompletableFuture">
+      ⏳ Future vs CompletableFuture in Java
+    </button>
+  </h2>
+  <div id="futureVsCompletableFuture" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      
+      <h5 class="text-info">📌 1. Future – Basic Asynchronous Computation</h5>
+      <p>
+        <code>Future&lt;T&gt;</code> was introduced in Java 5 to represent the result of an asynchronous computation.
+        You submit a task to an <code>ExecutorService</code> and get back a <code>Future</code>.  
+        But it has limitations:
+      </p>
+      <ul>
+        <li>❌ Cannot manually complete a task.</li>
+        <li>❌ No chaining (can’t combine multiple futures).</li>
+        <li>❌ <code>get()</code> is blocking.</li>
+      </ul>
+
+      <pre class="language-java"><code>
+ExecutorService executor = Executors.newFixedThreadPool(2);
+
+Future&lt;String&gt; future = executor.submit(() -&gt; {
+    Thread.sleep(2000);
+    return "Hello from Future!";
+});
+
+System.out.println("Doing other work...");
+
+// Blocks until result is available
+String result = future.get();  
+System.out.println(result);
+
+executor.shutdown();
+      </code></pre>
+      <p>👉 Here, <code>future.get()</code> blocks until the task finishes.</p>
+
+      <h5 class="text-info">📌 2. CompletableFuture – Enhanced Async API</h5>
+      <p>
+        <code>CompletableFuture&lt;T&gt;</code> (Java 8) extends Future and provides powerful features:
+      </p>
+      <ul>
+        <li>✅ Non-blocking callbacks (<code>thenApply</code>, <code>thenAccept</code>, <code>thenRun</code>).</li>
+        <li>✅ Can be manually completed.</li>
+        <li>✅ Combine multiple futures (<code>thenCombine</code>, <code>allOf</code>).</li>
+        <li>✅ Exception handling (<code>exceptionally</code>, <code>handle</code>).</li>
+      </ul>
+
+      <pre class="language-java"><code>
+CompletableFuture&lt;String&gt; completableFuture = CompletableFuture.supplyAsync(() -&gt; {
+    try {
+        Thread.sleep(2000);
+    } catch (InterruptedException e) {}
+    return "Hello from CompletableFuture!";
+});
+
+completableFuture
+    .thenApply(result -&gt; result + " - processed")
+    .thenAccept(System.out::println)  // Non-blocking callback
+    .exceptionally(ex -&gt; {
+        System.out.println("Error: " + ex.getMessage());
+        return null;
+    });
+
+System.out.println("Doing other work while async task runs...");
+Thread.sleep(3000); // wait so async can finish
+      </code></pre>
+      <p>👉 Unlike Future, here we use <b>callback chaining</b> instead of blocking.</p>
+
+      <h5 class="text-info">📌 3. Key Differences</h5>
+      <table class="table table-dark table-striped">
+        <thead>
+          <tr>
+            <th>Aspect</th>
+            <th>Future</th>
+            <th>CompletableFuture</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Completion</td>
+            <td>Only async task sets result</td>
+            <td>Can be completed manually</td>
+          </tr>
+          <tr>
+            <td>Blocking</td>
+            <td><code>get()</code> blocks</td>
+            <td>Non-blocking callbacks available</td>
+          </tr>
+          <tr>
+            <td>Chaining</td>
+            <td>Not supported</td>
+            <td>Supports chaining (thenApply, thenRun)</td>
+          </tr>
+          <tr>
+            <td>Combining tasks</td>
+            <td>Not supported</td>
+            <td><code>allOf()</code>, <code>anyOf()</code>, <code>thenCombine()</code></td>
+          </tr>
+          <tr>
+            <td>Error handling</td>
+            <td>No built-in support</td>
+            <td><code>exceptionally()</code>, <code>handle()</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h5 class="text-info">📌 4. Real-Time Use Case</h5>
+      <p>
+        <b>Future:</b> Good for simple background jobs like sending one email.  
+        <b>CompletableFuture:</b> Ideal for microservices calls, chaining async DB/API operations, 
+        running multiple calls in parallel and combining results.
+      </p>
+
+      <h5 class="text-info">📌 Conclusion</h5>
+      <p>
+        <b>Future</b> is basic and blocking.  
+        <b>CompletableFuture</b> is advanced, non-blocking, and supports chaining, error handling, 
+        and parallel task composition → making it the standard choice in modern Java apps.
+      </p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#completableFutureParallel">
+      ⚡ CompletableFuture – Parallel API Call Example
+    </button>
+  </h2>
+  <div id="completableFutureParallel" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      
+      <h5 class="text-info">📌 Scenario</h5>
+      <p>
+        Suppose you have a microservice that needs to fetch data from 3 different services:
+      </p>
+      <ul>
+        <li>👤 User Service → User details</li>
+        <li>🛒 Order Service → Orders list</li>
+        <li>💳 Payment Service → Payment info</li>
+      </ul>
+      <p>
+        Instead of calling them sequentially (slow), you can fetch all in <b>parallel</b> with <code>CompletableFuture</code>.
+      </p>
+
+      <h5 class="text-info">📌 Code Example</h5>
+      <pre class="language-java"><code>
+@Service
+public class AggregatorService {
+
+    private final UserService userService;
+    private final OrderService orderService;
+    private final PaymentService paymentService;
+
+    public AggregatorService(UserService userService, 
+                             OrderService orderService, 
+                             PaymentService paymentService) {
+        this.userService = userService;
+        this.orderService = orderService;
+        this.paymentService = paymentService;
+    }
+
+    public CompletableFuture&lt;UserProfile&gt; getUserProfile(Long userId) {
+
+        CompletableFuture&lt;User&gt; userFuture =
+            CompletableFuture.supplyAsync(() -&gt; userService.getUser(userId));
+
+        CompletableFuture&lt;List&lt;Order&gt;&gt; ordersFuture =
+            CompletableFuture.supplyAsync(() -&gt; orderService.getOrders(userId));
+
+        CompletableFuture&lt;Payment&gt; paymentFuture =
+            CompletableFuture.supplyAsync(() -&gt; paymentService.getPayment(userId));
+
+        // Combine all futures
+        return CompletableFuture.allOf(userFuture, ordersFuture, paymentFuture)
+            .thenApply(v -&gt; new UserProfile(
+                    userFuture.join(),
+                    ordersFuture.join(),
+                    paymentFuture.join()
+            ));
+    }
+}
+
+// --- DTO ---
+public record UserProfile(User user, List&lt;Order&gt; orders, Payment payment) { }
+      </code></pre>
+
+      <h5 class="text-info">📌 Explanation</h5>
+      <ul>
+        <li><code>supplyAsync()</code> → Runs API calls in parallel threads.</li>
+        <li><code>allOf()</code> → Waits for all futures to finish.</li>
+        <li><code>join()</code> → Retrieves the result (safe here since tasks are completed).</li>
+        <li><b>Total time = Max of all calls</b>, not sum → Big performance boost 🚀.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Output</h5>
+      <p>
+        Instead of 3 API calls taking <b>2s + 3s + 1s = 6s</b> sequentially,  
+        parallel execution will take only <b>~3s</b> (the longest call).
+      </p>
+
+      <h5 class="text-info">📌 Real-Time Use Cases</h5>
+      <ul>
+        <li>Aggregating data from multiple microservices (User, Orders, Payments, Notifications).</li>
+        <li>Calling external APIs in parallel for faster response.</li>
+        <li>Running independent DB queries simultaneously.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Conclusion</h5>
+      <p>
+        <code>CompletableFuture</code> with <code>allOf()</code> is perfect for <b>parallel API calls</b>.  
+        It improves performance and responsiveness in microservices and backend aggregation patterns.
+      </p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#apiTimingCentral">
+      ⏱️ Central API Timing & Metadata Logging (Spring Boot 3)
+    </button>
+  </h2>
+  <div id="apiTimingCentral" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 1) MVC (Servlet) Apps — Use a <code>HandlerInterceptor</code></h5>
+      <p>Works for Spring MVC controllers. Captures <b>start</b>, <b>end</b>, <b>duration</b>, <b>method</b>, <b>URI</b>, <b>status</b>, client IP, and puts a <b>traceId</b> into MDC for every log line.</p>
+      <pre class="language-java"><code>
+package com.example.logging;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+import org.springframework.lang.Nullable;
+import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.HandlerInterceptor;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.time.Instant;
+import java.util.UUID;
+
+@Component
+public class ApiTimingInterceptor implements HandlerInterceptor {
+  private static final Logger log = LoggerFactory.getLogger(ApiTimingInterceptor.class);
+  private static final String START_TIME = "startTime";
+
+  @Override
+  public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+    long now = System.currentTimeMillis();
+    request.setAttribute(START_TIME, now);
+
+    String traceId = UUID.randomUUID().toString();
+    MDC.put("traceId", traceId);
+
+    // optional: request-scoped MDC fields
+    MDC.put("method", request.getMethod());
+    MDC.put("path", request.getRequestURI());
+
+    log.debug("➡️ START {} {} at {}", request.getMethod(), request.getRequestURI(), Instant.ofEpochMilli(now));
+    return true;
+  }
+
+  @Override
+  public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, @Nullable Exception ex) {
+    long start = (long) request.getAttribute(START_TIME);
+    long end = System.currentTimeMillis();
+    long durationMs = end - start;
+
+    String method = request.getMethod();
+    String uri = request.getRequestURI();
+    int status = response.getStatus();
+
+    // better client IP if behind proxy
+    String clientIp = getClientIp(request);
+    String ua = request.getHeader("User-Agent");
+
+    log.info("✅ END {} {} status={} duration={}ms start={} end={} ip={} ua={}",
+        method, uri, status, durationMs, Instant.ofEpochMilli(start), Instant.ofEpochMilli(end), clientIp, ua);
+
+    if (ex != null) {
+      log.warn("❗ Exception on {} {}: {}", method, uri, ex.toString());
+    }
+    // Clean up MDC
+    MDC.clear();
+  }
+
+  private String getClientIp(HttpServletRequest request) {
+    String xff = request.getHeader("X-Forwarded-For");
+    if (xff != null && !xff.isBlank()) return xff.split(",")[0].trim();
+    return request.getRemoteAddr();
+  }
+}
+      </code></pre>
+
+      <p>Register it globally and exclude static/health endpoints if you want:</p>
+      <pre class="language-java"><code>
+package com.example.logging;
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+  private final ApiTimingInterceptor interceptor;
+
+  public WebConfig(ApiTimingInterceptor interceptor) {
+    this.interceptor = interceptor;
+  }
+
+  @Override
+  public void addInterceptors(InterceptorRegistry registry) {
+    registry.addInterceptor(interceptor)
+      .addPathPatterns("/**")
+      .excludePathPatterns("/actuator/health", "/css/**", "/js/**", "/images/**");
+  }
+}
+      </code></pre>
+
+      <h5 class="text-info">📌 2) Alternative (Servlet): <code>OncePerRequestFilter</code></h5>
+      <p>Same output, filter style. Good if you also want to time <b>non-MVC</b> endpoints (e.g., static, error pages).</p>
+      <pre class="language-java"><code>
+package com.example.logging;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.time.Instant;
+import java.util.UUID;
+
+@Component
+public class ApiTimingFilter extends OncePerRequestFilter {
+  private static final Logger log = LoggerFactory.getLogger(ApiTimingFilter.class);
+
+  @Override
+  protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
+      throws ServletException, IOException {
+    long start = System.currentTimeMillis();
+    MDC.put("traceId", UUID.randomUUID().toString());
+    MDC.put("method", req.getMethod());
+    MDC.put("path", req.getRequestURI());
+    try {
+      chain.doFilter(req, res);
+    } finally {
+      long end = System.currentTimeMillis();
+      long duration = end - start;
+      log.info("HTTP {} {} status={} duration={}ms start={} end={}",
+          req.getMethod(), req.getRequestURI(), res.getStatus(), duration,
+          Instant.ofEpochMilli(start), Instant.ofEpochMilli(end));
+      MDC.clear();
+    }
+  }
+
+  @Override
+  protected boolean shouldNotFilter(HttpServletRequest request) {
+    String p = request.getRequestURI();
+    return p.startsWith("/actuator/health") || p.startsWith("/css/") || p.startsWith("/js/") || p.startsWith("/images/");
+  }
+}
+      </code></pre>
+
+      <h5 class="text-info">📌 3) Reactive (WebFlux) Apps — Use a <code>WebFilter</code></h5>
+      <p>If you’re on WebFlux, use Reactor hooks. The <code>doFinally</code> ensures timing is logged even on error/cancel.</p>
+      <pre class="language-java"><code>
+package com.example.logging;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+import org.springframework.stereotype.Component;
+import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.server.WebFilter;
+import org.springframework.web.server.WebFilterChain;
+import reactor.core.publisher.Mono;
+
+import java.time.Instant;
+import java.util.UUID;
+
+@Component
+public class ApiTimingWebFilter implements WebFilter {
+  private static final Logger log = LoggerFactory.getLogger(ApiTimingWebFilter.class);
+
+  @Override
+  public Mono&lt;Void&gt; filter(ServerWebExchange exchange, WebFilterChain chain) {
+    long start = System.currentTimeMillis();
+    String traceId = UUID.randomUUID().toString();
+
+    MDC.put("traceId", traceId);
+    MDC.put("method", exchange.getRequest().getMethodValue());
+    MDC.put("path", exchange.getRequest().getPath().value());
+
+    return chain.filter(exchange)
+        .doFinally(signalType -&gt; {
+          long end = System.currentTimeMillis();
+          long duration = end - start;
+          int status = exchange.getResponse().getRawStatusCode() == null ? 200 : exchange.getResponse().getRawStatusCode();
+          log.info("WEBFLUX {} {} status={} duration={}ms start={} end={} signal={}",
+              exchange.getRequest().getMethodValue(),
+              exchange.getRequest().getPath().value(),
+              status, duration, Instant.ofEpochMilli(start), Instant.ofEpochMilli(end), signalType);
+          MDC.clear();
+        });
+  }
+}
+      </code></pre>
+
+      <h5 class="text-info">📌 4) Log4j2 Pattern (Your Preference)</h5>
+      <p>You prefer Log4j2. Add MDC keys (traceId, method, path) to your pattern so they appear in <b>all</b> logs.</p>
+      <pre class="language-xml"><code>
+&lt;!-- file: src/main/resources/log4j2-spring.xml --&gt;
+&lt;Configuration status="WARN"&gt;
+  &lt;Appenders&gt;
+    &lt;Console name="Console" target="SYSTEM_OUT"&gt;
+      &lt;PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %X{traceId} %X{method} %X{path} - %logger{36} - %msg%n"/&gt;
+    &lt;/Console&gt;
+  &lt;/Appenders&gt;
+  &lt;Loggers&gt;
+    &lt;Root level="info"&gt;
+      &lt;AppenderRef ref="Console"/&gt;
+    &lt;/Root&gt;
+  &lt;/Loggers&gt;
+&lt;/Configuration&gt;
+      </code></pre>
+
+      <h5 class="text-info">📌 5) Sample Output</h5>
+      <pre class="language-text"><code>
+2025-09-17 10:22:01.123 [http-nio-8080-exec-3] INFO  3e5a6b5e POST /api/v1/orders - com.example.logging.ApiTimingFilter - 
+HTTP POST /api/v1/orders status=201 duration=86ms start=2025-09-17T10:22:01.037Z end=2025-09-17T10:22:01.123Z
+      </code></pre>
+
+      <h5 class="text-info">📌 6) Tips & Gotchas</h5>
+      <ul>
+        <li>Exclude super-chatty endpoints (health, static) to keep logs clean.</li>
+        <li>Behind a proxy? Prefer <code>X-Forwarded-For</code> / <code>X-Real-IP</code> for client IP.</li>
+        <li>Add <b>requestId</b> header support: if client sends <code>X-Request-Id</code>, use that instead of random UUID.</li>
+        <li>Use <b>MDC</b> so every log in the same request carries <code>traceId/method/path</code>.</li>
+        <li>If you also want <b>request/response bodies</b>, wrap the request/response (costly, use level=DEBUG).</li>
+      </ul>
+
+      <h5 class="text-info">✅ Conclusion</h5>
+      <p>
+        Use an <code>Interceptor</code> (MVC) or <code>OncePerRequestFilter</code> (Servlet) or <code>WebFilter</code> (WebFlux) to centrally log
+        start time, end time, duration, method, URI, status, IP, and UA. Add Log4j2 MDC to make every log line request-aware.
+      </p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#tracingIntro">
+      🔎 What problem does Sleuth/Zipkin (now Micrometer Tracing + Zipkin) solve?
+    </button>
+  </h2>
+  <div id="tracingIntro" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <p>
+        In microservices, a single user request can hop across many services (A → B → C). When something is slow or fails, 
+        it's hard to know <b>where</b> and <b>why</b>. Distributed tracing solves this by attaching a <b>traceId</b> to the request 
+        and creating <b>spans</b> for each hop. <b>Zipkin</b> collects & visualizes these traces so you can follow the request end-to-end.
+      </p>
+      <ul>
+        <li><b>traceId</b> = unique id for the entire request path.</li>
+        <li><b>spanId</b> = id of a single operation (e.g., an HTTP call, DB call).</li>
+        <li>Context propagates via headers (B3/W3C) so every service knows the same trace.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#tracingBoot3Stack">
+      ⚙️ Spring Boot 3 Stack (Replacement for Sleuth)
+    </button>
+  </h2>
+  <div id="tracingBoot3Stack" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <p>Use <b>Micrometer Tracing</b> with the <b>Brave bridge</b> and a <b>Zipkin reporter</b>.</p>
+      <pre class="language-xml"><code>
+&lt;!-- Replace Sleuth with Micrometer Tracing in Boot 3 --&gt;
+&lt;dependency&gt;
+  &lt;groupId&gt;io.micrometer&lt;/groupId&gt;
+  &lt;artifactId&gt;micrometer-tracing-bridge-brave&lt;/artifactId&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+  &lt;groupId&gt;io.zipkin.reporter2&lt;/groupId&gt;
+  &lt;artifactId&gt;zipkin-reporter-brave&lt;/artifactId&gt;
+&lt;/dependency&gt;
+&lt;!-- If using OpenFeign --&gt;
+&lt;dependency&gt;
+  &lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;
+  &lt;artifactId&gt;spring-cloud-starter-openfeign&lt;/artifactId&gt;
+&lt;/dependency&gt;
+      </code></pre>
+
+      <p><b>application.yml</b> (Zipkin + sampling):</p>
+      <pre class="language-yaml"><code>
+management:
+  tracing:
+    sampling:
+      probability: 1.0   # 1.0 = sample all (use 0.1 in prod)
+  zipkin:
+    tracing:
+      endpoint: http://localhost:9411/api/v2/spans
+      # For Boot 3.4+, property may appear under management.zipkin.tracing.endpoint
+logging:
+  pattern:
+    level: "%5p [%X{traceId:-},%X{spanId:-}]"
+      </code></pre>
+
+      <p><b>Zipkin locally</b>:</p>
+      <pre class="language-bash"><code>
+docker run -d -p 9411:9411 --name zipkin openzipkin/zipkin
+# UI: http://localhost:9411
+      </code></pre>
+
+      <p><b>Log4j2</b> pattern (your preference):</p>
+      <pre class="language-xml"><code>
+&lt;PatternLayout pattern="%d{HH:mm:ss.SSS} %-5level [%X{traceId}:%X{spanId}] %logger - %msg%n"/&gt;
+      </code></pre>
+      <p>Now every log line shows the same <code>traceId</code> across services.</p>
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#abcFlow">
+      🔗 Example: Service A → Service B → Service C (end-to-end trace)
+    </button>
+  </h2>
+  <div id="abcFlow" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <h5 class="text-info">📌 Flow</h5>
+      <p><b>Service A</b> (API gateway) calls <b>Service B</b>, which calls <b>Service C</b>. 
+      Tracing auto-injects/propagates headers so all spans share the same <code>traceId</code>.</p>
+
+      <h5 class="text-info">📌 Service A (Controller + RestTemplate/WebClient)</h5>
+      <pre class="language-java"><code>
+@RestController
+@RequestMapping("/api")
+public class AController {
+  private final RestTemplate restTemplate;
+
+  public AController(RestTemplateBuilder builder, ObservationRegistry registry) {
+    // Observation-aware RestTemplate (adds tracing interceptors)
+    this.restTemplate = builder
+        .additionalInterceptors(new ObservationRestTemplateInterceptor(registry))
+        .build();
+  }
+
+  @GetMapping("/aggregate")
+  public ResponseEntity&lt;String&gt; aggregate() {
+    // Call B which will call C
+    String fromB = restTemplate.getForObject("http://localhost:8081/b/process", String.class);
+    return ResponseEntity.ok("A -> " + fromB);
+  }
+}
+      </code></pre>
+
+      <h5 class="text-info">📌 Service B (calls C)</h5>
+      <pre class="language-java"><code>
+@RestController
+@RequestMapping("/b")
+public class BController {
+  private final RestTemplate restTemplate;
+
+  public BController(RestTemplateBuilder builder, ObservationRegistry registry) {
+    this.restTemplate = builder
+        .additionalInterceptors(new ObservationRestTemplateInterceptor(registry))
+        .build();
+  }
+
+  @GetMapping("/process")
+  public String process() {
+    // some work...
+    String fromC = restTemplate.getForObject("http://localhost:8082/c/data", String.class);
+    return "B -> " + fromC;
+  }
+}
+      </code></pre>
+
+      <h5 class="text-info">📌 Service C (terminal)</h5>
+      <pre class="language-java"><code>
+@RestController
+@RequestMapping("/c")
+public class CController {
+  @GetMapping("/data")
+  public String data() {
+    // simulate slow I/O
+    try { Thread.sleep(120); } catch (InterruptedException ignored) {}
+    return "C(ok)";
+  }
+}
+      </code></pre>
+
+      <p>💡 Using <b>OpenFeign</b>? Tracing is auto-applied via Micrometer. Example client in A:</p>
+      <pre class="language-java"><code>
+@FeignClient(name = "b-client", url = "http://localhost:8081")
+public interface BClient {
+  @GetMapping("/b/process")
+  String process();
+}
+      </code></pre>
+
+      <p>Then just inject <code>BClient</code> and call <code>bClient.process()</code> — headers propagate automatically.</p>
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#headersPropagation">
+      📨 Which headers get propagated?
+    </button>
+  </h2>
+  <div id="headersPropagation" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <p>By default (Brave/Zipkin), the <b>B3</b> headers are used:</p>
+      <ul>
+        <li><code>X-B3-TraceId</code>, <code>X-B3-SpanId</code>, <code>X-B3-ParentSpanId</code></li>
+        <li><code>X-B3-Sampled</code>, <code>X-B3-Flags</code></li>
+      </ul>
+      <p>Micrometer Tracing can also do <b>W3C Trace Context</b> (<code>traceparent</code>, <code>tracestate</code>) if configured.</p>
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#seeingTraces">
+      👀 How to see the trace in logs & Zipkin
+    </button>
+  </h2>
+  <div id="seeingTraces" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <h5 class="text-info">📜 Logs</h5>
+      <pre class="language-text"><code>
+10:32:00.111 INFO  [8f0a1c0d3b2a49f1:9c1b7e12a3] c.e.a.AController - handling /api/aggregate
+10:32:00.245 INFO  [8f0a1c0d3b2a49f1:ab77cc98f1] c.e.b.BController - calling /b/process
+10:32:00.372 INFO  [8f0a1c0d3b2a49f1:ce12aa88d0] c.e.c.CController - returning /c/data
+      </code></pre>
+      <p>Same <code>traceId</code> (<code>8f0a1c0d3b2a49f1</code>) across A, B, and C = one end-to-end request.</p>
+
+      <h5 class="text-info">📊 Zipkin UI</h5>
+      <ol>
+        <li>Open <code>http://localhost:9411</code>.</li>
+        <li>Search for recent traces → pick one.</li>
+        <li>See waterfall: <b>A /api/aggregate</b> → <b>B /b/process</b> → <b>C /c/data</b> with timings.</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#gotchas">
+      🧩 Tips & Gotchas
+    </button>
+  </h2>
+  <div id="gotchas" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <ul>
+        <li><b>Boot 3</b>: Don’t add Sleuth; use Micrometer Tracing (Brave) + Zipkin reporter.</li>
+        <li><b>Sampling</b>: set <code>management.tracing.sampling.probability</code> ≤ 0.1 in prod to reduce overhead.</li>
+        <li><b>Async/Thread pools</b>: use Spring’s executors or <code>TaskDecorator</code> to propagate context if you create custom threads.</li>
+        <li><b>Gateways</b>: keep headers (B3/W3C) — don’t strip them in proxies/API gateways.</li>
+        <li><b>DB calls</b>: use JDBC/ORM instrumentation to see spans for queries (Micrometer Observations can capture this).</li>
+        <li><b>Feign/WebClient/RestTemplate</b>: Boot auto-instruments many; the <code>ObservationRestTemplateInterceptor</code> ensures RestTemplate carries context.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#wrapupTracing">
+      ✅ Summary
+    </button>
+  </h2>
+  <div id="wrapupTracing" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <p>
+        With Spring Boot 3, use <b>Micrometer Tracing (Brave)</b> to propagate <b>traceId/spanId</b> across services.
+        Send spans to <b>Zipkin</b> for a visual timeline. Set a log pattern with MDC to see trace ids in logs.  
+        The A → B → C example above shows how a single user request can be traced end-to-end.
+      </p>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" data-bs-toggle="collapse" data-bs-target="#traceAlternatives">
+      🧭 Alternatives to Sleuth/Zipkin for Spring Boot 3
+    </button>
+  </h2>
+  <div id="traceAlternatives" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 1) Micrometer Tracing + OpenTelemetry (OTLP)</h5>
+      <p>
+        Boot 3 default. Use Micrometer Tracing and export to an <b>OpenTelemetry Collector</b> (then to Jaeger/Tempo/OTLP backends).
+        Flexible, vendor-neutral, supports W3C tracecontext.
+      </p>
+      <pre class="language-xml"><code>
+&lt;dependency&gt;
+  &lt;groupId&gt;io.micrometer&lt;/groupId&gt;
+  &lt;artifactId&gt;micrometer-tracing-bridge-otel&lt;/artifactId&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+  &lt;groupId&gt;io.opentelemetry&lt;/groupId&gt;
+  &lt;artifactId&gt;opentelemetry-exporter-otlp&lt;/artifactId&gt;
+&lt;/dependency&gt;
+      </code></pre>
+      <pre class="language-yaml"><code>
+management:
+  tracing:
+    sampling.probability: 1.0
+  otlp:
+    tracing:
+      endpoint: http://localhost:4318/v1/traces  # OTel Collector (HTTP)
+logging.pattern.level: "%5p [%X{traceId:-},%X{spanId:-}]"
+      </code></pre>
+      <p>Run a local OTel Collector and forward to your choice (Jaeger, Tempo, New Relic, etc.).</p>
+
+      <h5 class="text-info">📌 2) Micrometer Tracing + Jaeger</h5>
+      <p>
+        Jaeger is a Zipkin alternative with powerful UI. Prefer sending via <b>OTLP to the OTel Collector</b> → Jaeger.
+      </p>
+      <pre class="language-yaml"><code>
+# app.yml
+management.tracing.sampling.probability: 1.0
+management.otlp.tracing.endpoint: http://localhost:4318/v1/traces
+      </code></pre>
+      <pre class="language-yaml"><code>
+# otel-collector.yaml (snippet)
+exporters:
+  jaeger:
+    endpoint: "jaeger:14250"
+    tls:
+      insecure: true
+service:
+  pipelines:
+    traces:
+      exporters: [jaeger]
+      </code></pre>
+
+      <h5 class="text-info">📌 3) Micrometer Tracing + Grafana Tempo</h5>
+      <p>
+        <b>Tempo</b> is a scalable, low-cost backend (S3/GCS/MinIO). Pair with Grafana for UI; logs &amp; metrics correlation is great.
+      </p>
+      <pre class="language-yaml"><code>
+# app.yml (export OTLP)
+management.otlp.tracing.endpoint: http://localhost:4318/v1/traces
+      </code></pre>
+      <p>Collector forwards OTLP → Tempo; view traces in Grafana Explore (with Loki/Prometheus if you have them).</p>
+
+      <h5 class="text-info">📌 4) Managed Cloud APMs</h5>
+      <ul>
+        <li><b>Datadog APM</b> (dd-trace): auto-instrumentation, service maps, error &amp; log correlation.</li>
+        <li><b>New Relic</b> (OTLP or native agent): distributed tracing, golden signals, NRQL.</li>
+        <li><b>Elastic APM</b>: integrates with Elasticsearch/Kibana; good if you’re already on ELK.</li>
+        <li><b>AWS X-Ray</b>: best if you’re deep on AWS (ALB/Lambda/SDK integrations).</li>
+        <li><b>GCP Cloud Trace</b> / <b>Azure Monitor</b>: native to respective clouds.</li>
+      </ul>
+
+      <h5 class="text-info">📌 5) Which one should I choose?</h5>
+      <ul>
+        <li><b>Portable, OSS, future-proof:</b> Micrometer Tracing + OpenTelemetry Collector.</li>
+        <li><b>Great OSS UI + scale:</b> Jaeger (analysis) or Tempo (cheap storage, Grafana stack).</li>
+        <li><b>Turnkey + deep features:</b> Datadog / New Relic / Elastic APM.</li>
+        <li><b>Cloud-native:</b> AWS X-Ray, GCP Cloud Trace, Azure Monitor.</li>
+      </ul>
+
+      <h5 class="text-info">📌 6) End-to-End Example: A → B → C with OpenTelemetry</h5>
+      <p>Same code flow as earlier; just switch exporter to OTLP. Micrometer auto-propagates W3C or B3 context.</p>
+      <pre class="language-java"><code>
+// build.gradle: implementation("io.micrometer:micrometer-tracing-bridge-otel")
+// and implementation("io.opentelemetry:opentelemetry-exporter-otlp")
+
+@RestController
+class AController {
+  private final RestClient client;  // Spring 6 RestClient (auto-instrumented via Micrometer)
+
+  AController(RestClient.Builder builder) {
+    this.client = builder.baseUrl("http://localhost:8081").build();
+  }
+
+  @GetMapping("/api/aggregate")
+  String aggregate() {
+    String fromB = client.get().uri("/b/process").retrieve().body(String.class);
+    return "A -> " + fromB;
+  }
+}
+
+@RestController
+class BController {
+  private final RestClient client;
+
+  BController(RestClient.Builder builder) {
+    this.client = builder.baseUrl("http://localhost:8082").build();
+  }
+
+  @GetMapping("/b/process")
+  String process() {
+    String fromC = client.get().uri("/c/data").retrieve().body(String.class);
+    return "B -> " + fromC;
+  }
+}
+
+@RestController
+class CController {
+  @GetMapping("/c/data")
+  String data() throws Exception {
+    Thread.sleep(120);
+    return "C(ok)";
+  }
+}
+      </code></pre>
+
+      <h5 class="text-info">📌 7) Propagation & Logs</h5>
+      <ul>
+        <li><b>Propagation:</b> W3C <code>traceparent</code>/<code>tracestate</code> by default with OTel; B3 also possible.</li>
+        <li><b>Logs correlation:</b> set Log4j2 pattern to include <code>%X{traceId}</code> and <code>%X{spanId}</code>.</li>
+      </ul>
+
+      <h5 class="text-info">✅ TL;DR</h5>
+      <p>
+        Yes—beyond Sleuth/Zipkin, use <b>Micrometer Tracing + OpenTelemetry</b> and choose your backend:
+        <b>Jaeger</b>, <b>Grafana Tempo</b>, or a hosted APM (Datadog/New Relic/Elastic). 
+        You’ll get the same cross-MS request visibility with more flexibility and vendor neutrality.
+      </p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#auditOverview">
+      🔎 What do we mean by Audit Logging?
+    </button>
+  </h2>
+  <div id="auditOverview" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <p>
+        Two common needs:
+      </p>
+      <ul>
+        <li><b>Operational audit fields</b> on each row: <code>createdDate</code>, <code>updatedDate</code>, <code>createdBy</code>, <code>updatedBy</code>.</li>
+        <li><b>Historical change log</b> (who changed what, when, old/new values) across versions of an entity.</li>
+      </ul>
+      <p>Below are centralized ways to do both in Spring Boot 3 (Jakarta) + Hibernate 6.</p>
+    </div>
+  </div>
+</div>
+
+<!-- 1. Spring Data JPA Auditing -->
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#springDataAuditing">
+      ✅ Option 1 — Spring Data JPA Auditing (simple & centralized)
+    </button>
+  </h2>
+  <div id="springDataAuditing" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <p>Automatically fills audit fields on <b>insert</b> and <b>update</b>. Best for operational columns.</p>
+
+      <h5 class="text-info">📦 Setup</h5>
+      <pre class="language-java"><code>
+// config
+@Configuration
+@EnableJpaAuditing(modifyOnCreate = false) // Boot 3 supports this flag
+public class JpaAuditConfig {
+  @Bean
+  public AuditorAware&lt;String&gt; auditorAware() {
+    return () -&gt; Optional.ofNullable(SecurityContextHolder.getContext().getAuthentication())
+                         .map(auth -&gt; auth.getName()); // or a custom Principal/UserId
+  }
+}
+      </code></pre>
+
+      <h5 class="text-info">🧩 Base Entity (centralized)</h5>
+      <pre class="language-java"><code>
+@MappedSuperclass
+@EntityListeners(org.springframework.data.jpa.domain.support.AuditingEntityListener.class)
+public abstract class AuditableBase {
+  @CreatedDate
+  @Column(nullable = false, updatable = false)
+  private Instant createdDate;
+
+  @LastModifiedDate
+  @Column(nullable = false)
+  private Instant updatedDate;
+
+  @CreatedBy
+  @Column(nullable = false, updatable = false, length = 100)
+  private String createdBy;
+
+  @LastModifiedBy
+  @Column(nullable = false, length = 100)
+  private String updatedBy;
+
+  // getters/setters
+}
+      </code></pre>
+
+      <h5 class="text-info">🧾 Entity usage</h5>
+      <pre class="language-java"><code>
+@Entity
+public class Customer extends AuditableBase {
+  @Id @GeneratedValue
+  private Long id;
+  private String name;
+}
+      </code></pre>
+
+      <ul>
+        <li>Dates come from Spring’s <b>AuditingDateTimeProvider</b> (uses system clock). You can override for fixed UTC.</li>
+        <li><code>@CreatedBy</code>/<code>@LastModifiedBy</code> resolved via your <code>AuditorAware&lt;String&gt;</code>.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- 2. Hibernate Envers -->
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#hibernateEnvers">
+      🗃️ Option 2 — Hibernate Envers (full history tables)
+    </button>
+  </h2>
+  <div id="hibernateEnvers" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <p>
+        Envers creates <code>_AUD</code> tables and stores a versioned history for audited entities (insert/update/delete). 
+        Great when you need to <b>see past values</b> and who changed them.
+      </p>
+
+      <h5 class="text-info">📦 Dependency</h5>
+      <pre class="language-xml"><code>
+&lt;dependency&gt;
+  &lt;groupId&gt;org.hibernate.orm&lt;/groupId&gt;
+  &lt;artifactId&gt;hibernate-envers&lt;/artifactId&gt;
+&lt;/dependency&gt;
+      </code></pre>
+
+      <h5 class="text-info">🧩 Enable & Use</h5>
+      <pre class="language-java"><code>
+@Entity
+@Audited // tells Envers to version this entity
+public class Customer extends AuditableBase {
+  @Id @GeneratedValue
+  private Long id;
+  private String name;
+}
+      </code></pre>
+
+      <h5 class="text-info">👤 Who did the change?</h5>
+      <p>Create a custom Revision entity to store user info per revision.</p>
+      <pre class="language-java"><code>
+@Entity
+@RevisionEntity(UserRevisionListener.class)
+public class RevInfo extends DefaultRevisionEntity {
+  private String username;
+  // getters/setters
+}
+
+public class UserRevisionListener implements RevisionListener {
+  @Override
+  public void newRevision(Object revisionEntity) {
+    RevInfo rev = (RevInfo) revisionEntity;
+    var auth = SecurityContextHolder.getContext().getAuthentication();
+    rev.setUsername(auth != null ? auth.getName() : "system");
+  }
+}
+      </code></pre>
+
+      <h5 class="text-info">🔎 Query history</h5>
+      <pre class="language-java"><code>
+AuditReader reader = AuditReaderFactory.get(entityManager);
+Customer past = reader.find(Customer.class, id, 5); // revision #5
+      </code></pre>
+    </div>
+  </div>
+</div>
+
+<!-- 3. Hibernate Event Listeners / Interceptors -->
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#hibernateEvents">
+      ⚙️ Option 3 — Hibernate Event Listeners / Interceptor (low-level)
+    </button>
+  </h2>
+  <div id="hibernateEvents" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <p>
+        Use Hibernate’s events (<code>PreInsertEventListener</code>, <code>PreUpdateEventListener</code>) to set fields centrally, even without Spring Data.
+      </p>
+      <pre class="language-java"><code>
+@Component
+public class AuditEventListener implements PreInsertEventListener, PreUpdateEventListener {
+  @Override
+  public boolean onPreInsert(PreInsertEvent e) {
+    if (e.getEntity() instanceof AuditableBase ab) {
+      ab.setCreatedDate(Instant.now());
+      ab.setUpdatedDate(Instant.now());
+      var user = currentUser();
+      ab.setCreatedBy(user);
+      ab.setUpdatedBy(user);
+      // also push values into the state array so Hibernate writes them
+    }
+    return false;
+  }
+  @Override
+  public boolean onPreUpdate(PreUpdateEvent e) {
+    if (e.getEntity() instanceof AuditableBase ab) {
+      ab.setUpdatedDate(Instant.now());
+      ab.setUpdatedBy(currentUser());
+      // copy into state[]
+    }
+    return false;
+  }
+  private String currentUser() { /* SecurityContext or RequestContext */ return "system"; }
+}
+      </code></pre>
+      <p>Register via <code>LocalContainerEntityManagerFactoryBean</code> or Spring Boot JPA properties.</p>
+    </div>
+  </div>
+</div>
+
+<!-- 4. AOP at Service Layer -->
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#aopServiceLayer">
+      🧠 Option 4 — AOP at Service Layer (business-friendly)
+    </button>
+  </h2>
+  <div id="aopServiceLayer" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <p>If all writes go through services, an <b>@Around</b> advice can stamp audit fields and/or write to an audit log table.</p>
+      <pre class="language-java"><code>
+@Aspect
+@Component
+public class AuditAspect {
+
+  @Around("@annotation(org.springframework.transaction.annotation.Transactional)")
+  public Object stamp(ProceedingJoinPoint pjp) throws Throwable {
+    Object result = pjp.proceed();
+    // Optionally inspect args/result and persist a custom audit record
+    return result;
+  }
+}
+      </code></pre>
+      <p>Gives you full control (e.g., log request metadata, diff old/new). But you must handle entity lifecycle carefully.</p>
+    </div>
+  </div>
+</div>
+
+<!-- 5. Database Triggers (vendor-side) -->
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#dbTriggers">
+      🧱 Option 5 — Database Triggers
+    </button>
+  </h2>
+  <div id="dbTriggers" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <p>DB triggers can set timestamps/users and write into an audit table regardless of application code.</p>
+      <ul>
+        <li><b>Pros:</b> guaranteed enforcement, works for multiple apps.</li>
+        <li><b>Cons:</b> harder to version/control in app repo; portability issues.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- 6. CDC / Outbox for Append-only Audit -->
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#cdcOutbox">
+      📡 Option 6 — CDC (Debezium) / Outbox Pattern
+    </button>
+  </h2>
+  <div id="cdcOutbox" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <p>
+        For append-only audit streams (compliance/analytics), publish change events to a dedicated <b>audit/outbox</b> table.
+        Use <b>Debezium</b> (CDC) to stream changes to Kafka/ELK/Lake.
+      </p>
+      <ul>
+        <li><b>Pros:</b> immutable audit, scalable, excellent for analytics/forensics.</li>
+        <li><b>Cons:</b> extra infra (Kafka/Connect), eventual consistency.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- Comparison & Best Practices -->
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#whichToChoose">
+      🧭 Which should I choose?
+    </button>
+  </h2>
+  <div id="whichToChoose" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <ul>
+        <li><b>Just need 4 columns (created/updated/by/date):</b> Use <b>Spring Data JPA Auditing</b> + <code>AuditorAware</code>.</li>
+        <li><b>Need full history with old/new values:</b> Use <b>Hibernate Envers</b>.</li>
+        <li><b>Non–Spring Data or special rules:</b> Use <b>Hibernate Event Listeners</b>.</li>
+        <li><b>Cross-cutting logs with business context:</b> Add <b>AOP</b> (can co-exist).</li>
+        <li><b>Enterprise append-only audit stream:</b> <b>CDC / Outbox + Debezium</b>.</li>
+      </ul>
+
+      <h5 class="text-info">🛡️ Best Practices</h5>
+      <ul>
+        <li>Use <b>UTC</b> (<code>Instant</code>) for dates; avoid local timezone drift.</li>
+        <li>Resolve <b>user id</b> in <code>AuditorAware</code> from <code>SecurityContext</code> or a <code>RequestContext</code> (fallback to <code>system</code>).</li>
+        <li>Mark <code>created*</code> fields <b>non-updatable</b> (<code>updatable = false</code>).</li>
+        <li>Add DB defaults/constraints for consistency.</li>
+        <li>If soft deletes: pair with <code>@SQLDelete</code> + <code>@Where</code> and audit delete actor/time.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- Bonus: Properties -->
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#propsSnippets">
+      ⚙️ Helpful properties (Boot 3)
+    </button>
+  </h2>
+  <div id="propsSnippets" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      <pre class="language-properties"><code>
+# Ensure Hibernate updates schema flags/types for auditing columns
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.properties.hibernate.jdbc.time_zone=UTC
+# If using Envers (optional tuning)
+spring.jpa.properties.org.hibernate.envers.store_data_at_delete=true
+spring.jpa.properties.org.hibernate.envers.audit_strategy=org.hibernate.envers.strategy.ValidityAuditStrategy
+      </code></pre>
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#jwtUserId">
+      🔐 Reading userId from JWT (SecurityContextHolder) in Spring Boot 3
+    </button>
+  </h2>
+  <div id="jwtUserId" class="accordion-collapse collapse">
+    <div class="accordion-body">
+      
+      <h5 class="text-info">📌 Why?</h5>
+      <p>
+        In a Spring Boot 3 app with JWT authentication, every request has an <code>Authentication</code> object 
+        inside the <code>SecurityContextHolder</code>. If you’re using Spring Security OAuth2 Resource Server, 
+        the principal is usually a <code>Jwt</code>. From here, you can extract claims like <b>user_id</b>, <b>sub</b>, or <b>username</b> 
+        and populate <code>createdBy</code>/<code>updatedBy</code> in entities.
+      </p>
+
+      <h5 class="text-info">📌 Example Utility</h5>
+      <pre class="language-java"><code>
+package com.example.security;
+
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import java.util.Optional;
+
+public final class CurrentUser {
+  private CurrentUser() {}
+
+  public static Optional&lt;String&gt; userId() {
+    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    if (auth == null || !auth.isAuthenticated()) return Optional.empty();
+
+    // Case 1: OAuth2 JWT
+    if (auth instanceof JwtAuthenticationToken jwtAuth) {
+      Jwt jwt = jwtAuth.getToken();
+      // try different claim names
+      String userId = claim(jwt, "user_id")
+          .orElseGet(() -&gt; claim(jwt, "uid").orElse(jwt.getSubject())); // fallback "sub"
+      return Optional.ofNullable(userId);
+    }
+
+    // Case 2: Classic UserDetails (form login)
+    Object principal = auth.getPrincipal();
+    if (principal instanceof UserDetails ud) {
+      return Optional.ofNullable(ud.getUsername());
+    }
+    if (principal instanceof String s) {
+      return Optional.of(s); // sometimes "anonymousUser"
+    }
+
+    return Optional.empty();
+  }
+
+  private static Optional&lt;String&gt; claim(Jwt jwt, String name) {
+    Object v = jwt.getClaims().get(name);
+    return v != null ? Optional.of(String.valueOf(v)) : Optional.empty();
+  }
+}
+      </code></pre>
+
+      <h5 class="text-info">📌 Usage in AuditorAware</h5>
+      <pre class="language-java"><code>
+@Configuration
+@EnableJpaAuditing
+public class JpaAuditConfig {
+  @Bean
+  public AuditorAware&lt;String&gt; auditorAware() {
+    return () -&gt; CurrentUser.userId();
+  }
+}
+      </code></pre>
+
+      <h5 class="text-info">📌 Result</h5>
+      <ul>
+        <li><code>createdBy</code> and <code>updatedBy</code> fields in entities will automatically use the <b>userId from JWT</b>.</li>
+        <li>Logs can also include <code>%X{userId}</code> via MDC if you inject it per request.</li>
+      </ul>
+
+      <h5 class="text-info">✅ Conclusion</h5>
+      <p>
+        Centrally extracting <b>userId</b> from the JWT via <code>SecurityContextHolder</code> lets you keep audit logging consistent across all entities and services.
+      </p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#mdcUserId">
+      🧾 Add userId to MDC (per request) so it appears in all logs
+    </button>
+  </h2>
+  <div id="mdcUserId" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What & Why</h5>
+      <p>
+        Put the authenticated <code>userId</code> (from JWT / SecurityContext) into <b>MDC</b> at the start of every request and
+        remove it at the end. Then configure Log4j2 pattern to print it automatically on every log line.
+      </p>
+
+      <h5 class="text-info">🧩 1) Filter to populate MDC</h5>
+      <pre class="language-java"><code>
+package com.example.logging;
+
+import com.example.security.CurrentUser; // the utility you created earlier
+import org.slf4j.MDC;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.UUID;
+
+@Component
+public class MdcUserFilter extends OncePerRequestFilter {
+
+  @Override
+  protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
+      throws ServletException, IOException {
+
+    // Optional trace/request ids (use your gateway's header if present)
+    String traceId = headerOrDefault(req, "X-Request-Id", UUID.randomUUID().toString());
+    MDC.put("traceId", traceId);
+
+    // Extract userId from SecurityContext/JWT
+    String userId = CurrentUser.userId().orElse("anonymous");
+    MDC.put("userId", userId);
+
+    // Add HTTP metadata if you like
+    MDC.put("method", req.getMethod());
+    MDC.put("path", req.getRequestURI());
+
+    try {
+      chain.doFilter(req, res);
+    } finally {
+      MDC.clear(); // IMPORTANT: avoid leakage across threads
+    }
+  }
+
+  private String headerOrDefault(HttpServletRequest req, String name, String def) {
+    String v = req.getHeader(name);
+    return (v == null || v.isBlank()) ? def : v;
+  }
+}
+      </code></pre>
+
+      <h5 class="text-info">🧱 2) Log4j2 pattern (Console)</h5>
+      <pre class="language-xml"><code>
+<!-- src/main/resources/log4j2-spring.xml -->
+<Configuration status="WARN">
+  <Appenders>
+    <Console name="Console" target="SYSTEM_OUT">
+      <PatternLayout
+        pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%t] trace=%X{traceId:-} user=%X{userId:-} %X{method} %X{path} - %logger{36} - %msg%n"/>
+    </Console>
+  </Appenders>
+  <Loggers>
+    <Root level="info">
+      <AppenderRef ref="Console"/>
+    </Root>
+  </Loggers>
+</Configuration>
+      </code></pre>
+
+      <h5 class="text-info">🧪 3) Sample output</h5>
+      <pre class="language-text"><code>
+2025-09-17 11:05:22.184 INFO  [http-nio-8080-exec-6] trace=5b4f6a3e user=hari POST /api/v1/orders - com.example.OrderService - Order created: 123
+      </code></pre>
+
+      <h5 class="text-info">💡 Tips</h5>
+      <ul>
+        <li>If you use <code>@Async</code>/custom executors, add a <b>TaskDecorator</b> to copy MDC to child threads.</li>
+        <li>If your IdP uses different claim names (<code>sub</code>, <code>uid</code>, <code>username</code>), map them in <code>CurrentUser</code>.</li>
+        <li>In gateways, preserve/forward <code>X-Request-Id</code> (or generate one) for cross-service correlation.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
       data-bs-target="#springBoot3MtBestPractices">
       Spring Boot 3 Multithreading – Best Practices (with Examples)
     </button>
