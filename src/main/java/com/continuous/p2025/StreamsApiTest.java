@@ -184,6 +184,7 @@ public class StreamsApiTest {
 
         // Group employees by hobby
         // Grouping employees by each hobby
+        // private List<String> hobbies;
         Map<String, List<String>> groupedByHobby = employees.stream()
                 .flatMap(emp -> emp.getHobbies().stream().map(hobby -> Map.entry(hobby, emp.getName())))
                 .collect(Collectors.groupingBy(Map.Entry::getKey,

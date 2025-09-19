@@ -39,6 +39,9 @@ public class SeptemberTest {
         Map<String, Double> avgAgeOfMaleAndFemale = employees.stream()
                 .collect(Collectors.groupingBy(Employee::getGender, Collectors.averagingDouble(Employee::getAge)));
         System.out.println(avgAgeOfMaleAndFemale);
+//        4. Group words by their starting letter and print them (using Method References)
+        System.out.println("4. Group words by their starting letter and print them (using Method References");
+
 
     }
 }

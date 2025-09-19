@@ -2574,6 +2574,860 @@ youngestEmployeesByDept.forEach((dept, list) -&gt; {
     </div>
   </div>
 </div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#groupByStartingLetter">
+      🔤 Group words by starting letter (Java 8 Streams + Method References)
+    </button>
+  </h2>
+  <div id="groupByStartingLetter" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Goal</h5>
+      <p>Group a list of words by their <b>first letter</b> (case-insensitive), sort words in each group, and print the groups — using <b>method references</b> throughout.</p>
+
+      <h5 class="text-info">🧩 Code (Java 8)</h5>
+      <pre class="language-java"><code>
+import java.util.*;
+import java.util.stream.Collectors;
+
+public class GroupByFirstLetter {
+
+  // --- Method references helpers ---
+  static Character firstUpper(String s) { return Character.toUpperCase(s.charAt(0)); }
+  static boolean startsWithLetter(String s) { return !s.isEmpty() && Character.isLetter(s.charAt(0)); }
+  static void printGroup(Character letter, List&lt;String&gt; words) {
+    System.out.println(letter + " -> " + String.join(", ", words));
+  }
+
+  public static void main(String[] args) {
+    List&lt;String&gt; words = Arrays.asList(
+        "Apple", "ant", "banana", "Ball", "boy", "  Cat", "camel", null, "", "  ",
+        "dog", "Deer", "1foo", "@bar"
+    );
+
+    Map&lt;Character, List&lt;String&gt;&gt; grouped =
+        words.stream()
+             .filter(Objects::nonNull)               // method ref
+             .map(String::trim)                      // method ref
+             .filter(s -&gt; !s.isEmpty())
+             .filter(GroupByFirstLetter::startsWithLetter) // method ref
+             .collect(Collectors.groupingBy(
+                 GroupByFirstLetter::firstUpper,     // method ref for classifier
+                 TreeMap::new,                       // sorted by key (A..Z)
+                 Collectors.collectingAndThen(
+                     Collectors.toList(),
+                     list -&gt; list.stream()
+                                 .sorted(String::compareToIgnoreCase) // method ref comparator
+                                 .collect(Collectors.toList())
+                 )
+             ));
+
+    // Print using method reference to a BiConsumer
+    grouped.forEach(GroupByFirstLetter::printGroup);  // method ref
+  }
+}
+      </code></pre>
+
+      <h5 class="text-info">🧪 Example Output</h5>
+      <pre class="language-text"><code>
+A -> ant, Apple
+B -> ball, banana, boy
+C -> camel, Cat
+D -> Deer, dog
+      </code></pre>
+
+      <h5 class="text-info">💡 Notes</h5>
+      <ul>
+        <li><code>TreeMap::new</code> keeps groups ordered by letter (A→Z).</li>
+        <li><code>String::compareToIgnoreCase</code> sorts words inside each group.</li>
+        <li>Non-letters (e.g., <code>1foo</code>, <code>@bar</code>) are filtered out by <code>startsWithLetter</code>.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#sameStartEndWords">
+      🔁 Find words that start and end with the same character (Java 8 Streams)
+    </button>
+  </h2>
+  <div id="sameStartEndWords" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Goal</h5>
+      <p>
+        From a sentence, return all words whose <b>first</b> and <b>last</b> characters match (case-insensitive).  
+        We’ll strip punctuation around words and keep it Java-8-only.
+      </p>
+
+      <h5 class="text-info">🧩 Code (Java 8)</h5>
+      <pre class="language-java"><code>
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+public class SameStartEndWords {
+
+  // Trim non-letters/digits from start & end (keeps internal apostrophes/dashes intact)
+  static String trimPunct(String w) {
+    return w.replaceAll("^[^\\p{L}\\p{N}]+|[^\\p{L}\\p{N}]+$", "");
+  }
+
+  static boolean sameStartEndIgnoreCase(String s) {
+    if (s.isEmpty()) return false;
+    char first = Character.toLowerCase(s.charAt(0));
+    char last  = Character.toLowerCase(s.charAt(s.length() - 1));
+    return first == last;
+  }
+
+  public static List&lt;String&gt; findWords(String sentence) {
+    // Split by whitespace (not \\W+) so that we can keep internal apostrophes/dashes and trim them ourselves
+    return Stream.of(sentence.split("\\s+"))
+        .map(String::trim)            // method reference
+        .filter(s -&gt; !s.isEmpty())
+        .map(SameStartEndWords::trimPunct)  // method reference
+        .filter(s -&gt; !s.isEmpty())
+        .filter(SameStartEndWords::sameStartEndIgnoreCase) // method reference
+        .collect(Collectors.toList());
+  }
+
+  public static void main(String[] args) {
+    String sentence = "Anna went to Asia, met 'Axa' &amp; level? Wow! noon; civic, can't; redivider.";
+    System.out.println(findWords(sentence));
+  }
+}
+      </code></pre>
+
+      <h5 class="text-info">🧪 Sample Output</h5>
+      <pre class="language-text"><code>
+[Anna, Asia, Axa, level, Wow, noon, civic, redivider]
+      </code></pre>
+
+      <h5 class="text-info">💡 Notes</h5>
+      <ul>
+        <li><code>\\p{L}</code> = any letter in Unicode; <code>\\p{N}</code> = any digit. Adjust the regex if you want to allow only A–Z.</li>
+        <li>Single-letter words (e.g., “a”) match by definition (first == last).</li>
+        <li>Switch <code>split("\\s+")</code> to a smarter tokenizer if you have complex input needs.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#palindromicSubstrings">
+      🔁 Find all palindromic substrings (Java 8 Streams)
+    </button>
+  </h2>
+  <div id="palindromicSubstrings" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Goal</h5>
+      <p>Generate <b>all substrings</b> via Streams, filter those that are <b>palindromes</b> (case-sensitive), and collect them.
+         Includes variants for <b>all occurrences</b> (with duplicates) and <b>unique</b> palindromes.</p>
+
+      <h5 class="text-info">🧩 Code (Java 8)</h5>
+      <pre class="language-java"><code>
+import java.util.*;
+import java.util.stream.*;
+
+public class PalindromicSubstrings {
+
+  // Palindrome check without reversing the whole string
+  static boolean isPalindrome(String s) {
+    int n = s.length();
+    return IntStream.range(0, n / 2)
+        .allMatch(i -&gt; s.charAt(i) == s.charAt(n - 1 - i));
+  }
+
+  // All palindromic substrings (length &gt;= 2), including duplicates/occurrences
+  static List&lt;String&gt; allPalindromes(String s) {
+    int n = s.length();
+    return IntStream.range(0, n)
+        .boxed()
+        .flatMap(i -&gt; IntStream.range(i + 1, n + 1)
+            .mapToObj(j -&gt; s.substring(i, j)))
+        .filter(str -&gt; str.length() &gt;= 2)
+        .filter(PalindromicSubstrings::isPalindrome)   // method ref
+        .collect(Collectors.toList());
+  }
+
+  // Unique palindromic substrings (in first-seen order)
+  static Set&lt;String&gt; uniquePalindromes(String s) {
+    return allPalindromes(s).stream()
+        .collect(Collectors.toCollection(LinkedHashSet::new));
+  }
+
+  // (Optional) Palindromes with positions i..j (inclusive)
+  static List&lt;String&gt; palindromesWithPositions(String s) {
+    int n = s.length();
+    return IntStream.range(0, n)
+        .boxed()
+        .flatMap(i -&gt; IntStream.range(i + 1, n + 1)
+            .mapToObj(j -&gt; new AbstractMap.SimpleEntry&lt;&gt;(i, j)))
+        .map(e -&gt; new AbstractMap.SimpleEntry&lt;&gt;(e, s.substring(e.getKey(), e.getValue())))
+        .filter(e -&gt; e.getValue().length() &gt;= 2)
+        .filter(e -&gt; isPalindrome(e.getValue()))
+        .map(e -&gt; String.format("%s [%d..%d]", e.getValue(), e.getKey().getKey(), e.getKey().getValue() - 1))
+        .collect(Collectors.toList());
+  }
+
+  public static void main(String[] args) {
+    String s = "ababaXabcba";
+    System.out.println("All : " + allPalindromes(s));
+    System.out.println("Unique : " + uniquePalindromes(s));
+    System.out.println("With pos : " + palindromesWithPositions(s));
+  }
+}
+      </code></pre>
+
+      <h5 class="text-info">🧪 Sample Output</h5>
+      <pre class="language-text"><code>
+All : [aba, abab, ababa, bab, aba, abcba, bcb]
+Unique : [aba, abab, ababa, bab, abcba, bcb]
+With pos : [aba [0..2], abab [0..3], ababa [0..4], bab [1..3], aba [2..4], abcba [6..10], bcb [7..9]]
+      </code></pre>
+
+      <h5 class="text-info">💡 Notes</h5>
+      <ul>
+        <li>To include single-letter palindromes, remove <code>length() &gt;= 2</code> filter.</li>
+        <li>For case-insensitive check, compare <code>Character.toLowerCase</code> of chars in <code>isPalindrome</code>.</li>
+        <li>Complexity is O(n²) substrings × O(k) check; for very large strings consider Manacher’s algorithm (O(n)).</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#anagramsStreams">
+      🔤 Find all anagrams of a word from a list (Java 8 Streams)
+    </button>
+  </h2>
+  <div id="anagramsStreams" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Goal</h5>
+      <p>Given a <b>target word</b> and a <b>list of words</b>, return all that are anagrams (ignoring case & punctuation).</p>
+
+      <h5 class="text-info">🧩 Code (Java 8)</h5>
+      <pre class="language-java"><code>
+import java.util.*;
+import java.util.stream.Collectors;
+
+public class AnagramFinder {
+
+  // Normalize: keep letters/digits, lowercase, sort characters → canonical signature
+  static String signature(String s) {
+    char[] ch = s.replaceAll("[^\\p{L}\\p{N}]", "")
+                 .toLowerCase()
+                 .toCharArray();
+    Arrays.sort(ch);
+    return new String(ch);
+  }
+
+  // Find anagrams of 'target' from 'candidates'
+  static List&lt;String&gt; findAnagrams(String target, List&lt;String&gt; candidates) {
+    String targetSig = signature(target);
+    return candidates.stream()
+        .filter(Objects::nonNull)
+        .filter(w -&gt; !w.trim().isEmpty())
+        .filter(w -&gt; !signature(w).isEmpty())             // skip words with no letters/digits
+        .filter(w -&gt; !w.equalsIgnoreCase(target))         // optional: exclude the target itself
+        .filter(w -&gt; signature(w).equals(targetSig))
+        .collect(Collectors.toList());
+  }
+
+  // Optional: Pre-group a dictionary by signature for fast lookups
+  static Map&lt;String, List&lt;String&gt;&gt; groupBySignature(List&lt;String&gt; words) {
+    return words.stream()
+        .filter(Objects::nonNull)
+        .filter(w -&gt; !w.trim().isEmpty())
+        .collect(Collectors.groupingBy(AnagramFinder::signature));
+  }
+
+  public static void main(String[] args) {
+    List&lt;String&gt; words = Arrays.asList(
+        "listen", "Silent", "enlist", "inlets", "google", "tinsel", "Listen!!", "stone", "tones", "onset"
+    );
+
+    System.out.println(findAnagrams("Listen", words)); // [Silent, enlist, inlets, tinsel]
+
+    // Using the grouped dictionary (useful if you query many targets)
+    Map&lt;String, List&lt;String&gt;&gt; dict = groupBySignature(words);
+    String key = signature("tones");
+    System.out.println(dict.getOrDefault(key, Collections.emptyList())); // [stone, tones, onset]
+  }
+}
+      </code></pre>
+
+      <h5 class="text-info">🧪 Example Output</h5>
+      <pre class="language-text"><code>
+[Silent, enlist, inlets, tinsel]
+[stone, tones, onset]
+      </code></pre>
+
+      <h5 class="text-info">💡 Notes</h5>
+      <ul>
+        <li>Method references used: <code>Objects::nonNull</code> and <code>AnagramFinder::signature</code>.</li>
+        <li>For only letters A–Z, change the regex to <code>"[^A-Za-z]"</code>.</li>
+        <li>Performance: sorting is fine for typical words; for very long strings, a frequency-count signature can be faster.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#majorityElementStreams">
+      🥇 Majority Element (> n/2) using Java 8 Streams
+    </button>
+  </h2>
+  <div id="majorityElementStreams" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Goal</h5>
+      <p>
+        Given an array, find the element that appears <b>more than n/2 times</b> (if it exists).  
+        Return it as an <code>OptionalInt</code> (empty if no majority element).
+      </p>
+
+      <h5 class="text-info">🧩 Stream-based Solution (Java 8)</h5>
+      <pre class="language-java"><code>
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.Arrays;
+
+public class MajorityElementStreams {
+
+  // Majority element using Streams (counts via groupingBy)
+  static OptionalInt majorityElement(int[] arr) {
+    int n = arr.length;
+    Map&lt;Integer, Long&gt; freq =
+        Arrays.stream(arr)                 // IntStream
+              .boxed()                     // Stream&lt;Integer&gt;
+              .collect(Collectors.groupingBy(
+                  Function.identity(),     // key = number itself
+                  Collectors.counting())); // value = occurrences
+
+    return freq.entrySet().stream()
+               .filter(e -&gt; e.getValue() &gt; n / 2)    // strictly more than n/2
+               .mapToInt(Map.Entry::getKey)
+               .findFirst();
+  }
+
+  public static void main(String[] args) {
+    int[] a1 = {2, 2, 1, 2, 3, 2, 2};
+    int[] a2 = {1, 2, 3, 1, 2, 3};
+
+    System.out.println("a1 majority: " +
+        majorityElement(a1).orElseThrow(() -&gt; new NoSuchElementException("No majority")));
+    System.out.println("a2 majority present? " + majorityElement(a2).isPresent());
+  }
+}
+      </code></pre>
+
+      <h5 class="text-info">🧪 Sample Output</h5>
+      <pre class="language-text"><code>
+a1 majority: 2
+a2 majority present? false
+      </code></pre>
+
+      <h5 class="text-info">💡 Notes</h5>
+      <ul>
+        <li>Time: <code>O(n)</code>, Space: <code>O(k)</code> where <code>k</code> is number of distinct elements.</li>
+        <li>“More than n/2” means strictly greater, not greater-or-equal.</li>
+        <li>If you need a generic version for <code>List&lt;T&gt;</code>, replace the array stream with <code>list.stream()</code> and keep the same grouping logic.</li>
+      </ul>
+
+      <h5 class="text-info">🏎️ Bonus (non-stream, O(1) space)</h5>
+      <p>
+        For interviews, mention <b>Boyer–Moore Voting</b> (O(n) time, O(1) space). You still do a second pass to verify the candidate:
+      </p>
+      <pre class="language-java"><code>
+static OptionalInt majorityElementBoyerMoore(int[] arr) {
+  int count = 0, candidate = 0;
+  for (int x : arr) {
+    if (count == 0) candidate = x;
+    count += (x == candidate) ? 1 : -1;
+  }
+  // verify
+  long occ = Arrays.stream(arr).filter(v -&gt; v == candidate).count();
+  return occ &gt; arr.length / 2 ? OptionalInt.of(candidate) : OptionalInt.empty();
+}
+      </code></pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#majorityElementStreams">
+      🥇 Majority Element (> n/2) using Java 8 Streams
+    </button>
+  </h2>
+  <div id="majorityElementStreams" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Goal</h5>
+      <p>
+        Given an array, find the element that appears <b>more than n/2 times</b> (if it exists).  
+        Return it as an <code>OptionalInt</code> (empty if no majority element).
+      </p>
+
+      <h5 class="text-info">🧩 Stream-based Solution (Java 8)</h5>
+      <pre class="language-java"><code>
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.Arrays;
+
+public class MajorityElementStreams {
+
+  // Majority element using Streams (counts via groupingBy)
+  static OptionalInt majorityElement(int[] arr) {
+    int n = arr.length;
+    Map&lt;Integer, Long&gt; freq =
+        Arrays.stream(arr)                 // IntStream
+              .boxed()                     // Stream&lt;Integer&gt;
+              .collect(Collectors.groupingBy(
+                  Function.identity(),     // key = number itself
+                  Collectors.counting())); // value = occurrences
+
+    return freq.entrySet().stream()
+               .filter(e -&gt; e.getValue() &gt; n / 2)    // strictly more than n/2
+               .mapToInt(Map.Entry::getKey)
+               .findFirst();
+  }
+
+  public static void main(String[] args) {
+    int[] a1 = {2, 2, 1, 2, 3, 2, 2};
+    int[] a2 = {1, 2, 3, 1, 2, 3};
+
+    System.out.println("a1 majority: " +
+        majorityElement(a1).orElseThrow(() -&gt; new NoSuchElementException("No majority")));
+    System.out.println("a2 majority present? " + majorityElement(a2).isPresent());
+  }
+}
+      </code></pre>
+
+      <h5 class="text-info">🧪 Sample Output</h5>
+      <pre class="language-text"><code>
+a1 majority: 2
+a2 majority present? false
+      </code></pre>
+
+      <h5 class="text-info">💡 Notes</h5>
+      <ul>
+        <li>Time: <code>O(n)</code>, Space: <code>O(k)</code> where <code>k</code> is number of distinct elements.</li>
+        <li>“More than n/2” means strictly greater, not greater-or-equal.</li>
+        <li>If you need a generic version for <code>List&lt;T&gt;</code>, replace the array stream with <code>list.stream()</code> and keep the same grouping logic.</li>
+      </ul>
+
+      <h5 class="text-info">🏎️ Bonus (non-stream, O(1) space)</h5>
+      <p>
+        For interviews, mention <b>Boyer–Moore Voting</b> (O(n) time, O(1) space). You still do a second pass to verify the candidate:
+      </p>
+      <pre class="language-java"><code>
+static OptionalInt majorityElementBoyerMoore(int[] arr) {
+  int count = 0, candidate = 0;
+  for (int x : arr) {
+    if (count == 0) candidate = x;
+    count += (x == candidate) ? 1 : -1;
+  }
+  // verify
+  long occ = Arrays.stream(arr).filter(v -&gt; v == candidate).count();
+  return occ &gt; arr.length / 2 ? OptionalInt.of(candidate) : OptionalInt.empty();
+}
+      </code></pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#functionUseCases">
+      🧠 Where do we use <code>Function&lt;T,R&gt;</code>? (Streams + real cases)
+    </button>
+  </h2>
+  <div id="functionUseCases" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What is <code>Function&lt;T,R&gt;</code>?</h5>
+      <p>
+        A functional interface representing a transformation from <b>T → R</b>.  
+        Use it when you need to <b>return a value</b> (unlike <code>Consumer</code>) and not just test a condition (unlike <code>Predicate</code>).
+      </p>
+
+      <h5 class="text-info">📌 Most common places in Streams</h5>
+      <ul>
+        <li><b>map(Function)</b> – transform each element.</li>
+        <li><b>flatMap(Function&lt;T, Stream&lt;R&gt;&gt;)</b> – transform each element to a stream, then flatten.</li>
+        <li><b>groupingBy(classifier Function)</b> – choose the group key.</li>
+        <li><b>toMap(keyMapper, valueMapper)</b> – extract key & value.</li>
+        <li><b>Collectors.mapping(mapper, downstream)</b> – transform before collecting.</li>
+        <li><b>collectingAndThen(downstream, finisher Function)</b> – final transform after collecting.</li>
+        <li><b>Comparator.comparing(keyExtractor Function)</b> – sort by a derived key.</li>
+        <li><b>Function.identity()</b> – use the element itself as key/value.</li>
+      </ul>
+
+      <h5 class="text-info">🧩 Mini examples (Java 8)</h5>
+      <pre class="language-java"><code>
+import static java.util.stream.Collectors.*;
+import java.util.*;
+import java.util.function.Function;
+
+class FunctionInStreams {
+
+  static class User { 
+    final long id; final String name; final int age; final String email;
+    User(long id, String name, int age, String email){ this.id=id; this.name=name; this.age=age; this.email=email; }
+    long getId(){ return id; } String getName(){ return name; } int getAge(){ return age; } String getEmail(){ return email; }
+  }
+
+  public static void main(String[] args) {
+    List&lt;String&gt; lines = Arrays.asList("alpha beta", "gamma", "delta eta");
+    List&lt;User&gt; users = Arrays.asList(
+        new User(1,"Hari",28,"h@x.com"),
+        new User(2,"Anu",21,"a@x.com"),
+        new User(3,"Hari",31,"h@x.com") // duplicate email
+    );
+
+    // 1) map(Function): transform elements
+    List&lt;String&gt; upper = lines.stream()
+        .map(String::toUpperCase)              // Function<String,String>
+        .collect(toList());
+
+    // 2) flatMap(Function): split & flatten
+    List&lt;String&gt; words = lines.stream()
+        .flatMap(s -&gt; Arrays.stream(s.split("\\s+")))  // Function<String,Stream<String>>
+        .collect(toList());
+
+    // 3) groupingBy(Function): group words by first letter
+    Map&lt;Character,List&lt;String&gt;&gt; byFirst = words.stream()
+        .collect(groupingBy(s -&gt; s.charAt(0)));       // Function<String,Character>
+
+    // 4) toMap(Function, Function): map userId -&gt; name
+    Map&lt;Long,String&gt; idToName = users.stream()
+        .collect(toMap(User::getId, User::getName));  // Function<User,Long>, Function<User,String>
+
+    // 5) Collectors.mapping(Function, downstream): group dept -&gt; names (example with name only)
+    Map&lt;Integer,List&lt;String&gt;&gt; ageToNames = users.stream()
+        .collect(groupingBy(User::getAge, mapping(User::getName, toList())));
+
+    // 6) collectingAndThen(..., finisher Function): get an unmodifiable list of unique names
+    List&lt;String&gt; uniqueNames = users.stream()
+        .map(User::getName)
+        .collect(collectingAndThen(toSet(), set -&gt; Collections.unmodifiableList(new ArrayList&lt;&gt;(set))));
+
+    // 7) Comparator.comparing(Function): sort by email domain
+    List&lt;User&gt; sortedByDomain = users.stream()
+        .sorted(Comparator.comparing(u -&gt; u.getEmail().substring(u.getEmail().indexOf('@')+1)))
+        .collect(toList());
+
+    // 8) Frequency map using identity(): word -&gt; count
+    Map&lt;String,Long&gt; freq = words.stream()
+        .collect(groupingBy(Function.identity(), counting()));
+
+    // 9) Distinct by derived key using a Function keyExtractor
+    List&lt;User&gt; distinctByEmail = users.stream()
+        .filter(distinctByKey(User::getEmail))        // Function<User, String>
+        .collect(toList());
+
+    System.out.println(idToName);
+  }
+
+  // Helper: distinct by key using a Function
+  static &lt;T&gt; java.util.function.Predicate&lt;T&gt; distinctByKey(Function&lt;? super T, ?&gt; keyExtractor) {
+    java.util.Set&lt;Object&gt; seen = java.util.Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap&lt;&gt;());
+    return t -&gt; seen.add(keyExtractor.apply(t));
+  }
+}
+      </code></pre>
+
+      <h5 class="text-info">📦 Adjacent APIs that take <code>Function</code> (outside Streams)</h5>
+      <ul>
+        <li><b>Optional.map / flatMap</b>: transform a present value.</li>
+        <li><b>CompletableFuture.thenApply / thenCompose</b>: async transformations.</li>
+        <li><b>Map.compute / computeIfAbsent</b>: lazy value creation for a key.</li>
+        <li><b>Function#andThen / compose</b>: chain transformations; <code>identity()</code> for passthrough.</li>
+      </ul>
+
+      <h5 class="text-info">🧭 When should I use <code>Function</code>?</h5>
+      <ul>
+        <li>When you need to <b>convert</b> one type/value to another (DTO mapping, normalization, parsing).</li>
+        <li>When you need a <b>key extractor</b> (grouping, dedup, sorting, <code>toMap</code> keys).</li>
+        <li>When you need a <b>finisher</b> step for a collector (<code>collectingAndThen</code>).</li>
+        <li>When composing multiple small transforms into a pipeline (<code>andThen</code>/<code>compose</code>).</li>
+      </ul>
+
+      <h5 class="text-info">🔎 Quick contrasts</h5>
+      <ul>
+        <li><b>Predicate&lt;T&gt;</b>: returns boolean (filtering).</li>
+        <li><b>Consumer&lt;T&gt;</b>: returns void (side effects).</li>
+        <li><b>Supplier&lt;R&gt;</b>: takes nothing, returns a value (factories).</li>
+        <li><b>Function&lt;T,R&gt;</b>: takes T, returns R (transformations).</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#supplierUseCases">
+      📦 Where & how do we use <code>Supplier&lt;T&gt;</code>?
+    </button>
+  </h2>
+  <div id="supplierUseCases" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What is <code>Supplier&lt;T&gt;</code>?</h5>
+      <p>
+        A functional interface with a single method <code>T get()</code>.  
+        It takes <b>no input</b> and <b>returns a value</b>. Use it for <b>lazy value creation</b>, <b>factories</b>, and <b>callbacks</b> that produce something on demand.
+      </p>
+
+      <h5 class="text-info">📌 Common places you’ll use it</h5>
+      <ul>
+        <li><b>Lazy defaults</b>: <code>Optional.orElseGet(supplier)</code></li>
+        <li><b>Infinite/generated streams</b>: <code>Stream.generate(supplier)</code></li>
+        <li><b>Async tasks</b>: <code>CompletableFuture.supplyAsync(supplier)</code></li>
+        <li><b>Collectors</b> needing a collection/map <b>factory</b>: <code>toCollection(…)</code>, <code>toMap(… , mapSupplier)</code></li>
+        <li><b>Factories/constructors</b>: <code>Supplier&lt;Foo&gt; f = Foo::new</code></li>
+        <li><b>Retry / memoization utilities</b>: pass a Supplier so the util can (re)invoke production of a value</li>
+      </ul>
+
+      <h5 class="text-info">🧩 Mini examples (Java 8)</h5>
+      <pre class="language-java"><code>
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.function.Supplier;
+import java.util.stream.*;
+
+public class SupplierExamples {
+
+  // 1) Lazy default with Optional.orElseGet
+  static String expensiveDefault() {
+    System.out.println("computing default...");
+    return "DEFAULT";
+  }
+
+  // 2) Simple factory
+  static class User { final String id; User(String id){ this.id = id; } }
+
+  // 3) Retry utility using Supplier
+  static &lt;T&gt; T withRetry(Supplier&lt;T&gt; action, int attempts) {
+    RuntimeException last = null;
+    for (int i = 0; i &lt; attempts; i++) {
+      try { return action.get(); } 
+      catch (RuntimeException ex) { last = ex; }
+    }
+    throw last == null ? new RuntimeException("Failed") : last;
+  }
+
+  // 4) Lazy memoized supplier (init once, then reuse)
+  static &lt;T&gt; Supplier&lt;T&gt; memoize(Supplier&lt;T&gt; delegate) {
+    final Object lock = new Object();
+    return new Supplier&lt;T&gt;() {
+      volatile boolean initialized = false;
+      T value;
+      public T get() {
+        if (initialized) return value;
+        synchronized (lock) {
+          if (!initialized) { value = delegate.get(); initialized = true; }
+          return value;
+        }
+      }
+    };
+  }
+
+  public static void main(String[] args) {
+    // A) Optional.orElseGet (Supplier runs only if needed)
+    String fromDb = null;
+    String result = Optional.ofNullable(fromDb).orElseGet(SupplierExamples::expensiveDefault);
+    // prints "computing default..." once
+
+    // B) Stream.generate (endless values; limit it!)
+    List&lt;UUID&gt; ids = Stream.generate(UUID::randomUUID).limit(3).collect(Collectors.toList());
+
+    // C) CompletableFuture.supplyAsync (async producer)
+    CompletableFuture&lt;String&gt; cf = CompletableFuture.supplyAsync(() -&gt; "hello");
+    System.out.println(cf.join()); // "hello"
+
+    // D) Collector factories (Supplier for collection/map)
+    LinkedHashSet&lt;String&gt; set = Stream.of("b","a","b","c")
+        .collect(Collectors.toCollection(LinkedHashSet::new)); // preserves insertion order
+
+    Map&lt;String,Integer&gt; map = Stream.of("a","bb","ccc")
+        .collect(Collectors.toMap(s -&gt; s, String::length, (l, r) -&gt; l, LinkedHashMap::new));
+
+    // E) Constructor reference as Supplier (factory)
+    Supplier&lt;User&gt; newUser = () -&gt; new User(UUID.randomUUID().toString());
+    User u = newUser.get();
+
+    // F) Retry with Supplier
+    String val = withRetry(() -&gt; {
+      if (new Random().nextBoolean()) throw new RuntimeException("flaky");
+      return "ok";
+    }, 3);
+
+    // G) Memoize an expensive computation (compute once, reuse)
+    Supplier&lt;String&gt; lazyConfig = memoize(() -&gt; {
+      System.out.println("Loading config...");
+      return "CONFIG_VALUE";
+    });
+    System.out.println(lazyConfig.get()); // loads & caches
+    System.out.println(lazyConfig.get()); // returns cached
+  }
+}
+      </code></pre>
+
+      <h5 class="text-info">🔎 In Streams specifically</h5>
+      <ul>
+        <li><code>Stream.generate(Supplier)</code> — produce an unbounded stream of values.</li>
+        <li><code>Collectors.toCollection(Supplier)</code> — specify the collection type to collect into.</li>
+        <li><code>Collectors.toMap(keyMapper, valueMapper, mergeFn, mapSupplier)</code> — choose map implementation.</li>
+        <li><code>collectingAndThen(downstream, finisher)</code> — the <i>finisher</i> is a <code>Function</code>, but the downstream can use Suppliers (e.g., <code>toCollection</code>).</li>
+      </ul>
+
+      <h5 class="text-info">🧭 When to choose Supplier vs others</h5>
+      <ul>
+        <li><b>Supplier&lt;R&gt;</b>: no inputs, returns a value (lazy creation, factories, async producers).</li>
+        <li><b>Function&lt;T,R&gt;</b>: needs an input to compute output (mappers, key extractors).</li>
+        <li><b>Consumer&lt;T&gt;</b>: side effects, no return (logging, collecting).</li>
+        <li><b>Predicate&lt;T&gt;</b>: boolean test (filtering).</li>
+        <li><b>Callable&lt;R&gt;</b>: like Supplier but can throw checked exceptions (often used with executors).</li>
+      </ul>
+
+      <h5 class="text-info">✅ Takeaway</h5>
+      <p>
+        Use <code>Supplier&lt;T&gt;</code> whenever you want to <b>defer producing a value</b> until it’s actually needed, or you need a <b>factory hook</b>
+        that some API (Streams, CompletableFuture, Collectors) can invoke on demand.
+      </p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#pairsWithTargetSum">
+      ➕ Find all pairs with target sum (Java 8 Streams)
+    </button>
+  </h2>
+  <div id="pairsWithTargetSum" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Goal</h5>
+      <p>
+        From an integer array and a target, return pairs whose <b>sum equals the target</b>.  
+        Below are three streamy variants:
+      </p>
+      <ol>
+        <li><b>All value pairs (by positions, i &lt; j)</b> – includes duplicates if values repeat.</li>
+        <li><b>Unique value pairs</b> – ignore order and duplicates (e.g., (2,4) only once).</li>
+        <li><b>Index pairs</b> – return the indices (i, j) with i &lt; j.</li>
+      </ol>
+
+      <h5 class="text-info">🧩 Code (Java 8)</h5>
+      <pre class="language-java"><code>
+import java.util.*;
+import java.util.stream.*;
+import java.util.AbstractMap;
+
+public class TwoSumStreams {
+
+  // 1) All value pairs (every occurrence, by index i&lt;j)
+  static List&lt;int[]&gt; pairsAll(int[] a, int target) {
+    int n = a.length;
+    return IntStream.range(0, n)
+        .boxed()
+        .flatMap(i -&gt; IntStream.range(i + 1, n)
+            .filter(j -&gt; a[i] + a[j] == target)
+            .mapToObj(j -&gt; new int[]{ a[i], a[j] }))
+        .collect(Collectors.toList());
+  }
+
+  // 2) Unique value pairs (ignore duplicates and order)
+  static List&lt;int[]&gt; pairsUnique(int[] a, int target) {
+    int n = a.length;
+    return IntStream.range(0, n)
+        .boxed()
+        .flatMap(i -&gt; IntStream.range(i + 1, n)
+            .filter(j -&gt; a[i] + a[j] == target)
+            .mapToObj(j -&gt; {
+              int x = a[i], y = a[j];
+              // normalize unordered pair to (min, max) to deduplicate
+              int min = Math.min(x, y), max = Math.max(x, y);
+              return Arrays.asList(min, max);
+            }))
+        .distinct() // dedupe by (min,max) pair
+        .map(list -&gt; new int[]{ list.get(0), list.get(1) })
+        .collect(Collectors.toList());
+  }
+
+  // 3) Index pairs (i, j) with i&lt;j
+  static List&lt;int[]&gt; indexPairs(int[] a, int target) {
+    int n = a.length;
+    return IntStream.range(0, n)
+        .boxed()
+        .flatMap(i -&gt; IntStream.range(i + 1, n)
+            .filter(j -&gt; a[i] + a[j] == target)
+            .mapToObj(j -&gt; new int[]{ i, j }))
+        .collect(Collectors.toList());
+  }
+
+  // Helper for pretty printing int[] pairs
+  static String fmtPairs(List&lt;int[]&gt; pairs) {
+    return pairs.stream()
+        .map(p -&gt; "(" + p[0] + "," + p[1] + ")")
+        .collect(Collectors.joining(", "));
+  }
+
+  public static void main(String[] args) {
+    int[] arr = {1, 5, 7, -1, 5, 3, 4, 2, 6, 3};
+    int target = 6;
+
+    List&lt;int[]&gt; all = pairsAll(arr, target);
+    List&lt;int[]&gt; unique = pairsUnique(arr, target);
+    List&lt;int[]&gt; idx = indexPairs(arr, target);
+
+    System.out.println("All value pairs      : " + fmtPairs(all));    // duplicates kept
+    System.out.println("Unique value pairs   : " + fmtPairs(unique)); // deduped unordered
+    System.out.println("Index pairs (i,j)    : " + fmtPairs(idx));
+  }
+}
+      </code></pre>
+
+      <h5 class="text-info">🧪 Sample Output</h5>
+      <pre class="language-text"><code>
+All value pairs      : (1,5), (7,-1), (3,3), (4,2)
+Unique value pairs   : (1,5), (7,-1), (3,3), (2,4)
+Index pairs (i,j)    : (0,1), (2,3), (5,9), (6,7)
+      </code></pre>
+
+      <h5 class="text-info">💡 Notes</h5>
+      <ul>
+        <li>The stream approach above is clear but O(n²). It’s great for interview-style practice and moderate sizes.</li>
+        <li>For large arrays, mention the O(n) <b>HashSet</b> / <b>HashMap</b> approach (Boyer–Moore is for majority, not two-sum).</li>
+        <li><b>pairsUnique</b> normalizes each pair to <code>(min,max)</code> before <code>distinct()</code> to avoid duplicates like (2,4) and (4,2).</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+
 
 
       <div class="accordion-item">
