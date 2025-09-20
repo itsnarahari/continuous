@@ -22,7 +22,7 @@ public class InstanceAndStaticBlocks {
 
     public static void main(String[] args) {
         InstanceAndStaticBlocks instanceAndStaticBlocks = new InstanceAndStaticBlocks();
-        InstanceAndStaticBlocks instanceAndStaticBlocks2 = new InstanceAndStaticBlocks();
+
     }
 
 }

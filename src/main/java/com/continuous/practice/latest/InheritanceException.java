@@ -1,5 +1,7 @@
 package com.continuous.practice.latest;
 
+import com.continuous.practice.utils.Ex;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,7 +27,7 @@ class Parent {
 
 class Child extends Parent {
 
-    public String m2() throws RuntimeException{
+    public String m2() throws RuntimeException {
         System.out.println("child m2");
         return null;
     }
@@ -47,8 +49,9 @@ public class InheritanceException {
         System.out.println(f);
         Throwable throwable = new RuntimeException();
 
-        Integer i = new Integer(1);
+        Integer i = 1;
         int i2 = 1;
+        System.out.println("comp");
         System.out.println(i == i2);
         System.out.println(i.equals(i2));
 

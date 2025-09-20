@@ -1731,6 +1731,709 @@ public class MdcUserFilter extends OncePerRequestFilter {
     </div>
   </div>
 </div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#springBootVersioning">
+      🧭 Spring Boot API Versioning — options & code (Boot 3 / MVC)
+    </button>
+  </h2>
+  <div id="springBootVersioning" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Why version your API?</h5>
+      <p>
+        To evolve contracts without breaking clients. Typical changes: add fields (non-breaking), rename/remove fields (breaking), change semantics. 
+        Keep old clients working while you ship new shapes.
+      </p>
+
+      <h5 class="text-info">📦 Common Strategies</h5>
+      <ul>
+        <li><b>Path versioning</b> (most common): <code>/api/v1/users</code>, <code>/api/v2/users</code></li>
+        <li><b>Query param</b>: <code>/api/users?version=1</code></li>
+        <li><b>Header</b>: <code>X-API-Version: 1</code></li>
+        <li><b>Media type (content negotiation)</b>: <code>Accept: application/vnd.acme.user-v1+json</code></li>
+      </ul>
+
+      <h5 class="text-info">🧩 DTOs for different versions</h5>
+      <pre class="language-java"><code>
+record UserV1(String name) {}
+record UserV2(String firstName, String lastName) {}
+      </code></pre>
+
+      <h5 class="text-info">🅰️ Path Versioning (simple & explicit)</h5>
+      <pre class="language-java"><code>
+@RestController
+@RequestMapping("/api")
+class UserPathController {
+
+  @GetMapping("/v1/users/{id}")
+  UserV1 getV1(@PathVariable long id) {
+    // map from domain to v1 shape
+    return new UserV1("Hari");
+  }
+
+  @GetMapping("/v2/users/{id}")
+  UserV2 getV2(@PathVariable long id) {
+    // map from domain to v2 shape
+    return new UserV2("Hari", "G");
+  }
+}
+      </code></pre>
+
+      <h5 class="text-info">🅱️ Query Param Versioning</h5>
+      <pre class="language-java"><code>
+@RestController
+@RequestMapping("/api/users")
+class UserParamController {
+
+  @GetMapping(value="/{id}", params="version=1")
+  UserV1 getV1(@PathVariable long id) { return new UserV1("Hari"); }
+
+  @GetMapping(value="/{id}", params="version=2")
+  UserV2 getV2(@PathVariable long id) { return new UserV2("Hari", "G"); }
+}
+      </code></pre>
+
+      <h5 class="text-info">🅾️ Header Versioning</h5>
+      <pre class="language-java"><code>
+@RestController
+@RequestMapping("/api/users")
+class UserHeaderController {
+
+  @GetMapping(value="/{id}", headers="X-API-Version=1")
+  UserV1 getV1(@PathVariable long id) { return new UserV1("Hari"); }
+
+  @GetMapping(value="/{id}", headers="X-API-Version=2")
+  UserV2 getV2(@PathVariable long id) { return new UserV2("Hari", "G"); }
+}
+      </code></pre>
+
+      <h5 class="text-info">📰 Media-Type Versioning (content negotiation)</h5>
+      <pre class="language-java"><code>
+@RestController
+@RequestMapping("/api/users")
+class UserMediaController {
+
+  // Client: Accept: application/vnd.acme.user-v1+json
+  @GetMapping(value="/{id}", produces="application/vnd.acme.user-v1+json")
+  UserV1 getV1(@PathVariable long id) { return new UserV1("Hari"); }
+
+  // Client: Accept: application/vnd.acme.user-v2+json
+  @GetMapping(value="/{id}", produces="application/vnd.acme.user-v2+json")
+  UserV2 getV2(@PathVariable long id) { return new UserV2("Hari", "G"); }
+}
+      </code></pre>
+
+      <h5 class="text-info">🧠 Choosing a strategy</h5>
+      <ul>
+        <li><b>Path</b>: simplest, cache/CDN friendly, easy to route in gateways (recommended default).</li>
+        <li><b>Header</b>: keeps URLs clean; needs client/header control and proxy awareness.</li>
+        <li><b>Media type</b>: very RESTful; more tooling/config; great when multiple representations exist.</li>
+        <li><b>Query param</b>: easy to test, but less canonical; be careful with caches.</li>
+      </ul>
+
+      <h5 class="text-info">🧱 Structure & maintenance tips</h5>
+      <ul>
+        <li><b>Package by version</b>: <code>api.v1</code>, <code>api.v2</code> controllers & DTOs; reuse domain/services.</li>
+        <li><b>Keep v1 backward-compatible</b> (additive) when possible; reserve v2 for breaking changes.</li>
+        <li><b>Deprecate</b> with <code>Deprecation</code>/<code>Sunset</code> headers and docs; set EOL date.</li>
+        <li><b>Document</b> with OpenAPI (springdoc): create groups per path <code>/v1/**</code>, <code>/v2/**</code>.</li>
+      </ul>
+
+      <h5 class="text-info">📝 Spring Boot “versioning” (project releases)</h5>
+      <p>
+        Spring Boot itself follows <code>MAJOR.MINOR.PATCH</code> (e.g., <b>3.3.4</b>). 
+        Breaking changes only on MAJOR, features on MINOR, fixes on PATCH. 
+        Match Boot 3.x with Java 17+ and Spring Framework 6.x (Jakarta).
+      </p>
+
+      <h5 class="text-info">✅ TL;DR</h5>
+      <p>
+        Use <b>path versioning</b> for clarity and gateway/CDN friendliness; keep DTOs per version; reuse services; 
+        add deprecation headers & docs. Switch to header or media-type versioning if your org prefers contract-in-headers.
+      </p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#cqrsPatternExample">
+      🧭 CQRS Pattern – Spring Boot Example (Write API + Read API + Event Projection)
+    </button>
+  </h2>
+  <div id="cqrsPatternExample" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What is CQRS?</h5>
+      <p>
+        <b>Command Query Responsibility Segregation</b> splits the model into:
+        <br/>• <b>Write/Command side</b>: handles state changes (create/update/delete), validates invariants.
+        <br/>• <b>Read/Query side</b>: serves queries using denormalized, query-optimized views.
+        <br/>Data sync is via <b>events</b> (e.g., Kafka) or an <b>Outbox</b> pattern. Reads are <b>eventually consistent</b>.
+      </p>
+
+      <h5 class="text-warning">🧱 Architecture (Order domain)</h5>
+      <pre class="language-text"><code>
+[Client/UI]
+   |            Commands (POST/PUT)               Queries (GET)
+   v                                              ^
+[Write API]  --OrderPlaced/ItemAdded-->  [Broker]  --events-->  [Read API Projector]
+   |                                                        |
+ [Write DB - normalized]                           [Read DB - denormalized views]
+      </code></pre>
+
+      <h5 class="text-warning">🛠️ Write/Command Service (Spring Boot)</h5>
+      <pre class="language-java"><code>
+// domain/Order.java (Aggregate)
+@Entity
+@Table(name = "orders")
+public class Order {
+  @Id private String id;
+  private String customerId;
+  private String status; // NEW, PAID, CANCELLED
+  private BigDecimal total = BigDecimal.ZERO;
+
+  @Version private Long version;
+
+  // addItem recomputes total and enforces invariants
+  public void addItem(String sku, int qty, BigDecimal price) {
+    if (qty <= 0 || price.signum() <= 0) throw new IllegalArgumentException("Invalid item");
+    this.total = this.total.add(price.multiply(BigDecimal.valueOf(qty)));
+  }
+}
+      </code></pre>
+
+      <pre class="language-java"><code>
+// web/dto
+public record CreateOrderCmd(String customerId) {}
+public record AddItemCmd(String orderId, String sku, int qty, BigDecimal price) {}
+public record PayOrderCmd(String orderId) {}
+      </code></pre>
+
+      <pre class="language-java"><code>
+// service/OrderService.java
+@Service
+public class OrderService {
+  private final OrderRepository repo;
+  private final DomainEventPublisher events;
+
+  public OrderService(OrderRepository repo, DomainEventPublisher events) {
+    this.repo = repo; this.events = events;
+  }
+
+  @Transactional
+  public Order create(CreateOrderCmd cmd) {
+    Order o = new Order();
+    o.setId(UUID.randomUUID().toString());
+    o.setCustomerId(cmd.customerId());
+    o.setStatus("NEW");
+    repo.save(o);
+    events.publish(new OrderCreatedEvent(o.getId(), o.getCustomerId()));
+    return o;
+  }
+
+  @Transactional
+  public Order addItem(AddItemCmd cmd) {
+    Order o = repo.findById(cmd.orderId()).orElseThrow();
+    o.addItem(cmd.sku(), cmd.qty(), cmd.price());
+    events.publish(new ItemAddedEvent(o.getId(), cmd.sku(), cmd.qty(), cmd.price()));
+    return o;
+  }
+
+  @Transactional
+  public Order pay(PayOrderCmd cmd) {
+    Order o = repo.findById(cmd.orderId()).orElseThrow();
+    if (!"NEW".equals(o.getStatus())) throw new IllegalStateException("Only NEW can be paid");
+    o.setStatus("PAID");
+    events.publish(new OrderPaidEvent(o.getId(), o.getTotal()));
+    return o;
+  }
+}
+      </code></pre>
+
+      <pre class="language-java"><code>
+// web/CommandController.java
+@RestController @RequestMapping("/api/orders")
+public class CommandController {
+  private final OrderService service;
+  public CommandController(OrderService service) { this.service = service; }
+
+  @PostMapping
+  public ResponseEntity&lt;Order&gt; create(@RequestBody CreateOrderCmd cmd) {
+    return ResponseEntity.status(HttpStatus.CREATED).body(service.create(cmd));
+  }
+
+  @PostMapping("/{id}/items")
+  public Order addItem(@PathVariable String id, @RequestBody AddItemCmd cmd) {
+    return service.addItem(new AddItemCmd(id, cmd.sku(), cmd.qty(), cmd.price()));
+  }
+
+  @PostMapping("/{id}/pay")
+  public Order pay(@PathVariable String id) {
+    return service.pay(new PayOrderCmd(id));
+  }
+}
+      </code></pre>
+
+      <pre class="language-java"><code>
+// events/DomainEvent & publisher (Kafka or Outbox)
+public interface DomainEvent { String aggregateId(); Instant occurredAt(); String type(); }
+
+public record OrderCreatedEvent(String orderId, String customerId) implements DomainEvent {
+  public String aggregateId(){ return orderId; }
+  public Instant occurredAt(){ return Instant.now(); }
+  public String type(){ return "OrderCreated"; }
+}
+
+@Component
+public class DomainEventPublisher {
+  private final KafkaTemplate&lt;String, String&gt; kafka;
+  private final ObjectMapper om = new ObjectMapper();
+  public DomainEventPublisher(KafkaTemplate&lt;String, String&gt; kafka){ this.kafka = kafka; }
+
+  public void publish(DomainEvent e) {
+    try {
+      kafka.send("order-events", e.aggregateId(), om.writeValueAsString(e));
+    } catch (Exception ex) {
+      // In production prefer Outbox for atomicity (see below)
+      throw new RuntimeException(ex);
+    }
+  }
+}
+      </code></pre>
+
+      <h6 class="text-secondary">💡 Outbox (atomic write + later publish)</h6>
+      <pre class="language-java"><code>
+// persistence/OutboxEvent.java
+@Entity
+public class OutboxEvent {
+  @Id @GeneratedValue Long id;
+  String aggregateId;
+  String type;
+  @Lob String payload;
+  Instant createdAt = Instant.now();
+  boolean published = false;
+}
+
+// In OrderService, instead of publishing directly:
+outboxRepo.save(new OutboxEvent(o.getId(), "OrderCreated", jsonPayload));
+// A scheduled job/worker reads unpublished rows and publishes to Kafka, then marks published=true.
+      </code></pre>
+
+      <h5 class="text-success">🔎 Read/Query Service (Projection)</h5>
+      <pre class="language-java"><code>
+// readmodel/OrderView.java (denormalized)
+@Entity @Table(name = "order_view")
+public class OrderView {
+  @Id private String orderId;
+  private String customerId;
+  private String status;
+  private BigDecimal total;
+  private Instant lastEventAt;
+}
+      </code></pre>
+
+      <pre class="language-java"><code>
+// projector/OrderEventsListener.java
+@Component
+public class OrderEventsListener {
+  private final OrderViewRepository repo;
+  private final ObjectMapper om = new ObjectMapper();
+
+  public OrderEventsListener(OrderViewRepository repo) { this.repo = repo; }
+
+  @KafkaListener(topics = "order-events", groupId = "read-side")
+  @Transactional
+  public void onMessage(String msg) throws Exception {
+    JsonNode node = om.readTree(msg);
+    String type = node.get("type").asText(); // if you include "type" in payload
+    switch (type) {
+      case "OrderCreated" -> {
+        String id = node.get("orderId").asText();
+        String cust = node.get("customerId").asText();
+        repo.save(new OrderView(id, cust, "NEW", BigDecimal.ZERO, Instant.now()));
+      }
+      case "ItemAdded" -> {
+        String id = node.get("orderId").asText();
+        BigDecimal price = new BigDecimal(node.get("price").asText());
+        int qty = node.get("qty").asInt();
+        OrderView v = repo.findById(id).orElseThrow();
+        v.setTotal(v.getTotal().add(price.multiply(BigDecimal.valueOf(qty))));
+        v.setLastEventAt(Instant.now());
+      }
+      case "OrderPaid" -> {
+        String id = node.get("orderId").asText();
+        OrderView v = repo.findById(id).orElseThrow();
+        v.setStatus("PAID");
+        v.setLastEventAt(Instant.now());
+      }
+    }
+  }
+}
+      </code></pre>
+
+      <pre class="language-java"><code>
+// web/QueryController.java
+@RestController @RequestMapping("/query/orders")
+public class QueryController {
+  private final OrderViewRepository repo;
+  public QueryController(OrderViewRepository repo){ this.repo = repo; }
+
+  @GetMapping("/{id}")
+  public ResponseEntity&lt;OrderView&gt; byId(@PathVariable String id) {
+    return repo.findById(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+  }
+
+  @GetMapping
+  public List&lt;OrderView&gt; byCustomer(@RequestParam String customerId,
+                                       @RequestParam(required = false) String status) {
+    return (status == null)
+      ? repo.findByCustomerId(customerId)
+      : repo.findByCustomerIdAndStatus(customerId, status);
+  }
+}
+      </code></pre>
+
+      <h5 class="text-info">🧪 Quick SQL Sketch</h5>
+      <pre class="language-sql"><code>
+-- Write DB
+CREATE TABLE orders (
+  id VARCHAR(50) PRIMARY KEY,
+  customer_id VARCHAR(50),
+  status VARCHAR(20),
+  total DECIMAL(18,2),
+  version BIGINT
+);
+
+-- Read DB (denormalized)
+CREATE TABLE order_view (
+  order_id VARCHAR(50) PRIMARY KEY,
+  customer_id VARCHAR(50),
+  status VARCHAR(20),
+  total DECIMAL(18,2),
+  last_event_at TIMESTAMP
+);
+
+-- Outbox (if used on write side)
+CREATE TABLE outbox_event (
+  id BIGSERIAL PRIMARY KEY,
+  aggregate_id VARCHAR(50),
+  type VARCHAR(100),
+  payload TEXT,
+  created_at TIMESTAMP,
+  published BOOLEAN DEFAULT FALSE
+);
+      </code></pre>
+
+      <h5 class="text-success">✅ Key Points for Interviews</h5>
+      <ul>
+        <li><b>Separation</b>: Different models for commands vs queries; can scale independently.</li>
+        <li><b>Eventual Consistency</b>: Reads may lag; design UI with “syncing…” states.</li>
+        <li><b>Atomicity</b>: Use <b>Outbox</b> or transactional messaging to avoid lost events (write + event as one unit).</li>
+        <li><b>Idempotency</b>: Projectors should tolerate duplicate events (check version/eventId).</li>
+        <li><b>Schema Freedom</b>: Read DB can be multiple views (SQL/NoSQL) optimized per query.</li>
+        <li><b>When to use</b>: Complex domains, heavy read load, multiple query shapes, microservices.</li>
+        <li><b>When not</b>: Simple CRUD, strict read-after-write requirements without eventual consistency tolerance.</li>
+      </ul>
+
+      <h5 class="text-warning">🧩 Variations</h5>
+      <ul>
+        <li><b>In-process CQRS</b>: same codebase/DB, separate services/layers.</li>
+        <li><b>Event Sourcing</b>: persist events as source of truth; rebuild state from events + snapshots.</li>
+        <li><b>Transport</b>: Kafka/PubSub/RabbitMQ; or Postgres logical decoding; or Debezium CDC.</li>
+      </ul>
+
+      <h5 class="text-info">🚀 Mini Test Flow</h5>
+      <ol>
+        <li>POST <code>/api/orders</code> → returns orderId; event <code>OrderCreated</code> published.</li>
+        <li>POST <code>/api/orders/{id}/items</code> → <code>ItemAdded</code> event.</li>
+        <li>POST <code>/api/orders/{id}/pay</code> → <code>OrderPaid</code> event.</li>
+        <li>GET <code>/query/orders/{id}</code> → observe status/total updated after projection catches up.</li>
+      </ol>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#lspSpringBootNotifications">
+      ✉️ LSP in Spring Boot – NotificationService (Email/SMS/Push) – Correct vs Wrong
+    </button>
+  </h2>
+  <div id="lspSpringBootNotifications" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">🎯 Goal</h5>
+      <p>Design a <b>Notification</b> feature that supports <b>Email</b>, <b>SMS</b>, and <b>Push</b> without violating the <b>Liskov Substitution Principle</b> (LSP). Subtypes must be safely substitutable wherever their base type is expected—no surprise exceptions or broken pre/post-conditions.</p>
+
+      <h5 class="text-warning">❌ Anti-pattern (LSP Violation)</h5>
+      <pre class="language-java"><code>
+// Single concrete class with "type" switches & UnsupportedOperationException
+@Service
+public class NotificationService {
+  public void send(String type, String to, String subject, String message) {
+    switch (type) {
+      case "EMAIL" -> sendEmail(to, subject, message);
+      case "SMS"   -> sendSms(to, message);
+      case "PUSH"  -> sendPush(to, message);
+      default -> throw new UnsupportedOperationException("Unknown type");
+    }
+  }
+  // ... sendEmail/sendSms/sendPush impls
+}
+// ❌ Problems:
+// - Callers can pass any 'type' and get runtime errors.
+// - Behavior depends on string flags; can't substitute a subtype safely.
+// - Violates Open/Closed & LSP (adding new types edits existing logic).
+      </code></pre>
+
+      <h5 class="text-success">✅ LSP-Compliant Design (Strategy + Polymorphism)</h5>
+      <pre class="language-java"><code>
+// Contract: any NotificationChannel can be used wherever a channel is expected
+public interface NotificationChannel {
+  void send(NotificationRequest req);
+}
+
+// Immutable input DTO (preconditions validated at construction)
+public record NotificationRequest(
+    String to,        // email/phone/device token
+    String subject,   // optional for SMS/Push
+    String message
+) {
+  public NotificationRequest {
+    if (to == null || to.isBlank()) throw new IllegalArgumentException("to is required");
+    if (message == null || message.isBlank()) throw new IllegalArgumentException("message is required");
+  }
+}
+
+// Concrete channels keep invariants consistent with the interface contract
+
+@Component("EMAIL")
+class EmailChannel implements NotificationChannel {
+  @Override public void send(NotificationRequest req) {
+    // send via SMTP/provider; subject is used
+    System.out.printf("EMAIL -> %s | %s: %s%n", req.to(), req.subject(), req.message());
+  }
+}
+
+@Component("SMS")
+class SmsChannel implements NotificationChannel {
+  @Override public void send(NotificationRequest req) {
+    // subject ignored but never breaks contract
+    System.out.printf("SMS   -> %s | %s%n", req.to(), req.message());
+  }
+}
+
+@Component("PUSH")
+class PushChannel implements NotificationChannel {
+  @Override public void send(NotificationRequest req) {
+    System.out.printf("PUSH  -> %s | %s%n", req.to(), req.message());
+  }
+}
+      </code></pre>
+
+      <h5 class="text-warning">🧰 Channel Registry (No if/else chains)</h5>
+      <pre class="language-java"><code>
+// Spring will inject all beans implementing NotificationChannel as a Map by @Component name
+@Service
+public class ChannelRegistry {
+  private final Map&lt;String, NotificationChannel&gt; channels;
+  public ChannelRegistry(Map&lt;String, NotificationChannel&gt; channels) { this.channels = channels; }
+
+  public NotificationChannel get(String type) {
+    var ch = channels.get(type);
+    if (ch == null) throw new IllegalArgumentException("Unsupported channel: " + type);
+    return ch;
+  }
+}
+      </code></pre>
+
+      <h5 class="text-warning">🚀 Application Facade (uses base type)</h5>
+      <pre class="language-java"><code>
+@Service
+public class NotificationFacade {
+  private final ChannelRegistry registry;
+  public NotificationFacade(ChannelRegistry registry) { this.registry = registry; }
+
+  public void notify(String type, NotificationRequest req) {
+    // LSP: Any NotificationChannel can be substituted here safely
+    NotificationChannel channel = registry.get(type);
+    channel.send(req);
+  }
+}
+      </code></pre>
+
+      <h5 class="text-info">🌐 REST Controller</h5>
+      <pre class="language-java"><code>
+@RestController
+@RequestMapping("/api/notifications")
+public class NotificationController {
+  private record SendDto(String type, String to, String subject, String message) {}
+  private final NotificationFacade facade;
+  public NotificationController(NotificationFacade facade) { this.facade = facade; }
+
+  @PostMapping("/send")
+  public ResponseEntity&lt;Void&gt; send(@RequestBody SendDto dto) {
+    facade.notify(dto.type(), new NotificationRequest(dto.to(), dto.subject(), dto.message()));
+    return ResponseEntity.accepted().build();
+  }
+}
+      </code></pre>
+
+      <h5 class="text-success">🔎 Why this honors LSP?</h5>
+      <ul>
+        <li><b>Uniform contract</b>: <code>NotificationChannel#send()</code> is honored by every subtype. None throws “not supported”.</li>
+        <li><b>Stable preconditions</b>: <code>NotificationRequest</code> validates required fields; subtypes do not strengthen requirements.</li>
+        <li><b>Stable postconditions</b>: Each channel “sends” without weakening the expected outcome.</li>
+        <li><b>Substitutability</b>: The <code>NotificationFacade</code> uses only the base type; any channel bean can be swapped in.</li>
+      </ul>
+
+      <h5 class="text-warning">🧪 Tests (Behavioral Substitution)</h5>
+      <pre class="language-java"><code>
+@ExtendWith(MockitoExtension.class)
+class LspSubstitutionTest {
+  @Mock ChannelRegistry registry;
+  @Mock NotificationChannel channel;
+  @InjectMocks NotificationFacade facade;
+
+  @Test
+  void anyChannelCanBeSubstituted() {
+    when(registry.get("ANY")).thenReturn(channel);
+    NotificationRequest req = new NotificationRequest("to@example.com", "Hello", "Hi there");
+    facade.notify("ANY", req);
+    verify(channel).send(req); // ✅ passes for Email/SMS/Push or any future channel
+  }
+}
+      </code></pre>
+
+      <h5 class="text-info">💡 Extensions (still LSP-safe)</h5>
+      <ul>
+        <li><b>New Channel</b> (e.g., WhatsApp) → just add a new <code>@Component("WHATSAPP")</code> class; no changes elsewhere.</li>
+        <li><b>Retry/Idempotency</b> → wrap channels with a decorator (e.g., <code>RetryingChannel</code>) that also implements <code>NotificationChannel</code>.</li>
+        <li><b>Validation differences</b> → keep common invariants in <code>NotificationRequest</code>; channel-specific checks must not break callers (e.g., SMS truncation handled internally, not via exception).</li>
+      </ul>
+
+      <h5 class="text-success">🧠 Interview Takeaways</h5>
+      <ul>
+        <li>Avoid flag-based behavior and <code>UnsupportedOperationException</code> in subtypes.</li>
+        <li>Program to an interface; keep base contracts stable and minimal.</li>
+        <li>Use <b>Strategy</b> + Spring’s <b>bean map injection</b> to stay LSP- and OCP-compliant.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#sqlViewsSpringBoot">
+      🗄️ Using SQL Views in Spring Boot (JPA + Native Query)
+    </button>
+  </h2>
+  <div id="sqlViewsSpringBoot" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What is a SQL View?</h5>
+      <p>
+        A <b>SQL View</b> is a stored query in the database that behaves like a read-only table.  
+        In Spring Boot, we can map it like a normal entity or query it directly using native SQL.
+      </p>
+
+      <h5 class="text-warning">🛠️ Step 1: Create SQL View</h5>
+      <pre class="language-sql"><code>
+-- Example: Create a view for "active users"
+CREATE VIEW active_users AS
+SELECT id, name, email
+FROM users
+WHERE status = 'ACTIVE';
+      </code></pre>
+
+      <h5 class="text-warning">🛠️ Step 2: Create Entity for the View</h5>
+      <pre class="language-java"><code>
+@Entity
+// ⚠️ Views are read-only, so no @GeneratedValue or insert/update
+@Table(name = "active_users") 
+public class ActiveUser {
+    @Id
+    private Long id;   // must match the view's PK (or unique column)
+    private String name;
+    private String email;
+
+    // getters/setters
+}
+      </code></pre>
+
+      <h5 class="text-warning">🛠️ Step 3: Repository for the View</h5>
+      <pre class="language-java"><code>
+public interface ActiveUserRepository extends JpaRepository&lt;ActiveUser, Long&gt; {
+    // Derived query
+    List&lt;ActiveUser&gt; findByNameContainingIgnoreCase(String name);
+
+    // Or native query
+    @Query(value = "SELECT * FROM active_users WHERE email LIKE %:email%", nativeQuery = true)
+    List&lt;ActiveUser&gt; searchByEmail(@Param("email") String email);
+}
+      </code></pre>
+
+      <h5 class="text-warning">🛠️ Step 4: Service Layer</h5>
+      <pre class="language-java"><code>
+@Service
+public class UserService {
+    private final ActiveUserRepository repo;
+    public UserService(ActiveUserRepository repo) { this.repo = repo; }
+
+    public List&lt;ActiveUser&gt; getActiveUsers() {
+        return repo.findAll();
+    }
+}
+      </code></pre>
+
+      <h5 class="text-warning">🛠️ Step 5: Controller</h5>
+      <pre class="language-java"><code>
+@RestController
+@RequestMapping("/api/active-users")
+public class ActiveUserController {
+    private final UserService service;
+    public ActiveUserController(UserService service) { this.service = service; }
+
+    @GetMapping
+    public List&lt;ActiveUser&gt; list() {
+        return service.getActiveUsers();
+    }
+}
+      </code></pre>
+
+      <h5 class="text-success">✅ Key Notes</h5>
+      <ul>
+        <li>Map the SQL view like a normal entity, but keep it <b>read-only</b>.</li>
+        <li>Ensure the view has a unique column to use as <code>@Id</code>.</li>
+        <li>For complex views, prefer <b>native queries</b> with DTO projections.</li>
+        <li>Don’t use <code>save()</code> on view entities → they’re not writable.</li>
+      </ul>
+
+      <h5 class="text-info">🚀 Alternative: DTO Projection (no entity)</h5>
+      <pre class="language-java"><code>
+public interface ActiveUserProjection {
+    Long getId();
+    String getName();
+    String getEmail();
+}
+
+public interface UserRepository extends JpaRepository&lt;User, Long&gt; {
+    @Query(value = "SELECT id, name, email FROM active_users", nativeQuery = true)
+    List&lt;ActiveUserProjection&gt; fetchActiveUsers();
+}
+      </code></pre>
+      <p>Here, no entity is mapped. Spring directly maps the view result to a projection (DTO interface).</p>
+
+    </div>
+  </div>
+</div>
 
 
 <div class="accordion-item">

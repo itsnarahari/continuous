@@ -322,6 +322,104 @@ public interface Invalid {
           </div>
         </div>
       </div>
+      <div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#lspExample">
+      🧩 Liskov Substitution Principle (LSP) – Best Example in Java
+    </button>
+  </h2>
+  <div id="lspExample" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Definition</h5>
+      <p>
+        <b>Liskov Substitution Principle (LSP)</b> states that <br/>
+        <i>"Objects of a superclass should be replaceable with objects of its subclass without breaking the application’s behavior."</i><br/>
+        In other words, subclasses must honor the contract of the base class.
+      </p>
+
+      <h5 class="text-warning">⚠️ Wrong Example (Violating LSP)</h5>
+      <pre class="language-java"><code>
+// Base class
+class Bird {
+    public void fly() {
+        System.out.println("I can fly!");
+    }
+}
+
+// Subclass
+class Ostrich extends Bird {
+    @Override
+    public void fly() {
+        throw new UnsupportedOperationException("Ostrich can't fly!");
+    }
+}
+
+// Client code
+public class LSPViolation {
+    public static void main(String[] args) {
+        Bird b = new Ostrich();
+        b.fly(); // ❌ Throws runtime error, violates LSP
+    }
+}
+      </code></pre>
+      <p>
+        Here, <code>Ostrich</code> is a <code>Bird</code> but cannot actually <code>fly()</code>.  
+        Substituting <code>Bird</code> with <code>Ostrich</code> breaks behavior → LSP is violated.
+      </p>
+
+      <h5 class="text-success">✅ Correct Example (Following LSP)</h5>
+      <pre class="language-java"><code>
+// Better abstraction
+interface Bird { void eat(); }
+
+interface FlyingBird extends Bird { void fly(); }
+
+// Flying bird subclass
+class Sparrow implements FlyingBird {
+    public void eat() { System.out.println("Sparrow eating"); }
+    public void fly() { System.out.println("Sparrow flying"); }
+}
+
+// Non-flying bird subclass
+class Ostrich implements Bird {
+    public void eat() { System.out.println("Ostrich eating"); }
+}
+
+// Client code
+public class LSPExample {
+    public static void main(String[] args) {
+        FlyingBird sparrow = new Sparrow();
+        sparrow.fly();  // ✅ Works
+
+        Bird ostrich = new Ostrich();
+        ostrich.eat();  // ✅ Works without breaking substitution
+    }
+}
+      </code></pre>
+
+      <h5 class="text-info">🔎 Why this follows LSP?</h5>
+      <ul>
+        <li>Each subclass (<code>Sparrow</code>, <code>Ostrich</code>) honors the contract of its respective interface.</li>
+        <li>No subclass removes or breaks functionality promised by its parent.</li>
+        <li>You can substitute <code>Sparrow</code> wherever <code>FlyingBird</code> is expected, 
+            and <code>Ostrich</code> wherever <code>Bird</code> is expected → ✅ no surprises.</li>
+      </ul>
+
+      <h5 class="text-warning">🧩 Real-life Analogy</h5>
+      <p>
+        Think of a <b>payment system</b>:
+        <br/>• Base class: <code>PaymentMethod</code> with method <code>pay()</code>.  
+        <br/>• Subclasses: <code>CreditCardPayment</code>, <code>UPIPayment</code>.  
+        <br/>Each subclass must complete the <code>pay()</code> process reliably.  
+        If one subclass threw an exception like "Not supported" → that would violate LSP.
+      </p>
+
+    </div>
+  </div>
+</div>
+
 
       <div class="accordion-item">
         <h2 class="accordion-header">
@@ -3422,6 +3520,169 @@ Index pairs (i,j)    : (0,1), (2,3), (5,9), (6,7)
         <li>The stream approach above is clear but O(n²). It’s great for interview-style practice and moderate sizes.</li>
         <li>For large arrays, mention the O(n) <b>HashSet</b> / <b>HashMap</b> approach (Boyer–Moore is for majority, not two-sum).</li>
         <li><b>pairsUnique</b> normalizes each pair to <code>(min,max)</code> before <code>distinct()</code> to avoid duplicates like (2,4) and (4,2).</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#longestWordStreams">
+      🏁 Find the longest word in a sentence (Java 8 Streams)
+    </button>
+  </h2>
+  <div id="longestWordStreams" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Goal</h5>
+      <p>
+        Given a sentence, return: <b>(a)</b> the single longest word (first if tie), and <b>(b)</b> all longest words (if multiple share max length).  
+        We’ll strip surrounding punctuation and preserve original order for ties.
+      </p>
+
+      <h5 class="text-info">🧩 Code – First longest (tie → first seen)</h5>
+      <pre class="language-java"><code>
+import java.util.*;
+import java.util.stream.*;
+
+public class LongestWord {
+
+  // Remove non-letters/digits at start/end, keep internal apostrophes/dashes
+  static String trimPunct(String w) {
+    return w.replaceAll("^[^\\p{L}\\p{N}]+|[^\\p{L}\\p{N}]+$", "");
+  }
+
+  static Optional&lt;String&gt; longestWord(String sentence) {
+    return Stream.of(sentence.split("\\s+"))
+        .map(String::trim)
+        .map(LongestWord::trimPunct)                // method ref
+        .filter(s -&gt; !s.isEmpty())
+        .max(Comparator.comparingInt(String::length));
+  }
+
+  public static void main(String[] args) {
+    String s = "Find, the longest—word in this sentence! Really-long? yes.";
+    System.out.println("Longest: " + longestWord(s).orElse("(none)"));
+  }
+}
+      </code></pre>
+
+      <h5 class="text-info">🧪 Example Output</h5>
+      <pre class="language-text"><code>
+Longest: Really-long
+      </code></pre>
+
+      <h5 class="text-info">🧩 Code – All longest words (keep original order)</h5>
+      <pre class="language-java"><code>
+import static java.util.stream.Collectors.*;
+
+static List&lt;String&gt; allLongestWords(String sentence) {
+  // First pass: normalized tokens
+  java.util.List&lt;String&gt; words = Stream.of(sentence.split("\\s+"))
+      .map(String::trim)
+      .map(LongestWord::trimPunct)
+      .filter(s -&gt; !s.isEmpty())
+      .collect(toList());
+
+  // Find max length, then filter by it (preserves encounter order)
+  int maxLen = words.stream().mapToInt(String::length).max().orElse(0);
+  return words.stream().filter(w -&gt; w.length() == maxLen).collect(toList());
+}
+
+public static void main(String[] args) {
+  String s = "alpha beta-gamma delta-gamma epsilon-gamma!";
+  System.out.println("All longest: " + allLongestWords(s)); // [beta-gamma, delta-gamma, epsilon-gamma]
+}
+      </code></pre>
+
+      <h5 class="text-info">💡 Notes</h5>
+      <ul>
+        <li><code>\\p{L}</code> and <code>\\p{N}</code> keep letters/digits from all languages; adjust if you want only A–Z/0–9.</li>
+        <li>For <b>case-insensitive</b> comparisons (length unaffected), no change needed; length is case-agnostic.</li>
+        <li>If you need a <b>stable tie-breaker</b> (e.g., alphabetic), sort by <code>Comparator.comparingInt(String::length).thenComparing(String::compareToIgnoreCase)</code>.</li>
+        <li>For complex tokenization, consider <code>Pattern.compile("[\\p{L}\\p{N}][\\p{L}\\p{N}'-]*")</code> with a matcher instead of <code>split</code>.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#top3FrequentWords">
+      🔝 Top 3 most frequent words from sentences (Java 8 Streams)
+    </button>
+  </h2>
+  <div id="top3FrequentWords" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Goal</h5>
+      <p>Flatten sentences → tokenize → normalize (lowercase, strip punctuation) → count → sort desc → take Top 3.</p>
+
+      <h5 class="text-info">🧩 Code (Java 8)</h5>
+      <pre class="language-java"><code>
+import java.util.*;
+import java.util.function.Function;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+public class Top3Words {
+
+  // Token: keep letters/digits inside words; strip leading/trailing punctuation
+  static final Pattern SPLIT = Pattern.compile("\\s+");
+  static String normalize(String w) {
+    return w.replaceAll("^[^\\p{L}\\p{N}]+|[^\\p{L}\\p{N}]+$", "").toLowerCase();
+  }
+
+  public static List&lt;Map.Entry&lt;String, Long&gt;&gt; top3(List&lt;String&gt; sentences) {
+    return sentences.stream()
+        .filter(Objects::nonNull)
+        .flatMap(s -&gt; Stream.of(SPLIT.split(s)))
+        .map(String::trim)
+        .map(Top3Words::normalize)
+        .filter(w -&gt; !w.isEmpty())
+        // .filter(w -&gt; !STOPWORDS.contains(w)) // optional stop-words
+        .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
+        .entrySet().stream()
+        .sorted(Comparator
+            .comparing(Map.Entry&lt;String, Long&gt;::getValue).reversed()     // freq desc
+            .thenComparing(Map.Entry::getKey))                              // tie-break by word
+        .limit(3)
+        .collect(Collectors.toList());
+  }
+
+  // Optional: stop-words
+  static final Set&lt;String&gt; STOPWORDS = new HashSet&lt;&gt;(Arrays.asList(
+      "a","an","the","is","am","are","to","of","in","on","and","or","for","with","by","at","from","as"
+  ));
+
+  public static void main(String[] args) {
+    List&lt;String&gt; sentences = Arrays.asList(
+        "Java streams are powerful. Streams are lazy!",
+        "Streams make data processing in Java concise.",
+        "Powerful features in Java: streams, lambdas, collections."
+    );
+
+    List&lt;Map.Entry&lt;String, Long&gt;&gt; top = top3(sentences);
+    top.forEach(e -&gt; System.out.println(e.getKey() + " = " + e.getValue()));
+  }
+}
+      </code></pre>
+
+      <h5 class="text-info">🧪 Example Output</h5>
+      <pre class="language-text"><code>
+java = 3
+streams = 3
+are = 2
+      </code></pre>
+
+      <h5 class="text-info">⚙️ Variants & Tips</h5>
+      <ul>
+        <li><b>Return only words:</b> replace final <code>collect</code> with <code>.map(Map.Entry::getKey).collect(toList())</code>.</li>
+        <li><b>Stable case:</b> keep original case by counting on <code>lowercase</code> but carrying a representative value.</li>
+        <li><b>Large inputs:</b> use <code>parallelStream()</code> + <code>groupingByConcurrent</code> for speed.</li>
       </ul>
 
     </div>
