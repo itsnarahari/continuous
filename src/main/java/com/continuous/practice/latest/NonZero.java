@@ -35,15 +35,18 @@ public class NonZero {
         return "dsfs";
     }
 
+    //new int[]{3, 0, 2, 4, 8, 9, 0, 0, 9, 56, 0, 3, 0}
     public static int[] zerosToEnd(int arr[]) {
         System.out.println("zerosToEnd");
         System.out.println(Arrays.toString(arr));
         int count = 0;  // Count of non-zero elements
         int n = arr.length;
-        for (int i = 0; i < n; i++)
-            if (arr[i] != 0)
+        for (int i = 0; i < n; i++){
+            if (arr[i] != 0){
                 arr[count++] = arr[i]; // here count is
-//        System.out.println("countcount " + count);
+                System.out.println("i= "+i+" count= "+count+" "+Arrays.toString(arr));
+            }
+        }
         while (count < n)
             arr[count++] = 0;
         return arr;
@@ -68,7 +71,7 @@ public class NonZero {
         nonZero.m1();
         List<Integer> integers = List.of(3, 0, 3, 0, 8, 9, 0, 7, 9);
         System.out.println("Move zeros to first in array");
-        System.out.println(Arrays.toString(zerosToFirst(new int[]{3, 0, 2, 4, 8, 9, 0, 0, 9, 56, 0, 3, 0})));
+//        System.out.println(Arrays.toString(zerosToFirst(new int[]{3, 0, 2, 4, 8, 9, 0, 0, 9, 56, 0, 3, 0})));
         System.out.println("Move zeros to end of array ");
         System.out.println(Arrays.toString(zerosToEnd(new int[]{3, 0, 2, 4, 8, 9, 0, 0, 9, 56, 0, 3, 0})));
     }
