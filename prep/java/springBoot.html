@@ -190,6 +190,394 @@ public Flux&lt;User&gt; getUsers() {
     </div>
   </div>
 </div>
+<div class="accordion dark-accordion" id="retryAccordion">
+
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingOne">
+      <button class="accordion-button collapsed search-item text-warning" type="button" data-bs-toggle="collapse" data-bs-target="#springRetry" aria-expanded="false" aria-controls="springRetry">
+        1️⃣ Spring Retry (Annotation Based)
+      </button>
+    </h2>
+    <div id="springRetry" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#retryAccordion">
+      <div class="accordion-body">
+        <p>Add dependencies:</p>
+        <pre><code class="language-xml">
+&lt;dependency&gt;
+  &lt;groupId&gt;org.springframework.retry&lt;/groupId&gt;
+  &lt;artifactId&gt;spring-retry&lt;/artifactId&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+  &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+  &lt;artifactId&gt;spring-boot-starter-aop&lt;/artifactId&gt;
+&lt;/dependency&gt;
+        </code></pre>
+
+        <p>Enable in main class:</p>
+        <pre><code class="language-java">
+@SpringBootApplication
+@EnableRetry
+public class MyApp {}
+        </code></pre>
+
+        <p>Service with retry and backoff:</p>
+        <pre><code class="language-java">
+@Service
+public class ExternalApiService {
+
+    @Retryable(
+        value = { SocketTimeoutException.class, IOException.class },
+        maxAttempts = 3,
+        backoff = @Backoff(delay = 2000, multiplier = 2)
+    )
+    public String callApi() throws IOException {
+        return restTemplate.getForObject("https://api.example.com/data", String.class);
+    }
+
+    @Recover
+    public String recover(IOException ex) {
+        return "Fallback after all retries";
+    }
+}
+        </code></pre>
+        <ul>
+          <li><strong>maxAttempts</strong> : total tries including the first call.</li>
+          <li><strong>backoff</strong> : delay &amp; multiplier for exponential wait.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingTwo">
+      <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse" data-bs-target="#resilience" aria-expanded="false" aria-controls="resilience">
+        2️⃣ Resilience4j Retry + Timeout
+      </button>
+    </h2>
+    <div id="resilience" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#retryAccordion">
+      <div class="accordion-body">
+        <p>Add dependency:</p>
+        <pre><code class="language-xml">
+&lt;dependency&gt;
+  &lt;groupId&gt;io.github.resilience4j&lt;/groupId&gt;
+  &lt;artifactId&gt;resilience4j-spring-boot3&lt;/artifactId&gt;
+&lt;/dependency&gt;
+        </code></pre>
+
+        <p>application.yml configuration:</p>
+        <pre><code class="language-yaml">
+resilience4j.retry:
+  instances:
+    externalApi:
+      maxAttempts: 3
+      waitDuration: 2s
+      retryExceptions:
+        - java.io.IOException
+        - java.net.SocketTimeoutException
+        - org.springframework.web.client.ResourceAccessException
+        - java.util.concurrent.TimeoutException
+        - org.springframework.web.reactive.function.client.WebClientRequestException
+        - org.springframework.web.client.RestClientException
+timeout:
+  instances:
+    externalApi:
+      timeoutDuration: 3s
+        </code></pre>
+
+        <p>Usage in service:</p>
+        <pre><code class="language-java">
+@Service
+public class ExternalApiService {
+
+    private final Retry retry = Retry.ofDefaults("externalApi");
+    private final Timeout timeout = Timeout.of(Duration.ofSeconds(3));
+
+    public String callApi() {
+        Supplier&lt;String&gt; supplier = 
+            Retry.decorateSupplier(retry,
+                Timeout.decorateSupplier(timeout, 
+                    () -> restTemplate.getForObject("https://api.example.com/data", String.class)
+                )
+            );
+        return Try.ofSupplier(supplier)
+                 .recover(throwable -> "Fallback value")
+                 .get();
+    }
+}
+        </code></pre>
+        <p>Resilience4j lets you combine Retry, Timeout, CircuitBreaker, and RateLimiter easily.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingThree">
+      <button class="accordion-button collapsed search-item text-success" type="button" data-bs-toggle="collapse" data-bs-target="#manual" aria-expanded="false" aria-controls="manual">
+        3️⃣ Manual Retry Logic
+      </button>
+    </h2>
+    <div id="manual" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#retryAccordion">
+      <div class="accordion-body">
+        <p>Simple loop with attempts and timeout:</p>
+        <pre><code class="language-java">
+public String callApiWithRetry() {
+    int attempts = 0;
+    while (attempts &lt; 3) {
+        try {
+            return restTemplate.getForObject("https://api.example.com/data", String.class);
+        } catch (ResourceAccessException e) {
+            attempts++;
+            try { Thread.sleep(2000L * attempts); } 
+            catch (InterruptedException ignored) {}
+        }
+    }
+    return "Fallback after retries";
+}
+        </code></pre>
+        <p>This approach is lightweight but lacks advanced features like backoff policies or circuit breaking.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div class="accordion dark-accordion" id="retryWaysAccordion">
+
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingOne">
+      <button class="accordion-button collapsed search-item text-warning" type="button"
+              data-bs-toggle="collapse" data-bs-target="#springRetryWay"
+              aria-expanded="false" aria-controls="springRetryWay">
+        1️⃣ Spring Retry (Annotation Based)
+      </button>
+    </h2>
+    <div id="springRetryWay" class="accordion-collapse collapse"
+         aria-labelledby="headingOne" data-bs-parent="#retryWaysAccordion">
+      <div class="accordion-body">
+        <p>
+          Add <code>spring-retry</code> &amp; <code>spring-boot-starter-aop</code> dependencies,
+          enable <code>@EnableRetry</code>, and annotate methods with <code>@Retryable</code>.
+        </p>
+        <ul>
+          <li>Supports <strong>maxAttempts</strong> and <strong>@Backoff</strong> delay/multiplier.</li>
+          <li>Use <strong>@Recover</strong> for fallback when retries are exhausted.</li>
+          <li>Best for simple synchronous calls like REST or database queries.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingTwo">
+      <button class="accordion-button collapsed search-item text-info" type="button"
+              data-bs-toggle="collapse" data-bs-target="#resilience4jWay"
+              aria-expanded="false" aria-controls="resilience4jWay">
+        2️⃣ Resilience4j Retry / Timeout / CircuitBreaker
+      </button>
+    </h2>
+    <div id="resilience4jWay" class="accordion-collapse collapse"
+         aria-labelledby="headingTwo" data-bs-parent="#retryWaysAccordion">
+      <div class="accordion-body">
+        <p>
+          Add <code>resilience4j-spring-boot3</code> starter and configure retry, timeout, and optional circuit breaker in <code>application.yml</code>.
+        </p>
+        <ul>
+          <li>Annotation based: <code>@Retry(name="serviceName")</code>.</li>
+          <li>Programmatic: <code>Retry.decorateSupplier()</code> or <code>Retry.decorateCallable()</code>.</li>
+          <li>Combine with <strong>Timeout</strong>, <strong>RateLimiter</strong>, or <strong>CircuitBreaker</strong> for production-grade resilience.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingThree">
+      <button class="accordion-button collapsed search-item text-success" type="button"
+              data-bs-toggle="collapse" data-bs-target="#webclientWay"
+              aria-expanded="false" aria-controls="webclientWay">
+        3️⃣ WebClient / Reactor Retry
+      </button>
+    </h2>
+    <div id="webclientWay" class="accordion-collapse collapse"
+         aria-labelledby="headingThree" data-bs-parent="#retryWaysAccordion">
+      <div class="accordion-body">
+        <p>
+          For reactive applications using <code>WebClient</code> or Project Reactor:
+        </p>
+        <pre><code class="language-java">
+webClient.get()
+   .uri("/endpoint")
+   .retrieve()
+   .bodyToMono(String.class)
+   .retryWhen(Retry.backoff(3, Duration.ofSeconds(2)));
+        </code></pre>
+        <ul>
+          <li>Offers backoff strategies and exception filters.</li>
+          <li>Fits reactive pipelines where you need non-blocking retries.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingFour">
+      <button class="accordion-button collapsed search-item text-primary" type="button"
+              data-bs-toggle="collapse" data-bs-target="#manualWay"
+              aria-expanded="false" aria-controls="manualWay">
+        4️⃣ Manual Retry Logic
+      </button>
+    </h2>
+    <div id="manualWay" class="accordion-collapse collapse"
+         aria-labelledby="headingFour" data-bs-parent="#retryWaysAccordion">
+      <div class="accordion-body">
+        <p>
+          Implement a custom loop with attempts and exponential backoff:
+        </p>
+        <pre><code class="language-java">
+int attempts = 0;
+while (attempts &lt; 3) {
+    try {
+        return restTemplate.getForObject(url, String.class);
+    } catch (Exception e) {
+        attempts++;
+        Thread.sleep(2000L * attempts);
+    }
+}
+        </code></pre>
+        <ul>
+          <li>Lightweight and requires no extra library.</li>
+          <li>Good for very simple scenarios or when you need full control.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingFive">
+      <button class="accordion-button collapsed search-item text-danger" type="button"
+              data-bs-toggle="collapse" data-bs-target="#schedulerWay"
+              aria-expanded="false" aria-controls="schedulerWay">
+        5️⃣ Scheduled / Queue Based Retry
+      </button>
+    </h2>
+    <div id="schedulerWay" class="accordion-collapse collapse"
+         aria-labelledby="headingFive" data-bs-parent="#retryWaysAccordion">
+      <div class="accordion-body">
+        <p>
+          For background jobs, push failed calls to a queue (RabbitMQ, Kafka, SQS) or use a scheduled task to reprocess.
+        </p>
+        <ul>
+          <li>Ideal for long-running or asynchronous retries.</li>
+          <li>Works well with transactional outbox or message-driven architecture.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingOne">
+      <button class="accordion-button collapsed search-item text-warning" type="button"
+              data-bs-toggle="collapse" data-bs-target="#commonProblems"
+              aria-expanded="false" aria-controls="commonProblems">
+        ⚠️ Common Problems in Spring Boot Applications
+      </button>
+    </h2>
+    <div id="commonProblems" class="accordion-collapse collapse"
+         aria-labelledby="headingOne" data-bs-parent="#springCommonProblems">
+      <div class="accordion-body">
+
+        <h6 class="text-info">1️⃣ Configuration & Environment</h6>
+        <ul>
+          <li>Port conflicts (default 8080 already in use).</li>
+          <li>Wrong or missing profile-specific properties (<code>application-dev.yml</code> etc.).</li>
+          <li>Hard-coded secrets instead of externalized configuration (Vault, env vars).</li>
+        </ul>
+
+        <h6 class="text-info">2️⃣ Database & Persistence</h6>
+        <ul>
+          <li>Connection pool exhaustion due to improper pool size or leaks.</li>
+          <li>N+1 query issues causing performance bottlenecks.</li>
+          <li>Incorrect transaction boundaries leading to inconsistent data.</li>
+          <li>Lack of schema migration tooling (Flyway/Liquibase) → environment drift.</li>
+        </ul>
+
+        <h6 class="text-info">3️⃣ Performance & Memory</h6>
+        <ul>
+          <li>No caching or inefficient caching of heavy computations.</li>
+          <li>Blocking I/O on high-traffic endpoints (consider WebFlux for reactive needs).</li>
+          <li>Large object serialization slowing REST responses.</li>
+          <li>Memory leaks from static references or unbounded collections.</li>
+        </ul>
+
+        <h6 class="text-info">4️⃣ Security Pitfalls</h6>
+        <ul>
+          <li>Exposing Actuator endpoints without authentication.</li>
+          <li>Disabled CSRF protection unintentionally.</li>
+          <li>Unvalidated input → SQL Injection / XSS vulnerabilities.</li>
+          <li>Outdated dependencies with known CVEs.</li>
+        </ul>
+
+        <h6 class="text-info">5️⃣ Deployment & Ops</h6>
+        <ul>
+          <li>Improper JVM memory settings causing OOM errors.</li>
+          <li>No centralized logging or metrics, making debugging production issues harder.</li>
+          <li>Lack of graceful shutdown hooks leading to data loss during redeploy.</li>
+        </ul>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingOne">
+      <button class="accordion-button collapsed search-item text-warning" type="button"
+              data-bs-toggle="collapse" data-bs-target="#facedProblems"
+              aria-expanded="false" aria-controls="facedProblems">
+        💡 Sample Answer: Problems Faced in a Spring Boot Application
+      </button>
+    </h2>
+    <div id="facedProblems" class="accordion-collapse collapse"
+         aria-labelledby="headingOne" data-bs-parent="#springBootInterviewProblems">
+      <div class="accordion-body">
+
+        <h6 class="text-info">1️⃣ Configuration & Environment</h6>
+        <p>
+          In a multi-environment setup (dev, QA, staging, prod) a teammate once deployed with the wrong
+          profile, pointing the production app to a QA database.
+        </p>
+        <p class="mb-2"><strong>Solution:</strong> Added strict profile checks in the startup script and
+          moved secrets to a Vault service so deployments require explicit environment variables.</p>
+
+        <h6 class="text-info">2️⃣ Database & Performance Bottlenecks</h6>
+        <p>
+          We faced slow API responses under load. Profiling revealed an N+1 query problem with JPA/Hibernate,
+          causing many unnecessary queries.
+        </p>
+        <p class="mb-2"><strong>Solution:</strong> Introduced <code>fetch joins</code> and tuned the
+          connection pool. We also enabled second-level caching for frequently accessed data.</p>
+
+        <h6 class="text-info">3️⃣ Memory & Resource Leaks</h6>
+        <p>
+          A background scheduled task wasn’t closing resources correctly, eventually exhausting the JVM heap.
+        </p>
+        <p class="mb-2"><strong>Solution:</strong> Added proper <code>try-with-resources</code>,
+          monitored via Actuator metrics, and configured alerts to catch spikes early.</p>
+
+        <h6 class="text-info">4️⃣ Security Concerns</h6>
+        <p>
+          Initially Actuator endpoints were left open and became a potential risk.
+        </p>
+        <p><strong>Solution:</strong> Secured endpoints with Spring Security, role-based access,
+          and enabled HTTPS everywhere.</p>
+
+        <p class="mt-3">
+          ✅ <strong>Key Takeaway for Interview:</strong> Emphasize not only the problems
+          but also the diagnostics (logs, profiling, metrics) and the concrete fixes you implemented.
+        </p>
+
+      </div>
+    </div>
+  </div>
+
 
 <div class="accordion-item">
   <h2 class="accordion-header">

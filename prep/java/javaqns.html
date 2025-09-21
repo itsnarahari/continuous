@@ -257,6 +257,874 @@ custom.submit(() -&gt; list.parallelStream().map(...).toList()).join();</code></
           </div>
         </div>
       </div>
+        <div class="accordion-item">
+    <h2 class="accordion-header" id="headingExample">
+      <button class="accordion-button collapsed search-item text-warning" type="button"
+              data-bs-toggle="collapse" data-bs-target="#overrideExample"
+              aria-expanded="false" aria-controls="overrideExample">
+        ⚡ Java Inheritance: Override Examples
+      </button>
+    </h2>
+    <div id="overrideExample" class="accordion-collapse collapse"
+         aria-labelledby="headingExample" data-bs-parent="#overrideExampleAccordion">
+      <div class="accordion-body">
+
+        <h6 class="text-info">✅ Example of Overridable Methods</h6>
+        <pre><code class="language-java">
+// Parent class
+class Parent {
+    public void publicMethod() {
+        System.out.println("Parent publicMethod");
+    }
+
+    protected void protectedMethod() {
+        System.out.println("Parent protectedMethod");
+    }
+
+    void defaultMethod() { // package-private
+        System.out.println("Parent defaultMethod");
+    }
+}
+
+// Child class
+class Child extends Parent {
+    @Override
+    public void publicMethod() {
+        System.out.println("Child publicMethod");
+    }
+
+    @Override
+    protected void protectedMethod() {
+        System.out.println("Child protectedMethod");
+    }
+
+    @Override
+    void defaultMethod() {
+        System.out.println("Child defaultMethod");
+    }
+}
+        </code></pre>
+
+        <h6 class="text-danger">❌ Example of Non-Overridable Methods</h6>
+        <pre><code class="language-java">
+// Parent class
+class Parent {
+    private void privateMethod() {
+        System.out.println("Parent privateMethod");
+    }
+
+    public final void finalMethod() {
+        System.out.println("Parent finalMethod");
+    }
+
+    public static void staticMethod() {
+        System.out.println("Parent staticMethod");
+    }
+}
+
+// Child class
+class Child extends Parent {
+    // Cannot override these:
+    // privateMethod() -> not visible
+    // finalMethod() -> final prevents override
+    // staticMethod() -> static belongs to class; can be hidden, not overridden
+
+    // You could hide static method (optional):
+    public static void staticMethod() {
+        System.out.println("Child staticMethod (hidden, not overridden)");
+    }
+}
+        </code></pre>
+
+        <p class="mt-2"><strong>Key Takeaway:</strong> Only <code>public</code>, <code>protected</code>, and <code>default</code> instance methods can be overridden. <code>private</code>, <code>final</code>, and <code>static</code> cannot.</p>
+
+      </div>
+    </div>
+  </div>
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingSimple">
+      <button class="accordion-button collapsed search-item text-warning" type="button"
+              data-bs-toggle="collapse" data-bs-target="#simpleOverride"
+              aria-expanded="false" aria-controls="simpleOverride">
+        ⚡ Java Inheritance: Simple Override Example
+      </button>
+    </h2>
+    <div id="simpleOverride" class="accordion-collapse collapse"
+         aria-labelledby="headingSimple" data-bs-parent="#overrideSimpleAccordion">
+      <div class="accordion-body">
+
+<pre><code class="language-java">
+class Parent {
+    public void normal() {}
+    protected void prot() {}
+    void defaultMethod() {}
+    private void hidden() {}
+    public final void cannotOverride() {}
+    public static void staticMethod() {}
+}
+
+class Child extends Parent {
+    @Override public void normal() {}         // ✅ allowed
+    @Override protected void prot() {}        // ✅ allowed
+    @Override void defaultMethod() {}         // ✅ allowed only if same package
+    // @Override void hidden() {}             // ❌ private, cannot override
+    // @Override void cannotOverride() {}     // ❌ final, cannot override
+    public static void staticMethod() {}      // ⚠️ hides parent static method, not override
+}
+</code></pre>
+
+<p class="mt-2"><strong>Key points:</strong> Only <code>public</code>, <code>protected</code>, and <code>default</code> methods can be overridden. <code>private</code>, <code>final</code>, and <code>static</code> cannot.</p>
+
+      </div>
+    </div>
+</div>
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingReduce">
+      <button class="accordion-button collapsed search-item text-warning" type="button"
+              data-bs-toggle="collapse" data-bs-target="#reduceExample"
+              aria-expanded="false" aria-controls="reduceExample">
+        ⚡ Java Streams API: reduce() Example & Usage
+      </button>
+    </h2>
+    <div id="reduceExample" class="accordion-collapse collapse"
+         aria-labelledby="headingReduce" data-bs-parent="#streamsReduceAccordion">
+      <div class="accordion-body">
+
+<h6 class="text-info">🔹 What is <code>reduce()</code>?</h6>
+<p>
+The <code>reduce()</code> method combines all elements of a stream into a single result using an accumulator function.  
+It’s useful for aggregation operations like sum, product, max, min, or custom combination logic.
+</p>
+
+<h6 class="text-info">🔹 Basic Example: Sum of numbers</h6>
+<pre><code class="language-java">
+import java.util.Arrays;
+import java.util.List;
+
+public class ReduceExample {
+    public static void main(String[] args) {
+        List<Integer> numbers = Arrays.asList(1, 2, 3, 4, 5);
+
+        // Using reduce to sum all numbers
+        int sum = numbers.stream()
+                         .reduce(0, (a, b) -&gt; a + b);
+
+        System.out.println("Sum: " + sum); // Output: 15
+    }
+}
+</code></pre>
+
+<h6 class="text-info">🔹 Example: Product of numbers</h6>
+<pre><code class="language-java">
+int product = numbers.stream()
+                     .reduce(1, (a, b) -&gt; a * b);
+System.out.println("Product: " + product); // Output: 120
+</code></pre>
+
+<h6 class="text-info">🔹 Example: Find the maximum</h6>
+<pre><code class="language-java">
+int max = numbers.stream()
+                 .reduce(Integer::max)
+                 .orElseThrow();
+System.out.println("Max: " + max); // Output: 5
+</code></pre>
+
+<h6 class="text-info">🔹 When to use <code>reduce()</code>?</h6>
+<ul>
+  <li>When you need to combine elements of a stream into a single value.</li>
+  <li>Useful for aggregation operations: sum, product, min, max, concatenation, or custom operations.</li>
+  <li>Preferable when you want a functional approach instead of using loops.</li>
+</ul>
+
+      </div>
+    </div>
+  </div>
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingAccumulator">
+      <button class="accordion-button collapsed search-item text-warning" type="button"
+              data-bs-toggle="collapse" data-bs-target="#accumulatorExample"
+              aria-expanded="false" aria-controls="accumulatorExample">
+        ⚡ Java Streams API: reduce() & Accumulator
+      </button>
+    </h2>
+    <div id="accumulatorExample" class="accordion-collapse collapse"
+         aria-labelledby="headingAccumulator" data-bs-parent="#reduceAccumulatorAccordion">
+      <div class="accordion-body">
+
+<h6 class="text-info">🔹 What is the Accumulator in <code>reduce()</code>?</h6>
+<p>
+The <strong>accumulator</strong> is a function that takes two arguments:
+1. The partial result so far (often called <code>acc</code> or <code>identity</code>), and  
+2. The next element from the stream.  
+
+It returns the updated partial result. Essentially, it "accumulates" results as the stream is processed.
+</p>
+
+<h6 class="text-info">🔹 Example: Sum using accumulator</h6>
+<pre><code class="language-java">
+List<Integer> numbers = Arrays.asList(1, 2, 3, 4, 5);
+
+// Identity = 0, accumulator = sum
+int sum = numbers.stream()
+                 .reduce(0, (acc, element) -&gt; acc + element);
+
+System.out.println("Sum: " + sum); // Output: 15
+</code></pre>
+
+<h6 class="text-info">🔹 How it works step by step:</h6>
+<ul>
+  <li>Start with <code>acc = 0</code> (identity).</li>
+  <li>Take first element <code>1</code>, accumulator adds: 0 + 1 = 1.</li>
+  <li>Next element <code>2</code>: 1 + 2 = 3.</li>
+  <li>Next element <code>3</code>: 3 + 3 = 6, and so on...</li>
+  <li>Finally, after processing all elements, you get <code>sum = 15</code>.</li>
+</ul>
+
+<h6 class="text-info">🔹 Key Point:</h6>
+<p>
+The accumulator defines the logic of combining elements. For more complex operations, you can implement any custom function inside it.
+</p>
+
+      </div>
+    </div>
+  </div>
+<div className="accordion-item">
+  <h2 className="accordion-header" id="headingAnyMatch">
+    <button className="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAnyMatch" aria-expanded="false" aria-controls="collapseAnyMatch">
+      Java Streams: anyMatch()
+    </button>
+  </h2>
+  <div id="collapseAnyMatch" className="accordion-collapse collapse" aria-labelledby="headingAnyMatch" data-bs-parent="#accordionExample">
+    <div className="accordion-body">
+      <p><strong>Description:</strong> Returns <code>true</code> if any element of the stream matches the given predicate.</p>
+      <p><strong>Example:</strong></p>
+      <pre><code>
+import java.util.*;
+import java.util.stream.*;
+
+public class AnyMatchExample {{
+    public static void main(String[] args) {{
+        List<Integer> numbers = Arrays.asList(2, 4, 6, 7);
+        boolean hasOdd = numbers.stream()
+                                .anyMatch(n -&gt; n % 2 != 0);
+        System.out.println("Contains odd number? " + hasOdd);
+    }}
+}}
+      </code></pre>
+      <p><strong>Output:</strong> Contains odd number? true</p>
+    </div>
+  </div>
+</div>
+
+<div className="accordion-item">
+  <h2 className="accordion-header" id="headingAllMatch">
+    <button className="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAllMatch" aria-expanded="false" aria-controls="collapseAllMatch">
+      Java Streams: allMatch()
+    </button>
+  </h2>
+  <div id="collapseAllMatch" className="accordion-collapse collapse" aria-labelledby="headingAllMatch" data-bs-parent="#accordionExample">
+    <div className="accordion-body">
+      <p><strong>Description:</strong> Returns <code>true</code> if all elements of the stream match the given predicate.</p>
+      <p><strong>Example:</strong></p>
+      <pre><code>
+import java.util.*;
+import java.util.stream.*;
+
+public class AllMatchExample {{
+    public static void main(String[] args) {{
+        List<Integer> numbers = Arrays.asList(2, 4, 6, 8);
+        boolean allEven = numbers.stream()
+                                 .allMatch(n -&gt; n % 2 == 0);
+        System.out.println("All numbers are even? " + allEven);
+    }}
+}}
+      </code></pre>
+      <p><strong>Output:</strong> All numbers are even? true</p>
+    </div>
+  </div>
+</div>
+
+<div className="accordion-item">
+  <h2 className="accordion-header" id="headingNoneMatch">
+    <button className="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#collapseNoneMatch" aria-expanded="false" aria-controls="collapseNoneMatch">
+      Java Streams: noneMatch()
+    </button>
+  </h2>
+  <div id="collapseNoneMatch" className="accordion-collapse collapse" aria-labelledby="headingNoneMatch" data-bs-parent="#accordionExample">
+    <div className="accordion-body">
+      <p><strong>Description:</strong> Returns <code>true</code> if no elements of the stream match the given predicate.</p>
+      <p><strong>Example:</strong></p>
+      <pre><code>
+import java.util.*;
+import java.util.stream.*;
+
+public class NoneMatchExample {{
+    public static void main(String[] args) {{
+        List<Integer> numbers = Arrays.asList(2, 4, 6, 8);
+        boolean noneOdd = numbers.stream()
+                                 .noneMatch(n -&gt; n % 2 != 0);
+        System.out.println("No odd numbers? " + noneOdd);
+    }}
+}}
+      </code></pre>
+      <p><strong>Output:</strong> No odd numbers? true</p>
+    </div>
+  </div>
+</div>
+<div className="accordion-item">
+  <h2 className="accordion-header" id="headingStreamMatches">
+    <button className="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#collapseStreamMatches" aria-expanded="false" aria-controls="collapseStreamMatches">
+      Java Streams: anyMatch, allMatch, noneMatch Example
+    </button>
+  </h2>
+  <div id="collapseStreamMatches" className="accordion-collapse collapse" aria-labelledby="headingStreamMatches" data-bs-parent="#accordionExample">
+    <div className="accordion-body">
+      <p><strong>Description:</strong> Demonstrates how <code>anyMatch</code>, <code>allMatch</code>, and <code>noneMatch</code> work on the same list of numbers.</p>
+      <p><strong>Example:</strong></p>
+      <pre><code>
+import java.util.*;
+import java.util.stream.*;
+
+public class StreamMatchesExample {{
+    public static void main(String[] args) {{
+        List<Integer> numbers = Arrays.asList(2, 4, 6, 7);
+
+        boolean hasOdd = numbers.stream()
+                                .anyMatch(n -&gt; n % 2 != 0);
+        boolean allEven = numbers.stream()
+                                 .allMatch(n -&gt; n % 2 == 0);
+        boolean noneNegative = numbers.stream()
+                                      .noneMatch(n -&gt; n &lt; 0);
+
+        System.out.println("Contains odd number? " + hasOdd);
+        System.out.println("All numbers are even? " + allEven);
+        System.out.println("No negative numbers? " + noneNegative);
+    }}
+}}
+      </code></pre>
+      <p><strong>Output:</strong></p>
+      <ul>
+        <li>Contains odd number? true</li>
+        <li>All numbers are even? false</li>
+        <li>No negative numbers? true</li>
+      </ul>
+      <p>✅ This example shows all three match operations together on the same data list.</p>
+    </div>
+  </div>
+</div>
+<div className="accordion-item">
+  <h2 className="accordion-header" id="headingCollectorsOverview">
+    <button className="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCollectorsOverview" aria-expanded="false" aria-controls="collapseCollectorsOverview">
+      Java Streams: Collectors Overview
+    </button>
+  </h2>
+  <div id="collapseCollectorsOverview" className="accordion-collapse collapse" aria-labelledby="headingCollectorsOverview" data-bs-parent="#accordionExample">
+    <div className="accordion-body">
+      <p><strong>Description:</strong> <code>Collectors</code> help accumulate elements of a stream into collections, maps, strings, or compute summary statistics.</p>
+      <p>Here are the common use cases:</p>
+
+      <ul>
+        <li><strong>1. Collect to List</strong> – gather stream elements into a List</li>
+        <li><strong>2. Collect to Set</strong> – gather unique elements into a Set</li>
+        <li><strong>3. Collect to Map</strong> – convert stream to Map using key/value functions</li>
+        <li><strong>4. Joining Strings</strong> – concatenate elements into a single string</li>
+        <li><strong>5. Counting Elements</strong> – count total elements</li>
+        <li><strong>6. Summing / Averaging</strong> – calculate sum, average, min, max</li>
+        <li><strong>7. Grouping By</strong> – group elements by a classifier function</li>
+        <li><strong>8. Partitioning By</strong> – divide elements into true/false groups</li>
+        <li><strong>9. CollectingAndThen</strong> – perform post-processing after collection</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div className="accordion-item">
+  <h2 className="accordion-header" id="headingCollectorsExamples">
+    <button className="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCollectorsExamples" aria-expanded="false" aria-controls="collapseCollectorsExamples">
+      Java Streams: Collectors Examples
+    </button>
+  </h2>
+  <div id="collapseCollectorsExamples" className="accordion-collapse collapse" aria-labelledby="headingCollectorsExamples" data-bs-parent="#accordionExample">
+    <div className="accordion-body">
+      <pre><code>
+import java.util.*;
+import java.util.stream.*;
+import java.util.function.*;
+import java.util.Comparator;
+
+public class CollectorsExample {{
+    public static void main(String[] args) {{
+        List<String> names = Arrays.asList("Alice", "Bob", "Charlie", "Alice", "David");
+
+        // 1. Collect to List
+        List<String> nameList = names.stream()
+                                     .collect(Collectors.toList());
+        System.out.println("List: " + nameList);
+
+        // 2. Collect to Set
+        Set<String> nameSet = names.stream()
+                                   .collect(Collectors.toSet());
+        System.out.println("Set: " + nameSet);
+
+        // 3. Collect to Map (name -> length, last key wins)
+        Map<String, Integer> nameLengthMap = names.stream()
+                                                  .collect(Collectors.toMap(
+                                                      Function.identity(),
+                                                      String::length,
+                                                      (existing, replacement) -&gt; replacement));
+        System.out.println("Map: " + nameLengthMap);
+
+        // 4. Joining Strings
+        String joinedNames = names.stream()
+                                  .collect(Collectors.joining(", "));
+        System.out.println("Joined: " + joinedNames);
+
+        // 5. Counting Elements
+        long count = names.stream().collect(Collectors.counting());
+        System.out.println("Count: " + count);
+
+        // 6. Summing / Averaging (using lengths)
+        int sumLength = names.stream().collect(Collectors.summingInt(String::length));
+        double avgLength = names.stream().collect(Collectors.averagingInt(String::length));
+        System.out.println("Sum of lengths: " + sumLength);
+        System.out.println("Average length: " + avgLength);
+
+        // 7. Grouping By
+        Map<Integer, List<String>> groupByLength = names.stream()
+                                                        .collect(Collectors.groupingBy(String::length));
+        System.out.println("Grouped by length: " + groupByLength);
+
+        // 8. Partitioning By
+        Map<Boolean, List<String>> partitioned = names.stream()
+                                                      .collect(Collectors.partitioningBy(s -&gt; s.length() &gt; 4));
+        System.out.println("Partitioned (length>4): " + partitioned);
+
+        // 9. CollectingAndThen (to unmodifiable list)
+        List<String> unmodifiableList = names.stream()
+                                             .collect(Collectors.collectingAndThen(Collectors.toList(),
+                                                                                    Collections::unmodifiableList));
+        System.out.println("Unmodifiable List: " + unmodifiableList);
+    }}
+}}
+      </code></pre>
+      <p><strong>Output Example:</strong></p>
+      <ul>
+        <li>List: [Alice, Bob, Charlie, Alice, David]</li>
+        <li>Set: [Alice, Bob, Charlie, David]</li>
+        <li>Map: {Alice=5, Bob=3, Charlie=7, David=5}</li>
+        <li>Joined: Alice, Bob, Charlie, Alice, David</li>
+        <li>Count: 5</li>
+        <li>Sum of lengths: 25</li>
+        <li>Average length: 5.0</li>
+        <li>Grouped by length: {3=[Bob], 5=[Alice, Alice, David], 7=[Charlie]}</li>
+        <li>Partitioned (length>4): {false=[Bob], true=[Alice, Charlie, Alice, David]}</li>
+        <li>Unmodifiable List: [Alice, Bob, Charlie, Alice, David]</li>
+      </ul>
+    </div>
+  </div>
+</div>
+<div className="accordion-item">
+  <h2 className="accordion-header" id="headingCollectorsCheatSheet">
+    <button className="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCollectorsCheatSheet" aria-expanded="false" aria-controls="collapseCollectorsCheatSheet">
+      Java Streams: Ultimate Collectors Cheat Sheet
+    </button>
+  </h2>
+  <div id="collapseCollectorsCheatSheet" className="accordion-collapse collapse" aria-labelledby="headingCollectorsCheatSheet" data-bs-parent="#accordionExample">
+    <div className="accordion-body">
+      <p><strong>Description:</strong> This cheat sheet shows almost all practical Collectors usage in Java Streams.</p>
+      <pre><code>
+import java.util.*;
+import java.util.stream.*;
+import java.util.function.*;
+import java.util.Comparator;
+
+public class UltimateCollectorsExample {{
+    public static void main(String[] args) {{
+        List<String> names = Arrays.asList("Alice", "Bob", "Charlie", "Alice", "David");
+
+        // 1. Collect to List
+        List<String> list = names.stream()
+                                 .collect(Collectors.toList());
+
+        // 2. Collect to Set
+        Set<String> set = names.stream()
+                               .collect(Collectors.toSet());
+
+        // 3. Collect to Map (key=name, value=length, last key wins)
+        Map<String, Integer> map = names.stream()
+                                        .collect(Collectors.toMap(
+                                            Function.identity(),
+                                            String::length,
+                                            (existing, replacement) -&gt; replacement));
+
+        // 4. Joining Strings
+        String joined = names.stream()
+                             .collect(Collectors.joining(", ", "[", "]"));
+
+        // 5. Counting Elements
+        long count = names.stream()
+                          .collect(Collectors.counting());
+
+        // 6. Summing / Averaging
+        int sumLength = names.stream().collect(Collectors.summingInt(String::length));
+        double avgLength = names.stream().collect(Collectors.averagingInt(String::length));
+
+        // 7. Min / Max
+        Optional<String> min = names.stream().collect(Collectors.minBy(Comparator.naturalOrder()));
+        Optional<String> max = names.stream().collect(Collectors.maxBy(Comparator.naturalOrder()));
+
+        // 8. Grouping By (simple)
+        Map<Integer, List<String>> groupByLength = names.stream()
+                                                        .collect(Collectors.groupingBy(String::length));
+
+        // 9. Grouping By with downstream collector (count)
+        Map<Integer, Long> countByLength = names.stream()
+                                               .collect(Collectors.groupingBy(String::length, Collectors.counting()));
+
+        // 10. Partitioning By
+        Map<Boolean, List<String>> partitioned = names.stream()
+                                                      .collect(Collectors.partitioningBy(s -&gt; s.length() &gt; 4));
+
+        // 11. Mapping (transform before collecting)
+        List<Integer> nameLengths = names.stream()
+                                         .collect(Collectors.mapping(String::length, Collectors.toList()));
+
+        // 12. Reducing (custom reduction)
+        int totalLength = names.stream()
+                               .collect(Collectors.reducing(0, String::length, Integer::sum));
+
+        // 13. CollectingAndThen (post-processing)
+        List<String> unmodifiableList = names.stream()
+                                             .collect(Collectors.collectingAndThen(Collectors.toList(),
+                                                                                    Collections::unmodifiableList));
+
+        // 14. Summarizing Int/Double/Long (statistics)
+        IntSummaryStatistics stats = names.stream()
+                                         .collect(Collectors.summarizingInt(String::length));
+
+        System.out.println("List: " + list);
+        System.out.println("Set: " + set);
+        System.out.println("Map: " + map);
+        System.out.println("Joined: " + joined);
+        System.out.println("Count: " + count);
+        System.out.println("Sum: " + sumLength + ", Avg: " + avgLength);
+        System.out.println("Min: " + min.orElse("N/A") + ", Max: " + max.orElse("N/A"));
+        System.out.println("Grouped by length: " + groupByLength);
+        System.out.println("Count by length: " + countByLength);
+        System.out.println("Partitioned length>4: " + partitioned);
+        System.out.println("Mapped lengths: " + nameLengths);
+        System.out.println("Total length using reducing: " + totalLength);
+        System.out.println("Unmodifiable list: " + unmodifiableList);
+        System.out.println("Statistics: " + stats);
+    }}
+}}
+      </code></pre>
+      <p><strong>Notes:</strong></p>
+      <ul>
+        <li><code>toList()</code>, <code>toSet()</code>, <code>toMap()</code> – convert streams to collections/maps</li>
+        <li><code>joining()</code> – join strings with optional delimiter, prefix, suffix</li>
+        <li><code>counting()</code>, <code>summingInt()</code>, <code>averagingInt()</code> – compute statistics</li>
+        <li><code>minBy()</code>, <code>maxBy()</code> – find min/max based on comparator</li>
+        <li><code>groupingBy()</code>, <code>partitioningBy()</code> – group or split elements</li>
+        <li><code>mapping()</code> – transform before collection</li>
+        <li><code>reducing()</code> – custom reduction logic</li>
+        <li><code>collectingAndThen()</code> – post-process collected result</li>
+        <li><code>summarizingInt()</code>, <code>summarizingDouble()</code>, <code>summarizingLong()</code> – get count, sum, min, max, average in one go</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div className="accordion-item">
+  <h2 className="accordion-header" id="headingCollectorsToSQL">
+    <button className="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCollectorsToSQL" aria-expanded="false" aria-controls="collapseCollectorsToSQL">
+      Java Streams Collectors → MySQL Queries
+    </button>
+  </h2>
+  <div id="collapseCollectorsToSQL" className="accordion-collapse collapse" aria-labelledby="headingCollectorsToSQL" data-bs-parent="#accordionExample">
+    <div className="accordion-body">
+      <p><strong>Description:</strong> Most of the Stream Collector operations have SQL equivalents using <code>SELECT</code>, <code>GROUP BY</code>, <code>COUNT</code>, <code>SUM</code>, <code>AVG</code>, <code>MIN</code>, <code>MAX</code>, and <code>CONCAT</code>.</p>
+
+      <ul>
+        <li><strong>1. Collect to List / Set</strong>  
+          <p>Equivalent SQL: Just select the column (distinct for Set)</p>
+          <pre><code>
+-- List (all names)
+SELECT name FROM users;
+
+-- Set (unique names)
+SELECT DISTINCT name FROM users;
+          </code></pre>
+        </li>
+
+        <li><strong>2. Collect to Map (key → value)</strong>  
+          <p>Map in SQL: key-value pairs using SELECT with key and value</p>
+          <pre><code>
+SELECT name, LENGTH(name) AS name_length FROM users;
+          </code></pre>
+        </li>
+
+        <li><strong>3. Joining Strings</strong>  
+          <p>SQL equivalent: GROUP_CONCAT()</p>
+          <pre><code>
+SELECT GROUP_CONCAT(name SEPARATOR ', ') AS all_names FROM users;
+          </code></pre>
+        </li>
+
+        <li><strong>4. Counting Elements</strong>  
+          <pre><code>
+SELECT COUNT(*) AS total_users FROM users;
+          </code></pre>
+        </li>
+
+        <li><strong>5. Summing / Averaging</strong>  
+          <pre><code>
+-- Sum of name lengths
+SELECT SUM(LENGTH(name)) AS total_length FROM users;
+
+-- Average length
+SELECT AVG(LENGTH(name)) AS avg_length FROM users;
+          </code></pre>
+        </li>
+
+        <li><strong>6. Min / Max</strong>  
+          <pre><code>
+SELECT MIN(LENGTH(name)) AS min_length,
+       MAX(LENGTH(name)) AS max_length
+FROM users;
+          </code></pre>
+        </li>
+
+        <li><strong>7. Grouping By</strong>  
+          <pre><code>
+-- Group names by length
+SELECT LENGTH(name) AS len, GROUP_CONCAT(name) AS names
+FROM users
+GROUP BY LENGTH(name);
+          </code></pre>
+        </li>
+
+        <li><strong>8. Partitioning By (true/false)</strong>  
+          <p>In SQL, use CASE in GROUP BY or conditional aggregation</p>
+          <pre><code>
+SELECT CASE WHEN LENGTH(name) &gt; 4 THEN 'long' ELSE 'short' END AS name_type,
+       GROUP_CONCAT(name) AS names
+FROM users
+GROUP BY name_type;
+          </code></pre>
+        </li>
+
+        <li><strong>9. Mapping (transform before collecting)</strong>  
+          <p>Use expressions in SELECT</p>
+          <pre><code>
+-- Get lengths of names
+SELECT LENGTH(name) AS name_length FROM users;
+          </code></pre>
+        </li>
+
+        <li><strong>10. Reducing (custom reduction)</strong>  
+          <p>Use SUM, AVG, MIN, MAX or custom aggregate function</p>
+          <pre><code>
+-- Total length of names (sum reduction)
+SELECT SUM(LENGTH(name)) AS total_length FROM users;
+          </code></pre>
+        </li>
+
+        <li><strong>11. CollectingAndThen (post-processing)</strong>  
+          <p>In SQL, post-processing is often done in subquery or outer query</p>
+          <pre><code>
+-- Example: get distinct names in sorted order
+SELECT name FROM (
+    SELECT DISTINCT name FROM users
+) AS sub
+ORDER BY name;
+          </code></pre>
+        </li>
+
+        <li><strong>12. SummarizingInt / Double / Long</strong>  
+          <p>SQL provides COUNT, SUM, AVG, MIN, MAX in one query</p>
+          <pre><code>
+SELECT COUNT(*) AS total,
+       SUM(LENGTH(name)) AS sum_length,
+       AVG(LENGTH(name)) AS avg_length,
+       MIN(LENGTH(name)) AS min_length,
+       MAX(LENGTH(name)) AS max_length
+FROM users;
+          </code></pre>
+        </li>
+      </ul>
+      <p>✅ Conclusion: Almost all Java Stream Collector operations have SQL equivalents, just expressed via <code>SELECT</code>, <code>GROUP BY</code>, and aggregation functions.</p>
+    </div>
+  </div>
+</div>
+
+<div className="accordion-item">
+  <h2 className="accordion-header" id="headingCollectorsSQLCheatSheet">
+    <button className="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCollectorsSQLCheatSheet" aria-expanded="false" aria-controls="collapseCollectorsSQLCheatSheet">
+      Java Streams Collectors → MySQL Cheat Sheet
+    </button>
+  </h2>
+  <div id="collapseCollectorsSQLCheatSheet" className="accordion-collapse collapse" aria-labelledby="headingCollectorsSQLCheatSheet" data-bs-parent="#accordionExample">
+    <div className="accordion-body">
+      <p><strong>Description:</strong> Complete mapping of common and advanced Stream Collector operations to equivalent MySQL queries.</p>
+
+      <ul>
+        <li><strong>1. toList()</strong>
+          <pre><code>
+-- Get all names as a list
+SELECT name FROM users;
+          </code></pre>
+        </li>
+
+        <li><strong>2. toSet()</strong>
+          <pre><code>
+-- Get unique names
+SELECT DISTINCT name FROM users;
+          </code></pre>
+        </li>
+
+        <li><strong>3. toMap(key, value)</strong>
+          <pre><code>
+-- Map name → length
+SELECT name, LENGTH(name) AS name_length FROM users;
+          </code></pre>
+        </li>
+
+        <li><strong>4. joining(delimiter, prefix, suffix)</strong>
+          <pre><code>
+-- Join all names with comma
+SELECT CONCAT('[', GROUP_CONCAT(name SEPARATOR ', '), ']') AS all_names FROM users;
+          </code></pre>
+        </li>
+
+        <li><strong>5. counting()</strong>
+          <pre><code>
+SELECT COUNT(*) AS total_users FROM users;
+          </code></pre>
+        </li>
+
+        <li><strong>6. summingInt / summingDouble / summingLong</strong>
+          <pre><code>
+SELECT SUM(LENGTH(name)) AS total_length FROM users;
+SELECT SUM(salary) AS total_salary FROM employees;
+          </code></pre>
+        </li>
+
+        <li><strong>7. averagingInt / averagingDouble / averagingLong</strong>
+          <pre><code>
+SELECT AVG(LENGTH(name)) AS avg_length FROM users;
+SELECT AVG(salary) AS avg_salary FROM employees;
+          </code></pre>
+        </li>
+
+        <li><strong>8. minBy / maxBy</strong>
+          <pre><code>
+SELECT MIN(LENGTH(name)) AS min_length,
+       MAX(LENGTH(name)) AS max_length
+FROM users;
+          </code></pre>
+        </li>
+
+        <li><strong>9. groupingBy(classifier)</strong>
+          <pre><code>
+-- Group names by length
+SELECT LENGTH(name) AS len, GROUP_CONCAT(name) AS names
+FROM users
+GROUP BY len;
+          </code></pre>
+        </li>
+
+        <li><strong>10. groupingBy with downstream collector (e.g., counting)</strong>
+          <pre><code>
+-- Count names by length
+SELECT LENGTH(name) AS len, COUNT(*) AS name_count
+FROM users
+GROUP BY len;
+          </code></pre>
+        </li>
+
+        <li><strong>11. partitioningBy(predicate)</strong>
+          <pre><code>
+-- Partition names by length > 4
+SELECT CASE WHEN LENGTH(name) &gt; 4 THEN 'long' ELSE 'short' END AS name_type,
+       GROUP_CONCAT(name) AS names
+FROM users
+GROUP BY name_type;
+          </code></pre>
+        </li>
+
+        <li><strong>12. mapping(transform, downstream)</strong>
+          <pre><code>
+-- Get lengths of all names
+SELECT LENGTH(name) AS name_length FROM users;
+          </code></pre>
+        </li>
+
+        <li><strong>13. reducing(identity, mapper, combiner)</strong>
+          <pre><code>
+-- Total length of all names
+SELECT SUM(LENGTH(name)) AS total_length FROM users;
+
+-- Total salary after applying 10% bonus (example transformation)
+SELECT SUM(salary * 1.1) AS total_salary_with_bonus FROM employees;
+          </code></pre>
+        </li>
+
+        <li><strong>14. collectingAndThen(collector, finisher)</strong>
+          <pre><code>
+-- Distinct names sorted
+SELECT name FROM (
+    SELECT DISTINCT name FROM users
+) AS sub
+ORDER BY name;
+          </code></pre>
+        </li>
+
+        <li><strong>15. summarizingInt / summarizingDouble / summarizingLong</strong>
+          <pre><code>
+SELECT COUNT(*) AS total_count,
+       SUM(LENGTH(name)) AS total_length,
+       AVG(LENGTH(name)) AS avg_length,
+       MIN(LENGTH(name)) AS min_length,
+       MAX(LENGTH(name)) AS max_length
+FROM users;
+          </code></pre>
+        </li>
+
+        <li><strong>16. Example combining multiple operations</strong>
+          <pre><code>
+-- Count of names by length, longest and shortest name
+SELECT LENGTH(name) AS len,
+       COUNT(*) AS count,
+       MIN(name) AS first_name_alphabetically,
+       MAX(name) AS last_name_alphabetically
+FROM users
+GROUP BY len;
+          </code></pre>
+        </li>
+      </ul>
+
+      <p>✅ <strong>Summary:</strong>  
+      Java Stream Collector operations map closely to MySQL aggregation and grouping functions. Key equivalents:</p>
+      <ul>
+        <li><code>toList(), toSet()</code> → <code>SELECT / DISTINCT</code></li>
+        <li><code>toMap()</code> → <code>SELECT key, value</code></li>
+        <li><code>joining()</code> → <code>GROUP_CONCAT()</code></li>
+        <li><code>counting()</code> → <code>COUNT(*)</code></li>
+        <li><code>summingInt()</code> → <code>SUM()</code></li>
+        <li><code>averagingInt()</code> → <code>AVG()</code></li>
+        <li><code>minBy()/maxBy()</code> → <code>MIN()/MAX()</code></li>
+        <li><code>groupingBy()</code> → <code>GROUP BY</code></li>
+        <li><code>partitioningBy()</code> → <code>CASE WHEN ... GROUP BY</code></li>
+        <li><code>mapping()</code> → <code>SELECT expression</code></li>
+        <li><code>reducing()</code> → <code>SUM()/AVG()/custom expression</code></li>
+        <li><code>collectingAndThen()</code> → <code>Subquery + post-processing</code></li>
+        <li><code>summarizingInt()</code> → <code>COUNT, SUM, AVG, MIN, MAX</code></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
       <div class="accordion-item">
         <h2 class="accordion-header">
           <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
@@ -419,6 +1287,103 @@ public class LSPExample {
     </div>
   </div>
 </div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+      data-bs-target="#atomicIntegerInfo">
+      ⚡ Java <code>AtomicInteger</code> – Purpose & Multithreading Benefits
+    </button>
+  </h2>
+  <div id="atomicIntegerInfo" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What is <code>AtomicInteger</code>?</h5>
+      <p>
+        <code>AtomicInteger</code> is a class in <b>java.util.concurrent.atomic</b> that provides
+        a single <b>int</b> value which can be read and updated atomically.  
+        “Atomic” means each operation is performed as one indivisible step—no other thread
+        can observe it in an intermediate state.
+      </p>
+
+      <h5 class="text-warning">🚨 Problem Without It</h5>
+      <pre class="language-java"><code>
+class Counter {
+    private int count = 0;
+    public void increment() { count++; } // Not thread-safe
+    public int get() { return count; }
+}
+      </code></pre>
+      <p>
+        If many threads call <code>increment()</code>, the <code>count++</code> is
+        <b>not atomic</b> (read → add → write).  
+        Two threads can read the same value before either writes back → lost updates.
+      </p>
+
+      <h5 class="text-success">✅ Solution with <code>AtomicInteger</code></h5>
+      <pre class="language-java"><code>
+import java.util.concurrent.atomic.AtomicInteger;
+
+class AtomicCounter {
+    private final AtomicInteger count = new AtomicInteger(0);
+
+    public void increment() {
+        count.incrementAndGet(); // atomic
+    }
+    public int get() {
+        return count.get();
+    }
+}
+      </code></pre>
+      <ul>
+        <li><code>incrementAndGet()</code> = atomically add 1 and return new value.</li>
+        <li>No need for <code>synchronized</code> or external locks.</li>
+      </ul>
+
+      <h5 class="text-info">🔧 Other Useful Methods</h5>
+      <ul>
+        <li><code>getAndIncrement()</code> – returns old value then increments.</li>
+        <li><code>addAndGet(int delta)</code> – adds delta atomically.</li>
+        <li><code>compareAndSet(expect, update)</code> – CAS operation for custom atomic updates.</li>
+      </ul>
+
+      <h5 class="text-warning">🧩 Multithreading Example</h5>
+      <pre class="language-java"><code>
+public class AtomicDemo {
+    public static void main(String[] args) throws InterruptedException {
+        AtomicInteger counter = new AtomicInteger(0);
+
+        Runnable task = () -> {
+            for (int i = 0; i < 1000; i++) {
+                counter.incrementAndGet();
+            }
+        };
+
+        Thread t1 = new Thread(task);
+        Thread t2 = new Thread(task);
+        t1.start(); t2.start();
+        t1.join(); t2.join();
+
+        System.out.println("Final count = " + counter.get()); // Always 2000
+    }
+}
+      </code></pre>
+      <p>
+        Even though <b>2 threads</b> each increment 1000 times, the final count is always <b>2000</b>
+        without using <code>synchronized</code> because each increment is atomic.
+      </p>
+
+      <h5 class="text-success">🚀 Key Takeaways</h5>
+      <ul>
+        <li><b>No explicit locking</b> → better performance under contention.</li>
+        <li>Built on low-level CPU instructions (Compare-And-Swap).</li>
+        <li>Best for counters, sequence numbers, and statistics where only atomic primitives are needed.</li>
+        <li>For complex multi-step state changes, still use locks or higher-level concurrency utilities.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+
 <div class="accordion-item">
   <h2 class="accordion-header">
     <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"

@@ -312,6 +312,8 @@ public class StreamsApiTest {
         Stream<String> concat = Stream.concat(list12.stream(), list13.stream());
         Stream.of(concat, concat);
         System.out.println(concat);
+
+
     }
 }
 
