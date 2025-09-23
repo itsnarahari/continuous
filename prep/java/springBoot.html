@@ -190,6 +190,273 @@ public Flux&lt;User&gt; getUsers() {
     </div>
   </div>
 </div>
+
+<div class="accordion-item bg-dark text-light">
+  <h2 class="accordion-header" id="headingWs">
+    <button class="accordion-button collapsed search-item text-warning" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseWs"
+      aria-expanded="false" aria-controls="collapseWs">
+      💡 Microservices Communication using WebSocket – Explanation & Example
+    </button>
+  </h2>
+  <div id="collapseWs" class="accordion-collapse collapse" aria-labelledby="headingWs">
+    <div class="accordion-body">
+      <p>
+        <b>Concept:</b> WebSocket provides a full-duplex, persistent TCP connection that allows servers and
+        clients to push messages to each other in real time.  
+        In a microservices setup, one service (or a gateway) acts as a WebSocket server while
+        other services publish events to it through a message broker like Kafka, Redis, or RabbitMQ.
+        The gateway then forwards those messages to connected WebSocket clients (e.g. web or mobile apps).
+      </p>
+      <hr class="border-secondary"/>
+      <p>
+        <b>Architecture Flow:</b><br/>
+        <ol>
+          <li>🚪 <b>Gateway Service</b> – Hosts the WebSocket endpoint <code>/ws/notify</code> for client connections.</li>
+          <li>💳 <b>Payment Service</b> – After processing a payment, publishes a “payment-success” event to Kafka/Redis.</li>
+          <li>🔔 <b>Notification Service</b> – Subscribes to the topic and calls the gateway to push the message to all active WebSocket sessions.</li>
+          <li>🌐 <b>React Client</b> – Maintains one open WebSocket to receive instant notifications.</li>
+        </ol>
+      </p>
+      <hr class="border-secondary"/>
+      <p><b>Spring Boot – WebSocket Server</b></p>
+<pre><code class="language-java">
+@Configuration
+@EnableWebSocket
+public class WebSocketConfig implements WebSocketConfigurer {
+  @Override
+  public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
+    registry.addHandler(new NotificationHandler(), "/ws/notify")
+            .setAllowedOrigins("*");
+  }
+}
+
+@Component
+public class NotificationHandler extends TextWebSocketHandler {
+  private final List&lt;WebSocketSession&gt; sessions = new CopyOnWriteArrayList&lt;&gt;();
+
+  @Override
+  public void afterConnectionEstablished(WebSocketSession session) {
+    sessions.add(session);
+  }
+
+  public void sendMessage(String message) {
+    for (WebSocketSession s : sessions) {
+      s.sendMessage(new TextMessage(message));
+    }
+  }
+}
+</code></pre>
+      <p><b>React Client</b></p>
+<pre><code class="language-js">
+import React, { useEffect, useState } from 'react';
+
+export default function PaymentAlerts() {
+  const [alerts, setAlerts] = useState([]);
+  useEffect(() =&gt; {
+    const socket = new WebSocket("ws://localhost:8080/ws/notify");
+    socket.onmessage = e =&gt; setAlerts(prev =&gt; [...prev, e.data]);
+    return () =&gt; socket.close();
+  }, []);
+  return (
+    &lt;div&gt;
+      &lt;h3&gt;Payment Alerts&lt;/h3&gt;
+      {alerts.map((a, i) =&gt; &lt;p key={i}&gt;{a}&lt;/p&gt;)}
+    &lt;/div&gt;
+  );
+}
+</code></pre>
+      <hr class="border-secondary"/>
+      <p>
+        ✅ <b>Summary:</b> Other microservices never talk directly to WebSocket clients.
+        They publish events to a broker, and the WebSocket gateway pushes those events to all connected
+        browsers or apps in real time.
+      </p>
+    </div>
+  </div>
+</div>
+<div class="accordion-item bg-dark text-light">
+  <h2 class="accordion-header" id="headingDiff">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseDiff"
+      aria-expanded="false" aria-controls="collapseDiff">
+      ⚖️ Event-Based vs WebSocket Communication in Microservices
+    </button>
+  </h2>
+  <div id="collapseDiff" class="accordion-collapse collapse" aria-labelledby="headingDiff">
+    <div class="accordion-body">
+
+      <h5 class="text-warning">🔹 Event-Based Communication</h5>
+      <ul>
+        <li><b>Pattern:</b> Publish/Subscribe through a message broker (Kafka, RabbitMQ, Redis Streams, etc.).</li>
+        <li><b>Flow:</b> One service publishes an <i>event</i> (e.g. “OrderCreated”) and any number of other services subscribe and react to it.</li>
+        <li><b>Direction:</b> Always <b>server-to-server</b>. Clients (browsers/mobile) usually aren’t direct consumers.</li>
+        <li><b>Nature:</b> <b>Asynchronous</b> and fire-and-forget; the publisher doesn’t know or wait for who will handle the event.</li>
+        <li><b>Usage:</b> Decoupling internal services, audit/event sourcing, background processing.</li>
+        <li><b>Reliability:</b> Brokers provide delivery guarantees (at-least-once, exactly-once) and message persistence.</li>
+      </ul>
+
+      <h5 class="text-success mt-3">🔹 WebSocket Communication</h5>
+      <ul>
+        <li><b>Pattern:</b> Persistent full-duplex TCP connection between a <b>client</b> (browser/app) and a <b>gateway/service</b>.</li>
+        <li><b>Flow:</b> After the handshake, either side can push messages instantly over the same connection.</li>
+        <li><b>Direction:</b> <b>Client &lt;—&gt; Server</b>, typically to deliver real-time data to users.</li>
+        <li><b>Nature:</b> <b>Bidirectional and stateful</b>; remains open until closed.</li>
+        <li><b>Usage:</b> Live dashboards, chat apps, collaborative editing, real-time notifications.</li>
+        <li><b>Reliability:</b> No built-in persistence or replay; if a client is offline, messages are lost unless you add a broker/queue behind it.</li>
+      </ul>
+
+      <h5 class="text-warning mt-3">🔑 Key Differences at a Glance</h5>
+      <table class="table table-dark table-bordered align-middle text-center">
+        <thead>
+          <tr>
+            <th>Aspect</th>
+            <th>Event-Based</th>
+            <th>WebSocket</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Communication</td>
+            <td>Server ↔ Server (via broker)</td>
+            <td>Client ↔ Server (direct)</td>
+          </tr>
+          <tr>
+            <td>Connection</td>
+            <td>Short-lived; per message</td>
+            <td>Long-lived; persistent</td>
+          </tr>
+          <tr>
+            <td>Direction</td>
+            <td>One-way publish/subscribe</td>
+            <td>Full-duplex</td>
+          </tr>
+          <tr>
+            <td>Reliability</td>
+            <td>Guaranteed by broker</td>
+            <td>No built-in guarantee</td>
+          </tr>
+          <tr>
+            <td>Use Case</td>
+            <td>Internal microservice decoupling</td>
+            <td>Real-time UI updates</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p class="mt-3">
+        ✅ <b>Summary:</b> Event-based messaging is about <i>loose coupling</i> between backend services using a broker and reliable delivery.
+        WebSocket is about <i>real-time, interactive</i> communication between a client and server over a single long-lived connection.
+        In practice, large systems often combine both: services talk to each other through events,
+        and a WebSocket gateway subscribes to those events to instantly update connected clients.
+      </p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item bg-dark text-light">
+  <h2 class="accordion-header" id="headingBehindScene">
+    <button class="accordion-button collapsed search-item text-success" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseBehindScene"
+      aria-expanded="false" aria-controls="collapseBehindScene">
+      🛠️ How WebSocket Works Behind the Scenes
+    </button>
+  </h2>
+  <div id="collapseBehindScene" class="accordion-collapse collapse" aria-labelledby="headingBehindScene">
+    <div class="accordion-body">
+
+      <h5 class="text-warning">🔹 1. Initial HTTP/REST-Like Handshake</h5>
+      <ul>
+        <li>The WebSocket connection <b>starts as a normal HTTP request</b> (GET) to a specific URL such as
+            <code>ws://yourserver:8080/ws/notify</code> or <code>wss://</code> (secure).</li>
+        <li>The client sends an HTTP header <code>Upgrade: websocket</code> and <code>Connection: Upgrade</code> asking the server
+            to switch from HTTP to WebSocket protocol.</li>
+        <li>The server responds with <code>101 Switching Protocols</code> if it accepts. After this, the connection is no longer HTTP.</li>
+      </ul>
+
+      <h5 class="text-info mt-3">🔹 2. Persistent TCP Socket</h5>
+      <ul>
+        <li>Once the upgrade succeeds, the underlying connection becomes a raw <b>TCP socket</b>.</li>
+        <li>This socket remains open on the same <b>port</b> (commonly 80 for ws:// or 443 for wss://, but you can use any custom port).</li>
+        <li>Both client and server can send frames (binary or text) anytime without re-establishing connections.</li>
+      </ul>
+
+      <h5 class="text-warning mt-3">🔹 3. No REST Calls After Upgrade</h5>
+      <ul>
+        <li>After the handshake there are <b>no REST requests</b>, no request/response cycle.</li>
+        <li>Data travels as <b>WebSocket frames</b> over the open TCP connection—completely independent of HTTP verbs like GET/POST.</li>
+        <li>Because it’s full-duplex, the server can push data instantly without the client polling.</li>
+      </ul>
+
+      <h5 class="text-info mt-3">🔹 4. Ports and Security</h5>
+      <ul>
+        <li>By default, <code>ws://</code> uses port <b>80</b> and <code>wss://</code> (TLS/SSL encrypted) uses port <b>443</b>.</li>
+        <li>You can run a WebSocket server on any custom port (e.g., 8080, 3001), provided firewalls and load balancers allow it.</li>
+        <li>When running behind HTTPS (common in production), <b>wss://</b> is required to encrypt data just like HTTPS.</li>
+      </ul>
+
+      <h5 class="text-success mt-3">✅ Quick Recap</h5>
+      <p>
+        1️⃣ **Start:** HTTP(S) request with an Upgrade header.<br/>
+        2️⃣ **Switch:** Server returns 101 Switching Protocols.<br/>
+        3️⃣ **Persist:** Connection becomes a bidirectional TCP socket over a single port.<br/>
+        4️⃣ **Communicate:** Client & Server exchange lightweight frames—no REST, no repeated handshakes.
+      </p>
+
+      <p>
+        👉 So WebSocket is neither “just REST” nor “another random port protocol.”  
+        It’s a <b>TCP-based protocol</b> that *piggybacks* on HTTP only for the initial upgrade,
+        then lives as a continuous socket connection.
+      </p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item bg-dark text-light">
+  <h2 class="accordion-header" id="headingSendMsg">
+    <button class="accordion-button collapsed search-item text-warning" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseSendMsg"
+      aria-expanded="false" aria-controls="collapseSendMsg">
+      ❓ Does <code>s.sendMessage(new TextMessage(message))</code> use REST behind the scenes?
+    </button>
+  </h2>
+  <div id="collapseSendMsg" class="accordion-collapse collapse" aria-labelledby="headingSendMsg">
+    <div class="accordion-body">
+
+      <h5 class="text-info">🔹 Short Answer: <b>No, it does not use REST.</b></h5>
+      <p>
+        The call <code>s.sendMessage(new TextMessage(message))</code> writes the data
+        directly to the already-established <b>WebSocket TCP connection</b>.  
+        After the initial handshake, there is **no HTTP request/response** involved.
+      </p>
+
+      <h5 class="text-warning mt-3">🔹 What Actually Happens</h5>
+      <ul>
+        <li><b>Step 1 – Handshake:</b> Your WebSocket session <code>s</code> was created earlier when the client upgraded
+            from HTTP to WebSocket. That opened a persistent TCP socket (on port 80/443 or a custom port).</li>
+        <li><b>Step 2 – Frame Encoding:</b> When you call <code>sendMessage</code>, Spring converts your string to a
+            WebSocket “frame” (a small binary/text packet defined by the WebSocket protocol).</li>
+        <li><b>Step 3 – TCP Write:</b> That frame is pushed through the low-level <code>OutputStream</code> of the socket.
+            It’s literally a <b>write() on the TCP socket</b>, not an HTTP POST/GET.</li>
+        <li><b>Step 4 – Client Receive:</b> The browser or app listening on <code>socket.onmessage</code> gets the data instantly.</li>
+      </ul>
+
+      <h5 class="text-success mt-3">🔑 Key Takeaways</h5>
+      <ul>
+        <li>✅ No REST calls, no HTTP overhead.</li>
+        <li>✅ Pure bidirectional socket I/O after the upgrade.</li>
+        <li>✅ Faster and lighter than making a new HTTP request for every message.</li>
+      </ul>
+
+      <p class="mt-3">
+        👉 So <code>sendMessage()</code> is basically “write bytes on the existing WebSocket channel,”  
+        not “call a REST API to publish data.”
+      </p>
+
+    </div>
+  </div>
+</div>
+
 <div class="accordion dark-accordion" id="retryAccordion">
 
   <div class="accordion-item">
