@@ -110,7 +110,7 @@ public class StreamsApiTest {
         Map<String, Double> collect4 = employees.stream().collect(Collectors.groupingBy(Employee::getDepartment, Collectors.averagingDouble(Employee::getSalary)));
         System.out.println(collect4);
 
-        List<String> names = Arrays.asList("Alice", "Bob", "Charlie");
+        List<String> names = Arrays.asList("Alice", "Bob", "Charlie", "Alice", "David");
 
         Stream<String> nameStream = names.stream(); // Creating a stream
 
@@ -313,7 +313,39 @@ public class StreamsApiTest {
         Stream.of(concat, concat);
         System.out.println(concat);
 
+        List<String> s=List.of("manam","mahim","ujhy", "program", "qwer");
+        s.stream().filter(each -> each.length()>=5)
+                .map(each-> each.toUpperCase().charAt(4))
+                .forEach(System.out::println);
 
+        List<String> stringStream = s.stream().filter(each -> each.length() >= 5)
+                .map(str2 -> str2.substring(0, 3)
+                        + Character.toUpperCase(str2.charAt(3)) +
+                        str2.substring(4)).toList();
+        System.out.println(stringStream);
+
+        Map<String, Integer> nameLengthMap = names.stream()
+                .collect(Collectors.toMap(
+                        Function.identity(),
+                        String::length,
+                        (existing, replacement) -> replacement));
+        System.out.println("Map: " + nameLengthMap);
+
+        Map<Integer, List<String>> groupByLength = names.stream()
+                .collect(Collectors.groupingBy(string -> string.length()));
+        System.out.println("Grouped by length: " + groupByLength);
+
+        // 8️⃣ Partitioning By condition
+        Map<Boolean, List<String>> partitioned = names.stream()
+                .collect(Collectors.partitioningBy(s3 -> s3.length() > 4));
+        System.out.println("Partitioned (length>4): " + partitioned);
+
+        // 9️⃣ CollectingAndThen (unmodifiable list)
+        List<String> unmodifiableList = names.stream()
+                .collect(Collectors.collectingAndThen(
+                        Collectors.toList(),
+                        Collections::unmodifiableList));
+        System.out.println("Unmodifiable List: " + unmodifiableList);
     }
 }
 
