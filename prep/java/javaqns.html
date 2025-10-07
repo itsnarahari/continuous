@@ -94,6 +94,1575 @@
     <div class="accordion" id="googleAccordion">
 
       <div class="accordion-item">
+  <h2 class="accordion-header" id="headingAllStreamsSQL">
+    <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+      data-bs-target="#collapseAllStreamsSQL" aria-expanded="false" aria-controls="collapseAllStreamsSQL">
+      ⚡ Java Streams, Collections & SQL Queries – Full Reference
+    </button>
+  </h2>
+  <div id="collapseAllStreamsSQL" class="accordion-collapse collapse" aria-labelledby="headingAllStreamsSQL"
+    data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- Employee Queries -->
+      <h5 class="text-warning">1️⃣ Count male and female employees</h5>
+      <pre><code class="language-java">
+Map<String, Long> collect = employees.stream()
+    .collect(Collectors.groupingBy(Employee::getGender, Collectors.counting()));
+System.out.println(collect);
+      </code></pre>
+      <pre><code class="language-sql">
+SELECT gender, COUNT(*) AS count
+FROM Employee
+GROUP BY gender;
+      </code></pre>
+
+      <h5 class="text-warning">2️⃣ Print all department names</h5>
+      <pre><code class="language-java">
+employees.stream()
+    .map(Employee::getDepartment)
+    .distinct()
+    .forEach(System.out::println);
+      </code></pre>
+      <pre><code class="language-sql">
+SELECT DISTINCT department
+FROM Employee;
+      </code></pre>
+
+      <h5 class="text-warning">3️⃣ Average age of male and female employees</h5>
+      <pre><code class="language-java">
+Map<String, Double> collect1 = employees.stream()
+    .collect(Collectors.groupingBy(Employee::getGender, Collectors.averagingDouble(Employee::getAge)));
+System.out.println(collect1);
+      </code></pre>
+      <pre><code class="language-sql">
+SELECT gender, AVG(age) AS avg_age
+FROM Employee
+GROUP BY gender;
+      </code></pre>
+
+      <h5 class="text-warning">4️⃣ Highest paid employee</h5>
+      <pre><code class="language-java">
+Optional<Double> v = employees.stream()
+    .max(Comparator.comparing(Employee::getSalary))
+    .map(Employee::getSalary);
+System.out.println(v.orElse(-1.00));
+      </code></pre>
+      <pre><code class="language-sql">
+SELECT *
+FROM Employee
+ORDER BY salary DESC
+LIMIT 1;
+      </code></pre>
+
+      <h5 class="text-warning">5️⃣ Employees joined after 2015</h5>
+      <pre><code class="language-java">
+employees.stream()
+    .filter(employee -> employee.getYearOfJoining() > 2015)
+    .forEach(System.out::println);
+      </code></pre>
+      <pre><code class="language-sql">
+SELECT *
+FROM Employee
+WHERE yearOfJoining > 2015;
+      </code></pre>
+
+      <h5 class="text-warning">6️⃣ Number of employees in each department</h5>
+      <pre><code class="language-java">
+Map<String, Long> collect2 = employees.stream()
+    .collect(Collectors.groupingBy(Employee::getDepartment, Collectors.counting()));
+System.out.println(collect2);
+      </code></pre>
+      <pre><code class="language-sql">
+SELECT department, COUNT(*) AS count
+FROM Employee
+GROUP BY department;
+      </code></pre>
+
+      <h5 class="text-warning">7️⃣ Average salary of each department</h5>
+      <pre><code class="language-java">
+Map<String, Double> collect3 = employees.stream()
+    .collect(Collectors.groupingBy(Employee::getDepartment, Collectors.averagingDouble(Employee::getSalary)));
+System.out.println(collect3);
+      </code></pre>
+      <pre><code class="language-sql">
+SELECT department, AVG(salary) AS avg_salary
+FROM Employee
+GROUP BY department;
+      </code></pre>
+
+      <h5 class="text-warning">8️⃣ Count male and female employees in each department</h5>
+      <pre><code class="language-java">
+Map<String, Map<String, Long>> collect4 = employees.stream()
+    .collect(Collectors.groupingBy(Employee::getDepartment,
+             Collectors.groupingBy(Employee::getGender, Collectors.counting())));
+System.out.println(collect4);
+      </code></pre>
+      <pre><code class="language-sql">
+SELECT department, gender, COUNT(*) AS count
+FROM Employee
+GROUP BY department, gender;
+      </code></pre>
+
+      <h5 class="text-warning">9️⃣ First non-repeating character in a string</h5>
+      <pre><code class="language-java">
+String input = "swiss";
+Character c1 = input.chars()
+    .mapToObj(c -> (char) c)
+    .collect(Collectors.groupingBy(Function.identity(), LinkedHashMap::new, Collectors.counting()))
+    .entrySet().stream()
+    .filter(entry -> entry.getValue() == 1)
+    .map(Map.Entry::getKey)
+    .findFirst()
+    .orElse(null);
+System.out.println(c1);
+      </code></pre>
+      <pre><code class="language-sql">
+-- MySQL: Using numbers table or recursive CTE to split string into characters, then group & filter
+      </code></pre>
+
+      <h5 class="text-warning">🔟 Maximum & Minimum in a list</h5>
+      <pre><code class="language-java">
+List<Integer> numbers = Arrays.asList(10, 20, 5, 30, 50, 40, 20,30);
+Integer max = numbers.stream().max(Comparator.comparingInt(Integer::intValue)).orElse(-1);
+Integer min = numbers.stream().min(Comparator.comparingInt(Integer::intValue)).orElse(-1);
+System.out.println(max);
+System.out.println(min);
+      </code></pre>
+      <pre><code class="language-sql">
+SELECT MAX(num) AS max_num, MIN(num) AS min_num
+FROM Numbers;
+      </code></pre>
+
+      <h5 class="text-warning">1️⃣1️⃣ Count occurrences of each word</h5>
+      <pre><code class="language-java">
+List<String> words = Arrays.asList("apple", "banana", "apple", "orange", "banana", "apple");
+Map<String, Long> res = words.stream()
+    .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+System.out.println(res);
+      </code></pre>
+      <pre><code class="language-sql">
+SELECT word, COUNT(*) AS count
+FROM Words
+GROUP BY word;
+      </code></pre>
+
+      <h5 class="text-warning">1️⃣2️⃣ Second highest salary</h5>
+      <pre><code class="language-java">
+Optional<Employee> second = employees.stream()
+    .sorted(Comparator.comparing(Employee::getSalary).reversed())
+    .skip(1)
+    .findFirst();
+System.out.println(second.orElse(null));
+      </code></pre>
+      <pre><code class="language-sql">
+SELECT *
+FROM Employee
+ORDER BY salary DESC
+LIMIT 1,1; -- OFFSET 1, fetch 1 row (second highest)
+      </code></pre>
+
+      <h5 class="text-warning">1️⃣3️⃣ Highest salary per department</h5>
+      <pre><code class="language-java">
+employees.stream()
+    .collect(Collectors.groupingBy(Employee::getDepartment,
+             Collectors.maxBy(Comparator.comparing(Employee::getSalary))))
+    .forEach((dept, emp) -> System.out.println(dept + " " + emp.get().getSalary()));
+      </code></pre>
+      <pre><code class="language-sql">
+SELECT department, MAX(salary) AS highest_salary
+FROM Employee
+GROUP BY department;
+      </code></pre>
+
+      <h5 class="text-warning">1️⃣4️⃣ Second highest salary per department</h5>
+      <pre><code class="language-java">
+Map<String, Optional<Employee>> secondHighestByDept = employees.stream()
+    .collect(Collectors.groupingBy(Employee::getDepartment,
+             Collectors.collectingAndThen(
+                 Collectors.toList(),
+                 empList -> empList.stream()
+                     .sorted(Comparator.comparingDouble(Employee::getSalary).reversed())
+                     .skip(1)
+                     .findFirst()
+             )));
+secondHighestByDept.forEach((dept, emp) ->
+    System.out.println("Department: " + dept + ", Second Highest Paid Employee: " + emp.orElse(null).getSalary()));
+      </code></pre>
+      <pre><code class="language-sql">
+-- MySQL: Using window functions
+SELECT department, salary
+FROM (
+    SELECT department, salary,
+           ROW_NUMBER() OVER(PARTITION BY department ORDER BY salary DESC) AS rn
+    FROM Employee
+) t
+WHERE rn = 2;
+      </code></pre>
+
+      <h5 class="text-warning">1️⃣5️⃣ Sort employees by department then salary descending</h5>
+      <pre><code class="language-java">
+List<Employee> sortedList = employees.stream()
+    .sorted(Comparator.comparing(Employee::getDepartment)
+            .thenComparing(Employee::getSalary).reversed())
+    .collect(Collectors.toList());
+System.out.println(sortedList);
+      </code></pre>
+      <pre><code class="language-sql">
+SELECT *
+FROM Employee
+ORDER BY department ASC, salary DESC;
+      </code></pre>
+
+      <h5 class="text-warning">1️⃣6️⃣ Group employees by department & average salary</h5>
+      <pre><code class="language-java">
+Map<String, Double> collect6 = employees.stream()
+    .collect(Collectors.groupingBy(Employee::getDepartment, Collectors.averagingDouble(Employee::getSalary)));
+System.out.println(collect6);
+      </code></pre>
+      <pre><code class="language-sql">
+SELECT department, AVG(salary) AS avg_salary
+FROM Employee
+GROUP BY department;
+      </code></pre>
+
+      <h5 class="text-warning">1️⃣7️⃣ 5 random numbers in sorted order</h5>
+      <pre><code class="language-java">
+new Random().ints().limit(5).sorted().forEach(System.out::println);
+      </code></pre>
+      <pre><code class="language-sql">
+-- MySQL: Random numbers using RAND()
+SELECT FLOOR(RAND()*100) AS random_num
+FROM numbers_table
+ORDER BY random_num ASC
+LIMIT 5;
+      </code></pre>
+
+      <h5 class="text-warning">1️⃣8️⃣ Sum of all numbers in a list</h5>
+      <pre><code class="language-java">
+int sum = list2.stream().mapToInt(Integer::intValue).sum();
+System.out.println(sum);
+      </code></pre>
+      <pre><code class="language-sql">
+SELECT SUM(num) AS total
+FROM Numbers;
+      </code></pre>
+
+      <h5 class="text-warning">1️⃣9️⃣ Square numbers > 100 and average remaining</h5>
+      <pre><code class="language-java">
+OptionalDouble average = list2.stream()
+    .mapToInt(value -> value * 2)
+    .filter(value -> value > 100)
+    .average();
+System.out.println(average.orElse(-1));
+      </code></pre>
+      <pre><code class="language-sql">
+SELECT AVG(num*2) AS avg_val
+FROM Numbers
+WHERE num*2 > 100;
+      </code></pre>
+
+      <h5 class="text-warning">2️⃣0️⃣ Count strings with length > 5</h5>
+      <pre><code class="language-java">
+long count = strings.stream().filter(s -> s.length() > 5).count();
+System.out.println(count);
+      </code></pre>
+      <pre><code class="language-sql">
+SELECT COUNT(*) AS cnt
+FROM Strings
+WHERE LENGTH(str) > 5;
+      </code></pre>
+
+      <h5 class="text-warning">2️⃣1️⃣ Remove duplicates from a list</h5>
+      <pre><code class="language-java">
+List<Integer> distinctList = Arrays.stream(arr1).distinct().collect(Collectors.toList());
+System.out.println(distinctList);
+      </code></pre>
+      <pre><code class="language-sql">
+SELECT DISTINCT num
+FROM Numbers;
+      </code></pre>
+
+      <h5 class="text-warning">2️⃣2️⃣ Group employees by hobby</h5>
+      <pre><code class="language-java">
+Map<String, List<String>> groupedByHobby = employees.stream()
+    .flatMap(emp -> emp.getHobbies().stream().map(hobby -> Map.entry(hobby, emp.getName())))
+    .collect(Collectors.groupingBy(Map.Entry::getKey,
+             Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
+System.out.println(groupedByHobby);
+      </code></pre>
+      <pre><code class="language-sql">
+-- MySQL: EmployeeHobbies table (employee, hobby)
+SELECT hobby, GROUP_CONCAT(employee) AS employees
+FROM EmployeeHobbies
+GROUP BY hobby;
+      </code></pre>
+
+      <h5 class="text-warning">2️⃣3️⃣ StringJoiner examples (join with comma)</h5>
+      <pre><code class="language-java">
+StringJoiner stj = new StringJoiner(",");
+stj.add("Saket").add("John").add("Franklin");
+System.out.println(stj);
+      </code></pre>
+      <pre><code class="language-sql">
+-- MySQL: CONCAT_WS
+SELECT GROUP_CONCAT(name SEPARATOR ',') AS all_names
+FROM Persons;
+      </code></pre>
+
+      <h5 class="text-warning">2️⃣4️⃣ Partitioning numbers > 3</h5>
+      <pre><code class="language-java">
+Map<Boolean, List<Integer>> partitioned = Stream.of(1,2,3,4,5).collect(Collectors.partitioningBy(i -> i>3));
+System.out.println(partitioned);
+      </code></pre>
+      <pre><code class="language-sql">
+SELECT CASE WHEN num>3 THEN 'true' ELSE 'false' END AS is_gt_3, GROUP_CONCAT(num) AS nums
+FROM Numbers
+GROUP BY is_gt_3;
+      </code></pre>
+
+      <h5 class="text-warning">2️⃣5️⃣ Concatenate two streams</h5>
+      <pre><code class="language-java">
+Stream<String> concat = Stream.concat(list12.stream(), list13.stream());
+concat.forEach(System.out::println);
+      </code></pre>
+      <pre><code class="language-sql">
+-- MySQL: UNION ALL
+SELECT name FROM list12
+UNION ALL
+SELECT name FROM list13;
+      </code></pre>
+
+      <h5 class="text-warning">2️⃣6️⃣ Transform 4th char to uppercase in list elements</h5>
+      <pre><code class="language-java">
+s.stream()
+ .filter(each -> each.length()>=5)
+ .map(str -> str.substring(0,3) + Character.toUpperCase(str.charAt(3)) + str.substring(4))
+ .forEach(System.out::println);
+      </code></pre>
+      <pre><code class="language-sql">
+-- MySQL: SUBSTRING + UPPER
+SELECT CONCAT(SUBSTRING(word,1,3), UPPER(SUBSTRING(word,4,1)), SUBSTRING(word,5))
+FROM Words
+WHERE LENGTH(word)>=5;
+      </code></pre>
+
+      <h5 class="text-warning">2️⃣7️⃣ Map of name to length</h5>
+      <pre><code class="language-java">
+Map<String, Integer> nameLengthMap = names.stream()
+    .collect(Collectors.toMap(Function.identity(), String::length));
+System.out.println(nameLengthMap);
+      </code></pre>
+      <pre><code class="language-sql">
+SELECT name, LENGTH(name) AS len
+FROM Names;
+      </code></pre>
+
+      <h5 class="text-warning">2️⃣8️⃣ Group names by length</h5>
+      <pre><code class="language-java">
+Map<Integer, List<String>> groupByLength = names.stream()
+    .collect(Collectors.groupingBy(String::length));
+System.out.println(groupByLength);
+      </code></pre>
+      <pre><code class="language-sql">
+SELECT LENGTH(name) AS len, GROUP_CONCAT(name) AS names
+FROM Names
+GROUP BY len;
+      </code></pre>
+
+      <h5 class="text-warning">2️⃣9️⃣ Partition names length>4</h5>
+      <pre><code class="language-java">
+Map<Boolean, List<String>> partitioned = names.stream()
+    .collect(Collectors.partitioningBy(name -> name.length()>4));
+System.out.println(partitioned);
+      </code></pre>
+      <pre><code class="language-sql">
+SELECT CASE WHEN LENGTH(name)>4 THEN 'true' ELSE 'false' END AS is_long, GROUP_CONCAT(name)
+FROM Names
+GROUP BY is_long;
+      </code></pre>
+
+      <h5 class="text-warning">3️⃣0️⃣ Unmodifiable list</h5>
+      <pre><code class="language-java">
+List<String> unmodifiableList = names.stream()
+    .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
+System.out.println(unmodifiableList);
+      </code></pre>
+      <pre><code class="language-sql">
+-- SQL: Not applicable (concept specific to Java)
+      </code></pre>
+
+      <!-- Payment and Predicate examples are Java only -->
+      <h5 class="text-warning">3️⃣1️⃣ Functional interface – Payment example</h5>
+      <pre><code class="language-java">
+Payment payment = (a,b) -> a+b;
+int add = payment.add(12,13);
+System.out.println(add);
+      </code></pre>
+
+      <h5 class="text-warning">3️⃣2️⃣ Predicate example</h5>
+      <pre><code class="language-java">
+Predicate<Integer> predicate = a -> a*2==12;
+boolean test = predicate.test(6);
+System.out.println(test);
+      </code></pre>
+
+    </div>
+  </div>
+</div>
+
+      <div class="accordion-item">
+  <h2 class="accordion-header" id="headingPriorityQueue">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#collapsePriorityQueue">
+      ⚙️ What is PriorityQueue in Java?
+    </button>
+  </h2>
+  <div id="collapsePriorityQueue" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
+    <div class="accordion-body">
+
+      <h5 class="fw-bold text-primary mb-2">📌 Overview</h5>
+      <p>
+        <strong>PriorityQueue</strong> is a special type of <strong>Queue</strong> in Java that orders its elements
+        based on their natural ordering (for example, smallest element first for numbers) or according to a 
+        <strong>Comparator</strong> provided at queue creation time.
+      </p>
+      <p>
+        It does <strong>not allow null values</strong> and is part of the <code>java.util</code> package.
+      </p>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">🛠 Key Features</h5>
+      <ul>
+        <li>Implements <code>Queue</code> interface (part of Java Collections Framework).</li>
+        <li>Automatically orders elements based on priority.</li>
+        <li>Uses a <strong>heap data structure</strong> internally (min-heap by default).</li>
+        <li><strong>Not thread-safe</strong> (use <code>PriorityBlockingQueue</code> for concurrent use).</li>
+        <li>Does not guarantee order of iteration (only priority order for retrieval).</li>
+      </ul>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">📚 Common Methods</h5>
+      <ul>
+        <li><code>add(E e)</code> – Inserts the specified element into the queue.</li>
+        <li><code>offer(E e)</code> – Same as add, but returns <code>false</code> instead of throwing an exception if full.</li>
+        <li><code>peek()</code> – Retrieves (but does not remove) the head of the queue, or returns <code>null</code> if empty.</li>
+        <li><code>poll()</code> – Retrieves and removes the head of the queue, or returns <code>null</code> if empty.</li>
+        <li><code>remove()</code> – Removes the head element, throws an exception if empty.</li>
+        <li><code>clear()</code> – Removes all elements from the queue.</li>
+        <li><code>size()</code> – Returns the number of elements.</li>
+        <li><code>iterator()</code> – Returns an iterator (not guaranteed to traverse in priority order).</li>
+      </ul>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">💡 Example</h5>
+      <pre><code class="language-java">
+import java.util.PriorityQueue;
+
+public class PriorityQueueExample {
+    public static void main(String[] args) {
+        // Natural ordering (min-heap)
+        PriorityQueue<Integer> pq = new PriorityQueue<>();
+
+        pq.add(30);
+        pq.add(10);
+        pq.add(20);
+
+        System.out.println("PriorityQueue: " + pq);
+        System.out.println("Head element (peek): " + pq.peek());
+
+        System.out.println("Polling elements:");
+        while (!pq.isEmpty()) {
+            System.out.println(pq.poll());  // Retrieves smallest first
+        }
+    }
+}
+      </code></pre>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">🧭 Example with Custom Comparator</h5>
+      <pre><code class="language-java">
+import java.util.*;
+
+public class ReverseOrderPQ {
+    public static void main(String[] args) {
+        PriorityQueue<Integer> pq = new PriorityQueue<>(Comparator.reverseOrder());
+
+        pq.offer(10);
+        pq.offer(40);
+        pq.offer(20);
+
+        System.out.println("Max-Heap order:");
+        while (!pq.isEmpty()) {
+            System.out.println(pq.poll()); // Retrieves largest first
+        }
+    }
+}
+      </code></pre>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">📈 Use Cases</h5>
+      <ul>
+        <li>Task scheduling (process highest/lowest priority first).</li>
+        <li>Dijkstra’s shortest path algorithm (min-priority for distance).</li>
+        <li>Huffman encoding (merge least frequency nodes first).</li>
+        <li>Event-driven simulations (next event first).</li>
+      </ul>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">🔗 Example Use</h5>
+      <p>
+        In a <strong>task scheduler</strong>, you can use <code>PriorityQueue</code> to process tasks in the order of
+        their urgency or importance instead of the order they were added.
+      </p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingStack">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#collapseStack">
+      🧱 What is Stack in Java?
+    </button>
+  </h2>
+  <div id="collapseStack" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
+    <div class="accordion-body">
+
+      <h5 class="fw-bold text-primary mb-2">📌 Overview</h5>
+      <p>
+        A <strong>Stack</strong> in Java is a <strong>Last-In, First-Out (LIFO)</strong> data structure used to store and retrieve objects.
+        It extends the <strong>Vector</strong> class and is part of the <code>java.util</code> package.
+      </p>
+      <p>
+        Elements are added and removed from the <strong>top of the stack</strong>.  
+        It is often used in algorithms involving recursion, expression evaluation, and undo operations.
+      </p>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">🛠 Key Features</h5>
+      <ul>
+        <li>Implements <strong>LIFO</strong> order (Last element pushed is the first popped).</li>
+        <li>Extends <code>Vector</code>, so it is <strong>synchronized</strong> (thread-safe).</li>
+        <li>Allows <strong>null elements</strong>.</li>
+        <li>Automatically resizes when it grows beyond capacity.</li>
+        <li>Provides methods for <strong>push, pop, peek, search</strong>.</li>
+        <li>Belongs to <code>java.util</code> package.</li>
+      </ul>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">🏗 Constructors</h5>
+      <ul>
+        <li><code>Stack()</code> – Creates an empty stack.</li>
+      </ul>
+      <p>
+        Since <code>Stack</code> extends <code>Vector</code>, it also inherits all Vector constructors (but direct usage of Vector constructors for Stack is not common practice).
+      </p>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">📚 Common Methods</h5>
+      <ul>
+        <li><code>push(E item)</code> – Pushes an item onto the top of the stack.</li>
+        <li><code>pop()</code> – Removes and returns the top item of the stack.</li>
+        <li><code>peek()</code> – Returns the top item without removing it.</li>
+        <li><code>empty()</code> – Returns true if the stack is empty, false otherwise.</li>
+        <li><code>search(Object o)</code> – Returns 1-based position from the top of the stack if found, else -1.</li>
+        <li><code>size()</code> – Returns the number of elements in the stack.</li>
+        <li><code>clear()</code> – Removes all elements (inherited from Vector).</li>
+        <li><code>contains(Object o)</code> – Checks if the stack contains the element (inherited).</li>
+        <li><code>get(int index)</code> – Returns element at a specific index (inherited).</li>
+      </ul>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">💡 Basic Example</h5>
+      <pre><code class="language-java">
+import java.util.Stack;
+
+public class StackExample {
+    public static void main(String[] args) {
+        Stack<String> stack = new Stack<>();
+
+        // Push elements
+        stack.push("Java");
+        stack.push("Python");
+        stack.push("C++");
+
+        System.out.println("Stack: " + stack);
+
+        // Peek top element
+        System.out.println("Top element: " + stack.peek());
+
+        // Pop element
+        System.out.println("Popped: " + stack.pop());
+        System.out.println("After pop: " + stack);
+
+        // Search element
+        System.out.println("Position of 'Java': " + stack.search("Java"));
+
+        // Check empty
+        System.out.println("Is stack empty? " + stack.empty());
+    }
+}
+      </code></pre>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">🧭 Example — Reversing a String</h5>
+      <pre><code class="language-java">
+import java.util.Stack;
+
+public class ReverseStringUsingStack {
+    public static void main(String[] args) {
+        String input = "Narahari";
+        Stack<Character> stack = new Stack<>();
+
+        for (char c : input.toCharArray()) {
+            stack.push(c);
+        }
+
+        StringBuilder reversed = new StringBuilder();
+        while (!stack.isEmpty()) {
+            reversed.append(stack.pop());
+        }
+
+        System.out.println("Original: " + input);
+        System.out.println("Reversed: " + reversed);
+    }
+}
+      </code></pre>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">📈 Use Cases</h5>
+      <ul>
+        <li>Expression evaluation (Infix → Postfix conversion).</li>
+        <li>Undo/Redo functionality in editors.</li>
+        <li>Backtracking algorithms (like maze solving, DFS).</li>
+        <li>Function call stack management in recursion.</li>
+        <li>Parentheses balancing.</li>
+      </ul>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">⚙️ Alternative in Modern Java</h5>
+      <ul>
+        <li>Instead of <code>Stack</code>, modern code often uses <code>Deque</code> (like <code>ArrayDeque</code>) for better performance.</li>
+        <li>Example: <code>Deque<Integer> stack = new ArrayDeque&lt;&gt;();</code></li>
+      </ul>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">🔗 Example Use</h5>
+      <p>
+        A <strong>Stack</strong> can be used in a <strong>browser history</strong> — when the user visits a page, it is pushed
+        onto the stack. When they press the back button, the top page is popped to go back to the previous one.
+      </p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingQueue">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#collapseQueue">
+      🚚 What is Queue in Java?
+    </button>
+  </h2>
+  <div id="collapseQueue" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
+    <div class="accordion-body">
+
+      <h5 class="fw-bold text-primary mb-2">📌 Overview</h5>
+      <p>
+        A <strong>Queue</strong> in Java is a <strong>First-In, First-Out (FIFO)</strong> data structure that stores elements 
+        in an ordered sequence — the element added first is removed first.
+      </p>
+      <p>
+        It is part of the <code>java.util</code> package and extends the <strong>Collection</strong> interface.  
+        A queue is typically used for holding elements before processing them sequentially (like a waiting line).
+      </p>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">🛠 Key Features</h5>
+      <ul>
+        <li>Follows <strong>FIFO</strong> principle (First In → First Out).</li>
+        <li>Belongs to <code>java.util</code> package and is an <strong>interface</strong>.</li>
+        <li>Can have multiple implementations — <code>LinkedList</code>, <code>PriorityQueue</code>, <code>ArrayDeque</code>, etc.</li>
+        <li>Supports both blocking (like <code>ArrayBlockingQueue</code>) and non-blocking types.</li>
+        <li>Does not allow <code>null</code> elements in most implementations.</li>
+        <li>Can define custom ordering using <code>Comparator</code> (in <code>PriorityQueue</code>).</li>
+      </ul>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">🏗 Constructors (via Implementations)</h5>
+      <ul>
+        <li><code>LinkedList&lt;E&gt;()</code> – Creates an empty queue using linked list structure.</li>
+        <li><code>PriorityQueue&lt;E&gt;()</code> – Creates an empty priority queue (natural ordering).</li>
+        <li><code>PriorityQueue&lt;E&gt;(Comparator&lt;? super E&gt; comp)</code> – Custom comparator ordering.</li>
+        <li><code>ArrayDeque&lt;E&gt;()</code> – Creates a resizable array-based queue (efficient and fast).</li>
+        <li><code>ArrayBlockingQueue&lt;E&gt;(int capacity)</code> – Creates a fixed-size blocking queue (for multithreading).</li>
+      </ul>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">📚 Common Methods (Interface Queue)</h5>
+      <ul>
+        <li><code>boolean add(E e)</code> – Inserts element, throws exception if capacity is full.</li>
+        <li><code>boolean offer(E e)</code> – Inserts element, returns <code>false</code> if queue is full.</li>
+        <li><code>E remove()</code> – Removes and returns head element, throws exception if empty.</li>
+        <li><code>E poll()</code> – Removes and returns head element, returns <code>null</code> if empty.</li>
+        <li><code>E element()</code> – Retrieves (without removing) head element, throws exception if empty.</li>
+        <li><code>E peek()</code> – Retrieves (without removing) head element, returns <code>null</code> if empty.</li>
+        <li><code>int size()</code> – Returns number of elements in the queue.</li>
+        <li><code>boolean isEmpty()</code> – Checks if queue is empty.</li>
+        <li><code>clear()</code> – Removes all elements.</li>
+      </ul>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">💡 Basic Example using LinkedList</h5>
+      <pre><code class="language-java">
+import java.util.*;
+
+public class QueueExample {
+    public static void main(String[] args) {
+        Queue<String> queue = new LinkedList<>();
+
+        // Add elements
+        queue.add("A");
+        queue.add("B");
+        queue.add("C");
+
+        System.out.println("Queue: " + queue);
+
+        // Peek the head
+        System.out.println("Head element: " + queue.peek());
+
+        // Remove head element
+        System.out.println("Removed: " + queue.poll());
+        System.out.println("After removal: " + queue);
+
+        // Size
+        System.out.println("Queue size: " + queue.size());
+    }
+}
+      </code></pre>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">🧭 Example using PriorityQueue</h5>
+      <pre><code class="language-java">
+import java.util.*;
+
+public class PriorityQueueExample {
+    public static void main(String[] args) {
+        Queue<Integer> pq = new PriorityQueue<>();
+
+        pq.offer(50);
+        pq.offer(10);
+        pq.offer(30);
+
+        System.out.println("PriorityQueue (natural order): " + pq);
+
+        while (!pq.isEmpty()) {
+            System.out.println("Polled: " + pq.poll());
+        }
+    }
+}
+      </code></pre>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">🧱 Example using ArrayDeque</h5>
+      <pre><code class="language-java">
+import java.util.*;
+
+public class ArrayDequeExample {
+    public static void main(String[] args) {
+        ArrayDeque<String> deque = new ArrayDeque<>();
+
+        deque.offer("Java");
+        deque.offer("Spring");
+        deque.offer("AWS");
+
+        System.out.println("Deque: " + deque);
+
+        System.out.println("First element: " + deque.peekFirst());
+        System.out.println("Last element: " + deque.peekLast());
+    }
+}
+      </code></pre>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">📈 Use Cases</h5>
+      <ul>
+        <li>Task scheduling and job queues.</li>
+        <li>Printer or process queues (first request first serve).</li>
+        <li>Order management systems.</li>
+        <li>BFS (Breadth-First Search) in graph/tree algorithms.</li>
+        <li>Producer-Consumer pattern using BlockingQueue.</li>
+      </ul>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">⚙️ Types of Queues in Java</h5>
+      <ul>
+        <li><strong>Simple Queue:</strong> FIFO order (LinkedList implementation).</li>
+        <li><strong>Priority Queue:</strong> Ordered by priority (uses heap).</li>
+        <li><strong>Circular Queue:</strong> Uses array and wraps around (custom or ArrayDeque).</li>
+        <li><strong>Deque (Double-Ended Queue):</strong> Insert/remove from both ends.</li>
+        <li><strong>BlockingQueue:</strong> Used for thread communication in concurrency.</li>
+      </ul>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">🔗 Example Use</h5>
+      <p>
+        In a <strong>customer service system</strong>, incoming support tickets are placed in a 
+        <code>Queue</code>. The first ticket submitted is the first one to be processed by an agent (FIFO order).
+      </p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingCharacterClass">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#collapseCharacterClass">
+      🔤 What is Character Class in Java?
+    </button>
+  </h2>
+  <div id="collapseCharacterClass" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
+    <div class="accordion-body">
+
+      <h5 class="fw-bold text-primary mb-2">📌 Overview</h5>
+      <p>
+        The <strong>Character</strong> class in Java is a <strong>wrapper class</strong> for the primitive data type <code>char</code>.
+        It is part of the <code>java.lang</code> package and provides many useful methods for character manipulation, 
+        testing, and conversion.
+      </p>
+      <p>
+        Objects of the <code>Character</code> class contain a single field of type <code>char</code>.  
+        It is commonly used in cases where an object representation of a character is required, such as in 
+        <strong>collections</strong> or <strong>generic classes</strong>.
+      </p>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">🛠 Key Features</h5>
+      <ul>
+        <li>Wraps a single primitive <code>char</code> value into an object.</li>
+        <li>Belongs to the <strong>java.lang</strong> package.</li>
+        <li>Immutable and final (cannot be subclassed).</li>
+        <li>Provides numerous utility methods for checking character types (digit, letter, whitespace, etc.).</li>
+        <li>Supports Unicode and ASCII character properties.</li>
+        <li>Auto-boxing and unboxing supported (automatic conversion between <code>char</code> and <code>Character</code>).</li>
+      </ul>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">🏗 Constructors</h5>
+      <ul>
+        <li><code>Character(char value)</code> – Creates a <code>Character</code> object representing the given char value.</li>
+      </ul>
+      <p><strong>Note:</strong> Since Java 9, the constructor is <strong>deprecated</strong>. Use <code>Character.valueOf(char)</code> instead.</p>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">📚 Common Static Methods</h5>
+      <ul>
+        <li><code>isLetter(char ch)</code> – Checks if the character is a letter.</li>
+        <li><code>isDigit(char ch)</code> – Checks if the character is a digit.</li>
+        <li><code>isLetterOrDigit(char ch)</code> – Checks if the character is a letter or a digit.</li>
+        <li><code>isWhitespace(char ch)</code> – Checks if the character is a whitespace.</li>
+        <li><code>isUpperCase(char ch)</code> – Checks if the character is uppercase.</li>
+        <li><code>isLowerCase(char ch)</code> – Checks if the character is lowercase.</li>
+        <li><code>toUpperCase(char ch)</code> – Converts the character to uppercase.</li>
+        <li><code>toLowerCase(char ch)</code> – Converts the character to lowercase.</li>
+        <li><code>isAlphabetic(int codePoint)</code> – Checks if the given code point is alphabetic.</li>
+        <li><code>getNumericValue(char ch)</code> – Returns numeric value of a character (e.g., '5' → 5).</li>
+        <li><code>compare(char x, char y)</code> – Compares two characters numerically.</li>
+        <li><code>charValue()</code> – Returns the primitive <code>char</code> value of a <code>Character</code> object.</li>
+        <li><code>toString(char ch)</code> – Returns a String representation of the given character.</li>
+        <li><code>valueOf(char ch)</code> – Returns a <code>Character</code> instance representing the specified char.</li>
+      </ul>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">💡 Basic Example</h5>
+      <pre><code class="language-java">
+public class CharacterExample {
+    public static void main(String[] args) {
+        char c1 = 'A';
+        char c2 = 'a';
+        char c3 = '5';
+        char c4 = ' ';
+
+        System.out.println("isLetter: " + Character.isLetter(c1));
+        System.out.println("isDigit: " + Character.isDigit(c3));
+        System.out.println("isWhitespace: " + Character.isWhitespace(c4));
+        System.out.println("toLowerCase: " + Character.toLowerCase(c1));
+        System.out.println("toUpperCase: " + Character.toUpperCase(c2));
+        System.out.println("getNumericValue: " + Character.getNumericValue(c3));
+    }
+}
+      </code></pre>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">🧭 Example — Counting Letters and Digits in a String</h5>
+      <pre><code class="language-java">
+public class CountLettersAndDigits {
+    public static void main(String[] args) {
+        String input = "Java123!@#";
+        int letters = 0, digits = 0;
+
+        for (char ch : input.toCharArray()) {
+            if (Character.isLetter(ch)) {
+                letters++;
+            } else if (Character.isDigit(ch)) {
+                digits++;
+            }
+        }
+
+        System.out.println("Total letters: " + letters);
+        System.out.println("Total digits: " + digits);
+    }
+}
+      </code></pre>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">⚙️ Auto-boxing and Unboxing Example</h5>
+      <pre><code class="language-java">
+public class AutoBoxingExample {
+    public static void main(String[] args) {
+        // Auto-boxing
+        Character ch = 'J';  
+
+        // Auto-unboxing
+        char c = ch;          
+
+        System.out.println("Character object: " + ch);
+        System.out.println("Primitive char: " + c);
+    }
+}
+      </code></pre>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">📈 Use Cases</h5>
+      <ul>
+        <li>Character validation (checking if input is a digit, letter, etc.).</li>
+        <li>Used in tokenizers, parsers, and lexical analysis.</li>
+        <li>Text-processing programs for case conversion or filtering.</li>
+        <li>Building character-based utilities like palindrome or anagram checkers.</li>
+        <li>When working with <code>Collection&lt;Character&gt;</code> (since <code>char</code> is primitive).</li>
+      </ul>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">🔗 Example Use</h5>
+      <p>
+        In a <strong>password validation system</strong>, the <code>Character</code> class can be used to ensure 
+        that the password contains at least one uppercase letter, one digit, and one special character.
+      </p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingCollectionsClass">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#collapseCollectionsClass">
+      🧰 What is Collections Class in Java?
+    </button>
+  </h2>
+  <div id="collapseCollectionsClass" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
+    <div class="accordion-body">
+
+      <h5 class="fw-bold text-primary mb-2">📌 Overview</h5>
+      <p>
+        The <strong>Collections</strong> class in Java is a <strong>utility class</strong> that provides static methods to
+        operate on or return collections such as <code>List</code>, <code>Set</code>, and <code>Map</code>.
+        It belongs to the <code>java.util</code> package.
+      </p>
+      <p>
+        It contains <strong>polymorphic algorithms</strong> (like sorting, searching, shuffling, etc.) and 
+        methods to create <strong>synchronized</strong> or <strong>unmodifiable</strong> collections.
+      </p>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">🛠 Key Features</h5>
+      <ul>
+        <li>Provides utility methods to operate on collections.</li>
+        <li>Contains algorithms like <code>sort()</code>, <code>binarySearch()</code>, <code>shuffle()</code>, etc.</li>
+        <li>Provides methods for thread-safe (synchronized) collection wrappers.</li>
+        <li>Provides methods to make collections unmodifiable or singleton.</li>
+        <li>Includes utility methods for finding max/min elements.</li>
+        <li>All methods are <strong>static</strong>.</li>
+        <li>Belongs to <code>java.util</code> package.</li>
+      </ul>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">🏗 Constructors</h5>
+      <p>
+        <strong>No public constructors.</strong>  
+        The <code>Collections</code> class cannot be instantiated because it is a <strong>final class</strong> with a <strong>private constructor</strong>.
+        All its methods are static.
+      </p>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">📚 Common Static Methods</h5>
+
+      <h6 class="fw-bold text-success mt-3">🔹 Sorting and Searching</h6>
+      <ul>
+        <li><code>sort(List&lt;T&gt; list)</code> – Sorts the list in natural order.</li>
+        <li><code>sort(List&lt;T&gt; list, Comparator&lt;? super T&gt; c)</code> – Sorts using a custom comparator.</li>
+        <li><code>binarySearch(List&lt;? extends Comparable&gt; list, T key)</code> – Searches for a key in a sorted list.</li>
+        <li><code>reverse(List&lt;?&gt; list)</code> – Reverses the order of elements.</li>
+        <li><code>shuffle(List&lt;?&gt; list)</code> – Randomly permutes elements.</li>
+      </ul>
+
+      <h6 class="fw-bold text-success mt-3">🔹 Finding Elements</h6>
+      <ul>
+        <li><code>max(Collection&lt;? extends T&gt; coll)</code> – Returns the maximum element.</li>
+        <li><code>min(Collection&lt;? extends T&gt; coll)</code> – Returns the minimum element.</li>
+        <li><code>frequency(Collection&lt;?&gt; c, Object o)</code> – Counts how many times an element appears.</li>
+        <li><code>disjoint(Collection&lt;?&gt; c1, Collection&lt;?&gt; c2)</code> – Returns true if two collections have no elements in common.</li>
+      </ul>
+
+      <h6 class="fw-bold text-success mt-3">🔹 Thread-Safe (Synchronized) Wrappers</h6>
+      <ul>
+        <li><code>synchronizedList(List&lt;T&gt; list)</code></li>
+        <li><code>synchronizedSet(Set&lt;T&gt; s)</code></li>
+        <li><code>synchronizedMap(Map&lt;K, V&gt; m)</code></li>
+        <li><code>synchronizedCollection(Collection&lt;T&gt; c)</code></li>
+      </ul>
+
+      <h6 class="fw-bold text-success mt-3">🔹 Unmodifiable Wrappers</h6>
+      <ul>
+        <li><code>unmodifiableList(List&lt;? extends T&gt; list)</code></li>
+        <li><code>unmodifiableSet(Set&lt;? extends T&gt; s)</code></li>
+        <li><code>unmodifiableMap(Map&lt;? extends K, ? extends V&gt; m)</code></li>
+      </ul>
+
+      <h6 class="fw-bold text-success mt-3">🔹 Singleton and Empty Collections</h6>
+      <ul>
+        <li><code>singleton(T o)</code> – Returns an immutable set containing only one element.</li>
+        <li><code>emptyList()</code>, <code>emptySet()</code>, <code>emptyMap()</code> – Return immutable empty collections.</li>
+      </ul>
+
+      <h6 class="fw-bold text-success mt-3">🔹 Miscellaneous</h6>
+      <ul>
+        <li><code>fill(List&lt;? super T&gt; list, T obj)</code> – Replaces all elements with the specified value.</li>
+        <li><code>copy(List&lt;? super T&gt; dest, List&lt;? extends T&gt; src)</code> – Copies elements from one list to another.</li>
+        <li><code>rotate(List&lt;?&gt; list, int distance)</code> – Rotates elements by the given distance.</li>
+        <li><code>swap(List&lt;?&gt; list, int i, int j)</code> – Swaps elements at specified positions.</li>
+      </ul>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">💡 Basic Example — Sorting and Searching</h5>
+      <pre><code class="language-java">
+import java.util.*;
+
+public class CollectionsExample {
+    public static void main(String[] args) {
+        List<Integer> list = new ArrayList<>(Arrays.asList(5, 2, 9, 1, 3));
+
+        Collections.sort(list);
+        System.out.println("Sorted list: " + list);
+
+        int index = Collections.binarySearch(list, 3);
+        System.out.println("Index of 3: " + index);
+
+        Collections.reverse(list);
+        System.out.println("Reversed list: " + list);
+
+        Collections.shuffle(list);
+        System.out.println("Shuffled list: " + list);
+    }
+}
+      </code></pre>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">🧭 Example — Finding Max, Min, Frequency</h5>
+      <pre><code class="language-java">
+import java.util.*;
+
+public class CollectionsStats {
+    public static void main(String[] args) {
+        List<String> names = Arrays.asList("Java", "Spring", "Java", "AWS", "Spring");
+
+        System.out.println("Max: " + Collections.max(names));
+        System.out.println("Min: " + Collections.min(names));
+        System.out.println("Frequency of 'Java': " + Collections.frequency(names, "Java"));
+    }
+}
+      </code></pre>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">🧱 Example — Unmodifiable and Synchronized Collections</h5>
+      <pre><code class="language-java">
+import java.util.*;
+
+public class UnmodifiableSyncExample {
+    public static void main(String[] args) {
+        List<String> list = new ArrayList<>(List.of("Java", "Spring", "AWS"));
+
+        // Make unmodifiable
+        List<String> unmodifiableList = Collections.unmodifiableList(list);
+        System.out.println("Unmodifiable list: " + unmodifiableList);
+
+        // Make synchronized
+        List<String> syncList = Collections.synchronizedList(list);
+        System.out.println("Synchronized list: " + syncList.getClass().getName());
+    }
+}
+      </code></pre>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">📈 Use Cases</h5>
+      <ul>
+        <li>Sorting and searching collections efficiently.</li>
+        <li>Thread-safe collection handling in multi-threaded apps.</li>
+        <li>Creating immutable collections for security and data safety.</li>
+        <li>Shuffling or rotating data for simulations or games.</li>
+        <li>Frequency and disjoint checks in data analytics.</li>
+      </ul>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">🔗 Example Use</h5>
+      <p>
+        In an <strong>e-commerce application</strong>, you can use <code>Collections.sort()</code> to sort products by price,
+        <code>Collections.frequency()</code> to count product views, and <code>Collections.unmodifiableList()</code> 
+        to safely share product data across threads without modification.
+      </p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingArraysClass">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#collapseArraysClass">
+      🧮 What is Arrays Class in Java?
+    </button>
+  </h2>
+  <div id="collapseArraysClass" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
+    <div class="accordion-body">
+
+      <h5 class="fw-bold text-primary mb-2">📌 Overview</h5>
+      <p>
+        The <strong>Arrays</strong> class in Java is a <strong>utility class</strong> that provides static methods to manipulate arrays (like sorting, searching, copying, comparing, and filling).  
+        It is part of the <code>java.util</code> package and works on both primitive and object arrays.
+      </p>
+      <p>
+        It also provides methods for converting arrays into <code>List</code> objects and for performing stream-based operations.
+      </p>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">🛠 Key Features</h5>
+      <ul>
+        <li>Contains static utility methods to operate on arrays.</li>
+        <li>Supports sorting and searching of arrays.</li>
+        <li>Provides equality and comparison functions.</li>
+        <li>Can fill, copy, or convert arrays to lists.</li>
+        <li>Supports parallel sorting for large arrays (multi-threaded).</li>
+        <li>Supports stream-based operations using <code>Arrays.stream()</code>.</li>
+        <li>Belongs to <code>java.util</code> package.</li>
+      </ul>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">🏗 Constructors</h5>
+      <p>
+        <strong>No public constructors.</strong>  
+        The <code>Arrays</code> class cannot be instantiated because it has a <strong>private constructor</strong>.
+        All its methods are static.
+      </p>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">📚 Common Static Methods</h5>
+
+      <h6 class="fw-bold text-success mt-3">🔹 Sorting Methods</h6>
+      <ul>
+        <li><code>sort(int[] a)</code> – Sorts array in ascending order.</li>
+        <li><code>sort(T[] a)</code> – Sorts object array in natural order.</li>
+        <li><code>sort(T[] a, Comparator&lt;? super T&gt; c)</code> – Sorts using custom comparator.</li>
+        <li><code>parallelSort(int[] a)</code> – Uses multiple threads for faster sorting of large arrays.</li>
+      </ul>
+
+      <h6 class="fw-bold text-success mt-3">🔹 Searching Methods</h6>
+      <ul>
+        <li><code>binarySearch(int[] a, int key)</code> – Searches a sorted array using binary search.</li>
+        <li><code>binarySearch(T[] a, T key, Comparator&lt;? super T&gt; c)</code> – Searches using comparator.</li>
+      </ul>
+
+      <h6 class="fw-bold text-success mt-3">🔹 Comparison and Equality</h6>
+      <ul>
+        <li><code>equals(int[] a, int[] b)</code> – Checks if both arrays are equal (element by element).</li>
+        <li><code>deepEquals(Object[] a1, Object[] a2)</code> – Compares nested arrays deeply.</li>
+        <li><code>compare(int[] a, int[] b)</code> – Lexicographically compares arrays.</li>
+        <li><code>mismatch(int[] a, int[] b)</code> – Returns index of first mismatch, or -1 if identical.</li>
+      </ul>
+
+      <h6 class="fw-bold text-success mt-3">🔹 Copy and Fill Methods</h6>
+      <ul>
+        <li><code>copyOf(T[] original, int newLength)</code> – Copies the array to a new array with new length.</li>
+        <li><code>copyOfRange(T[] original, int from, int to)</code> – Copies a specified range of array.</li>
+        <li><code>fill(int[] a, int val)</code> – Fills the entire array with a specified value.</li>
+      </ul>
+
+      <h6 class="fw-bold text-success mt-3">🔹 Conversion and Utility</h6>
+      <ul>
+        <li><code>asList(T... a)</code> – Converts an array into a fixed-size <code>List</code>.</li>
+        <li><code>toString(int[] a)</code> – Returns a string representation of the array.</li>
+        <li><code>deepToString(Object[] a)</code> – Converts nested arrays into a string.</li>
+        <li><code>stream(int[] a)</code> – Returns a sequential <code>IntStream</code> for functional operations.</li>
+      </ul>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">💡 Example — Sorting and Searching</h5>
+      <pre><code class="language-java">
+import java.util.Arrays;
+
+public class ArraysExample {
+    public static void main(String[] args) {
+        int[] numbers = {5, 2, 9, 1, 3};
+
+        Arrays.sort(numbers);
+        System.out.println("Sorted array: " + Arrays.toString(numbers));
+
+        int index = Arrays.binarySearch(numbers, 3);
+        System.out.println("Index of 3: " + index);
+    }
+}
+      </code></pre>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">💡 Example — Copy, Fill and Compare</h5>
+      <pre><code class="language-java">
+import java.util.Arrays;
+
+public class ArraysMethods {
+    public static void main(String[] args) {
+        int[] a = {1, 2, 3};
+        int[] b = Arrays.copyOf(a, 5);
+        System.out.println("Copy: " + Arrays.toString(b));
+
+        Arrays.fill(b, 4);
+        System.out.println("After fill: " + Arrays.toString(b));
+
+        boolean equal = Arrays.equals(a, b);
+        System.out.println("Are a and b equal? " + equal);
+    }
+}
+      </code></pre>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">💡 Example — Converting Array to List</h5>
+      <pre><code class="language-java">
+import java.util.*;
+
+public class ArrayToListExample {
+    public static void main(String[] args) {
+        String[] languages = {"Java", "Spring", "AWS"};
+        List<String> list = Arrays.asList(languages);
+
+        System.out.println("List: " + list);
+    }
+}
+      </code></pre>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">💡 Example — Parallel Sorting</h5>
+      <pre><code class="language-java">
+import java.util.Arrays;
+
+public class ParallelSortExample {
+    public static void main(String[] args) {
+        int[] arr = {9, 3, 7, 1, 5};
+
+        Arrays.parallelSort(arr);
+        System.out.println("Parallel Sorted: " + Arrays.toString(arr));
+    }
+}
+      </code></pre>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">📈 Use Cases</h5>
+      <ul>
+        <li>Sorting or searching large datasets efficiently.</li>
+        <li>Converting arrays to collections for flexibility.</li>
+        <li>Copying or resizing arrays dynamically.</li>
+        <li>Filling arrays for initialization or resetting values.</li>
+        <li>Parallel sorting in performance-critical applications.</li>
+        <li>Functional operations using <code>Arrays.stream()</code>.</li>
+      </ul>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">🔗 Example Use</h5>
+      <p>
+        In a <strong>banking system</strong>, arrays can store transaction IDs.
+        Methods like <code>Arrays.sort()</code> help order them by date, and <code>Arrays.binarySearch()</code>
+        quickly finds a transaction by ID.
+      </p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingCollectorsClass">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#collapseCollectorsClass">
+      🧲 What is Collectors Class in Java?
+    </button>
+  </h2>
+  <div id="collapseCollectorsClass" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
+    <div class="accordion-body">
+
+      <h5 class="fw-bold text-primary mb-2">📌 Overview</h5>
+      <p>
+        The <strong>Collectors</strong> class in Java (from <code>java.util.stream</code> package) provides 
+        a set of <strong>static factory methods</strong> to create various <strong>Collector</strong> implementations.  
+        These collectors are used with the <code>Stream.collect()</code> method to accumulate elements into 
+        <strong>lists, sets, maps, strings, summaries</strong>, and more.
+      </p>
+      <p>
+        In short, it helps you to <strong>reduce or aggregate</strong> stream data efficiently.
+      </p>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">🛠 Key Features</h5>
+      <ul>
+        <li>Part of the <code>java.util.stream</code> package.</li>
+        <li>Provides static factory methods — cannot be instantiated.</li>
+        <li>Used with Stream’s <code>collect()</code> method to perform mutable reductions.</li>
+        <li>Supports reduction to different data structures — List, Set, Map, String, etc.</li>
+        <li>Supports advanced aggregations like <strong>grouping</strong>, <strong>partitioning</strong>, and <strong>summarizing</strong>.</li>
+        <li>Encourages functional programming style (no explicit loops).</li>
+      </ul>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">🏗 Constructors</h5>
+      <p>
+        <strong>Collectors</strong> class has a <strong>private constructor</strong>.  
+        You cannot create an object of this class — it only provides <strong>static methods</strong>.
+      </p>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">📚 Common Static Methods</h5>
+
+      <h6 class="fw-bold text-success mt-3">🔹 Basic Collectors</h6>
+      <ul>
+        <li><code>toList()</code> – Collects elements into a <code>List</code>.</li>
+        <li><code>toSet()</code> – Collects elements into a <code>Set</code>.</li>
+        <li><code>toMap(keyMapper, valueMapper)</code> – Collects elements into a <code>Map</code>.</li>
+        <li><code>toCollection(Supplier&lt;C&gt; collectionFactory)</code> – Collects elements into a custom collection type.</li>
+      </ul>
+
+      <h6 class="fw-bold text-success mt-3">🔹 Joining Strings</h6>
+      <ul>
+        <li><code>joining()</code> – Concatenates CharSequence elements.</li>
+        <li><code>joining(CharSequence delimiter)</code> – Joins with a delimiter.</li>
+        <li><code>joining(CharSequence delimiter, CharSequence prefix, CharSequence suffix)</code> – Joins with delimiter, prefix, and suffix.</li>
+      </ul>
+
+      <h6 class="fw-bold text-success mt-3">🔹 Counting and Summarizing</h6>
+      <ul>
+        <li><code>counting()</code> – Counts the number of elements.</li>
+        <li><code>summarizingInt(ToIntFunction mapper)</code> – Returns <code>IntSummaryStatistics</code> (min, max, avg, sum, count).</li>
+        <li><code>summarizingDouble(ToDoubleFunction mapper)</code> – For double values.</li>
+        <li><code>summarizingLong(ToLongFunction mapper)</code> – For long values.</li>
+        <li><code>summingInt(ToIntFunction mapper)</code> – Returns the sum of int values.</li>
+        <li><code>averagingInt(ToIntFunction mapper)</code> – Returns the average of int values.</li>
+      </ul>
+
+      <h6 class="fw-bold text-success mt-3">🔹 Grouping and Partitioning</h6>
+      <ul>
+        <li><code>groupingBy(Function classifier)</code> – Groups elements by a classifier function, returns <code>Map&lt;K, List&lt;T&gt;&gt;</code>.</li>
+        <li><code>groupingBy(Function classifier, Collector downstream)</code> – Allows nested collectors (like counting inside groups).</li>
+        <li><code>partitioningBy(Predicate predicate)</code> – Splits elements into two groups (true/false).</li>
+        <li><code>partitioningBy(Predicate predicate, Collector downstream)</code> – Partitions and applies downstream collector.</li>
+      </ul>
+
+      <h6 class="fw-bold text-success mt-3">🔹 Reduction and Mapping</h6>
+      <ul>
+        <li><code>reducing(BinaryOperator op)</code> – Performs a reduction using the given operator.</li>
+        <li><code>reducing(T identity, Function mapper, BinaryOperator op)</code> – Reduces mapped elements with identity value.</li>
+        <li><code>mapping(Function mapper, Collector downstream)</code> – Applies a mapping function before collecting.</li>
+        <li><code>collectingAndThen(Collector downstream, Function finisher)</code> – Transforms the result of another collector.</li>
+      </ul>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">💡 Example — Convert Stream to List and Set</h5>
+      <pre><code class="language-java">
+import java.util.*;
+import java.util.stream.*;
+
+public class CollectorsBasicExample {
+    public static void main(String[] args) {
+        List<String> names = Arrays.asList("Ravi", "Hari", "Ravi", "Kiran");
+
+        List<String> list = names.stream()
+                                 .collect(Collectors.toList());
+
+        Set<String> set = names.stream()
+                               .collect(Collectors.toSet());
+
+        System.out.println("List: " + list);
+        System.out.println("Set: " + set);
+    }
+}
+      </code></pre>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">💡 Example — Joining Strings</h5>
+      <pre><code class="language-java">
+import java.util.*;
+import java.util.stream.Collectors;
+
+public class JoiningExample {
+    public static void main(String[] args) {
+        List<String> names = Arrays.asList("Java", "Spring", "AWS");
+
+        String result = names.stream()
+                             .collect(Collectors.joining(", ", "[", "]"));
+
+        System.out.println("Joined: " + result);
+    }
+}
+      </code></pre>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">💡 Example — Grouping and Counting</h5>
+      <pre><code class="language-java">
+import java.util.*;
+import java.util.stream.*;
+
+public class GroupingExample {
+    public static void main(String[] args) {
+        List<String> items = Arrays.asList("apple", "banana", "apple", "orange", "banana", "apple");
+
+        Map<String, Long> countMap = items.stream()
+            .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+
+        System.out.println(countMap);
+    }
+}
+      </code></pre>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">💡 Example — Partitioning</h5>
+      <pre><code class="language-java">
+import java.util.*;
+import java.util.stream.*;
+
+public class PartitioningExample {
+    public static void main(String[] args) {
+        List<Integer> numbers = Arrays.asList(10, 25, 30, 41, 56);
+
+        Map<Boolean, List<Integer>> partitioned = numbers.stream()
+            .collect(Collectors.partitioningBy(n -> n % 2 == 0));
+
+        System.out.println("Even numbers: " + partitioned.get(true));
+        System.out.println("Odd numbers: " + partitioned.get(false));
+    }
+}
+      </code></pre>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">💡 Example — Summarizing and Averaging</h5>
+      <pre><code class="language-java">
+import java.util.*;
+import java.util.stream.*;
+
+public class SummarizingExample {
+    public static void main(String[] args) {
+        List<Integer> scores = Arrays.asList(90, 80, 70, 100);
+
+        IntSummaryStatistics stats = scores.stream()
+            .collect(Collectors.summarizingInt(Integer::intValue));
+
+        System.out.println("Count: " + stats.getCount());
+        System.out.println("Average: " + stats.getAverage());
+        System.out.println("Max: " + stats.getMax());
+        System.out.println("Min: " + stats.getMin());
+    }
+}
+      </code></pre>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">📈 Use Cases</h5>
+      <ul>
+        <li>Aggregating or summarizing data from streams (like counting, averaging, summing).</li>
+        <li>Grouping records (like by department, city, etc.) for reports.</li>
+        <li>Partitioning data based on conditions (e.g., pass/fail, male/female).</li>
+        <li>Converting data to collections such as List, Set, or Map.</li>
+        <li>Joining strings for display or export formats.</li>
+        <li>Post-processing collected data using <code>collectingAndThen()</code>.</li>
+      </ul>
+
+      <h5 class="fw-bold text-primary mt-4 mb-2">🔗 Example Use</h5>
+      <p>
+        In an <strong>Employee Management System</strong>, you can use <code>Collectors.groupingBy()</code> 
+        to group employees by department and <code>Collectors.averagingDouble()</code> 
+        to find the average salary per department.
+      </p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingThreadStart">
+    <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+      data-bs-target="#collapseThreadStart" aria-expanded="false" aria-controls="collapseThreadStart">
+      🧵 Can we start a Thread twice in Java?
+    </button>
+  </h2>
+  <div id="collapseThreadStart" class="accordion-collapse collapse" aria-labelledby="headingThreadStart"
+    data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <h5 class="text-warning">❌ No, we cannot start a thread twice.</h5>
+      <p>
+        Once a thread has been started using the <code>start()</code> method, calling <code>start()</code> again on the same
+        thread object will throw a <b>java.lang.IllegalThreadStateException</b>.
+      </p>
+
+      <hr>
+
+      <h6 class="text-info">⚙️ Why?</h6>
+      <ul>
+        <li>When <code>start()</code> is called, a <b>new call stack</b> is created for that thread.</li>
+        <li>After the thread’s <code>run()</code> method completes, the thread state becomes <b>TERMINATED</b>.</li>
+        <li>Once terminated, the same thread object <b>cannot be restarted</b>.</li>
+      </ul>
+
+      <hr>
+
+      <h6 class="text-success">💡 Example: Starting a Thread Twice</h6>
+      <pre><code class="language-java">
+public class ThreadStartExample extends Thread {
+    public void run() {
+        System.out.println("Thread is running...");
+    }
+
+    public static void main(String[] args) {
+        ThreadStartExample t1 = new ThreadStartExample();
+        t1.start(); // ✅ First time - Works fine
+        t1.start(); // ❌ Second time - Throws exception
+    }
+}
+      </code></pre>
+
+      <p><b>Output:</b></p>
+      <pre><code>
+Thread is running...
+Exception in thread "main" java.lang.IllegalThreadStateException
+      </code></pre>
+
+      <hr>
+
+      <h6 class="text-info">🧩 Can we call <code>run()</code> method twice?</h6>
+      <p>✅ Yes, but it will not start a new thread. It executes like a normal method call in the <b>main thread</b>.</p>
+
+      <pre><code class="language-java">
+public class RunExample extends Thread {
+    public void run() {
+        System.out.println("Running in: " + Thread.currentThread().getName());
+    }
+
+    public static void main(String[] args) {
+        RunExample t1 = new RunExample();
+        t1.run();  // runs in main thread
+        t1.run();  // runs again in main thread
+    }
+}
+      </code></pre>
+
+      <p><b>Output:</b></p>
+      <pre><code>
+Running in: main
+Running in: main
+      </code></pre>
+
+      <hr>
+
+      <h6 class="text-success">✅ Correct Way to Run Multiple Threads</h6>
+      <pre><code class="language-java">
+ThreadStartExample t1 = new ThreadStartExample();
+ThreadStartExample t2 = new ThreadStartExample();
+
+t1.start();  // OK
+t2.start();  // OK (different thread object)
+      </code></pre>
+
+      <hr>
+
+      <h6 class="text-warning">📋 Summary</h6>
+      <table class="table table-dark table-bordered">
+        <thead>
+          <tr>
+            <th>Operation</th>
+            <th>Allowed</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>start()</code> once</td>
+            <td>✅</td>
+            <td>Starts a new thread</td>
+          </tr>
+          <tr>
+            <td><code>start()</code> twice</td>
+            <td>❌</td>
+            <td>Throws IllegalThreadStateException</td>
+          </tr>
+          <tr>
+            <td><code>run()</code> directly</td>
+            <td>✅</td>
+            <td>Runs like a normal method, no new thread</td>
+          </tr>
+          <tr>
+            <td><code>new Thread</code> + <code>start()</code></td>
+            <td>✅</td>
+            <td>Proper way to start multiple threads</td>
+          </tr>
+        </tbody>
+      </table>
+
+    </div>
+  </div>
+</div>
+
+
+      <div class="accordion-item">
         <h2 class="accordion-header">
           <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
             data-bs-target="#forkJoinQ1">

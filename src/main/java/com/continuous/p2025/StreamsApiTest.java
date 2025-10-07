@@ -18,43 +18,44 @@ public class StreamsApiTest {
 //        // Query 1 : How many male and female employees are there in the organization?
         Map<String, Long> collect = employees.stream().collect(Collectors.groupingBy(Employee::getGender, Collectors.counting()));
         System.out.println(collect);
-//        System.out.println("Query 2 : Print the name of all departments in the organization?");
-//        employees.stream().map(Employee::getDepartment).forEach(System.out::println);
-//        System.out.println("Query 3 : What is the average age f male and female employees?");
+        System.out.println("Query 2 : Print the name of all departments in the organization?");
+        employees.stream().map(Employee::getDepartment).forEach(System.out::println);
+        System.out.println("Query 3 : What is the average age f male and female employees?");
         Map<String, Double> collect1 = employees.stream().collect(Collectors.groupingBy(Employee::getGender, Collectors.averagingDouble(Employee::getAge)));
         System.out.println(collect1);
-//        System.out.println("Query 4 : Get the details of highest paid employee in the organization?");
+        System.out.println("Query 4 : Get the details of highest paid employee in the organization?");
         Optional<Double> v = employees.stream().max(Comparator.comparing(Employee::getSalary)).map(Employee::getSalary);
         System.out.println(v.orElse(-1.00));
-//        System.out.println("Query 5 : Get the names of all employees who have joined after 2015?");
-//        employees.stream().filter(employee -> employee.getYearOfJoining() > 2015).forEach(System.out::println);
+        System.out.println("Query 5 : Get the names of all employees who have joined after 2015?");
+        employees.stream().filter(employee -> employee.getYearOfJoining() > 2015).forEach(System.out::println);
 
-//        System.out.println("Query 6 : Count the number of employees in each department?");
-//        Map<String, Long> collect2 = employees.stream().collect(Collectors.groupingBy(Employee::getDepartment, Collectors.counting()));
-//        System.out.println(collect2);
-//        System.out.println("Query 7 : What is the average salary of each department?");
-//        Map<String, Double> collect3 = employees.stream().collect(Collectors.groupingBy(Employee::getDepartment, Collectors.averagingDouble(Employee::getSalary)));
-//        System.out.println(collect3);
+        System.out.println("Query 6 : Count the number of employees in each department?");
+        Map<String, Long> collect2 = employees.stream().collect(Collectors.groupingBy(Employee::getDepartment, Collectors.counting()));
+        System.out.println(collect2);
+        System.out.println("Query 7 : What is the average salary of each department?");
+        Map<String, Double> collect3 = employees.stream().collect(Collectors.groupingBy(Employee::getDepartment, Collectors.averagingDouble(Employee::getSalary)));
+        System.out.println(collect3);
 
-        //        System.out.println("Query 8 : Count the number of male and female employees in each department?");
-//        Map<String, Map<String, Long>> collect4 = employees.stream()
-//                .collect(Collectors.groupingBy(Employee::getDepartment, Collectors.groupingBy(Employee::getGender, Collectors.counting())));
-//        System.out.println(collect4);
-//        System.out.println("9. Find the First Non-Repeating Character in a String (Fresher Level)");
-//        String input = "swiss";
-//        Character c1 = input.chars()
-//                .mapToObj(c -> (char) c)
-//                .collect(Collectors.groupingBy(Function.identity(), LinkedHashMap::new, Collectors.counting()))
-//                .entrySet().stream().filter(integerLongEntry -> integerLongEntry.getValue() == 1)
-//                .map(Map.Entry::getKey)
-//                .findFirst()
-//                .orElse(null);
-//
-//        System.out.println(c1);
+                System.out.println("Query 8 : Count the number of male and female employees in each department?");
+        Map<String, Map<String, Long>> collect4 = employees.stream()
+                .collect(Collectors.groupingBy(Employee::getDepartment, Collectors.groupingBy(Employee::getGender, Collectors.counting())));
+        System.out.println(collect4);
+        System.out.println("9. Find the First Non-Repeating Character in a String (Fresher Level)");
+        String input = "swiss";
+        Character c1 = input.chars()
+                .mapToObj(c -> (char) c)
+                .collect(Collectors.groupingBy(Function.identity(), LinkedHashMap::new, Collectors.counting()))
+                .entrySet().stream().filter(integerLongEntry -> integerLongEntry.getValue() == 1)
+                .map(Map.Entry::getKey)
+                .findFirst()
+                .orElse(null);
+
+        System.out.println(c1);
 
         System.out.println("10. Find Maximum & Minimum Number in a List (Fresher Level)");
         List<Integer> numbers = Arrays.asList(10, 20, 5, 30, 50, 40, 20,30);
         Integer iwe = numbers.stream().max(Comparator.comparingInt(Integer::intValue)).orElse(-1);
+        numbers.stream().max(Comparator.comparingInt(Integer::intValue)).orElse(-1);
         System.out.println(iwe);
         Integer min = numbers.stream().min(Comparator.comparingInt(Integer::intValue)).orElse(-1);
         System.out.println(min);
@@ -62,8 +63,8 @@ public class StreamsApiTest {
         System.out.println("11. Count the Occurrences of Each Word in a List (Experienced Level)");
         List<String> words = Arrays.asList("apple", "banana", "apple", "orange", "banana", "apple");
 
-        Map<String, Long> collect2 = words.stream().collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
-        System.out.println(collect2);
+        Map<String, Long> res = words.stream().collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+        System.out.println(res);
 
         System.out.println("12. Find the Second-Highest Salary (Experienced Level)");
         Optional<Employee> first = employees.stream().sorted(Comparator.comparing(Employee::getSalary).reversed()).skip(1).limit(1).findFirst();
@@ -101,24 +102,47 @@ public class StreamsApiTest {
         );
 
         System.out.println("15. Sort a list of employees first by department, then by salary in descending order.\n");
-        List<Employee> collect3 = employees.stream()
+        List<Employee> collect5 = employees.stream()
                 .sorted(Comparator.comparing(Employee::getDepartment).thenComparing(Employee::getSalary).reversed())
                 .collect(Collectors.toList());
-        System.out.println(collect3);
+        System.out.println(collect5);
 
         System.out.println("16. Group employees by department and calculate the average salary per department.\n");
-        Map<String, Double> collect4 = employees.stream().collect(Collectors.groupingBy(Employee::getDepartment, Collectors.averagingDouble(Employee::getSalary)));
-        System.out.println(collect4);
+        Map<String, Double> collect6 = employees.stream().collect(Collectors.groupingBy(Employee::getDepartment, Collectors.averagingDouble(Employee::getSalary)));
+        System.out.println(collect6);
+
+        //Explanation:
+
+//        Streams are single-use
+//        In Java, a Stream represents a pipeline of data that can be processed once. After you perform a terminal operation (like forEach, collect, reduce, count), the stream is consumed and cannot be reused.
+//        What happens in your code:
+//        nameStream.forEach(System.out::println); → This consumes the stream, printing all names.
+//        nameStream.forEach(System.out::println); → Now you’re trying to reuse the same stream. Java throws:
+//        java.lang.IllegalStateException: stream has already been operated upon or closed
+//
+//
+//✅ That’s the exception you see.
+//        How to fix:
+//
+//        If you need to perform multiple operations, create a new stream each time:
+//
+//        names.stream().forEach(System.out::println); // First operation
+//        names.stream().forEach(System.out::println); // Second operation
+//        Or, collect into a list first if you want multiple passes:
+//
+//        List<String> distinctNames = names.stream().distinct().collect(Collectors.toList());
+//        distinctNames.forEach(System.out::println);
+//        distinctNames.forEach(System.out::println);
+//        Summary:
+//        Java Streams are not reusable. Once a terminal operation is executed, the stream is closed. Always create a new stream for subsequent operations.
 
         List<String> names = Arrays.asList("Alice", "Bob", "Charlie", "Alice", "David");
-
         Stream<String> nameStream = names.stream(); // Creating a stream
-
         // First terminal operation (Allowed)
         nameStream.forEach(System.out::println);
 
         // Second terminal operation (Fails ❌)
-//        nameStream.forEach(System.out::println); // Exception here
+        nameStream.forEach(System.out::println); // Exception here
 
         List<String> list=List.of();
         list.stream().collect(Collectors.toList());
@@ -179,8 +203,8 @@ public class StreamsApiTest {
 
         //Write a Java 8 program to remove the duplicate elements from the list?
         Integer[] arr1 = new Integer[] { 1, 9, 8, 7, 7, 8, 9 };
-        List<Integer> collect5 = List.of(arr1).stream().filter(integer -> Collections.frequency(List.of(arr1), integer)<1).collect(Collectors.toList());
-        System.out.println(collect5);
+        List<Integer> collect7 = List.of(arr1).stream().filter(integer -> Collections.frequency(List.of(arr1), integer)<1).collect(Collectors.toList());
+        System.out.println(collect7);
 
         // Group employees by hobby
         // Grouping employees by each hobby
@@ -191,7 +215,7 @@ public class StreamsApiTest {
                         Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
         System.out.println(groupedByHobby);
 
-        Map<String, List<String>> collect6 = employees.stream()
+        Map<String, List<String>> collect8 = employees.stream()
                 .flatMap(emp -> emp.getHobbies().stream().map(hobby -> Map.entry(hobby, emp.getName())))
                 .collect(Collectors.groupingBy(Map.Entry::getKey,
                         Collectors.mapping(Map.Entry::getValue, Collectors.toList())))
@@ -199,7 +223,7 @@ public class StreamsApiTest {
                 .stream()
                 .sorted(Map.Entry.comparingByKey())
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (oldValue, newValue) -> oldValue, LinkedHashMap::new));
-        System.out.println(collect6);
+        System.out.println(collect8);
 
         Payment payment = (a,b)-> a+b;
         int add = payment.add(12, 13);
@@ -255,16 +279,16 @@ public class StreamsApiTest {
             System.out.print(iterator.next() + " ");
         }
         // Q3 How to find duplicate elements in a given integers list in java using Stream functions?
-        Set<Integer> collect7 = numbers.stream().filter(i -> Collections.frequency(numbers, i) > 1).collect(Collectors.toSet());
-        System.out.println(collect7);
+        Set<Integer> collect9 = numbers.stream().filter(i -> Collections.frequency(numbers, i) > 1).collect(Collectors.toSet());
+        System.out.println(collect9);
         //Q8 Given a String, find the first repeated character in it using Stream functions?
         System.out.println("Q8 Given a String, find the first repeated character in it using Stream functions?");
 
-        String input = "Java Hungry Blog Alive is Awesome";
-        LinkedHashMap<String, Long> collect8 = Arrays.stream(input.split(""))
+        String input2 = "Java Hungry Blog Alive is Awesome";
+        LinkedHashMap<String, Long> collect10 = Arrays.stream(input2.split(""))
                 .collect(Collectors.groupingBy(Function.identity(), LinkedHashMap::new, Collectors.counting()));
 
-        collect8.entrySet()
+        collect10.entrySet()
                 .stream()
                 .filter(stringLongEntry -> stringLongEntry.getValue()>1)
                 .map(Map.Entry::getValue)
@@ -272,8 +296,8 @@ public class StreamsApiTest {
                 .orElse(-1L);
 
         //Q #22) Write a Java 8 program to square the list of numbers and then filter out the numbers greater than 100 and then find the average of the remaining numbers?
-        Double collect9 = numbers.stream().map(i -> i * i).filter(i -> i > 100).collect(Collectors.averagingDouble(Integer::intValue));
-        System.out.println(collect9);
+        Double collect11 = numbers.stream().map(i -> i * i).filter(i -> i > 100).collect(Collectors.averagingDouble(Integer::intValue));
+        System.out.println(collect11);
 
         //Q #34) Explain StringJoiner Class in Java 8? How can we achieve joining multiple Strings using StringJoiner Class?
         System.out.println("Q #34) Explain StringJoiner Class in Java 8? How can we achieve joining multiple Strings using StringJoiner Class?");
@@ -303,8 +327,8 @@ public class StreamsApiTest {
 
         System.out.println("Collectors partitioningBy() method in Java");
         Stream<Integer> stream = Stream.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
-        Map<Boolean, List<Integer>> collect10 = stream.collect(Collectors.partitioningBy(integer3 -> integer3 > 3));
-        System.out.println(collect10);
+        Map<Boolean, List<Integer>> collect12 = stream.collect(Collectors.partitioningBy(integer3 -> integer3 > 3));
+        System.out.println(collect12);
 
         System.out.println("Q #39) Write a Java 8 program to concatenate two Streams?");
         List<String> list12 = Arrays.asList("Java", "8");
