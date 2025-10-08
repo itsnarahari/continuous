@@ -865,6 +865,170 @@ while (attempts &lt; 3) {
           </div>
         </div>
       </div>
+      <div class="accordion-item">
+  <h2 class="accordion-header" id="headingExternalizedConfig">
+    <button class="accordion-button collapsed search-item text-success" type="button" data-bs-toggle="collapse"
+      data-bs-target="#collapseExternalizedConfig" aria-expanded="false" aria-controls="collapseExternalizedConfig">
+      🌍 Spring Boot 3 — Externalized Configuration (Env Vars, Profiles, Vault)
+    </button>
+  </h2>
+  <div id="collapseExternalizedConfig" class="accordion-collapse collapse" aria-labelledby="headingExternalizedConfig"
+    data-bs-parent="#springBootAdvancedTopics">
+    <div class="accordion-body">
+
+      <h6 class="text-info">1️⃣ What is Externalized Configuration?</h6>
+      <ul>
+        <li>Allows you to move configuration out of your code into external sources.</li>
+        <li>Spring Boot loads properties in this priority order (highest → lowest):
+          <ol>
+            <li>Command-line arguments</li>
+            <li>Environment variables</li>
+            <li><code>application-{profile}.yml</code> or <code>.properties</code></li>
+            <li><code>application.yml</code></li>
+            <li>Defaults (in code via <code>@Value</code> or <code>@ConfigurationProperties</code>)</li>
+          </ol>
+        </li>
+      </ul>
+
+      <hr>
+
+      <h6 class="text-warning">2️⃣ Using Environment Variables</h6>
+      <ul>
+        <li>Set environment variables in your OS or Docker.</li>
+        <li>Spring automatically maps <code>ENV_VAR_NAME</code> → <code>env.var.name</code> style.</li>
+        <li><b>Example:</b></li>
+      </ul>
+
+      <pre><code># Terminal / Docker
+export DB_URL=jdbc:mysql://localhost:3306/appdb
+export DB_USER=root
+export DB_PASS=secret123
+      </code></pre>
+
+      <pre><code>application.yml
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASS}
+      </code></pre>
+
+      <p class="text-secondary"><b>✅ Benefit:</b> Secrets are not hard-coded in Git.</p>
+
+      <hr>
+
+      <h6 class="text-warning">3️⃣ Using Spring Profiles</h6>
+      <ul>
+        <li>Create environment-specific config files like:</li>
+      </ul>
+
+      <pre><code>application-dev.yml
+server:
+  port: 8081
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/devdb
+
+application-prod.yml
+server:
+  port: 8080
+spring:
+  datasource:
+    url: jdbc:mysql://mysql-prod:3306/proddb
+      </code></pre>
+
+      <ul>
+        <li>Activate profile:
+          <ul>
+            <li>Command-line: <code>--spring.profiles.active=prod</code></li>
+            <li>Env var: <code>SPRING_PROFILES_ACTIVE=dev</code></li>
+          </ul>
+        </li>
+      </ul>
+
+      <p class="text-secondary"><b>✅ Benefit:</b> Separate configs for Dev/Test/Prod with one codebase.</p>
+
+      <hr>
+
+      <h6 class="text-warning">4️⃣ Integrating with HashiCorp Vault (End to End)</h6>
+      <ul>
+        <li>Vault is a secure secrets manager — Spring Boot can auto-fetch values from it.</li>
+      </ul>
+
+      <pre><code>Step 1️⃣: Start Vault (Dev mode)
+vault server -dev
+
+# Set environment variable for token
+export VAULT_TOKEN=root
+export VAULT_ADDR=http://127.0.0.1:8200
+      </code></pre>
+
+      <pre><code>Step 2️⃣: Add secrets in Vault
+vault kv put secret/application db.username=root db.password=secret123
+      </code></pre>
+
+      <pre><code>Step 3️⃣: Add Spring Vault dependency (Maven)
+&lt;dependency&gt;
+  &lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;
+  &lt;artifactId&gt;spring-cloud-starter-vault-config&lt;/artifactId&gt;
+&lt;/dependency&gt;
+      </code></pre>
+
+      <pre><code>Step 4️⃣: Configure Vault in bootstrap.yml (Spring Boot 3)
+spring:
+  application:
+    name: demo-app
+  cloud:
+    vault:
+      uri: http://127.0.0.1:8200
+      token: ${VAULT_TOKEN}
+      kv:
+        enabled: true
+        backend: secret
+        default-context: application
+      authentication: TOKEN
+      fail-fast: true
+      connection-timeout: 5s
+      read-timeout: 5s
+      config:
+        lifecycle:
+          enabled: true
+      </code></pre>
+
+      <pre><code>Step 5️⃣: Access Vault properties in code
+@Value("${db.username}")
+private String username;
+
+@Value("${db.password}")
+private String password;
+      </code></pre>
+
+      <p class="text-secondary"><b>✅ Benefit:</b> Centralized secrets management, no exposure in Git or environment files.</p>
+
+      <hr>
+
+      <h6 class="text-info">5️⃣ End-to-End Flow Summary</h6>
+      <ol>
+        <li>Spring reads <b>Vault</b> → <b>Env Vars</b> → <b>application.yml</b> → <b>defaults</b>.</li>
+        <li>Vault secrets override YAML and environment values if same key exists.</li>
+        <li>Supports dynamic secret rotation without redeployment.</li>
+      </ol>
+
+      <hr>
+
+      <h6 class="text-success">6️⃣ Verification</h6>
+      <ul>
+        <li>Start Vault and your Spring Boot app.</li>
+        <li>Visit <code>/actuator/env</code> to confirm Vault-loaded values.</li>
+        <li>Temporarily update Vault secret and restart app → new value appears.</li>
+      </ul>
+
+      <p class="text-secondary"><b>🔐 Real-World Tip:</b> In production, use Vault with AppRole or AWS IAM auth instead of dev token.</p>
+
+    </div>
+  </div>
+</div>
+
 
       <div class="accordion-item">
         <h2 class="accordion-header" id="headingOne">
