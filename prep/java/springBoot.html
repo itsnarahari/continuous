@@ -94,6 +94,70 @@
     </div>
     <div class="accordion" id="googleAccordion">
       <div class="accordion-item">
+  <h2 class="accordion-header" id="headingTimeoutConfig">
+    <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+      data-bs-target="#springBootTimeout" aria-expanded="false" aria-controls="springBootTimeout">
+      ⏱️ Spring Boot REST API Timeout Configuration
+    </button>
+  </h2>
+  <div id="springBootTimeout" class="accordion-collapse collapse" aria-labelledby="headingTimeoutConfig"
+    data-bs-parent="#springBootChallengeAccordion">
+    <div class="accordion-body">
+
+      <pre><code class="language-text">
+Context:
+  By default, Spring Boot (with embedded Tomcat) does not enforce a strict global REST timeout.
+  However, connection and read timeouts are handled by the underlying HTTP client or server.
+
+Default Timeout Behavior:
+  • Server (Tomcat) connection timeout → 20 seconds (default)
+  • Client (RestTemplate/WebClient) → No timeout unless explicitly configured
+  • Async/WebFlux APIs → Controlled by reactive timeout operators
+
+How to Configure or Change Timeout:
+
+1️⃣ For Embedded Tomcat (Server side):
+   application.yml:
+   ----------------------------------
+   server:
+     tomcat:
+       connection-timeout: 30s   # Increase or decrease as needed
+   ----------------------------------
+
+2️⃣ For RestTemplate (Client side):
+   ----------------------------------
+   @Bean
+   public RestTemplate restTemplate() {
+       HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory();
+       factory.setConnectTimeout(5000);  // 5 seconds
+       factory.setReadTimeout(5000);
+       return new RestTemplate(factory);
+   }
+   ----------------------------------
+
+3️⃣ For WebClient (Reactive apps):
+   ----------------------------------
+   WebClient client = WebClient.builder()
+       .clientConnector(new ReactorClientHttpConnector(
+           HttpClient.create().responseTimeout(Duration.ofSeconds(5))
+       ))
+       .build();
+   ----------------------------------
+
+Result:
+  • You can fine-tune timeout values per environment.
+  • Prevents hanging threads and ensures faster error recovery under network slowness.
+
+Key Takeaway:
+  Always set explicit timeouts for client calls and server connections
+  to ensure reliability and predictable performance in microservices.
+      </code></pre>
+
+    </div>
+  </div>
+</div>
+
+      <div class="accordion-item">
         <h2 class="accordion-header" id="headingSpringBootChallenge">
           <button class="accordion-button collapsed search-item text-warning" type="button" data-bs-toggle="collapse"
             data-bs-target="#springBootChallenge" aria-expanded="false" aria-controls="springBootChallenge">
