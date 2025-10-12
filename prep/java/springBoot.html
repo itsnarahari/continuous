@@ -95,95 +95,98 @@
     <div class="accordion" id="googleAccordion">
 
       <div class="accordion-item">
-  <h2 class="accordion-header" id="headingOOMSpringBoot">
-    <button class="accordion-button collapsed search-item text-danger" type="button" data-bs-toggle="collapse"
-      data-bs-target="#springBootOOMError" aria-expanded="false" aria-controls="springBootOOMError">
-      💥 How to Investigate OutOfMemoryError in a Spring Boot Application (Production Scenario)
-    </button>
-  </h2>
-  <div id="springBootOOMError" class="accordion-collapse collapse">
-    <div class="accordion-body">
+        <h2 class="accordion-header" id="headingOOMSpringBoot">
+          <button class="accordion-button collapsed search-item text-danger" type="button" data-bs-toggle="collapse"
+            data-bs-target="#springBootOOMError" aria-expanded="false" aria-controls="springBootOOMError">
+            💥 How to Investigate OutOfMemoryError in a Spring Boot Application (Production Scenario)
+          </button>
+        </h2>
+        <div id="springBootOOMError" class="accordion-collapse collapse">
+          <div class="accordion-body">
 
-      <p class="highlight-yellow">
-        When your Spring Boot application suddenly throws a <code>java.lang.OutOfMemoryError</code> in production, it
-        indicates that the JVM has exhausted its available memory. This could be due to leaks, large data loads, or
-        insufficient heap settings.
-      </p>
+            <p class="highlight-yellow">
+              When your Spring Boot application suddenly throws a <code>java.lang.OutOfMemoryError</code> in production,
+              it
+              indicates that the JVM has exhausted its available memory. This could be due to leaks, large data loads,
+              or
+              insufficient heap settings.
+            </p>
 
-      <h5 class="text-info">📌 Common Causes</h5>
-      <ul>
-        <li>Memory leaks — objects retained unintentionally (static references, collections, etc.)</li>
-        <li>Huge result sets loaded into memory without pagination</li>
-        <li>Unclosed streams or connections</li>
-        <li>Improper cache usage (no eviction policy)</li>
-        <li>Incorrect JVM memory configuration in Docker or K8s</li>
-        <li>Third-party library leaks (common in old JDBC drivers or async tasks)</li>
-      </ul>
+            <h5 class="text-info">📌 Common Causes</h5>
+            <ul>
+              <li>Memory leaks — objects retained unintentionally (static references, collections, etc.)</li>
+              <li>Huge result sets loaded into memory without pagination</li>
+              <li>Unclosed streams or connections</li>
+              <li>Improper cache usage (no eviction policy)</li>
+              <li>Incorrect JVM memory configuration in Docker or K8s</li>
+              <li>Third-party library leaks (common in old JDBC drivers or async tasks)</li>
+            </ul>
 
-      <h5 class="text-warning">🧠 Step-by-Step Investigation</h5>
+            <h5 class="text-warning">🧠 Step-by-Step Investigation</h5>
 
-      <h6 class="text-primary">1️⃣ Identify Error Type</h6>
-      <p class="highlight-yellow">Check logs for the specific OutOfMemoryError subtype:</p>
-      <ul>
-        <li><code>java.lang.OutOfMemoryError: Java heap space</code> → Application memory exhausted</li>
-        <li><code>java.lang.OutOfMemoryError: Metaspace</code> → Too many loaded classes or leaks in classloaders</li>
-        <li><code>java.lang.OutOfMemoryError: Direct buffer memory</code> → NIO or Netty buffer leak</li>
-        <li><code>java.lang.OutOfMemoryError: GC overhead limit exceeded</code> → GC unable to reclaim space</li>
-      </ul>
+            <h6 class="text-primary">1️⃣ Identify Error Type</h6>
+            <p class="highlight-yellow">Check logs for the specific OutOfMemoryError subtype:</p>
+            <ul>
+              <li><code>java.lang.OutOfMemoryError: Java heap space</code> → Application memory exhausted</li>
+              <li><code>java.lang.OutOfMemoryError: Metaspace</code> → Too many loaded classes or leaks in classloaders
+              </li>
+              <li><code>java.lang.OutOfMemoryError: Direct buffer memory</code> → NIO or Netty buffer leak</li>
+              <li><code>java.lang.OutOfMemoryError: GC overhead limit exceeded</code> → GC unable to reclaim space</li>
+            </ul>
 
-      <h6 class="text-primary">2️⃣ Capture Heap Dump Automatically</h6>
-      <pre class="language-bash"><code>
+            <h6 class="text-primary">2️⃣ Capture Heap Dump Automatically</h6>
+            <pre class="language-bash"><code>
 JAVA_OPTS="
 -XX:+HeapDumpOnOutOfMemoryError 
 -XX:HeapDumpPath=/tmp/heapdump.hprof
 "
       </code></pre>
-      <p>Analyze the dump using:</p>
-      <ul>
-        <li>🧩 <strong>Eclipse MAT (Memory Analyzer Tool)</strong></li>
-        <li>🧠 <strong>VisualVM or JProfiler</strong></li>
-        <li>🔍 Identify largest retained objects and leaking classes</li>
-      </ul>
+            <p>Analyze the dump using:</p>
+            <ul>
+              <li>🧩 <strong>Eclipse MAT (Memory Analyzer Tool)</strong></li>
+              <li>🧠 <strong>VisualVM or JProfiler</strong></li>
+              <li>🔍 Identify largest retained objects and leaking classes</li>
+            </ul>
 
-      <h6 class="text-primary">3️⃣ Check JVM & Container Configuration</h6>
-      <pre class="language-bash"><code>
+            <h6 class="text-primary">3️⃣ Check JVM & Container Configuration</h6>
+            <pre class="language-bash"><code>
 # Example: Check memory limits in Docker
 docker inspect my-spring-app | grep -i memory
 
 # Adjust heap size in Dockerfile or compose
 ENV JAVA_OPTS="-Xms512m -Xmx1024m"
       </code></pre>
-      <p>Also verify <code>-XX:MaxMetaspaceSize</code> and GC logs for frequent full GCs.</p>
+            <p>Also verify <code>-XX:MaxMetaspaceSize</code> and GC logs for frequent full GCs.</p>
 
-      <h6 class="text-primary">4️⃣ Analyze Application Behavior</h6>
-      <ul>
-        <li>Ensure pagination in DB queries (avoid loading all records)</li>
-        <li>Check for infinite loops or growing collections</li>
-        <li>Limit in-memory caching with <code>@Cacheable</code> size or TTL</li>
-        <li>Review thread pools or async executors (avoid unbounded queues)</li>
-      </ul>
+            <h6 class="text-primary">4️⃣ Analyze Application Behavior</h6>
+            <ul>
+              <li>Ensure pagination in DB queries (avoid loading all records)</li>
+              <li>Check for infinite loops or growing collections</li>
+              <li>Limit in-memory caching with <code>@Cacheable</code> size or TTL</li>
+              <li>Review thread pools or async executors (avoid unbounded queues)</li>
+            </ul>
 
-      <h6 class="text-primary">5️⃣ Monitor Memory in Real-Time</h6>
-      <p class="highlight-yellow">
-        Use monitoring tools to identify heap usage patterns and memory growth trends.
-      </p>
-      <ul>
-        <li>📊 Spring Boot Actuator + Micrometer + Prometheus</li>
-        <li>📈 Grafana Dashboards for Heap, GC, and Thread metrics</li>
-        <li>🧰 VisualVM / JConsole for live debugging</li>
-      </ul>
+            <h6 class="text-primary">5️⃣ Monitor Memory in Real-Time</h6>
+            <p class="highlight-yellow">
+              Use monitoring tools to identify heap usage patterns and memory growth trends.
+            </p>
+            <ul>
+              <li>📊 Spring Boot Actuator + Micrometer + Prometheus</li>
+              <li>📈 Grafana Dashboards for Heap, GC, and Thread metrics</li>
+              <li>🧰 VisualVM / JConsole for live debugging</li>
+            </ul>
 
-      <h6 class="text-primary">6️⃣ Apply Fixes</h6>
-      <ul>
-        <li>Fix code-level leaks — close resources (try-with-resources)</li>
-        <li>Paginate or stream large datasets</li>
-        <li>Use bounded caches (e.g., Caffeine with max size)</li>
-        <li>Increase heap size if app legitimately needs more memory</li>
-        <li>Use G1GC or ZGC for large heaps</li>
-      </ul>
+            <h6 class="text-primary">6️⃣ Apply Fixes</h6>
+            <ul>
+              <li>Fix code-level leaks — close resources (try-with-resources)</li>
+              <li>Paginate or stream large datasets</li>
+              <li>Use bounded caches (e.g., Caffeine with max size)</li>
+              <li>Increase heap size if app legitimately needs more memory</li>
+              <li>Use G1GC or ZGC for large heaps</li>
+            </ul>
 
-      <h6 class="text-primary">7️⃣ Prevent Future Occurrences</h6>
-      <pre class="language-java"><code>
+            <h6 class="text-primary">7️⃣ Prevent Future Occurrences</h6>
+            <pre class="language-java"><code>
 @SpringBootApplication
 public class MemoryMonitoringApp {
     public static void main(String[] args) {
@@ -201,67 +204,1012 @@ public class MemoryMonitoringApp {
 }
       </code></pre>
 
-      <h5 class="text-success">🏁 Key Takeaway</h5>
-      <p>
-        An OutOfMemoryError is often a symptom, not the root cause. Instead of just increasing heap size,
-        identify the leak using heap dumps, monitor memory growth trends, and optimize both your
-        <strong>code</strong> and <strong>JVM configuration</strong> for stability and scalability.
-      </p>
-    </div>
-  </div>
-</div>
-<div class="accordion-item">
-  <h2 class="accordion-header" id="headingJWTLibrary">
+            <h5 class="text-success">🏁 Key Takeaway</h5>
+            <p>
+              An OutOfMemoryError is often a symptom, not the root cause. Instead of just increasing heap size,
+              identify the leak using heap dumps, monitor memory growth trends, and optimize both your
+              <strong>code</strong> and <strong>JVM configuration</strong> for stability and scalability.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+  <h2 class="accordion-header" id="headingNestedTransactional">
     <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
-      data-bs-target="#springBootJWTLibrary" aria-expanded="false" aria-controls="springBootJWTLibrary">
-      🔐 Which Library is Used to Validate and Extract Claims from a JWT Token in Spring Boot?
+      data-bs-target="#nestedTransactionalSection" aria-expanded="false" aria-controls="nestedTransactionalSection">
+      🔄 How Nested @Transactional Works in Spring
     </button>
   </h2>
-  <div id="springBootJWTLibrary" class="accordion-collapse collapse">
+  <div id="nestedTransactionalSection" class="accordion-collapse collapse">
     <div class="accordion-body">
 
       <p class="highlight-yellow">
-        In a Spring Boot application, the library used to validate and extract claims from a JWT (JSON Web Token)
-        depends on whether you are using Spring Security or handling JWT manually.
+        In Spring, the <code>@Transactional</code> annotation controls transaction boundaries. When you have **nested transactional methods**, the behavior depends on the **propagation type**.
       </p>
 
-      <h5 class="text-info">📘 1️⃣ Using Spring Security (Recommended Approach)</h5>
+      <h5 class="text-warning">1️⃣ Default Behavior (Propagation.REQUIRED)</h5>
       <ul>
-        <li>Spring Boot 3 and Spring Security 6 rely on the
-          <code>spring-security-oauth2-jose</code> module to handle JWT operations.
-        </li>
-        <li>Internally, it uses the <strong>Nimbus JOSE + JWT</strong> library for parsing, validating, and extracting
-          claims from tokens.</li>
+        <li>If a method with <code>@Transactional</code> calls another <code>@Transactional</code> method, by default Spring uses <code>Propagation.REQUIRED</code>.</li>
+        <li>This means **both methods participate in the same transaction**.</li>
+        <li>Rollback in inner or outer method will affect the **entire transaction**.</li>
       </ul>
 
-      <p class="highlight-yellow">✅ Maven Dependency</p>
-      <pre class="language-xml"><code>
+      <h5 class="text-warning">2️⃣ Propagation Options</h5>
+      <ul>
+        <li><strong>REQUIRED:</strong> Join existing transaction or create new if none exists (default).</li>
+        <li><strong>REQUIRES_NEW:</strong> Suspend existing transaction and start a **new independent transaction**.</li>
+        <li><strong>NESTED:</strong> Execute in a **nested transaction** using JDBC savepoints. Can rollback independently from outer transaction.</li>
+        <li><strong>SUPPORTS:</strong> Execute within existing transaction if available, otherwise run non-transactionally.</li>
+      </ul>
+
+      <h5 class="text-warning">3️⃣ Example Code</h5>
+      <pre class="language-java"><code>
+@Service
+public class OrderService {
+
+    @Transactional
+    public void placeOrder() {
+        // outer transaction starts
+        insertOrder();
+        updateInventory();
+    }
+
+    @Transactional(propagation = Propagation.REQUIRED)
+    public void insertOrder() {
+        // joins outer transaction
+        // exception here will rollback the entire placeOrder()
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void updateInventory() {
+        // independent transaction
+        // exception here will rollback only updateInventory, outer transaction continues
+    }
+}
+      </code></pre>
+
+      <h5 class="text-warning">4️⃣ Key Points / Best Practices</h5>
+      <ul>
+        <li>Default <code>REQUIRED</code> means **nested calls share the same transaction**.</li>
+        <li>Use <code>REQUIRES_NEW</code> if you want **isolated transactions** inside another transactional method.</li>
+        <li>Use <code>NESTED</code> (with JDBC support) for **savepoint-based rollback**, useful in batch processing.</li>
+        <li>Self-invocation of methods (<code>this.innerMethod()</code>) **does NOT trigger transactional behavior** — use **proxying or AOP**.</li>
+        <li>Be careful with checked vs unchecked exceptions for rollback — by default, Spring rolls back only for **RuntimeException**.</li>
+      </ul>
+
+      <h5 class="text-success">📌 Summary</h5>
+      <ul>
+        <li>Nested @Transactional methods usually **share the same transaction** (REQUIRED) unless propagation changes it.</li>
+        <li>REQUIRES_NEW creates a **new independent transaction**.</li>
+        <li>NESTED uses **savepoints**, allowing partial rollbacks without affecting the outer transaction.</li>
+        <li>Transactional behavior depends on **propagation, exceptions, and proxy mechanism**.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingBehavioralAgile">
+          <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+            data-bs-target="#behavioralAgileQuestions" aria-expanded="false" aria-controls="behavioralAgileQuestions">
+            💼 Manager/Director Level — Behavioral, Situational & Agile Questions
+          </button>
+        </h2>
+        <div id="behavioralAgileQuestions" class="accordion-collapse collapse">
+          <div class="accordion-body">
+
+            <p class="highlight-yellow">
+              At manager and director levels, interviews often focus on leadership, decision-making, conflict
+              resolution, and Agile mindset. Below are common behavioral, situational, and Agile-related questions with
+              suggested answers.
+            </p>
+
+            <h5 class="text-warning">1️⃣ Behavioral Questions</h5>
+
+            <h6 class="text-info">Q: Describe a time when your team missed a critical deadline. How did you handle it?
+            </h6>
+            <p><strong>Answer:</strong> I first analyzed why the deadline was missed—whether due to resource allocation,
+              scope creep, or technical blockers. Then I communicated transparently with stakeholders, re-prioritized
+              tasks, and implemented interim checkpoints to prevent future delays. We also conducted a retrospective to
+              identify process improvements.</p>
+
+            <h6 class="text-info">Q: How do you handle conflicts between team members?</h6>
+            <p><strong>Answer:</strong> I listen to both sides to understand the root cause, mediate the discussion to
+              find common ground, and focus on aligning everyone to the project goals. If needed, I provide coaching or
+              adjust responsibilities to minimize friction.</p>
+
+            <h6 class="text-info">Q: Tell me about a situation where you had to make a difficult decision with
+              incomplete information.</h6>
+            <p><strong>Answer:</strong> I gather as much relevant data as possible within the time constraints, weigh
+              risks and benefits, consult key stakeholders, and make a decision while documenting assumptions. Later, I
+              track outcomes and adjust strategy if necessary.</p>
+
+            <h5 class="text-warning">2️⃣ Situational Questions</h5>
+
+            <h6 class="text-info">Q: Your product feature is delayed, and stakeholders are unhappy. How do you
+              communicate and manage expectations?</h6>
+            <p><strong>Answer:</strong> I provide a clear status update highlighting the reasons for the delay, the
+              impact on timelines, and the mitigation plan. I also propose alternative solutions, like phased releases
+              or resource adjustments, to maintain trust.</p>
+
+            <h6 class="text-info">Q: A critical production issue arises outside business hours. How would you manage
+              your team?</h6>
+            <p><strong>Answer:</strong> I first ensure the incident is assigned to available on-call engineers and
+              provide support or guidance. I coordinate communication with stakeholders, document the incident, and lead
+              a post-mortem session to prevent recurrence.</p>
+
+            <h6 class="text-info">Q: A new technology needs adoption, but the team is resistant. What do you do?</h6>
+            <p><strong>Answer:</strong> I explain the business and technical benefits, provide training and support,
+              start with a pilot project to demonstrate value, and involve team members in decision-making to gain
+              buy-in.</p>
+
+            <h5 class="text-warning">3️⃣ Agile & Leadership Questions</h5>
+
+            <h6 class="text-info">Q: How do you scale Agile practices across multiple teams?</h6>
+            <p><strong>Answer:</strong> I implement frameworks like SAFe or LeSS where needed, ensure consistent
+              ceremonies (standups, sprint planning, retrospectives), align on objectives via OKRs, and foster
+              collaboration through shared backlog refinement sessions and cross-team communication.</p>
+
+            <h6 class="text-info">Q: How do you measure team productivity and success in Agile?</h6>
+            <p><strong>Answer:</strong> Metrics like velocity, cycle time, defect rate, and customer satisfaction are
+              monitored. I emphasize outcomes over output and encourage continuous improvement through retrospectives
+              and process adaptation.</p>
+
+            <h6 class="text-info">Q: How do you handle scope creep in Agile projects?</h6>
+            <p><strong>Answer:</strong> I work with the Product Owner to assess the impact of new requirements,
+              prioritize against existing backlog, communicate trade-offs with stakeholders, and incorporate changes in
+              future sprints without compromising sprint commitments.</p>
+
+            <h5 class="text-success">📌 Key Takeaways</h5>
+            <ul>
+              <li>Demonstrate leadership, problem-solving, and decision-making skills.</li>
+              <li>Show ability to handle conflict and change positively.</li>
+              <li>Highlight understanding of Agile principles, scaling, and metrics.</li>
+              <li>Provide structured, real-world examples using STAR (Situation, Task, Action, Result) format.</li>
+            </ul>
+
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingBehavioralAgile2">
+          <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+            data-bs-target="#behavioralAgileQuestions2" aria-expanded="false" aria-controls="behavioralAgileQuestions2">
+            💼 More Manager/Director Level — Behavioral, Situational & Agile Questions
+          </button>
+        </h2>
+        <div id="behavioralAgileQuestions2" class="accordion-collapse collapse">
+          <div class="accordion-body">
+
+            <p class="highlight-yellow">
+              Additional questions for senior leadership interviews, focusing on strategic thinking, team management,
+              and Agile practices.
+            </p>
+
+            <h5 class="text-warning">1️⃣ Behavioral Questions</h5>
+
+            <h6 class="text-info">Q: Describe a time when you had to influence senior stakeholders to adopt your
+              proposal.</h6>
+            <p><strong>Answer:</strong> I presented a data-driven analysis of the proposed solution, highlighted
+              potential ROI and risks, and facilitated discussions to address concerns. By demonstrating alignment with
+              business goals and providing a phased implementation plan, I gained stakeholder buy-in.</p>
+
+            <h6 class="text-info">Q: How do you foster a culture of accountability in your teams?</h6>
+            <p><strong>Answer:</strong> I set clear expectations, define measurable goals, encourage ownership of
+              deliverables, and provide regular feedback. Recognition of achievements and transparent discussions about
+              missed targets reinforce accountability.</p>
+
+            <h6 class="text-info">Q: Tell me about a time when a project you were responsible for failed. How did you
+              handle it?</h6>
+            <p><strong>Answer:</strong> I accepted ownership of the outcome, analyzed root causes, communicated
+              transparently with stakeholders, and implemented corrective actions. Lessons learned were documented and
+              shared to prevent recurrence across teams.</p>
+
+            <h5 class="text-warning">2️⃣ Situational Questions</h5>
+
+            <h6 class="text-info">Q: Multiple teams are delivering features that conflict with each other. How do you
+              resolve it?</h6>
+            <p><strong>Answer:</strong> I facilitate cross-team backlog grooming sessions to identify dependencies and
+              conflicts, prioritize based on business value, and define integration guidelines. I also implement regular
+              synchronization meetings to prevent future conflicts.</p>
+
+            <h6 class="text-info">Q: You inherit a team with low morale. How do you turn it around?</h6>
+            <p><strong>Answer:</strong> I first meet team members individually to understand concerns, celebrate quick
+              wins to build confidence, provide clarity on goals and expectations, and create opportunities for skill
+              development and ownership. Regular feedback loops and recognition help improve engagement.</p>
+
+            <h6 class="text-info">Q: One of your key projects is at risk of missing deadlines. How do you handle this
+              situation?</h6>
+            <p><strong>Answer:</strong> I assess project scope, resources, and blockers, re-prioritize deliverables,
+              communicate risks to stakeholders, and implement mitigation strategies like parallel workstreams or
+              additional resources. I also set up daily checkpoints to monitor progress.</p>
+
+            <h5 class="text-warning">3️⃣ Agile & Leadership Questions</h5>
+
+            <h6 class="text-info">Q: How do you implement Agile in an organization that is currently Waterfall?</h6>
+            <p><strong>Answer:</strong> I start with pilot teams to demonstrate value, train teams on Agile principles,
+              implement iterative planning and reviews, and gradually expand adoption. I also align leadership on
+              metrics, reporting, and culture shift required for successful Agile adoption.</p>
+
+            <h6 class="text-info">Q: How do you ensure your teams are delivering value rather than just output?</h6>
+            <p><strong>Answer:</strong> I focus on outcomes and business impact by aligning sprint goals with KPIs,
+              involve Product Owners in prioritization, track customer satisfaction, and encourage regular demos and
+              feedback from stakeholders to validate value delivery.</p>
+
+            <h6 class="text-info">Q: How do you handle remote or distributed teams in Agile?</h6>
+            <p><strong>Answer:</strong> I ensure effective communication with video standups, asynchronous updates, and
+              clear documentation. I use collaboration tools, track progress with visible dashboards, and foster team
+              cohesion through virtual team-building and regular feedback.</p>
+
+            <h5 class="text-success">📌 Key Takeaways</h5>
+            <ul>
+              <li>Showcase leadership, coaching, and strategic thinking skills.</li>
+              <li>Demonstrate ability to manage conflict, influence stakeholders, and drive outcomes.</li>
+              <li>Emphasize Agile mindset, value delivery, and team engagement practices.</li>
+              <li>Answer using STAR (Situation, Task, Action, Result) for clarity and impact.</li>
+            </ul>
+
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingManagerDirectorQuestions">
+          <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+            data-bs-target="#managerDirectorQuestions" aria-expanded="false" aria-controls="managerDirectorQuestions">
+            💼 Manager & Director Level — Complete Behavioral, Situational & Agile Question Bank
+          </button>
+        </h2>
+        <div id="managerDirectorQuestions" class="accordion-collapse collapse">
+          <div class="accordion-body">
+
+            <p class="highlight-yellow">
+              A comprehensive set of behavioral, situational, and Agile questions and answers for Manager/Director level
+              interviews. Use STAR (Situation, Task, Action, Result) format for structured answers.
+            </p>
+
+            <h5 class="text-warning">1️⃣ Behavioral Questions</h5>
+
+            <h6 class="text-info">Q: Describe a time when your team missed a critical deadline. How did you handle it?
+            </h6>
+            <p><strong>Answer:</strong> Analyze reasons, communicate with stakeholders, re-prioritize tasks, implement
+              checkpoints, and conduct a retrospective for process improvements.</p>
+
+            <h6 class="text-info">Q: How do you handle conflicts between team members?</h6>
+            <p><strong>Answer:</strong> Listen to both sides, mediate, focus on project goals, provide coaching, or
+              adjust responsibilities to minimize friction.</p>
+
+            <h6 class="text-info">Q: Tell me about a situation where you had to make a difficult decision with
+              incomplete information.</h6>
+            <p><strong>Answer:</strong> Gather available data, weigh risks and benefits, consult stakeholders, make a
+              decision, document assumptions, track outcomes, and adjust strategy if needed.</p>
+
+            <h6 class="text-info">Q: Describe a time when you had to influence senior stakeholders to adopt your
+              proposal.</h6>
+            <p><strong>Answer:</strong> Present data-driven analysis, highlight ROI and risks, facilitate discussion,
+              provide phased plan, gain buy-in.</p>
+
+            <h6 class="text-info">Q: How do you foster a culture of accountability in your teams?</h6>
+            <p><strong>Answer:</strong> Set clear expectations, define measurable goals, encourage ownership, provide
+              feedback, recognize achievements.</p>
+
+            <h6 class="text-info">Q: Tell me about a project you were responsible for that failed. How did you handle
+              it?</h6>
+            <p><strong>Answer:</strong> Accept ownership, analyze root causes, communicate transparently, implement
+              corrective actions, share lessons learned.</p>
+
+            <h5 class="text-warning">2️⃣ Situational Questions</h5>
+
+            <h6 class="text-info">Q: Your product feature is delayed, and stakeholders are unhappy. How do you manage
+              expectations?</h6>
+            <p><strong>Answer:</strong> Provide status update with reasons, impact, mitigation plan, propose
+              alternatives like phased releases, maintain trust.</p>
+
+            <h6 class="text-info">Q: A critical production issue arises outside business hours. How would you manage
+              your team?</h6>
+            <p><strong>Answer:</strong> Assign on-call engineers, guide as needed, communicate with stakeholders,
+              document incident, conduct post-mortem.</p>
+
+            <h6 class="text-info">Q: A new technology needs adoption, but the team is resistant. What do you do?</h6>
+            <p><strong>Answer:</strong> Explain benefits, provide training, start with pilot, involve team in
+              decision-making to gain buy-in.</p>
+
+            <h6 class="text-info">Q: Multiple teams are delivering features that conflict with each other. How do you
+              resolve it?</h6>
+            <p><strong>Answer:</strong> Facilitate backlog grooming sessions, prioritize by business value, define
+              integration guidelines, hold regular sync meetings.</p>
+
+            <h6 class="text-info">Q: You inherit a team with low morale. How do you turn it around?</h6>
+            <p><strong>Answer:</strong> Meet individually to understand concerns, celebrate quick wins, clarify goals,
+              provide development opportunities, use feedback and recognition.</p>
+
+            <h6 class="text-info">Q: One of your key projects is at risk of missing deadlines. How do you handle this
+              situation?</h6>
+            <p><strong>Answer:</strong> Assess scope, resources, and blockers, re-prioritize deliverables, communicate
+              risks, implement mitigation strategies, set daily checkpoints.</p>
+
+            <h5 class="text-warning">3️⃣ Agile & Leadership Questions</h5>
+
+            <h6 class="text-info">Q: How do you scale Agile practices across multiple teams?</h6>
+            <p><strong>Answer:</strong> Implement SAFe or LeSS if needed, ensure consistent ceremonies, align objectives
+              with OKRs, foster collaboration via shared backlog refinement and cross-team communication.</p>
+
+            <h6 class="text-info">Q: How do you measure team productivity and success in Agile?</h6>
+            <p><strong>Answer:</strong> Monitor velocity, cycle time, defect rate, customer satisfaction; focus on
+              outcomes over output; use retrospectives for continuous improvement.</p>
+
+            <h6 class="text-info">Q: How do you handle scope creep in Agile projects?</h6>
+            <p><strong>Answer:</strong> Assess impact with Product Owner, prioritize against backlog, communicate
+              trade-offs, incorporate changes in future sprints.</p>
+
+            <h6 class="text-info">Q: How do you implement Agile in an organization that is currently Waterfall?</h6>
+            <p><strong>Answer:</strong> Start with pilot teams, train on Agile principles, implement iterative planning,
+              expand adoption gradually, align leadership on metrics and culture shift.</p>
+
+            <h6 class="text-info">Q: How do you ensure your teams are delivering value rather than just output?</h6>
+            <p><strong>Answer:</strong> Align sprint goals with KPIs, involve Product Owners in prioritization, track
+              customer satisfaction, demonstrate value via demos and feedback.</p>
+
+            <h6 class="text-info">Q: How do you handle remote or distributed teams in Agile?</h6>
+            <p><strong>Answer:</strong> Use video standups, asynchronous updates, clear documentation, collaboration
+              tools, visible dashboards, virtual team-building, and regular feedback.</p>
+
+            <h5 class="text-success">📌 Key Takeaways</h5>
+            <ul>
+              <li>Demonstrate leadership, decision-making, and conflict resolution skills.</li>
+              <li>Show ability to influence stakeholders and manage expectations.</li>
+              <li>Highlight Agile mindset, value delivery, and process improvement.</li>
+              <li>Answer in STAR format with structured examples for maximum impact.</li>
+            </ul>
+
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingDirectorCaseStudies">
+          <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+            data-bs-target="#directorCaseStudies" aria-expanded="false" aria-controls="directorCaseStudies">
+            🎯 Director-Level Real-World Scenario Case Studies
+          </button>
+        </h2>
+        <div id="directorCaseStudies" class="accordion-collapse collapse">
+          <div class="accordion-body">
+
+            <p class="highlight-yellow">
+              Real-world scenarios designed for Director-level interviews to test technical leadership, strategic
+              thinking, and business decision-making.
+            </p>
+
+            <h5 class="text-warning">1️⃣ Scenario: Multi-Million Users Service Performance</h5>
+            <p><strong>Situation:</strong> Your e-commerce platform’s checkout API latency spikes from 200ms to 20s
+              under peak traffic.</p>
+            <p><strong>Task:</strong> Identify root causes, implement fixes, and ensure SLAs are met.</p>
+            <p><strong>Action:</strong></p>
+            <ul>
+              <li>Review metrics & distributed tracing to locate bottlenecks.</li>
+              <li>Scale services horizontally and optimize DB queries.</li>
+              <li>Implement caching and asynchronous processing.</li>
+              <li>Communicate plan and progress to stakeholders.</li>
+            </ul>
+            <p><strong>Result:</strong> Checkout latency reduced to ~250ms, SLA achieved, and monitoring alerts
+              established for future spikes.</p>
+
+            <h5 class="text-warning">2️⃣ Scenario: Security Breach Risk</h5>
+            <p><strong>Situation:</strong> A critical microservice exposed an unprotected endpoint internally; risk of
+              data leak.</p>
+            <p><strong>Task:</strong> Secure service-to-service communication and prevent unauthorized access.</p>
+            <p><strong>Action:</strong></p>
+            <ul>
+              <li>Implement OAuth2 Client Credentials Grant for internal microservices.</li>
+              <li>Rotate secrets, enable mTLS, and audit access logs.</li>
+              <li>Educate teams on secure development practices.</li>
+            </ul>
+            <p><strong>Result:</strong> Endpoint secured, internal services authenticated, risk minimized, and incident
+              report communicated to leadership.</p>
+
+            <h5 class="text-warning">3️⃣ Scenario: Merging Two Teams Post-Acquisition</h5>
+            <p><strong>Situation:</strong> Two engineering teams from different companies with different cultures must
+              merge.</p>
+            <p><strong>Task:</strong> Ensure smooth integration, maintain productivity, and align on shared goals.</p>
+            <p><strong>Action:</strong></p>
+            <ul>
+              <li>Conduct joint workshops to align processes and coding standards.</li>
+              <li>Assign mentors and cross-functional pairing to build trust.</li>
+              <li>Set unified KPIs and performance metrics.</li>
+              <li>Monitor team morale and intervene if conflicts arise.</li>
+            </ul>
+            <p><strong>Result:</strong> Teams successfully integrated, collaboration improved, and delivery schedules
+              maintained.</p>
+
+            <h5 class="text-warning">4️⃣ Scenario: Cloud Cost Optimization</h5>
+            <p><strong>Situation:</strong> Monthly cloud expenses increase 40% year-over-year due to underutilized
+              resources.</p>
+            <p><strong>Task:</strong> Reduce cost without compromising performance or uptime.</p>
+            <p><strong>Action:</strong></p>
+            <ul>
+              <li>Analyze usage metrics and identify underutilized instances.</li>
+              <li>Introduce auto-scaling policies and reserved instances.</li>
+              <li>Enforce tagging and budgeting for projects.</li>
+            </ul>
+            <p><strong>Result:</strong> Cloud costs reduced by 25%, with optimized resource allocation and alerts for
+              future anomalies.</p>
+
+            <h5 class="text-warning">5️⃣ Scenario: Product Launch with Tight Deadlines</h5>
+            <p><strong>Situation:</strong> New product launch scheduled in 3 weeks; backend system not ready.</p>
+            <p><strong>Task:</strong> Ensure successful launch without compromising quality.</p>
+            <p><strong>Action:</strong></p>
+            <ul>
+              <li>Identify MVP features required for launch.</li>
+              <li>Implement feature toggles to release incrementally.</li>
+              <li>Deploy automated testing pipelines and monitoring.</li>
+              <li>Communicate risk and mitigation plan to executives.</li>
+            </ul>
+            <p><strong>Result:</strong> Product launched successfully, minimal post-launch issues, and phased rollout
+              plan for remaining features.</p>
+
+            <h5 class="text-success">📌 Key Takeaways</h5>
+            <ul>
+              <li>Always combine technical expertise with business impact when answering scenarios.</li>
+              <li>Focus on structured decision-making and stakeholder communication.</li>
+              <li>Show ability to mitigate risks, lead teams, and deliver outcomes under pressure.</li>
+              <li>STAR format works best: clearly explain Situation, Task, Action, Result.</li>
+            </ul>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion" id="megaManagerDirectorPrep">
+
+        <!-- Section 1: Behavioral Questions -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="headingBehavioral">
+            <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+              data-bs-target="#behavioralSection" aria-expanded="false" aria-controls="behavioralSection">
+              💼 Behavioral Questions — Manager & Director Level
+            </button>
+          </h2>
+          <div id="behavioralSection" class="accordion-collapse collapse">
+            <div class="accordion-body">
+
+              <p class="highlight-yellow">
+                Questions designed to evaluate leadership, decision-making, and conflict resolution skills.
+              </p>
+
+              <h6 class="text-info">Q: Describe a time when your team missed a critical deadline. How did you handle it?
+              </h6>
+              <p><strong>Answer:</strong> Analyze reasons, communicate with stakeholders, re-prioritize tasks, implement
+                checkpoints, and conduct a retrospective for process improvements.</p>
+
+              <h6 class="text-info">Q: How do you handle conflicts between team members?</h6>
+              <p><strong>Answer:</strong> Listen to both sides, mediate, focus on project goals, provide coaching, or
+                adjust responsibilities to minimize friction.</p>
+
+              <h6 class="text-info">Q: Tell me about a situation where you had to make a difficult decision with
+                incomplete information.</h6>
+              <p><strong>Answer:</strong> Gather available data, weigh risks and benefits, consult stakeholders, make a
+                decision, document assumptions, track outcomes, and adjust strategy if needed.</p>
+
+              <h6 class="text-info">Q: Describe a time when you had to influence senior stakeholders to adopt your
+                proposal.</h6>
+              <p><strong>Answer:</strong> Present data-driven analysis, highlight ROI and risks, facilitate discussion,
+                provide phased plan, gain buy-in.</p>
+
+              <h6 class="text-info">Q: How do you foster a culture of accountability in your teams?</h6>
+              <p><strong>Answer:</strong> Set clear expectations, define measurable goals, encourage ownership, provide
+                feedback, recognize achievements.</p>
+
+              <h6 class="text-info">Q: Tell me about a project you were responsible for that failed. How did you handle
+                it?</h6>
+              <p><strong>Answer:</strong> Accept ownership, analyze root causes, communicate transparently, implement
+                corrective actions, share lessons learned.</p>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 2: Situational Questions -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="headingSituational">
+            <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+              data-bs-target="#situationalSection" aria-expanded="false" aria-controls="situationalSection">
+              ⚡ Situational Questions — Manager & Director Level
+            </button>
+          </h2>
+          <div id="situationalSection" class="accordion-collapse collapse">
+            <div class="accordion-body">
+
+              <p class="highlight-yellow">
+                Questions designed to evaluate problem-solving and decision-making under real-world scenarios.
+              </p>
+
+              <h6 class="text-info">Q: Your product feature is delayed, and stakeholders are unhappy. How do you manage
+                expectations?</h6>
+              <p><strong>Answer:</strong> Provide status update with reasons, impact, mitigation plan, propose
+                alternatives like phased releases, maintain trust.</p>
+
+              <h6 class="text-info">Q: A critical production issue arises outside business hours. How would you manage
+                your team?</h6>
+              <p><strong>Answer:</strong> Assign on-call engineers, guide as needed, communicate with stakeholders,
+                document incident, conduct post-mortem.</p>
+
+              <h6 class="text-info">Q: A new technology needs adoption, but the team is resistant. What do you do?</h6>
+              <p><strong>Answer:</strong> Explain benefits, provide training, start with pilot, involve team in
+                decision-making to gain buy-in.</p>
+
+              <h6 class="text-info">Q: Multiple teams are delivering features that conflict with each other. How do you
+                resolve it?</h6>
+              <p><strong>Answer:</strong> Facilitate backlog grooming sessions, prioritize by business value, define
+                integration guidelines, hold regular sync meetings.</p>
+
+              <h6 class="text-info">Q: You inherit a team with low morale. How do you turn it around?</h6>
+              <p><strong>Answer:</strong> Meet individually to understand concerns, celebrate quick wins, clarify goals,
+                provide development opportunities, use feedback and recognition.</p>
+
+              <h6 class="text-info">Q: One of your key projects is at risk of missing deadlines. How do you handle this
+                situation?</h6>
+              <p><strong>Answer:</strong> Assess scope, resources, and blockers, re-prioritize deliverables, communicate
+                risks, implement mitigation strategies, set daily checkpoints.</p>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 3: Agile & Leadership Questions -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="headingAgile">
+            <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+              data-bs-target="#agileSection" aria-expanded="false" aria-controls="agileSection">
+              🏃 Agile & Leadership Questions
+            </button>
+          </h2>
+          <div id="agileSection" class="accordion-collapse collapse">
+            <div class="accordion-body">
+
+              <p class="highlight-yellow">
+                Questions designed to evaluate Agile mindset, scaling, metrics, and leadership skills.
+              </p>
+
+              <h6 class="text-info">Q: How do you scale Agile practices across multiple teams?</h6>
+              <p><strong>Answer:</strong> Implement SAFe or LeSS if needed, ensure consistent ceremonies, align
+                objectives with OKRs, foster collaboration via shared backlog refinement and cross-team communication.
+              </p>
+
+              <h6 class="text-info">Q: How do you measure team productivity and success in Agile?</h6>
+              <p><strong>Answer:</strong> Monitor velocity, cycle time, defect rate, customer satisfaction; focus on
+                outcomes over output; use retrospectives for continuous improvement.</p>
+
+              <h6 class="text-info">Q: How do you handle scope creep in Agile projects?</h6>
+              <p><strong>Answer:</strong> Assess impact with Product Owner, prioritize against backlog, communicate
+                trade-offs, incorporate changes in future sprints.</p>
+
+              <h6 class="text-info">Q: How do you implement Agile in an organization that is currently Waterfall?</h6>
+              <p><strong>Answer:</strong> Start with pilot teams, train on Agile principles, implement iterative
+                planning, expand adoption gradually, align leadership on metrics and culture shift.</p>
+
+              <h6 class="text-info">Q: How do you ensure your teams are delivering value rather than just output?</h6>
+              <p><strong>Answer:</strong> Align sprint goals with KPIs, involve Product Owners in prioritization, track
+                customer satisfaction, demonstrate value via demos and feedback.</p>
+
+              <h6 class="text-info">Q: How do you handle remote or distributed teams in Agile?</h6>
+              <p><strong>Answer:</strong> Use video standups, asynchronous updates, clear documentation, collaboration
+                tools, visible dashboards, virtual team-building, and regular feedback.</p>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 4: Technical Scenario-Based Questions -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="headingTechnicalScenarios">
+            <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+              data-bs-target="#technicalScenarioSection" aria-expanded="false" aria-controls="technicalScenarioSection">
+              ⚙️ Technical Scenario-Based Questions
+            </button>
+          </h2>
+          <div id="technicalScenarioSection" class="accordion-collapse collapse">
+            <div class="accordion-body">
+
+              <p class="highlight-yellow">
+                Real-world scenarios to test decision-making, strategic thinking, and technical leadership.
+              </p>
+
+              <h6 class="text-info">Q: Multi-Million Users Service Performance</h6>
+              <p><strong>Situation:</strong> Checkout API latency spikes from 200ms to 20s under peak traffic.</p>
+              <p><strong>Action:</strong> Analyze metrics & tracing, optimize DB queries, scale services, implement
+                caching, communicate plan.</p>
+              <p><strong>Result:</strong> Latency reduced to ~250ms, SLA met, monitoring alerts established.</p>
+
+              <h6 class="text-info">Q: Security Breach Risk</h6>
+              <p><strong>Situation:</strong> Unprotected internal endpoint exposed risk of data leak.</p>
+              <p><strong>Action:</strong> Implement OAuth2 Client Credentials, rotate secrets, enable mTLS, audit logs,
+                educate teams.</p>
+              <p><strong>Result:</strong> Endpoint secured, risk minimized, incident report communicated.</p>
+
+              <h6 class="text-info">Q: Merging Two Teams Post-Acquisition</h6>
+              <p><strong>Situation:</strong> Two engineering teams from different companies with different cultures must
+                merge.</p>
+              <p><strong>Action:</strong> Conduct workshops, assign mentors, set unified KPIs, monitor morale.</p>
+              <p><strong>Result:</strong> Teams integrated, collaboration improved, delivery maintained.</p>
+
+              <h6 class="text-info">Q: Cloud Cost Optimization</h6>
+              <p><strong>Situation:</strong> Monthly cloud expenses increasing 40% YoY.</p>
+              <p><strong>Action:</strong> Analyze usage, implement auto-scaling, enforce tagging & budgeting.</p>
+              <p><strong>Result:</strong> Costs reduced 25%, resources optimized, anomaly alerts configured.</p>
+
+              <h6 class="text-info">Q: Product Launch with Tight Deadlines</h6>
+              <p><strong>Situation:</strong> Backend system not ready for launch in 3 weeks.</p>
+              <p><strong>Action:</strong> Identify MVP, implement feature toggles, automated testing & monitoring,
+                communicate risk.</p>
+              <p><strong>Result:</strong> Product launched successfully, minimal issues, phased rollout plan executed.
+              </p>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <div class="accordion" id="megaTechLeadershipPrep">
+
+        <!-- Section 1: Microservices & Security -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="headingMicroservicesSecurity">
+            <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+              data-bs-target="#microservicesSecurity" aria-expanded="false" aria-controls="microservicesSecurity">
+              🔐 Microservices & Security Scenarios
+            </button>
+          </h2>
+          <div id="microservicesSecurity" class="accordion-collapse collapse">
+            <div class="accordion-body">
+
+              <p class="highlight-yellow">
+                Real-world microservices & security challenges often discussed in senior technical interviews.
+              </p>
+
+              <h6 class="text-info">Q: In microservices world, how can services communicate privately? Which grant type
+                is generally used?</h6>
+              <p><strong>Answer:</strong> Services communicate over secured channels using OAuth2 Client Credentials
+                Grant. Each service has its own client id/secret to authenticate with the authorization server and
+                obtain a token.</p>
+
+              <h6 class="text-info">Q: List all OAuth2 grant types with examples and pros/cons.</h6>
+              <p><strong>Answer:</strong></p>
+              <ul>
+                <li><strong>Authorization Code:</strong> Used by web apps; pros: secure, supports refresh token; cons:
+                  requires redirect flow.</li>
+                <li><strong>Implicit:</strong> Used by single-page apps; pros: simpler; cons: less secure, no refresh
+                  token.</li>
+                <li><strong>Client Credentials:</strong> Used by microservices; pros: server-to-server secure
+                  communication; cons: not for user delegation.</li>
+                <li><strong>Resource Owner Password Credentials:</strong> User provides credentials directly; pros:
+                  simple; cons: unsafe, rarely recommended.</li>
+                <li><strong>Refresh Token:</strong> Used to obtain new access tokens; pros: extends session without
+                  re-login; cons: requires secure storage.</li>
+              </ul>
+
+              <h6 class="text-info">Q: Which library to validate & extract claims from JWT tokens?</h6>
+              <p><strong>Answer:</strong> Java: <code>io.jsonwebtoken:jjwt</code> or Spring Security’s
+                <code>JwtDecoder</code>. Provides token validation, signature verification, and claims extraction.</p>
+
+              <h6 class="text-info">Q: Kafka topic lagging by millions of messages?</h6>
+              <p><strong>Answer:</strong> Check consumer group offsets, broker performance, partition distribution, and
+                GC pauses. Scale consumers, optimize processing logic, or add partitions if needed.</p>
+
+              <h6 class="text-info">Q: Random 500 errors but logs look fine?</h6>
+              <p><strong>Answer:</strong> Enable debug logs, capture full stack traces, check thread dumps, monitor GC,
+                inspect DB or downstream service timeouts, and analyze spike patterns.</p>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 2: Performance Tuning -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="headingPerformance">
+            <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+              data-bs-target="#performanceSection" aria-expanded="false" aria-controls="performanceSection">
+              ⚡ Performance Tuning & Troubleshooting
+            </button>
+          </h2>
+          <div id="performanceSection" class="accordion-collapse collapse">
+            <div class="accordion-body">
+
+              <p class="highlight-yellow">
+                Key performance troubleshooting steps for senior technical roles.
+              </p>
+
+              <h6 class="text-info">Q: Request that normally takes 200ms now takes 20s under load. How do you approach
+                performance tuning?</h6>
+              <p><strong>Answer:</strong> Analyze metrics, thread dumps, DB queries, and service calls. Use profiling
+                tools, caching, async processing, connection pool tuning, load balancing, and horizontal scaling.
+                Identify bottlenecks step-by-step under load tests.</p>
+
+              <h6 class="text-info">Q: Batch job processing 1M records fails halfway with no clear error?</h6>
+              <p><strong>Answer:</strong> Enable detailed logging, check memory usage, split batch into smaller chunks,
+                retry failed records, handle exceptions, and monitor DB connections or network timeouts.</p>
+
+              <h6 class="text-info">Q: OutOfMemoryError in production?</h6>
+              <p><strong>Answer:</strong> Capture heap dump, analyze top memory consumers, check caches and collections,
+                review thread usage, optimize object lifecycle, increase heap if necessary, and implement
+                monitoring/alerts.</p>
+
+              <h6 class="text-info">Q: Service works locally but fails in Kubernetes?</h6>
+              <p><strong>Answer:</strong> Inspect pod logs, readiness/liveness probes, config maps, secrets, environment
+                variables, network policies, service endpoints, resource limits, and container logs. Use port-forwarding
+                and exec for debugging.</p>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 3: Spring Boot / REST API -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="headingSpringBoot">
+            <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+              data-bs-target="#springBootSection" aria-expanded="false" aria-controls="springBootSection">
+              🖥️ Spring Boot / REST API Scenarios
+            </button>
+          </h2>
+          <div id="springBootSection" class="accordion-collapse collapse">
+            <div class="accordion-body">
+
+              <p class="highlight-yellow">
+                Senior-level Spring Boot troubleshooting and configuration scenarios.
+              </p>
+
+              <h6 class="text-info">Q: REST API Timeout Configuration</h6>
+              <p><strong>Answer:</strong> Server-side: <code>server.tomcat.connection-timeout</code>. Client-side:
+                <code>RestTemplate.setReadTimeout</code> or <code>WebClient.responseTimeout</code>. Always configure
+                explicit timeouts to prevent hanging threads under network slowness.</p>
+
+              <h6 class="text-info">Q: Passing arguments to Spring Boot app from IDE or Docker?</h6>
+              <p><strong>Answer:</strong> IDE: Use program arguments <code>--server.port=9090</code>. Docker:
+                Command-line args or environment variables <code>-e SERVER_PORT=8081</code>. Access in code via
+                <code>@Value</code> or <code>Environment</code>.</p>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingJavaSpringPopularity">
+          <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+            data-bs-target="#javaSpringPopularity" aria-expanded="false" aria-controls="javaSpringPopularity">
+            ☕ Why Java & Spring are More Popular than Others
+          </button>
+        </h2>
+        <div id="javaSpringPopularity" class="accordion-collapse collapse">
+          <div class="accordion-body">
+
+            <p class="highlight-yellow">
+              Java and Spring have consistently been top choices for enterprise development, web applications,
+              microservices, and cloud-native applications. Here’s why:
+            </p>
+
+            <h5 class="text-warning">1️⃣ Java Popularity Reasons</h5>
+            <ul>
+              <li><strong>Platform Independence:</strong> “Write once, run anywhere” via JVM — supports Windows, Linux,
+                macOS, and cloud platforms.</li>
+              <li><strong>Mature Ecosystem:</strong> Rich libraries, frameworks, tools, IDEs (IntelliJ, Eclipse), and
+                strong community support.</li>
+              <li><strong>Performance:</strong> Modern JVMs (like GraalVM) provide high performance with JIT compilation
+                and memory optimization.</li>
+              <li><strong>Strong Typing & OOP:</strong> Helps maintain large enterprise codebases, reduces runtime
+                errors, and supports modular architecture.</li>
+              <li><strong>Enterprise Adoption:</strong> Widely used in banking, fintech, government, and telecom
+                domains, creating huge job demand.</li>
+              <li><strong>Scalability:</strong> Handles millions of transactions with multi-threading, concurrency APIs,
+                and robust garbage collection.</li>
+              <li><strong>Backward Compatibility:</strong> Older Java code continues to work on newer JVM versions,
+                reducing migration risk.</li>
+            </ul>
+
+            <h5 class="text-warning">2️⃣ Spring Framework Popularity Reasons</h5>
+            <ul>
+              <li><strong>Dependency Injection:</strong> Simplifies object creation & management, making code cleaner
+                and easier to test.</li>
+              <li><strong>Modular & Lightweight:</strong> Spring Boot allows microservice architecture without heavy XML
+                configs.</li>
+              <li><strong>Wide Ecosystem:</strong> Spring Data, Spring Security, Spring Cloud, Spring Batch, Spring
+                Integration — all ready for enterprise apps.</li>
+              <li><strong>Rapid Development:</strong> Auto-configuration, embedded servers, and starters reduce
+                boilerplate code.</li>
+              <li><strong>Microservices & Cloud Ready:</strong> Spring Cloud integrates easily with Netflix OSS,
+                Kubernetes, Docker, and messaging platforms.</li>
+              <li><strong>Strong Community & Documentation:</strong> Continuous support, tutorials, and libraries reduce
+                learning curve.</li>
+              <li><strong>Security:</strong> Spring Security provides authentication, authorization, OAuth2, JWT
+                integration out-of-the-box.</li>
+            </ul>
+
+            <h5 class="text-warning">3️⃣ Comparison to Other Languages/Frameworks</h5>
+            <ul>
+              <li><strong>Python:</strong> Excellent for data science and scripting, but slower in raw enterprise
+                transaction processing and static typing.</li>
+              <li><strong>Node.js:</strong> Great for lightweight web apps, but lacks built-in enterprise-level
+                structure, strong typing (until TypeScript), and threading model for CPU-intensive tasks.</li>
+              <li><strong>.NET:</strong> Strong competitor, but Java/Spring is more cross-platform historically and
+                open-source friendly.</li>
+              <li><strong>Go / Rust:</strong> Newer languages with performance advantages, but ecosystem and job demand
+                are smaller compared to Java.</li>
+            </ul>
+
+            <h5 class="text-success">📌 Key Takeaways</h5>
+            <ul>
+              <li>Java + Spring offer a combination of scalability, performance, maintainability, and enterprise
+                readiness.</li>
+              <li>Extensive ecosystem and community support reduce development time and risk.</li>
+              <li>Cross-platform capability, backward compatibility, and strong typing make it ideal for large-scale
+                projects.</li>
+              <li>Spring Boot and Spring Cloud make microservices & cloud-native apps easier, keeping Java relevant in
+                modern architectures.</li>
+            </ul>
+
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingJavaComparison">
+          <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+            data-bs-target="#javaComparisonSection" aria-expanded="false" aria-controls="javaComparisonSection">
+            📊 Java & Spring vs Other Popular Frameworks Comparison
+          </button>
+        </h2>
+        <div id="javaComparisonSection" class="accordion-collapse collapse">
+          <div class="accordion-body">
+
+            <p class="highlight-yellow">
+              Comparison of Java + Spring with other popular languages/frameworks for enterprise and web development.
+            </p>
+
+            <table class="table table-dark table-striped">
+              <thead>
+                <tr>
+                  <th>Feature / Framework</th>
+                  <th>Java + Spring</th>
+                  <th>Python + Django / Flask</th>
+                  <th>Node.js + Express</th>
+                  <th>.NET (C#)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Performance</td>
+                  <td>High performance, multi-threading, JIT compilation</td>
+                  <td>Moderate, interpreted language, slower for CPU-intensive tasks</td>
+                  <td>Good for I/O-intensive tasks, single-threaded for CPU-heavy tasks</td>
+                  <td>High, JIT compilation, native Windows integration</td>
+                </tr>
+                <tr>
+                  <td>Scalability</td>
+                  <td>Excellent for large-scale enterprise apps, microservices</td>
+                  <td>Moderate, scaling possible with async frameworks</td>
+                  <td>Good for lightweight services, horizontal scaling needed</td>
+                  <td>Excellent, enterprise-ready, integrates with Azure/Kubernetes</td>
+                </tr>
+                <tr>
+                  <td>Typing</td>
+                  <td>Strongly typed, compile-time safety</td>
+                  <td>Dynamically typed</td>
+                  <td>Dynamically typed (TypeScript optional)</td>
+                  <td>Strongly typed</td>
+                </tr>
+                <tr>
+                  <td>Community & Ecosystem</td>
+                  <td>Huge, mature, enterprise-ready libraries & tools</td>
+                  <td>Large for AI, ML, web, data science</td>
+                  <td>Large for web, real-time apps, npm ecosystem</td>
+                  <td>Large, enterprise support, Microsoft backing</td>
+                </tr>
+                <tr>
+                  <td>Learning Curve</td>
+                  <td>Moderate to steep for enterprise features</td>
+                  <td>Easy to moderate</td>
+                  <td>Easy for simple apps, moderate for complex systems</td>
+                  <td>Moderate, enterprise patterns</td>
+                </tr>
+                <tr>
+                  <td>Enterprise Adoption</td>
+                  <td>Very high — banking, telecom, fintech, government</td>
+                  <td>Moderate — startups, data-intensive apps</td>
+                  <td>Moderate — startups, lightweight APIs</td>
+                  <td>High — corporate & enterprise applications</td>
+                </tr>
+                <tr>
+                  <td>Security</td>
+                  <td>Advanced — Spring Security, OAuth2, JWT support</td>
+                  <td>Moderate — libraries exist but less enforced standards</td>
+                  <td>Moderate — must implement auth layers manually</td>
+                  <td>Advanced — built-in identity & auth libraries</td>
+                </tr>
+                <tr>
+                  <td>Cloud / Microservices</td>
+                  <td>Excellent — Spring Boot, Spring Cloud, Kubernetes/Docker</td>
+                  <td>Good — can run in Docker/Kubernetes, less mature tooling</td>
+                  <td>Good — works well with microservices & serverless</td>
+                  <td>Excellent — Azure & Kubernetes integration, cloud-native</td>
+                </tr>
+                <tr>
+                  <td>Maintainability</td>
+                  <td>High — modular architecture, DI, strong typing</td>
+                  <td>Moderate — dynamic typing may lead to runtime issues</td>
+                  <td>Moderate — depends on coding discipline</td>
+                  <td>High — strong typing & enterprise patterns</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-success">📌 Key Takeaways</h5>
+            <ul>
+              <li>Java + Spring is preferred for **large-scale, enterprise-grade, mission-critical applications**.</li>
+              <li>Python shines in **AI, ML, data-intensive apps**, but not always for CPU-heavy or highly concurrent
+                systems.</li>
+              <li>Node.js is great for **lightweight, real-time, event-driven apps**, but single-threaded limitations
+                exist for heavy computation.</li>
+              <li>.NET is strong in **enterprise & corporate environments**, especially with Windows/Azure ecosystems.
+              </li>
+              <li>For **long-term maintainability, microservices, cloud adoption**, Java + Spring often leads due to
+                ecosystem maturity and standards.</li>
+            </ul>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingJWTLibrary">
+          <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+            data-bs-target="#springBootJWTLibrary" aria-expanded="false" aria-controls="springBootJWTLibrary">
+            🔐 Which Library is Used to Validate and Extract Claims from a JWT Token in Spring Boot?
+          </button>
+        </h2>
+        <div id="springBootJWTLibrary" class="accordion-collapse collapse">
+          <div class="accordion-body">
+
+            <p class="highlight-yellow">
+              In a Spring Boot application, the library used to validate and extract claims from a JWT (JSON Web Token)
+              depends on whether you are using Spring Security or handling JWT manually.
+            </p>
+
+            <h5 class="text-info">📘 1️⃣ Using Spring Security (Recommended Approach)</h5>
+            <ul>
+              <li>Spring Boot 3 and Spring Security 6 rely on the
+                <code>spring-security-oauth2-jose</code> module to handle JWT operations.
+              </li>
+              <li>Internally, it uses the <strong>Nimbus JOSE + JWT</strong> library for parsing, validating, and
+                extracting
+                claims from tokens.</li>
+            </ul>
+
+            <p class="highlight-yellow">✅ Maven Dependency</p>
+            <pre class="language-xml"><code>
 &lt;dependency&gt;
   &lt;groupId&gt;org.springframework.security&lt;/groupId&gt;
   &lt;artifactId&gt;spring-security-oauth2-jose&lt;/artifactId&gt;
 &lt;/dependency&gt;
       </code></pre>
 
-      <p class="highlight-yellow">⚙️ Underlying Library Used Internally</p>
-      <pre class="language-xml"><code>
+            <p class="highlight-yellow">⚙️ Underlying Library Used Internally</p>
+            <pre class="language-xml"><code>
 &lt;dependency&gt;
   &lt;groupId&gt;com.nimbusds&lt;/groupId&gt;
   &lt;artifactId&gt;nimbus-jose-jwt&lt;/artifactId&gt;
 &lt;/dependency&gt;
       </code></pre>
 
-      <p>
-        The <strong>Nimbus JOSE + JWT</strong> library provides low-level JWT operations such as:
-      </p>
-      <ul>
-        <li>Parsing JWT tokens</li>
-        <li>Verifying signatures (HMAC, RSA, or EC)</li>
-        <li>Extracting and validating claims</li>
-        <li>Checking expiration and audience constraints</li>
-      </ul>
+            <p>
+              The <strong>Nimbus JOSE + JWT</strong> library provides low-level JWT operations such as:
+            </p>
+            <ul>
+              <li>Parsing JWT tokens</li>
+              <li>Verifying signatures (HMAC, RSA, or EC)</li>
+              <li>Extracting and validating claims</li>
+              <li>Checking expiration and audience constraints</li>
+            </ul>
 
-      <h5 class="text-warning">🧠 Example: Using Nimbus with Spring Security</h5>
-      <pre class="language-java"><code>
+            <h5 class="text-warning">🧠 Example: Using Nimbus with Spring Security</h5>
+            <pre class="language-java"><code>
 @Bean
 SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     return http
@@ -280,8 +1228,8 @@ JwtDecoder jwtDecoder() {
 }
       </code></pre>
 
-      <h5 class="text-success">🏆 Accessing Claims in Code</h5>
-      <pre class="language-java"><code>
+            <h5 class="text-success">🏆 Accessing Claims in Code</h5>
+            <pre class="language-java"><code>
 @RestController
 public class UserController {
 
@@ -293,12 +1241,13 @@ public class UserController {
 }
       </code></pre>
 
-      <h5 class="text-primary">📘 2️⃣ Manual JWT Handling (Alternative)</h5>
-      <p>
-        If you are not using Spring Security, you can manually handle JWTs using the <strong>io.jsonwebtoken (JJWT)</strong> library.
-      </p>
+            <h5 class="text-primary">📘 2️⃣ Manual JWT Handling (Alternative)</h5>
+            <p>
+              If you are not using Spring Security, you can manually handle JWTs using the <strong>io.jsonwebtoken
+                (JJWT)</strong> library.
+            </p>
 
-      <pre class="language-xml"><code>
+            <pre class="language-xml"><code>
 &lt;dependency&gt;
   &lt;groupId&gt;io.jsonwebtoken&lt;/groupId&gt;
   &lt;artifactId&gt;jjwt-api&lt;/artifactId&gt;
@@ -306,7 +1255,7 @@ public class UserController {
 &lt;/dependency&gt;
       </code></pre>
 
-      <pre class="language-java"><code>
+            <pre class="language-java"><code>
 Claims claims = Jwts.parser()
     .setSigningKey("my-secret-key")
     .parseClaimsJws(token)
@@ -316,58 +1265,64 @@ String username = claims.getSubject();
 String role = claims.get("role", String.class);
       </code></pre>
 
-      <h5 class="text-success">✅ Conclusion</h5>
-      <ul>
-        <li>Spring Boot (with Spring Security) uses <strong>Nimbus JOSE + JWT</strong> to validate and extract JWT claims.</li>
-        <li>For custom implementations, you can use <strong>io.jsonwebtoken (JJWT)</strong> as an alternative.</li>
-        <li>Both support signature verification, expiration checks, and claim extraction with minimal configuration.</li>
-      </ul>
-    </div>
-  </div>
-</div>
+            <h5 class="text-success">✅ Conclusion</h5>
+            <ul>
+              <li>Spring Boot (with Spring Security) uses <strong>Nimbus JOSE + JWT</strong> to validate and extract JWT
+                claims.</li>
+              <li>For custom implementations, you can use <strong>io.jsonwebtoken (JJWT)</strong> as an alternative.
+              </li>
+              <li>Both support signature verification, expiration checks, and claim extraction with minimal
+                configuration.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
 
-<div class="accordion-item">
-  <h2 class="accordion-header" id="headingPerfTuning">
-    <button class="accordion-button collapsed search-item text-warning" type="button" data-bs-toggle="collapse"
-      data-bs-target="#springBootPerfTuning" aria-expanded="false" aria-controls="springBootPerfTuning">
-      🚀 A Request That Normally Takes 200ms Now Takes 20s Under Load — How to Approach Performance Tuning?
-    </button>
-  </h2>
-  <div id="springBootPerfTuning" class="accordion-collapse collapse">
-    <div class="accordion-body">
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingPerfTuning">
+          <button class="accordion-button collapsed search-item text-warning" type="button" data-bs-toggle="collapse"
+            data-bs-target="#springBootPerfTuning" aria-expanded="false" aria-controls="springBootPerfTuning">
+            🚀 A Request That Normally Takes 200ms Now Takes 20s Under Load — How to Approach Performance Tuning?
+          </button>
+        </h2>
+        <div id="springBootPerfTuning" class="accordion-collapse collapse">
+          <div class="accordion-body">
 
-      <p class="highlight-yellow">
-        When a Spring Boot REST API request that usually completes in <strong>200ms</strong> suddenly takes
-        <strong>20 seconds</strong> under heavy load, it indicates performance bottlenecks such as thread starvation,
-        slow database queries, connection pool exhaustion, or poor resource configuration.
-      </p>
+            <p class="highlight-yellow">
+              When a Spring Boot REST API request that usually completes in <strong>200ms</strong> suddenly takes
+              <strong>20 seconds</strong> under heavy load, it indicates performance bottlenecks such as thread
+              starvation,
+              slow database queries, connection pool exhaustion, or poor resource configuration.
+            </p>
 
-      <h5 class="text-info">📊 Step-by-Step Performance Investigation Strategy</h5>
+            <h5 class="text-info">📊 Step-by-Step Performance Investigation Strategy</h5>
 
-      <h6 class="text-primary">1️⃣ Confirm the Scope of the Problem</h6>
-      <ul>
-        <li>Check if the slowdown is <strong>global or endpoint-specific</strong>.</li>
-        <li>Compare latency across environments (staging vs production).</li>
-        <li>Is it happening only under concurrent load (stress or spike)?</li>
-      </ul>
+            <h6 class="text-primary">1️⃣ Confirm the Scope of the Problem</h6>
+            <ul>
+              <li>Check if the slowdown is <strong>global or endpoint-specific</strong>.</li>
+              <li>Compare latency across environments (staging vs production).</li>
+              <li>Is it happening only under concurrent load (stress or spike)?</li>
+            </ul>
 
-      <h6 class="text-primary">2️⃣ Analyze Application Metrics</h6>
-      <ul>
-        <li>Enable <strong>Spring Boot Actuator</strong> and observe:
-          <code>/actuator/metrics/http.server.requests</code> for latency patterns.</li>
-        <li>Use <strong>Micrometer + Prometheus + Grafana</strong> dashboards for real-time monitoring.</li>
-        <li>Track CPU, memory, GC, thread count, and DB connection pool usage.</li>
-      </ul>
+            <h6 class="text-primary">2️⃣ Analyze Application Metrics</h6>
+            <ul>
+              <li>Enable <strong>Spring Boot Actuator</strong> and observe:
+                <code>/actuator/metrics/http.server.requests</code> for latency patterns.
+              </li>
+              <li>Use <strong>Micrometer + Prometheus + Grafana</strong> dashboards for real-time monitoring.</li>
+              <li>Track CPU, memory, GC, thread count, and DB connection pool usage.</li>
+            </ul>
 
-      <h6 class="text-primary">3️⃣ Profile the Application</h6>
-      <ul>
-        <li>Use profilers like <strong>VisualVM, JProfiler, YourKit</strong>, or <strong>Java Flight Recorder (JFR)</strong>.</li>
-        <li>Capture CPU and heap snapshots under load.</li>
-        <li>Identify hotspots — methods consuming most CPU or memory.</li>
-      </ul>
+            <h6 class="text-primary">3️⃣ Profile the Application</h6>
+            <ul>
+              <li>Use profilers like <strong>VisualVM, JProfiler, YourKit</strong>, or <strong>Java Flight Recorder
+                  (JFR)</strong>.</li>
+              <li>Capture CPU and heap snapshots under load.</li>
+              <li>Identify hotspots — methods consuming most CPU or memory.</li>
+            </ul>
 
-      <h6 class="text-primary">4️⃣ Check Thread and Connection Pooling</h6>
-      <pre class="language-yaml"><code>
+            <h6 class="text-primary">4️⃣ Check Thread and Connection Pooling</h6>
+            <pre class="language-yaml"><code>
 spring:
   datasource:
     hikari:
@@ -381,45 +1336,46 @@ server:
       accept-count: 100
       connection-timeout: 30s
       </code></pre>
-      <ul>
-        <li>Monitor <strong>HikariCP metrics</strong> — check if connections are exhausted or waiting too long.</li>
-        <li>Increase Tomcat max threads if requests are queuing.</li>
-        <li>Tune connection timeout and thread pool parameters.</li>
-      </ul>
+            <ul>
+              <li>Monitor <strong>HikariCP metrics</strong> — check if connections are exhausted or waiting too long.
+              </li>
+              <li>Increase Tomcat max threads if requests are queuing.</li>
+              <li>Tune connection timeout and thread pool parameters.</li>
+            </ul>
 
-      <h6 class="text-primary">5️⃣ Investigate Database Layer</h6>
-      <ul>
-        <li>Enable <code>spring.jpa.show-sql=true</code> or use a query profiler.</li>
-        <li>Check for <strong>N+1 queries</strong>, missing indexes, or long-running joins.</li>
-        <li>Use <strong>EXPLAIN ANALYZE</strong> on SQL queries.</li>
-        <li>Implement caching (Caffeine, Redis) for frequently accessed data.</li>
-      </ul>
+            <h6 class="text-primary">5️⃣ Investigate Database Layer</h6>
+            <ul>
+              <li>Enable <code>spring.jpa.show-sql=true</code> or use a query profiler.</li>
+              <li>Check for <strong>N+1 queries</strong>, missing indexes, or long-running joins.</li>
+              <li>Use <strong>EXPLAIN ANALYZE</strong> on SQL queries.</li>
+              <li>Implement caching (Caffeine, Redis) for frequently accessed data.</li>
+            </ul>
 
-      <h6 class="text-primary">6️⃣ Analyze Garbage Collection & Memory Pressure</h6>
-      <pre class="language-bash"><code>
+            <h6 class="text-primary">6️⃣ Analyze Garbage Collection & Memory Pressure</h6>
+            <pre class="language-bash"><code>
 # Enable GC logging
 java -Xlog:gc*,gc+heap=debug:file=gc.log:time,uptime,level,tags
       </code></pre>
-      <ul>
-        <li>Frequent GC cycles or full GCs can stall threads for seconds.</li>
-        <li>Use <strong>G1GC</strong> or <strong>ZGC</strong> for large heaps.</li>
-        <li>Inspect <strong>allocation rate</strong> and object churn under load.</li>
-      </ul>
+            <ul>
+              <li>Frequent GC cycles or full GCs can stall threads for seconds.</li>
+              <li>Use <strong>G1GC</strong> or <strong>ZGC</strong> for large heaps.</li>
+              <li>Inspect <strong>allocation rate</strong> and object churn under load.</li>
+            </ul>
 
-      <h6 class="text-primary">7️⃣ Identify Synchronization or Blocking Code</h6>
-      <ul>
-        <li>Look for <code>synchronized</code> blocks or blocking I/O in the request path.</li>
-        <li>Use async or reactive APIs if waiting for I/O responses (e.g., WebClient).</li>
-        <li>Replace heavy computation with background tasks or queues.</li>
-      </ul>
+            <h6 class="text-primary">7️⃣ Identify Synchronization or Blocking Code</h6>
+            <ul>
+              <li>Look for <code>synchronized</code> blocks or blocking I/O in the request path.</li>
+              <li>Use async or reactive APIs if waiting for I/O responses (e.g., WebClient).</li>
+              <li>Replace heavy computation with background tasks or queues.</li>
+            </ul>
 
-      <h6 class="text-primary">8️⃣ Check External Dependencies</h6>
-      <ul>
-        <li>Upstream services (REST APIs, message queues, file storage) may respond slowly under load.</li>
-        <li>Apply <strong>timeouts</strong> and <strong>circuit breakers</strong> using Resilience4j.</li>
-      </ul>
+            <h6 class="text-primary">8️⃣ Check External Dependencies</h6>
+            <ul>
+              <li>Upstream services (REST APIs, message queues, file storage) may respond slowly under load.</li>
+              <li>Apply <strong>timeouts</strong> and <strong>circuit breakers</strong> using Resilience4j.</li>
+            </ul>
 
-      <pre class="language-java"><code>
+            <pre class="language-java"><code>
 @Bean
 public WebClient webClient() {
     return WebClient.builder()
@@ -431,86 +1387,92 @@ public WebClient webClient() {
 }
       </code></pre>
 
-      <h6 class="text-primary">9️⃣ Conduct Load Testing & Benchmarking</h6>
-      <ul>
-        <li>Use tools like <strong>JMeter, k6, or Gatling</strong> to simulate load.</li>
-        <li>Gradually increase concurrent users to identify the saturation point.</li>
-        <li>Analyze throughput (RPS), latency percentiles (P95, P99), and error rates.</li>
-      </ul>
+            <h6 class="text-primary">9️⃣ Conduct Load Testing & Benchmarking</h6>
+            <ul>
+              <li>Use tools like <strong>JMeter, k6, or Gatling</strong> to simulate load.</li>
+              <li>Gradually increase concurrent users to identify the saturation point.</li>
+              <li>Analyze throughput (RPS), latency percentiles (P95, P99), and error rates.</li>
+            </ul>
 
-      <h6 class="text-primary">🔟 Apply Fixes and Re-Test</h6>
-      <ul>
-        <li>Reduce blocking calls and optimize DB queries.</li>
-        <li>Increase resource pools (threads, connections) within safe limits.</li>
-        <li>Introduce caching layers for repeated expensive operations.</li>
-        <li>Deploy with autoscaling if hosted on Kubernetes or AWS ECS.</li>
-      </ul>
+            <h6 class="text-primary">🔟 Apply Fixes and Re-Test</h6>
+            <ul>
+              <li>Reduce blocking calls and optimize DB queries.</li>
+              <li>Increase resource pools (threads, connections) within safe limits.</li>
+              <li>Introduce caching layers for repeated expensive operations.</li>
+              <li>Deploy with autoscaling if hosted on Kubernetes or AWS ECS.</li>
+            </ul>
 
-      <h5 class="text-success">🏁 Key Takeaway</h5>
-      <p>
-        Performance tuning is an iterative process — <strong>measure ➜ identify ➜ fix ➜ re-measure</strong>.
-        Focus first on metrics (CPU, threads, DB latency), then optimize the slowest component rather than guessing.
-        Always validate improvements through consistent load testing and profiling.
-      </p>
-    </div>
-  </div>
-</div>
-<div class="accordion-item">
-  <h2 class="accordion-header" id="headingLegacyService">
-    <button class="accordion-button collapsed search-item text-primary" type="button" data-bs-toggle="collapse"
-      data-bs-target="#springBootLegacyService" aria-expanded="false" aria-controls="springBootLegacyService">
-      🧩 You Inherit a Legacy Spring Boot Service with No Tests — How Do You Add New Features Safely?
-    </button>
-  </h2>
-  <div id="springBootLegacyService" class="accordion-collapse collapse">
-    <div class="accordion-body">
+            <h5 class="text-success">🏁 Key Takeaway</h5>
+            <p>
+              Performance tuning is an iterative process — <strong>measure ➜ identify ➜ fix ➜ re-measure</strong>.
+              Focus first on metrics (CPU, threads, DB latency), then optimize the slowest component rather than
+              guessing.
+              Always validate improvements through consistent load testing and profiling.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingLegacyService">
+          <button class="accordion-button collapsed search-item text-primary" type="button" data-bs-toggle="collapse"
+            data-bs-target="#springBootLegacyService" aria-expanded="false" aria-controls="springBootLegacyService">
+            🧩 You Inherit a Legacy Spring Boot Service with No Tests — How Do You Add New Features Safely?
+          </button>
+        </h2>
+        <div id="springBootLegacyService" class="accordion-collapse collapse">
+          <div class="accordion-body">
 
-      <p class="highlight-yellow">
-        Inheriting a legacy Spring Boot service with no existing tests can be risky. Adding new features without breaking
-        existing functionality requires a careful, incremental approach focusing on <strong>safety, coverage, and refactoring discipline</strong>.
-      </p>
+            <p class="highlight-yellow">
+              Inheriting a legacy Spring Boot service with no existing tests can be risky. Adding new features without
+              breaking
+              existing functionality requires a careful, incremental approach focusing on <strong>safety, coverage, and
+                refactoring discipline</strong>.
+            </p>
 
-      <h5 class="text-info">📘 Step-by-Step Approach to Adding Features Safely</h5>
+            <h5 class="text-info">📘 Step-by-Step Approach to Adding Features Safely</h5>
 
-      <h6 class="text-primary">1️⃣ Understand the Current Behavior</h6>
-      <ul>
-        <li>Run the application locally and exercise main features manually.</li>
-        <li>Check existing logs, API docs, or Swagger (if available) to understand endpoints.</li>
-        <li>Document expected behavior of critical features before making any code changes.</li>
-      </ul>
+            <h6 class="text-primary">1️⃣ Understand the Current Behavior</h6>
+            <ul>
+              <li>Run the application locally and exercise main features manually.</li>
+              <li>Check existing logs, API docs, or Swagger (if available) to understand endpoints.</li>
+              <li>Document expected behavior of critical features before making any code changes.</li>
+            </ul>
 
-      <h6 class="text-primary">2️⃣ Add Safety Nets Before Coding</h6>
-      <ul>
-        <li>Introduce <strong>logging and metrics</strong> (e.g., Spring Boot Actuator) to monitor runtime behavior.</li>
-        <li>Set up version control properly if not already (Git).</li>
-        <li>Implement <strong>feature flags</strong> or toggles to isolate new features (using <code>Togglz</code> or custom flags).</li>
-      </ul>
+            <h6 class="text-primary">2️⃣ Add Safety Nets Before Coding</h6>
+            <ul>
+              <li>Introduce <strong>logging and metrics</strong> (e.g., Spring Boot Actuator) to monitor runtime
+                behavior.</li>
+              <li>Set up version control properly if not already (Git).</li>
+              <li>Implement <strong>feature flags</strong> or toggles to isolate new features (using <code>Togglz</code>
+                or custom flags).</li>
+            </ul>
 
-      <h6 class="text-primary">3️⃣ Identify Critical Areas and Write Characterization Tests</h6>
-      <p class="highlight-yellow">
-        Before refactoring or adding new code, write tests that capture existing behavior — even if it’s not ideal.
-        These are called <strong>characterization tests</strong>.
-      </p>
-      <pre class="language-java"><code>
+            <h6 class="text-primary">3️⃣ Identify Critical Areas and Write Characterization Tests</h6>
+            <p class="highlight-yellow">
+              Before refactoring or adding new code, write tests that capture existing behavior — even if it’s not
+              ideal.
+              These are called <strong>characterization tests</strong>.
+            </p>
+            <pre class="language-java"><code>
 @Test
 void testExistingBehavior() {
     String response = legacyService.process("input");
     assertEquals("EXPECTED_OUTPUT", response);
 }
       </code></pre>
-      <ul>
-        <li>Helps ensure new code does not alter legacy behavior unintentionally.</li>
-        <li>Focus first on “happy path” and business-critical flows.</li>
-      </ul>
+            <ul>
+              <li>Helps ensure new code does not alter legacy behavior unintentionally.</li>
+              <li>Focus first on “happy path” and business-critical flows.</li>
+            </ul>
 
-      <h6 class="text-primary">4️⃣ Add Integration Tests Gradually</h6>
-      <ul>
-        <li>Use <code>@SpringBootTest</code> or <code>@WebMvcTest</code> for endpoint-level verification.</li>
-        <li>Mock external dependencies using <code>MockBean</code> or <code>WireMock</code>.</li>
-        <li>Write one test per feature addition to confirm stability.</li>
-      </ul>
+            <h6 class="text-primary">4️⃣ Add Integration Tests Gradually</h6>
+            <ul>
+              <li>Use <code>@SpringBootTest</code> or <code>@WebMvcTest</code> for endpoint-level verification.</li>
+              <li>Mock external dependencies using <code>MockBean</code> or <code>WireMock</code>.</li>
+              <li>Write one test per feature addition to confirm stability.</li>
+            </ul>
 
-      <pre class="language-java"><code>
+            <pre class="language-java"><code>
 @WebMvcTest(UserController.class)
 class UserControllerTest {
 
@@ -526,97 +1488,107 @@ class UserControllerTest {
 }
       </code></pre>
 
-      <h6 class="text-primary">5️⃣ Introduce Unit Tests for New Code Only</h6>
-      <ul>
-        <li>Follow the “<strong>Boy Scout Rule</strong>” — leave the code cleaner than you found it.</li>
-        <li>For any new method or class you add, ensure it’s covered with proper unit tests.</li>
-        <li>Use <strong>JUnit 5</strong> and <strong>Mockito</strong> for fast and isolated testing.</li>
-      </ul>
+            <h6 class="text-primary">5️⃣ Introduce Unit Tests for New Code Only</h6>
+            <ul>
+              <li>Follow the “<strong>Boy Scout Rule</strong>” — leave the code cleaner than you found it.</li>
+              <li>For any new method or class you add, ensure it’s covered with proper unit tests.</li>
+              <li>Use <strong>JUnit 5</strong> and <strong>Mockito</strong> for fast and isolated testing.</li>
+            </ul>
 
-      <h6 class="text-primary">6️⃣ Refactor in Small, Safe Steps</h6>
-      <ul>
-        <li>Refactor one function or class at a time — don’t rewrite everything at once.</li>
-        <li>Use tests as guardrails after every small change.</li>
-        <li>Leverage tools like <strong>SonarLint</strong> or <strong>IntelliJ inspections</strong> to detect bad practices.</li>
-      </ul>
+            <h6 class="text-primary">6️⃣ Refactor in Small, Safe Steps</h6>
+            <ul>
+              <li>Refactor one function or class at a time — don’t rewrite everything at once.</li>
+              <li>Use tests as guardrails after every small change.</li>
+              <li>Leverage tools like <strong>SonarLint</strong> or <strong>IntelliJ inspections</strong> to detect bad
+                practices.</li>
+            </ul>
 
-      <h6 class="text-primary">7️⃣ Add Observability</h6>
-      <ul>
-        <li>Enable <code>/actuator/health</code> and <code>/actuator/metrics</code> for runtime monitoring.</li>
-        <li>Add structured logging with MDC (Mapped Diagnostic Context) for traceability.</li>
-        <li>Introduce performance tracing with tools like <strong>Micrometer</strong> and <strong>Prometheus</strong>.</li>
-      </ul>
+            <h6 class="text-primary">7️⃣ Add Observability</h6>
+            <ul>
+              <li>Enable <code>/actuator/health</code> and <code>/actuator/metrics</code> for runtime monitoring.</li>
+              <li>Add structured logging with MDC (Mapped Diagnostic Context) for traceability.</li>
+              <li>Introduce performance tracing with tools like <strong>Micrometer</strong> and
+                <strong>Prometheus</strong>.</li>
+            </ul>
 
-      <h6 class="text-primary">8️⃣ Deploy Cautiously</h6>
-      <ul>
-        <li>Use <strong>canary deployments</strong> or deploy to a test environment first.</li>
-        <li>Compare performance metrics before and after deployment.</li>
-        <li>Monitor logs for regression symptoms immediately after rollout.</li>
-      </ul>
+            <h6 class="text-primary">8️⃣ Deploy Cautiously</h6>
+            <ul>
+              <li>Use <strong>canary deployments</strong> or deploy to a test environment first.</li>
+              <li>Compare performance metrics before and after deployment.</li>
+              <li>Monitor logs for regression symptoms immediately after rollout.</li>
+            </ul>
 
-      <h5 class="text-success">🏁 Key Takeaway</h5>
-      <p>
-        Adding features to an untested legacy system is like performing surgery without X-rays.
-        Build <strong>characterization tests</strong>, add <strong>observability</strong>, and write <strong>new tests for all new code</strong>.
-        Move slowly but steadily — with every change, the system becomes a little safer and more maintainable.
-      </p>
+            <h5 class="text-success">🏁 Key Takeaway</h5>
+            <p>
+              Adding features to an untested legacy system is like performing surgery without X-rays.
+              Build <strong>characterization tests</strong>, add <strong>observability</strong>, and write <strong>new
+                tests for all new code</strong>.
+              Move slowly but steadily — with every change, the system becomes a little safer and more maintainable.
+            </p>
 
-    </div>
-  </div>
-</div>
+          </div>
+        </div>
+      </div>
 
-<div class="accordion-item">
-  <h2 class="accordion-header" id="headingKafkaLag">
-    <button class="accordion-button collapsed search-item text-danger" type="button" data-bs-toggle="collapse"
-      data-bs-target="#springBootKafkaLag" aria-expanded="false" aria-controls="springBootKafkaLag">
-      🧭 Kafka Consumer Lag Issue — Microservice Falling Behind by Millions of Messages
-    </button>
-  </h2>
-  <div id="springBootKafkaLag" class="accordion-collapse collapse">
-    <div class="accordion-body">
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingKafkaLag">
+          <button class="accordion-button collapsed search-item text-danger" type="button" data-bs-toggle="collapse"
+            data-bs-target="#springBootKafkaLag" aria-expanded="false" aria-controls="springBootKafkaLag">
+            🧭 Kafka Consumer Lag Issue — Microservice Falling Behind by Millions of Messages
+          </button>
+        </h2>
+        <div id="springBootKafkaLag" class="accordion-collapse collapse">
+          <div class="accordion-body">
 
-      <p class="highlight-yellow">
-        When a Spring Boot microservice consuming a Kafka topic lags by millions of messages,
-        it usually indicates a <strong>performance bottleneck</strong>, <strong>consumer configuration issue</strong>,
-        or <strong>message processing slowdown</strong>. Diagnosing it requires both infrastructure and application-level analysis.
-      </p>
+            <p class="highlight-yellow">
+              When a Spring Boot microservice consuming a Kafka topic lags by millions of messages,
+              it usually indicates a <strong>performance bottleneck</strong>, <strong>consumer configuration
+                issue</strong>,
+              or <strong>message processing slowdown</strong>. Diagnosing it requires both infrastructure and
+              application-level analysis.
+            </p>
 
-      <h5 class="text-info">🧩 Step-by-Step Diagnostic Approach</h5>
+            <h5 class="text-info">🧩 Step-by-Step Diagnostic Approach</h5>
 
-      <h6 class="text-primary">1️⃣ Identify Where the Lag Is</h6>
-      <ul>
-        <li>Use <strong>Kafka Consumer Group Lag tools</strong>:
-          <ul>
-            <li><code>kafka-consumer-groups.sh --bootstrap-server &lt;broker&gt; --describe --group &lt;group-id&gt;</code></li>
-            <li>Tools: <strong>Burrow</strong>, <strong>Conduktor</strong>, <strong>Kafka UI</strong>, <strong>Prometheus JMX metrics</strong></li>
-          </ul>
-        </li>
-        <li>Check which <strong>partitions</strong> have the highest lag — this tells if imbalance exists.</li>
-      </ul>
+            <h6 class="text-primary">1️⃣ Identify Where the Lag Is</h6>
+            <ul>
+              <li>Use <strong>Kafka Consumer Group Lag tools</strong>:
+                <ul>
+                  <li>
+                    <code>kafka-consumer-groups.sh --bootstrap-server &lt;broker&gt; --describe --group &lt;group-id&gt;</code>
+                  </li>
+                  <li>Tools: <strong>Burrow</strong>, <strong>Conduktor</strong>, <strong>Kafka UI</strong>,
+                    <strong>Prometheus JMX metrics</strong></li>
+                </ul>
+              </li>
+              <li>Check which <strong>partitions</strong> have the highest lag — this tells if imbalance exists.</li>
+            </ul>
 
-      <pre class="language-bash"><code>
+            <pre class="language-bash"><code>
 kafka-consumer-groups.sh --bootstrap-server localhost:9092 --describe --group user-service-consumer
       </code></pre>
 
-      <h6 class="text-primary">2️⃣ Check Consumer Health and Configuration</h6>
-      <ul>
-        <li>Ensure <strong>enough consumer instances</strong> are running (equal or less than partition count).</li>
-        <li>Verify the <strong>poll loop</strong> is running frequently:
-          <pre><code>max.poll.interval.ms</code> too high → rebalance delays.
+            <h6 class="text-primary">2️⃣ Check Consumer Health and Configuration</h6>
+            <ul>
+              <li>Ensure <strong>enough consumer instances</strong> are running (equal or less than partition count).
+              </li>
+              <li>Verify the <strong>poll loop</strong> is running frequently:
+                <pre><code>max.poll.interval.ms</code> too high → rebalance delays.
           <br><code>max.poll.records</code> too low → slower consumption.
           </pre>
-        </li>
-        <li>Confirm <strong>enable.auto.commit</strong> and manual commits are correctly configured.</li>
-        <li>Check <strong>fetch.min.bytes</strong> and <strong>fetch.max.wait.ms</strong> tuning for throughput.</li>
-      </ul>
+              </li>
+              <li>Confirm <strong>enable.auto.commit</strong> and manual commits are correctly configured.</li>
+              <li>Check <strong>fetch.min.bytes</strong> and <strong>fetch.max.wait.ms</strong> tuning for throughput.
+              </li>
+            </ul>
 
-      <h6 class="text-primary">3️⃣ Analyze Processing Bottlenecks</h6>
-      <ul>
-        <li>If message processing logic is slow (e.g., DB calls, REST APIs), the consumer cannot keep up.</li>
-        <li>Add <strong>timing logs</strong> or <strong>Micrometer metrics</strong> around processing blocks:</li>
-      </ul>
+            <h6 class="text-primary">3️⃣ Analyze Processing Bottlenecks</h6>
+            <ul>
+              <li>If message processing logic is slow (e.g., DB calls, REST APIs), the consumer cannot keep up.</li>
+              <li>Add <strong>timing logs</strong> or <strong>Micrometer metrics</strong> around processing blocks:</li>
+            </ul>
 
-      <pre class="language-java"><code>
+            <pre class="language-java"><code>
 @KafkaListener(topics = "orders", groupId = "order-processor")
 public void consume(OrderEvent event) {
     long start = System.currentTimeMillis();
@@ -625,122 +1597,127 @@ public void consume(OrderEvent event) {
 }
       </code></pre>
 
-      <ul>
-        <li>Identify slow operations (e.g., DB writes, remote calls, serialization issues).</li>
-        <li>Batch writes or use async processing where possible.</li>
-      </ul>
+            <ul>
+              <li>Identify slow operations (e.g., DB writes, remote calls, serialization issues).</li>
+              <li>Batch writes or use async processing where possible.</li>
+            </ul>
 
-      <h6 class="text-primary">4️⃣ Scale Out Consumers</h6>
-      <ul>
-        <li>If topic has multiple partitions, deploy multiple instances of the consumer service.</li>
-        <li>Kafka automatically distributes partitions among consumers in the same group.</li>
-        <li>Example: A topic with 10 partitions → up to 10 consumers can process in parallel.</li>
-      </ul>
+            <h6 class="text-primary">4️⃣ Scale Out Consumers</h6>
+            <ul>
+              <li>If topic has multiple partitions, deploy multiple instances of the consumer service.</li>
+              <li>Kafka automatically distributes partitions among consumers in the same group.</li>
+              <li>Example: A topic with 10 partitions → up to 10 consumers can process in parallel.</li>
+            </ul>
 
-      <h6 class="text-primary">5️⃣ Check Broker and Network Health</h6>
-      <ul>
-        <li>High lag can occur if brokers are overloaded or under-replicated.</li>
-        <li>Check broker logs for <strong>throttling</strong>, <strong>network timeouts</strong>, or <strong>I/O saturation</strong>.</li>
-        <li>Monitor metrics like <code>NetworkProcessorAvgIdlePercent</code> and <code>RequestQueueSize</code>.</li>
-      </ul>
+            <h6 class="text-primary">5️⃣ Check Broker and Network Health</h6>
+            <ul>
+              <li>High lag can occur if brokers are overloaded or under-replicated.</li>
+              <li>Check broker logs for <strong>throttling</strong>, <strong>network timeouts</strong>, or <strong>I/O
+                  saturation</strong>.</li>
+              <li>Monitor metrics like <code>NetworkProcessorAvgIdlePercent</code> and <code>RequestQueueSize</code>.
+              </li>
+            </ul>
 
-      <h6 class="text-primary">6️⃣ Tune Kafka Consumer Parameters</h6>
-      <pre class="language-java"><code>
+            <h6 class="text-primary">6️⃣ Tune Kafka Consumer Parameters</h6>
+            <pre class="language-java"><code>
 spring.kafka.consumer.properties.max.poll.records=500
 spring.kafka.consumer.fetch.min.bytes=524288
 spring.kafka.consumer.fetch.max.wait.ms=500
 spring.kafka.consumer.enable.auto.commit=false
 spring.kafka.listener.concurrency=4
       </code></pre>
-      <ul>
-        <li>Increase <code>max.poll.records</code> to process more messages per fetch.</li>
-        <li>Use <strong>concurrency</strong> in <code>@KafkaListener</code> to parallelize consumption.</li>
-      </ul>
+            <ul>
+              <li>Increase <code>max.poll.records</code> to process more messages per fetch.</li>
+              <li>Use <strong>concurrency</strong> in <code>@KafkaListener</code> to parallelize consumption.</li>
+            </ul>
 
-      <h6 class="text-primary">7️⃣ Monitor and Alert</h6>
-      <ul>
-        <li>Enable <strong>lag metrics</strong> via JMX (<code>consumer_lag</code>).</li>
-        <li>Visualize lag trends using <strong>Grafana</strong> + <strong>Prometheus</strong>.</li>
-        <li>Set up alerts when lag crosses a defined threshold.</li>
-      </ul>
+            <h6 class="text-primary">7️⃣ Monitor and Alert</h6>
+            <ul>
+              <li>Enable <strong>lag metrics</strong> via JMX (<code>consumer_lag</code>).</li>
+              <li>Visualize lag trends using <strong>Grafana</strong> + <strong>Prometheus</strong>.</li>
+              <li>Set up alerts when lag crosses a defined threshold.</li>
+            </ul>
 
-      <h5 class="text-success">🏁 Root Causes (Common)</h5>
-      <ul>
-        <li>Consumer too slow due to blocking logic (e.g., DB or external API).</li>
-        <li>Not enough consumers for available partitions.</li>
-        <li>Bad Kafka configurations (e.g., small <code>max.poll.records</code>).</li>
-        <li>Broker throttling or high CPU/network usage.</li>
-        <li>Message deserialization bottlenecks (e.g., heavy JSON parsing).</li>
-      </ul>
+            <h5 class="text-success">🏁 Root Causes (Common)</h5>
+            <ul>
+              <li>Consumer too slow due to blocking logic (e.g., DB or external API).</li>
+              <li>Not enough consumers for available partitions.</li>
+              <li>Bad Kafka configurations (e.g., small <code>max.poll.records</code>).</li>
+              <li>Broker throttling or high CPU/network usage.</li>
+              <li>Message deserialization bottlenecks (e.g., heavy JSON parsing).</li>
+            </ul>
 
-      <h5 class="text-warning">⚡ Quick Fix Checklist</h5>
-      <ul>
-        <li>✅ Increase <code>max.poll.records</code></li>
-        <li>✅ Enable listener concurrency (<code>spring.kafka.listener.concurrency</code>)</li>
-        <li>✅ Optimize business logic (batching, async calls)</li>
-        <li>✅ Scale out consumers horizontally</li>
-        <li>✅ Tune fetch sizes and poll intervals</li>
-        <li>✅ Monitor and visualize lag metrics</li>
-      </ul>
+            <h5 class="text-warning">⚡ Quick Fix Checklist</h5>
+            <ul>
+              <li>✅ Increase <code>max.poll.records</code></li>
+              <li>✅ Enable listener concurrency (<code>spring.kafka.listener.concurrency</code>)</li>
+              <li>✅ Optimize business logic (batching, async calls)</li>
+              <li>✅ Scale out consumers horizontally</li>
+              <li>✅ Tune fetch sizes and poll intervals</li>
+              <li>✅ Monitor and visualize lag metrics</li>
+            </ul>
 
-      <h5 class="text-success">🚀 Key Takeaway</h5>
-      <p>
-        Kafka lag is a symptom — not the root problem. Always check <strong>processing throughput</strong>,
-        <strong>partition balance</strong>, and <strong>consumer configuration</strong>. 
-        Measure first, then scale or optimize — blindly increasing consumers won’t fix bad logic.
-      </p>
+            <h5 class="text-success">🚀 Key Takeaway</h5>
+            <p>
+              Kafka lag is a symptom — not the root problem. Always check <strong>processing throughput</strong>,
+              <strong>partition balance</strong>, and <strong>consumer configuration</strong>.
+              Measure first, then scale or optimize — blindly increasing consumers won’t fix bad logic.
+            </p>
 
-    </div>
-  </div>
-</div>
+          </div>
+        </div>
+      </div>
 
-<div class="accordion-item">
-  <h2 class="accordion-header" id="headingRandom500">
-    <button class="accordion-button collapsed search-item text-danger" type="button" data-bs-toggle="collapse"
-      data-bs-target="#springBootRandom500" aria-expanded="false" aria-controls="springBootRandom500">
-      ⚠️ Users Report Random 500 Errors, but Logs Look Fine — What’s Your Next Step?
-    </button>
-  </h2>
-  <div id="springBootRandom500" class="accordion-collapse collapse">
-    <div class="accordion-body">
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingRandom500">
+          <button class="accordion-button collapsed search-item text-danger" type="button" data-bs-toggle="collapse"
+            data-bs-target="#springBootRandom500" aria-expanded="false" aria-controls="springBootRandom500">
+            ⚠️ Users Report Random 500 Errors, but Logs Look Fine — What’s Your Next Step?
+          </button>
+        </h2>
+        <div id="springBootRandom500" class="accordion-collapse collapse">
+          <div class="accordion-body">
 
-      <p class="highlight-yellow">
-        Intermittent <code>HTTP 500</code> errors indicate that something is failing inside your application — but if logs appear normal,
-        the issue could lie in <strong>infrastructure, concurrency, or missing error capture</strong>. 
-        Here's how to systematically diagnose it.
-      </p>
+            <p class="highlight-yellow">
+              Intermittent <code>HTTP 500</code> errors indicate that something is failing inside your application — but
+              if logs appear normal,
+              the issue could lie in <strong>infrastructure, concurrency, or missing error capture</strong>.
+              Here's how to systematically diagnose it.
+            </p>
 
-      <h5 class="text-info">🧭 Step-by-Step Troubleshooting Approach</h5>
+            <h5 class="text-info">🧭 Step-by-Step Troubleshooting Approach</h5>
 
-      <h6 class="text-primary">1️⃣ Confirm the Error Pattern</h6>
-      <ul>
-        <li>Check if the issue occurs:
-          <ul>
-            <li>Under specific load conditions</li>
-            <li>For certain endpoints or payload sizes</li>
-            <li>At certain times (e.g., peak traffic)</li>
-          </ul>
-        </li>
-        <li>Use monitoring tools like <strong>Grafana</strong>, <strong>New Relic</strong>, or <strong>Datadog</strong> to detect spikes in 5xx responses.</li>
-        <li>Look at <code>HTTP status</code> logs at the gateway/load balancer level.</li>
-      </ul>
+            <h6 class="text-primary">1️⃣ Confirm the Error Pattern</h6>
+            <ul>
+              <li>Check if the issue occurs:
+                <ul>
+                  <li>Under specific load conditions</li>
+                  <li>For certain endpoints or payload sizes</li>
+                  <li>At certain times (e.g., peak traffic)</li>
+                </ul>
+              </li>
+              <li>Use monitoring tools like <strong>Grafana</strong>, <strong>New Relic</strong>, or
+                <strong>Datadog</strong> to detect spikes in 5xx responses.</li>
+              <li>Look at <code>HTTP status</code> logs at the gateway/load balancer level.</li>
+            </ul>
 
-      <h6 class="text-primary">2️⃣ Reproduce the Error Locally or in Staging</h6>
-      <ul>
-        <li>Run a <strong>load test</strong> using tools like <strong>JMeter</strong> or <strong>k6</strong>.</li>
-        <li>Try the same request patterns users report — large payloads, concurrent hits, or edge-case inputs.</li>
-      </ul>
+            <h6 class="text-primary">2️⃣ Reproduce the Error Locally or in Staging</h6>
+            <ul>
+              <li>Run a <strong>load test</strong> using tools like <strong>JMeter</strong> or <strong>k6</strong>.</li>
+              <li>Try the same request patterns users report — large payloads, concurrent hits, or edge-case inputs.
+              </li>
+            </ul>
 
-      <pre class="language-bash"><code>
+            <pre class="language-bash"><code>
 k6 run --vus 50 --duration 30s loadtest.js
       </code></pre>
 
-      <h6 class="text-primary">3️⃣ Enable Full Error Visibility</h6>
-      <ul>
-        <li>Add a <strong>global exception handler</strong> to catch unlogged exceptions:</li>
-      </ul>
+            <h6 class="text-primary">3️⃣ Enable Full Error Visibility</h6>
+            <ul>
+              <li>Add a <strong>global exception handler</strong> to catch unlogged exceptions:</li>
+            </ul>
 
-      <pre class="language-java"><code>
+            <pre class="language-java"><code>
 @RestControllerAdvice
 public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
@@ -752,18 +1729,21 @@ public class GlobalExceptionHandler {
 }
       </code></pre>
 
-      <ul>
-        <li>Ensure your logging framework (e.g., Log4j2) is not filtering <code>ERROR</code> logs due to config issues.</li>
-        <li>Log stack traces with <code>ex.getMessage()</code> and <code>ex</code> itself — not just the message.</li>
-      </ul>
+            <ul>
+              <li>Ensure your logging framework (e.g., Log4j2) is not filtering <code>ERROR</code> logs due to config
+                issues.</li>
+              <li>Log stack traces with <code>ex.getMessage()</code> and <code>ex</code> itself — not just the message.
+              </li>
+            </ul>
 
-      <h6 class="text-primary">4️⃣ Correlate Requests with Trace IDs</h6>
-      <ul>
-        <li>Enable distributed tracing (e.g., <strong>Spring Cloud Sleuth</strong>, <strong>OpenTelemetry</strong>).</li>
-        <li>Add trace IDs in logs and response headers to correlate client-side and server-side logs.</li>
-      </ul>
+            <h6 class="text-primary">4️⃣ Correlate Requests with Trace IDs</h6>
+            <ul>
+              <li>Enable distributed tracing (e.g., <strong>Spring Cloud Sleuth</strong>,
+                <strong>OpenTelemetry</strong>).</li>
+              <li>Add trace IDs in logs and response headers to correlate client-side and server-side logs.</li>
+            </ul>
 
-      <pre class="language-yaml"><code>
+            <pre class="language-yaml"><code>
 spring:
   sleuth:
     sampler:
@@ -772,191 +1752,198 @@ spring:
     base-url: http://zipkin-server:9411
       </code></pre>
 
-      <h6 class="text-primary">5️⃣ Check Infrastructure and Network Layers</h6>
-      <ul>
-        <li>500 errors can originate from reverse proxies (e.g., Nginx, API Gateway) if the backend times out or resets.</li>
-        <li>Check:
-          <ul>
-            <li><code>upstream timed out</code> or <code>connection reset by peer</code> in gateway logs</li>
-            <li>Container restarts or <code>OOMKilled</code> events in Kubernetes/Docker</li>
-            <li>Load balancer health check logs</li>
-          </ul>
-        </li>
-      </ul>
+            <h6 class="text-primary">5️⃣ Check Infrastructure and Network Layers</h6>
+            <ul>
+              <li>500 errors can originate from reverse proxies (e.g., Nginx, API Gateway) if the backend times out or
+                resets.</li>
+              <li>Check:
+                <ul>
+                  <li><code>upstream timed out</code> or <code>connection reset by peer</code> in gateway logs</li>
+                  <li>Container restarts or <code>OOMKilled</code> events in Kubernetes/Docker</li>
+                  <li>Load balancer health check logs</li>
+                </ul>
+              </li>
+            </ul>
 
-      <h6 class="text-primary">6️⃣ Investigate Threading and Resource Exhaustion</h6>
-      <ul>
-        <li>Check JVM metrics:
-          <ul>
-            <li><code>Thread count</code>, <code>GC pauses</code>, <code>CPU usage</code></li>
-          </ul>
-        </li>
-        <li>Look for blocked threads or connection pool exhaustion using <code>jstack</code> or <code>VisualVM</code>.</li>
-      </ul>
+            <h6 class="text-primary">6️⃣ Investigate Threading and Resource Exhaustion</h6>
+            <ul>
+              <li>Check JVM metrics:
+                <ul>
+                  <li><code>Thread count</code>, <code>GC pauses</code>, <code>CPU usage</code></li>
+                </ul>
+              </li>
+              <li>Look for blocked threads or connection pool exhaustion using <code>jstack</code> or
+                <code>VisualVM</code>.</li>
+            </ul>
 
-      <pre class="language-bash"><code>
+            <pre class="language-bash"><code>
 jstack &lt;pid&gt; | grep BLOCKED
       </code></pre>
 
-      <h6 class="text-primary">7️⃣ Add Temporary Diagnostic Logging</h6>
-      <ul>
-        <li>Log request start/end times with correlation IDs.</li>
-        <li>Include exception types, causes, and request metadata.</li>
-        <li>Optionally use <strong>Spring Boot Actuator</strong> to expose metrics and health indicators.</li>
-      </ul>
+            <h6 class="text-primary">7️⃣ Add Temporary Diagnostic Logging</h6>
+            <ul>
+              <li>Log request start/end times with correlation IDs.</li>
+              <li>Include exception types, causes, and request metadata.</li>
+              <li>Optionally use <strong>Spring Boot Actuator</strong> to expose metrics and health indicators.</li>
+            </ul>
 
-      <pre class="language-bash"><code>
+            <pre class="language-bash"><code>
 GET /actuator/health
 GET /actuator/metrics/http.server.requests
       </code></pre>
 
-      <h5 class="text-success">🏁 Common Root Causes</h5>
-      <ul>
-        <li>Uncaught runtime exceptions not logged properly.</li>
-        <li>Thread or connection pool exhaustion under load.</li>
-        <li>Infrastructure timeouts (reverse proxy → backend delays).</li>
-        <li>Hidden null pointer or race conditions in async code.</li>
-        <li>Silent OOM errors or GC pauses causing dropped requests.</li>
-      </ul>
+            <h5 class="text-success">🏁 Common Root Causes</h5>
+            <ul>
+              <li>Uncaught runtime exceptions not logged properly.</li>
+              <li>Thread or connection pool exhaustion under load.</li>
+              <li>Infrastructure timeouts (reverse proxy → backend delays).</li>
+              <li>Hidden null pointer or race conditions in async code.</li>
+              <li>Silent OOM errors or GC pauses causing dropped requests.</li>
+            </ul>
 
-      <h5 class="text-warning">⚡ Quick Fix Checklist</h5>
-      <ul>
-        <li>✅ Add global exception handling and detailed logging</li>
-        <li>✅ Check Nginx/API Gateway logs for proxy errors</li>
-        <li>✅ Review JVM and thread pool metrics</li>
-        <li>✅ Correlate requests using trace IDs</li>
-        <li>✅ Reproduce under controlled load test</li>
-      </ul>
+            <h5 class="text-warning">⚡ Quick Fix Checklist</h5>
+            <ul>
+              <li>✅ Add global exception handling and detailed logging</li>
+              <li>✅ Check Nginx/API Gateway logs for proxy errors</li>
+              <li>✅ Review JVM and thread pool metrics</li>
+              <li>✅ Correlate requests using trace IDs</li>
+              <li>✅ Reproduce under controlled load test</li>
+            </ul>
 
-      <h5 class="text-success">🚀 Key Takeaway</h5>
-      <p>
-        Random 500s often stem from unhandled exceptions or infrastructure-level timeouts. 
-        If logs are clean, enhance observability — add <strong>structured logging, distributed tracing, and monitoring</strong> 
-        to pinpoint where the failure originates before making code changes.
-      </p>
+            <h5 class="text-success">🚀 Key Takeaway</h5>
+            <p>
+              Random 500s often stem from unhandled exceptions or infrastructure-level timeouts.
+              If logs are clean, enhance observability — add <strong>structured logging, distributed tracing, and
+                monitoring</strong>
+              to pinpoint where the failure originates before making code changes.
+            </p>
 
-    </div>
-  </div>
-</div>
-<div class="accordion-item">
-  <h2 class="accordion-header" id="headingKubernetesDebug">
-    <button class="accordion-button collapsed search-item text-warning" type="button" data-bs-toggle="collapse"
-      data-bs-target="#springBootKubernetesDebug" aria-expanded="false" aria-controls="springBootKubernetesDebug">
-      🐳 Service Works Locally but Fails in Kubernetes — How Do You Debug?
-    </button>
-  </h2>
-  <div id="springBootKubernetesDebug" class="accordion-collapse collapse">
-    <div class="accordion-body">
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingKubernetesDebug">
+          <button class="accordion-button collapsed search-item text-warning" type="button" data-bs-toggle="collapse"
+            data-bs-target="#springBootKubernetesDebug" aria-expanded="false" aria-controls="springBootKubernetesDebug">
+            🐳 Service Works Locally but Fails in Kubernetes — How Do You Debug?
+          </button>
+        </h2>
+        <div id="springBootKubernetesDebug" class="accordion-collapse collapse">
+          <div class="accordion-body">
 
-      <p class="highlight-yellow">
-        When your Spring Boot service works perfectly in local (IDE or Docker) but fails after deploying to Kubernetes,
-        it usually indicates a <strong>configuration mismatch, networking issue, or missing dependency</strong> in the
-        container or cluster environment.
-      </p>
+            <p class="highlight-yellow">
+              When your Spring Boot service works perfectly in local (IDE or Docker) but fails after deploying to
+              Kubernetes,
+              it usually indicates a <strong>configuration mismatch, networking issue, or missing dependency</strong> in
+              the
+              container or cluster environment.
+            </p>
 
-      <h5 class="text-info">🧭 Step-by-Step Kubernetes Debugging Approach</h5>
+            <h5 class="text-info">🧭 Step-by-Step Kubernetes Debugging Approach</h5>
 
-      <h6 class="text-primary">1️⃣ Check Pod and Container Status</h6>
-      <ul>
-        <li>List all pods and their states:</li>
-      </ul>
+            <h6 class="text-primary">1️⃣ Check Pod and Container Status</h6>
+            <ul>
+              <li>List all pods and their states:</li>
+            </ul>
 
-      <pre class="language-bash"><code>
+            <pre class="language-bash"><code>
 kubectl get pods -n your-namespace
 kubectl describe pod &lt;pod-name&gt;
       </code></pre>
 
-      <ul>
-        <li>Look for:
-          <ul>
-            <li><strong>CrashLoopBackOff</strong> or <strong>ImagePullBackOff</strong> errors</li>
-            <li>Startup/Readiness probe failures</li>
-            <li>OOMKilled or container restarts</li>
-          </ul>
-        </li>
-      </ul>
+            <ul>
+              <li>Look for:
+                <ul>
+                  <li><strong>CrashLoopBackOff</strong> or <strong>ImagePullBackOff</strong> errors</li>
+                  <li>Startup/Readiness probe failures</li>
+                  <li>OOMKilled or container restarts</li>
+                </ul>
+              </li>
+            </ul>
 
-      <h6 class="text-primary">2️⃣ View Application Logs</h6>
-      <ul>
-        <li>Access logs directly from the failing pod:</li>
-      </ul>
+            <h6 class="text-primary">2️⃣ View Application Logs</h6>
+            <ul>
+              <li>Access logs directly from the failing pod:</li>
+            </ul>
 
-      <pre class="language-bash"><code>
+            <pre class="language-bash"><code>
 kubectl logs &lt;pod-name&gt; -n your-namespace
 kubectl logs &lt;pod-name&gt; -c &lt;container-name&gt; --previous
       </code></pre>
 
-      <ul>
-        <li>Check for exceptions like:
-          <ul>
-            <li><code>BindException</code> → Port conflict</li>
-            <li><code>UnknownHostException</code> → DNS or service name issue</li>
-            <li><code>Connection Refused</code> → Service not reachable</li>
-            <li><code>FileNotFoundException</code> → Missing ConfigMap or Secret</li>
-          </ul>
-        </li>
-      </ul>
+            <ul>
+              <li>Check for exceptions like:
+                <ul>
+                  <li><code>BindException</code> → Port conflict</li>
+                  <li><code>UnknownHostException</code> → DNS or service name issue</li>
+                  <li><code>Connection Refused</code> → Service not reachable</li>
+                  <li><code>FileNotFoundException</code> → Missing ConfigMap or Secret</li>
+                </ul>
+              </li>
+            </ul>
 
-      <h6 class="text-primary">3️⃣ Verify Environment Variables and ConfigMaps</h6>
-      <ul>
-        <li>Inspect environment variables inside the container:</li>
-      </ul>
+            <h6 class="text-primary">3️⃣ Verify Environment Variables and ConfigMaps</h6>
+            <ul>
+              <li>Inspect environment variables inside the container:</li>
+            </ul>
 
-      <pre class="language-bash"><code>
+            <pre class="language-bash"><code>
 kubectl exec -it &lt;pod-name&gt; -- env
       </code></pre>
 
-      <ul>
-        <li>Compare values like <code>SPRING_PROFILES_ACTIVE</code>, <code>DB_URL</code>, <code>API_KEYS</code> with local setup.</li>
-        <li>Check if ConfigMaps or Secrets are correctly mounted:</li>
-      </ul>
+            <ul>
+              <li>Compare values like <code>SPRING_PROFILES_ACTIVE</code>, <code>DB_URL</code>, <code>API_KEYS</code>
+                with local setup.</li>
+              <li>Check if ConfigMaps or Secrets are correctly mounted:</li>
+            </ul>
 
-      <pre class="language-bash"><code>
+            <pre class="language-bash"><code>
 kubectl describe configmap &lt;configmap-name&gt;
 kubectl describe secret &lt;secret-name&gt;
       </code></pre>
 
-      <h6 class="text-primary">4️⃣ Check Networking and DNS Resolution</h6>
-      <ul>
-        <li>Test internal service reachability using <code>curl</code> or <code>ping</code> inside the pod:</li>
-      </ul>
+            <h6 class="text-primary">4️⃣ Check Networking and DNS Resolution</h6>
+            <ul>
+              <li>Test internal service reachability using <code>curl</code> or <code>ping</code> inside the pod:</li>
+            </ul>
 
-      <pre class="language-bash"><code>
+            <pre class="language-bash"><code>
 kubectl exec -it &lt;pod-name&gt; -- sh
 # Inside pod
 curl http://other-service:8080/actuator/health
 nslookup other-service
       </code></pre>
 
-      <ul>
-        <li>If DNS fails → check <code>CoreDNS</code> pods (<code>kube-system</code> namespace).</li>
-        <li>If connection refused → verify <code>Service</code> and <code>Deployment</code> ports match.</li>
-      </ul>
+            <ul>
+              <li>If DNS fails → check <code>CoreDNS</code> pods (<code>kube-system</code> namespace).</li>
+              <li>If connection refused → verify <code>Service</code> and <code>Deployment</code> ports match.</li>
+            </ul>
 
-      <h6 class="text-primary">5️⃣ Validate Kubernetes Service and Port Configuration</h6>
-      <ul>
-        <li>Ensure service selector labels match pod labels:</li>
-      </ul>
+            <h6 class="text-primary">5️⃣ Validate Kubernetes Service and Port Configuration</h6>
+            <ul>
+              <li>Ensure service selector labels match pod labels:</li>
+            </ul>
 
-      <pre class="language-bash"><code>
+            <pre class="language-bash"><code>
 kubectl get svc -n your-namespace
 kubectl describe svc &lt;service-name&gt;
       </code></pre>
 
-      <ul>
-        <li>Example check:
-          <ul>
-            <li><code>targetPort: 8080</code> in service matches <code>containerPort: 8080</code> in deployment.</li>
-          </ul>
-        </li>
-      </ul>
+            <ul>
+              <li>Example check:
+                <ul>
+                  <li><code>targetPort: 8080</code> in service matches <code>containerPort: 8080</code> in deployment.
+                  </li>
+                </ul>
+              </li>
+            </ul>
 
-      <h6 class="text-primary">6️⃣ Check Health Probes and Resource Limits</h6>
-      <ul>
-        <li>Misconfigured liveness/readiness probes can kill healthy pods:</li>
-      </ul>
+            <h6 class="text-primary">6️⃣ Check Health Probes and Resource Limits</h6>
+            <ul>
+              <li>Misconfigured liveness/readiness probes can kill healthy pods:</li>
+            </ul>
 
-      <pre class="language-yaml"><code>
+            <pre class="language-yaml"><code>
 livenessProbe:
   httpGet:
     path: /actuator/health
@@ -965,111 +1952,117 @@ livenessProbe:
   periodSeconds: 10
       </code></pre>
 
-      <ul>
-        <li>Ensure your app starts before probes fire (adjust <code>initialDelaySeconds</code>).</li>
-        <li>Check <strong>resource requests/limits</strong> — too low CPU/memory may crash under load.</li>
-      </ul>
+            <ul>
+              <li>Ensure your app starts before probes fire (adjust <code>initialDelaySeconds</code>).</li>
+              <li>Check <strong>resource requests/limits</strong> — too low CPU/memory may crash under load.</li>
+            </ul>
 
-      <h6 class="text-primary">7️⃣ Compare Runtime vs Local Configuration</h6>
-      <ul>
-        <li>Differences in:
-          <ul>
-            <li>Database URLs / credentials</li>
-            <li>External API endpoints</li>
-            <li>Profile-specific config (e.g., dev vs prod)</li>
-          </ul>
-        </li>
-        <li>Inspect the effective Spring Boot configuration:</li>
-      </ul>
+            <h6 class="text-primary">7️⃣ Compare Runtime vs Local Configuration</h6>
+            <ul>
+              <li>Differences in:
+                <ul>
+                  <li>Database URLs / credentials</li>
+                  <li>External API endpoints</li>
+                  <li>Profile-specific config (e.g., dev vs prod)</li>
+                </ul>
+              </li>
+              <li>Inspect the effective Spring Boot configuration:</li>
+            </ul>
 
-      <pre class="language-bash"><code>
+            <pre class="language-bash"><code>
 kubectl exec -it &lt;pod-name&gt; -- curl http://localhost:8080/actuator/env
       </code></pre>
 
-      <h6 class="text-primary">8️⃣ Debug Inside the Pod</h6>
-      <ul>
-        <li>Use <code>kubectl exec</code> with <code>bash/sh</code> to explore filesystem or test connectivity.</li>
-        <li>Check mounted volumes and application JAR files.</li>
-      </ul>
+            <h6 class="text-primary">8️⃣ Debug Inside the Pod</h6>
+            <ul>
+              <li>Use <code>kubectl exec</code> with <code>bash/sh</code> to explore filesystem or test connectivity.
+              </li>
+              <li>Check mounted volumes and application JAR files.</li>
+            </ul>
 
-      <pre class="language-bash"><code>
+            <pre class="language-bash"><code>
 kubectl exec -it &lt;pod-name&gt; -- ls /config
 kubectl exec -it &lt;pod-name&gt; -- cat /config/application.yml
       </code></pre>
 
-      <h5 class="text-success">🏁 Common Root Causes</h5>
-      <ul>
-        <li>❌ Wrong environment variables or missing ConfigMaps</li>
-        <li>❌ Port mismatch between Service and Deployment</li>
-        <li>❌ Network/DNS issues inside the cluster</li>
-        <li>❌ Liveness probe killing slow-starting service</li>
-        <li>❌ Missing Secrets or file mounts</li>
-        <li>❌ Different profile configurations (dev vs prod)</li>
-      </ul>
+            <h5 class="text-success">🏁 Common Root Causes</h5>
+            <ul>
+              <li>❌ Wrong environment variables or missing ConfigMaps</li>
+              <li>❌ Port mismatch between Service and Deployment</li>
+              <li>❌ Network/DNS issues inside the cluster</li>
+              <li>❌ Liveness probe killing slow-starting service</li>
+              <li>❌ Missing Secrets or file mounts</li>
+              <li>❌ Different profile configurations (dev vs prod)</li>
+            </ul>
 
-      <h5 class="text-warning">⚡ Quick Fix Checklist</h5>
-      <ul>
-        <li>✅ Check pod logs and status (<code>kubectl describe</code>)</li>
-        <li>✅ Verify ConfigMaps, Secrets, and environment variables</li>
-        <li>✅ Match <code>containerPort</code> ↔ <code>targetPort</code> correctly</li>
-        <li>✅ Test internal service connectivity using <code>curl</code></li>
-        <li>✅ Adjust health probe timings</li>
-        <li>✅ Compare Kubernetes and local environment configs</li>
-      </ul>
+            <h5 class="text-warning">⚡ Quick Fix Checklist</h5>
+            <ul>
+              <li>✅ Check pod logs and status (<code>kubectl describe</code>)</li>
+              <li>✅ Verify ConfigMaps, Secrets, and environment variables</li>
+              <li>✅ Match <code>containerPort</code> ↔ <code>targetPort</code> correctly</li>
+              <li>✅ Test internal service connectivity using <code>curl</code></li>
+              <li>✅ Adjust health probe timings</li>
+              <li>✅ Compare Kubernetes and local environment configs</li>
+            </ul>
 
-      <h5 class="text-success">🚀 Key Takeaway</h5>
-      <p>
-        When debugging Kubernetes deployment issues, think in layers — <strong>Pod → Config → Network → Service</strong>.
-        Start from the container logs and environment, then move outward to networking and cluster configuration.
-        A systematic approach saves time and reveals subtle environment mismatches.
-      </p>
+            <h5 class="text-success">🚀 Key Takeaway</h5>
+            <p>
+              When debugging Kubernetes deployment issues, think in layers — <strong>Pod → Config → Network →
+                Service</strong>.
+              Start from the container logs and environment, then move outward to networking and cluster configuration.
+              A systematic approach saves time and reveals subtle environment mismatches.
+            </p>
 
-    </div>
-  </div>
-</div>
+          </div>
+        </div>
+      </div>
 
-<div class="accordion-item">
-  <h2 class="accordion-header" id="headingBatchJobFailure">
-    <button class="accordion-button collapsed search-item text-danger" type="button" data-bs-toggle="collapse"
-      data-bs-target="#springBootBatchJobFailure" aria-expanded="false" aria-controls="springBootBatchJobFailure">
-      ⚙️ A Batch Job Processing 1M Records Fails Halfway with No Clear Error — How Do You Fix It?
-    </button>
-  </h2>
-  <div id="springBootBatchJobFailure" class="accordion-collapse collapse">
-    <div class="accordion-body">
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingBatchJobFailure">
+          <button class="accordion-button collapsed search-item text-danger" type="button" data-bs-toggle="collapse"
+            data-bs-target="#springBootBatchJobFailure" aria-expanded="false" aria-controls="springBootBatchJobFailure">
+            ⚙️ A Batch Job Processing 1M Records Fails Halfway with No Clear Error — How Do You Fix It?
+          </button>
+        </h2>
+        <div id="springBootBatchJobFailure" class="accordion-collapse collapse">
+          <div class="accordion-body">
 
-      <p class="highlight-yellow">
-        When a batch job fails halfway through large-scale processing (like 1 million records) without clear errors,
-        it indicates issues like <strong>silent exceptions, memory leaks, or transaction handling problems</strong>.
-        The goal is to make the job observable, fault-tolerant, and resumable.
-      </p>
+            <p class="highlight-yellow">
+              When a batch job fails halfway through large-scale processing (like 1 million records) without clear
+              errors,
+              it indicates issues like <strong>silent exceptions, memory leaks, or transaction handling
+                problems</strong>.
+              The goal is to make the job observable, fault-tolerant, and resumable.
+            </p>
 
-      <h5 class="text-info">🧭 Step-by-Step Debugging and Resolution Approach</h5>
+            <h5 class="text-info">🧭 Step-by-Step Debugging and Resolution Approach</h5>
 
-      <h6 class="text-primary">1️⃣ Reproduce and Observe Failure</h6>
-      <ul>
-        <li>Run the batch job locally or in a controlled environment with the same dataset.</li>
-        <li>Reduce the dataset to smaller chunks (e.g., 10k, 50k records) and see if it completes successfully.</li>
-        <li>If failure timing is consistent (e.g., always around 500k), suspect memory or data-related issues.</li>
-      </ul>
+            <h6 class="text-primary">1️⃣ Reproduce and Observe Failure</h6>
+            <ul>
+              <li>Run the batch job locally or in a controlled environment with the same dataset.</li>
+              <li>Reduce the dataset to smaller chunks (e.g., 10k, 50k records) and see if it completes successfully.
+              </li>
+              <li>If failure timing is consistent (e.g., always around 500k), suspect memory or data-related issues.
+              </li>
+            </ul>
 
-      <h6 class="text-primary">2️⃣ Enable Detailed Logging and Exception Tracing</h6>
-      <ul>
-        <li>Set logging level to <code>DEBUG</code> for your batch and persistence packages:</li>
-      </ul>
+            <h6 class="text-primary">2️⃣ Enable Detailed Logging and Exception Tracing</h6>
+            <ul>
+              <li>Set logging level to <code>DEBUG</code> for your batch and persistence packages:</li>
+            </ul>
 
-      <pre class="language-yaml"><code>
+            <pre class="language-yaml"><code>
 logging:
   level:
     org.springframework.batch: DEBUG
     org.springframework.jdbc: DEBUG
       </code></pre>
 
-      <ul>
-        <li>Add error-handling logic to capture skipped or failed records explicitly.</li>
-      </ul>
+            <ul>
+              <li>Add error-handling logic to capture skipped or failed records explicitly.</li>
+            </ul>
 
-      <pre class="language-java"><code>
+            <pre class="language-java"><code>
 @Bean
 public SkipListener&lt;Input, Output&gt; skipListener() {
     return new SkipListener&lt;&gt;() {
@@ -1081,32 +2074,32 @@ public SkipListener&lt;Input, Output&gt; skipListener() {
 }
       </code></pre>
 
-      <h6 class="text-primary">3️⃣ Check Memory and Resource Usage</h6>
-      <ul>
-        <li>Large datasets often cause <code>OutOfMemoryError</code> or GC stalls without explicit logs.</li>
-        <li>Monitor heap and CPU usage during execution:</li>
-      </ul>
+            <h6 class="text-primary">3️⃣ Check Memory and Resource Usage</h6>
+            <ul>
+              <li>Large datasets often cause <code>OutOfMemoryError</code> or GC stalls without explicit logs.</li>
+              <li>Monitor heap and CPU usage during execution:</li>
+            </ul>
 
-      <pre class="language-bash"><code>
+            <pre class="language-bash"><code>
 jvisualvm
 jstat -gc &lt;pid&gt; 5s
       </code></pre>
 
-      <ul>
-        <li>Increase JVM memory temporarily and observe behavior:</li>
-      </ul>
+            <ul>
+              <li>Increase JVM memory temporarily and observe behavior:</li>
+            </ul>
 
-      <pre class="language-bash"><code>
+            <pre class="language-bash"><code>
 java -Xms1G -Xmx4G -jar batch-job.jar
       </code></pre>
 
-      <h6 class="text-primary">4️⃣ Verify Transaction Boundaries and Commit Intervals</h6>
-      <ul>
-        <li>Large transactions can fail or cause DB timeouts halfway through.</li>
-        <li>Ensure you commit in small chunks (e.g., 500–1000 records per transaction):</li>
-      </ul>
+            <h6 class="text-primary">4️⃣ Verify Transaction Boundaries and Commit Intervals</h6>
+            <ul>
+              <li>Large transactions can fail or cause DB timeouts halfway through.</li>
+              <li>Ensure you commit in small chunks (e.g., 500–1000 records per transaction):</li>
+            </ul>
 
-      <pre class="language-java"><code>
+            <pre class="language-java"><code>
 .step("processRecords")
   .&lt;Input, Output&gt;chunk(1000)
   .reader(reader())
@@ -1118,17 +2111,17 @@ java -Xms1G -Xmx4G -jar batch-job.jar
   .build();
       </code></pre>
 
-      <ul>
-        <li>Smaller chunk sizes = better fault tolerance + lower rollback cost.</li>
-      </ul>
+            <ul>
+              <li>Smaller chunk sizes = better fault tolerance + lower rollback cost.</li>
+            </ul>
 
-      <h6 class="text-primary">5️⃣ Enable Spring Batch Restartability</h6>
-      <ul>
-        <li>If the job fails, you shouldn’t need to restart from the beginning.</li>
-        <li>Spring Batch provides checkpointing and restart features out of the box:</li>
-      </ul>
+            <h6 class="text-primary">5️⃣ Enable Spring Batch Restartability</h6>
+            <ul>
+              <li>If the job fails, you shouldn’t need to restart from the beginning.</li>
+              <li>Spring Batch provides checkpointing and restart features out of the box:</li>
+            </ul>
 
-      <pre class="language-java"><code>
+            <pre class="language-java"><code>
 jobBuilderFactory.get("recordJob")
   .incrementer(new RunIdIncrementer())
   .start(processRecordsStep())
@@ -1136,29 +2129,30 @@ jobBuilderFactory.get("recordJob")
   .build();
       </code></pre>
 
-      <ul>
-        <li>Verify <code>JobRepository</code> is configured to persist execution metadata.</li>
-      </ul>
+            <ul>
+              <li>Verify <code>JobRepository</code> is configured to persist execution metadata.</li>
+            </ul>
 
-      <h6 class="text-primary">6️⃣ Investigate Database and I/O Bottlenecks</h6>
-      <ul>
-        <li>Long-running batch jobs often hit database timeouts or connection pool exhaustion.</li>
-        <li>Check DB logs for:
-          <ul>
-            <li>Deadlocks or slow queries</li>
-            <li>Connection resets</li>
-            <li>Transaction timeouts</li>
-          </ul>
-        </li>
-        <li>If using external APIs, implement retries and timeouts with exponential backoff.</li>
-      </ul>
+            <h6 class="text-primary">6️⃣ Investigate Database and I/O Bottlenecks</h6>
+            <ul>
+              <li>Long-running batch jobs often hit database timeouts or connection pool exhaustion.</li>
+              <li>Check DB logs for:
+                <ul>
+                  <li>Deadlocks or slow queries</li>
+                  <li>Connection resets</li>
+                  <li>Transaction timeouts</li>
+                </ul>
+              </li>
+              <li>If using external APIs, implement retries and timeouts with exponential backoff.</li>
+            </ul>
 
-      <h6 class="text-primary">7️⃣ Add Monitoring and Metrics</h6>
-      <ul>
-        <li>Integrate <strong>Spring Boot Actuator</strong> and <strong>Micrometer</strong> to track job progress and duration.</li>
-      </ul>
+            <h6 class="text-primary">7️⃣ Add Monitoring and Metrics</h6>
+            <ul>
+              <li>Integrate <strong>Spring Boot Actuator</strong> and <strong>Micrometer</strong> to track job progress
+                and duration.</li>
+            </ul>
 
-      <pre class="language-yaml"><code>
+            <pre class="language-yaml"><code>
 management:
   endpoints:
     web:
@@ -1166,88 +2160,92 @@ management:
         include: ["health", "metrics", "prometheus"]
       </code></pre>
 
-      <ul>
-        <li>Monitor batch metrics like:
-          <ul>
-            <li><code>batch.job.execution.duration</code></li>
-            <li><code>batch.step.read.count</code></li>
-            <li><code>batch.step.skip.count</code></li>
-          </ul>
-        </li>
-      </ul>
+            <ul>
+              <li>Monitor batch metrics like:
+                <ul>
+                  <li><code>batch.job.execution.duration</code></li>
+                  <li><code>batch.step.read.count</code></li>
+                  <li><code>batch.step.skip.count</code></li>
+                </ul>
+              </li>
+            </ul>
 
-      <h6 class="text-primary">8️⃣ Add Defensive Code and Retry Logic</h6>
-      <ul>
-        <li>Wrap critical sections with retries for transient errors:</li>
-      </ul>
+            <h6 class="text-primary">8️⃣ Add Defensive Code and Retry Logic</h6>
+            <ul>
+              <li>Wrap critical sections with retries for transient errors:</li>
+            </ul>
 
-      <pre class="language-java"><code>
+            <pre class="language-java"><code>
 .retryLimit(3)
 .retry(SQLException.class)
 .retry(TransientDataAccessException.class)
       </code></pre>
 
-      <ul>
-        <li>Log partial batch results for postmortem analysis.</li>
-      </ul>
+            <ul>
+              <li>Log partial batch results for postmortem analysis.</li>
+            </ul>
 
-      <h5 class="text-success">🏁 Common Root Causes</h5>
-      <ul>
-        <li>🧠 Memory leak or high GC pauses</li>
-        <li>💾 Uncommitted large transaction (commit interval too high)</li>
-        <li>🔌 Database or external service timeout midway</li>
-        <li>🧩 Missing error handling — exceptions swallowed silently</li>
-        <li>📊 Job not restartable after failure</li>
-      </ul>
+            <h5 class="text-success">🏁 Common Root Causes</h5>
+            <ul>
+              <li>🧠 Memory leak or high GC pauses</li>
+              <li>💾 Uncommitted large transaction (commit interval too high)</li>
+              <li>🔌 Database or external service timeout midway</li>
+              <li>🧩 Missing error handling — exceptions swallowed silently</li>
+              <li>📊 Job not restartable after failure</li>
+            </ul>
 
-      <h5 class="text-warning">⚡ Quick Fix Checklist</h5>
-      <ul>
-        <li>✅ Enable DEBUG logs for Spring Batch and JDBC</li>
-        <li>✅ Reduce chunk size and commit more frequently</li>
-        <li>✅ Add skip/retry logic with listener for error tracking</li>
-        <li>✅ Monitor memory and GC activity</li>
-        <li>✅ Use persistent <code>JobRepository</code> for restarts</li>
-        <li>✅ Validate DB connection stability and pool size</li>
-      </ul>
+            <h5 class="text-warning">⚡ Quick Fix Checklist</h5>
+            <ul>
+              <li>✅ Enable DEBUG logs for Spring Batch and JDBC</li>
+              <li>✅ Reduce chunk size and commit more frequently</li>
+              <li>✅ Add skip/retry logic with listener for error tracking</li>
+              <li>✅ Monitor memory and GC activity</li>
+              <li>✅ Use persistent <code>JobRepository</code> for restarts</li>
+              <li>✅ Validate DB connection stability and pool size</li>
+            </ul>
 
-      <h5 class="text-success">🚀 Key Takeaway</h5>
-      <p>
-        When a large batch job fails mid-run, make it <strong>observable</strong>, <strong>fault-tolerant</strong>,
-        and <strong>incrementally restartable</strong>. 
-        Most halfway failures are due to resource exhaustion, unlogged exceptions, or oversized transactions —
-        break down the workload, monitor actively, and add resilience.
-      </p>
+            <h5 class="text-success">🚀 Key Takeaway</h5>
+            <p>
+              When a large batch job fails mid-run, make it <strong>observable</strong>,
+              <strong>fault-tolerant</strong>,
+              and <strong>incrementally restartable</strong>.
+              Most halfway failures are due to resource exhaustion, unlogged exceptions, or oversized transactions —
+              break down the workload, monitor actively, and add resilience.
+            </p>
 
-    </div>
-  </div>
-</div>
+          </div>
+        </div>
+      </div>
 
-<div class="accordion-item">
-  <h2 class="accordion-header" id="headingMicroserviceAuth">
-    <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
-      data-bs-target="#microservicePrivateComm" aria-expanded="false" aria-controls="microservicePrivateComm">
-      🔒 Microservices Private Communication — Which Grant Type is Used?
-    </button>
-  </h2>
-  <div id="microservicePrivateComm" class="accordion-collapse collapse">
-    <div class="accordion-body">
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingMicroserviceAuth">
+          <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+            data-bs-target="#microservicePrivateComm" aria-expanded="false" aria-controls="microservicePrivateComm">
+            🔒 Microservices Private Communication — Which Grant Type is Used?
+          </button>
+        </h2>
+        <div id="microservicePrivateComm" class="accordion-collapse collapse">
+          <div class="accordion-body">
 
-      <p class="highlight-yellow">
-        In a microservices architecture, services often need to communicate with each other privately and securely. 
-        OAuth2 with <strong>client credentials grant type</strong> is commonly used for service-to-service authentication.
-      </p>
+            <p class="highlight-yellow">
+              In a microservices architecture, services often need to communicate with each other privately and
+              securely.
+              OAuth2 with <strong>client credentials grant type</strong> is commonly used for service-to-service
+              authentication.
+            </p>
 
-      <h5 class="text-info">🧩 How Service-to-Service Communication Works</h5>
-      <ul>
-        <li>Each service registers itself as a client in the OAuth2 authorization server.</li>
-        <li>The service uses <code>client_id</code> and <code>client_secret</code> to request an access token.</li>
-        <li>Other microservices validate this token before processing the request.</li>
-      </ul>
+            <h5 class="text-info">🧩 How Service-to-Service Communication Works</h5>
+            <ul>
+              <li>Each service registers itself as a client in the OAuth2 authorization server.</li>
+              <li>The service uses <code>client_id</code> and <code>client_secret</code> to request an access token.
+              </li>
+              <li>Other microservices validate this token before processing the request.</li>
+            </ul>
 
-      <h5 class="text-warning">⚡ Client Credentials Grant Flow</h5>
-      <ol>
-        <li>Service A requests a token from the authorization server:
-          <pre class="language-bash"><code>
+            <h5 class="text-warning">⚡ Client Credentials Grant Flow</h5>
+            <ol>
+              <li>Service A requests a token from the authorization server:
+                <pre class="language-bash"><code>
 POST /oauth/token
 Content-Type: application/x-www-form-urlencoded
 
@@ -1255,207 +2253,216 @@ grant_type=client_credentials
 &client_id=service-a
 &client_secret=SECRET
           </code></pre>
-        </li>
-        <li>Authorization server responds with an <code>access_token</code>.</li>
-        <li>Service A calls Service B and includes the token in the <code>Authorization: Bearer &lt;token&gt;</code> header.</li>
-        <li>Service B validates the token before processing the request.</li>
-      </ol>
+              </li>
+              <li>Authorization server responds with an <code>access_token</code>.</li>
+              <li>Service A calls Service B and includes the token in the
+                <code>Authorization: Bearer &lt;token&gt;</code> header.</li>
+              <li>Service B validates the token before processing the request.</li>
+            </ol>
 
-      <h5 class="text-success">✅ Key Points</h5>
-      <ul>
-        <li>No user involvement — ideal for server-to-server communication.</li>
-        <li>Access tokens are short-lived; services can refresh tokens if needed.</li>
-        <li>Works well with Spring Boot + Spring Security OAuth2 or any OAuth2-compliant framework.</li>
-        <li>Alternative: Mutual TLS (mTLS) can also secure service-to-service calls.</li>
-      </ul>
+            <h5 class="text-success">✅ Key Points</h5>
+            <ul>
+              <li>No user involvement — ideal for server-to-server communication.</li>
+              <li>Access tokens are short-lived; services can refresh tokens if needed.</li>
+              <li>Works well with Spring Boot + Spring Security OAuth2 or any OAuth2-compliant framework.</li>
+              <li>Alternative: Mutual TLS (mTLS) can also secure service-to-service calls.</li>
+            </ul>
 
-      <h5 class="text-primary">📌 Summary</h5>
-      <p>
-        For private communication between microservices, <strong>OAuth2 client credentials grant</strong> is the standard choice.
-        It allows services to authenticate themselves securely without user context, ensuring trusted, private communication within the system.
-      </p>
+            <h5 class="text-primary">📌 Summary</h5>
+            <p>
+              For private communication between microservices, <strong>OAuth2 client credentials grant</strong> is the
+              standard choice.
+              It allows services to authenticate themselves securely without user context, ensuring trusted, private
+              communication within the system.
+            </p>
 
-    </div>
-  </div>
-</div>
-<div class="accordion-item">
-  <h2 class="accordion-header" id="headingOAuth2GrantTypes">
-    <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
-      data-bs-target="#oauth2GrantTypes" aria-expanded="false" aria-controls="oauth2GrantTypes">
-      🔑 OAuth2 Grant Types — Examples, Real-World Use Cases, Pros & Cons
-    </button>
-  </h2>
-  <div id="oauth2GrantTypes" class="accordion-collapse collapse">
-    <div class="accordion-body">
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingOAuth2GrantTypes">
+          <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+            data-bs-target="#oauth2GrantTypes" aria-expanded="false" aria-controls="oauth2GrantTypes">
+            🔑 OAuth2 Grant Types — Examples, Real-World Use Cases, Pros & Cons
+          </button>
+        </h2>
+        <div id="oauth2GrantTypes" class="accordion-collapse collapse">
+          <div class="accordion-body">
 
-      <p class="highlight-yellow">
-        OAuth2 defines several grant types to obtain access tokens, each suited for a specific use case.
-      </p>
+            <p class="highlight-yellow">
+              OAuth2 defines several grant types to obtain access tokens, each suited for a specific use case.
+            </p>
 
-      <h5 class="text-warning">1️⃣ Authorization Code Grant</h5>
-      <ul>
-        <li><strong>Flow:</strong> User logs in via browser → app receives authorization code → exchanges for access token.</li>
-        <li><strong>Example:</strong> Web apps with front-end + back-end separation.</li>
-        <li><strong>Real World:</strong> Google Login, GitHub OAuth login on third-party apps.</li>
-        <li><strong>Advantages:</strong>
-          <ul>
-            <li>Secure: access token never exposed to browser directly.</li>
-            <li>Supports refresh tokens.</li>
-          </ul>
-        </li>
-        <li><strong>Disadvantages:</strong>
-          <ul>
-            <li>More complex flow than implicit grant.</li>
-            <li>Requires server-side code to handle code exchange.</li>
-          </ul>
-        </li>
-      </ul>
+            <h5 class="text-warning">1️⃣ Authorization Code Grant</h5>
+            <ul>
+              <li><strong>Flow:</strong> User logs in via browser → app receives authorization code → exchanges for
+                access token.</li>
+              <li><strong>Example:</strong> Web apps with front-end + back-end separation.</li>
+              <li><strong>Real World:</strong> Google Login, GitHub OAuth login on third-party apps.</li>
+              <li><strong>Advantages:</strong>
+                <ul>
+                  <li>Secure: access token never exposed to browser directly.</li>
+                  <li>Supports refresh tokens.</li>
+                </ul>
+              </li>
+              <li><strong>Disadvantages:</strong>
+                <ul>
+                  <li>More complex flow than implicit grant.</li>
+                  <li>Requires server-side code to handle code exchange.</li>
+                </ul>
+              </li>
+            </ul>
 
-      <h5 class="text-warning">2️⃣ Implicit Grant</h5>
-      <ul>
-        <li><strong>Flow:</strong> User authenticates → access token returned directly via browser URL fragment.</li>
-        <li><strong>Example:</strong> Single Page Applications (SPAs) without a backend.</li>
-        <li><strong>Real World:</strong> Old JavaScript SPAs using Facebook Login.</li>
-        <li><strong>Advantages:</strong>
-          <ul>
-            <li>Simpler: no server-side token exchange required.</li>
-          </ul>
-        </li>
-        <li><strong>Disadvantages:</strong>
-          <ul>
-            <li>Less secure: access token exposed in URL and browser.</li>
-            <li>No refresh token.</li>
-          </ul>
-        </li>
-      </ul>
+            <h5 class="text-warning">2️⃣ Implicit Grant</h5>
+            <ul>
+              <li><strong>Flow:</strong> User authenticates → access token returned directly via browser URL fragment.
+              </li>
+              <li><strong>Example:</strong> Single Page Applications (SPAs) without a backend.</li>
+              <li><strong>Real World:</strong> Old JavaScript SPAs using Facebook Login.</li>
+              <li><strong>Advantages:</strong>
+                <ul>
+                  <li>Simpler: no server-side token exchange required.</li>
+                </ul>
+              </li>
+              <li><strong>Disadvantages:</strong>
+                <ul>
+                  <li>Less secure: access token exposed in URL and browser.</li>
+                  <li>No refresh token.</li>
+                </ul>
+              </li>
+            </ul>
 
-      <h5 class="text-warning">3️⃣ Client Credentials Grant</h5>
-      <ul>
-        <li><strong>Flow:</strong> Service authenticates itself using client_id & client_secret → gets access token.</li>
-        <li><strong>Example:</strong> Microservices communication, machine-to-machine APIs.</li>
-        <li><strong>Real World:</strong> Internal microservices in AWS, Kubernetes-based services.</li>
-        <li><strong>Advantages:</strong>
-          <ul>
-            <li>No user context needed.</li>
-            <li>Secure for server-to-server communication.</li>
-          </ul>
-        </li>
-        <li><strong>Disadvantages:</strong>
-          <ul>
-            <li>Cannot be used for user-specific actions.</li>
-          </ul>
-        </li>
-      </ul>
+            <h5 class="text-warning">3️⃣ Client Credentials Grant</h5>
+            <ul>
+              <li><strong>Flow:</strong> Service authenticates itself using client_id & client_secret → gets access
+                token.</li>
+              <li><strong>Example:</strong> Microservices communication, machine-to-machine APIs.</li>
+              <li><strong>Real World:</strong> Internal microservices in AWS, Kubernetes-based services.</li>
+              <li><strong>Advantages:</strong>
+                <ul>
+                  <li>No user context needed.</li>
+                  <li>Secure for server-to-server communication.</li>
+                </ul>
+              </li>
+              <li><strong>Disadvantages:</strong>
+                <ul>
+                  <li>Cannot be used for user-specific actions.</li>
+                </ul>
+              </li>
+            </ul>
 
-      <h5 class="text-warning">4️⃣ Resource Owner Password Credentials Grant (Password Grant)</h5>
-      <ul>
-        <li><strong>Flow:</strong> User provides username/password → client exchanges them directly for token.</li>
-        <li><strong>Example:</strong> First-party trusted apps.</li>
-        <li><strong>Real World:</strong> Legacy mobile apps directly sending credentials to auth server.</li>
-        <li><strong>Advantages:</strong>
-          <ul>
-            <li>Simple, fast token acquisition.</li>
-          </ul>
-        </li>
-        <li><strong>Disadvantages:</strong>
-          <ul>
-            <li>Highly insecure for third-party apps (credentials exposed).</li>
-            <li>Not recommended in modern applications.</li>
-          </ul>
-        </li>
-      </ul>
+            <h5 class="text-warning">4️⃣ Resource Owner Password Credentials Grant (Password Grant)</h5>
+            <ul>
+              <li><strong>Flow:</strong> User provides username/password → client exchanges them directly for token.
+              </li>
+              <li><strong>Example:</strong> First-party trusted apps.</li>
+              <li><strong>Real World:</strong> Legacy mobile apps directly sending credentials to auth server.</li>
+              <li><strong>Advantages:</strong>
+                <ul>
+                  <li>Simple, fast token acquisition.</li>
+                </ul>
+              </li>
+              <li><strong>Disadvantages:</strong>
+                <ul>
+                  <li>Highly insecure for third-party apps (credentials exposed).</li>
+                  <li>Not recommended in modern applications.</li>
+                </ul>
+              </li>
+            </ul>
 
-      <h5 class="text-warning">5️⃣ Refresh Token Grant</h5>
-      <ul>
-        <li><strong>Flow:</strong> Client uses refresh token to obtain a new access token without user login.</li>
-        <li><strong>Example:</strong> Long-lived sessions in mobile apps or web apps.</li>
-        <li><strong>Real World:</strong> Gmail mobile app refreshing tokens silently in background.</li>
-        <li><strong>Advantages:</strong>
-          <ul>
-            <li>Improves UX by avoiding repeated logins.</li>
-            <li>Reduces exposure of user credentials.</li>
-          </ul>
-        </li>
-        <li><strong>Disadvantages:</strong>
-          <ul>
-            <li>Refresh token compromise can lead to unauthorized access.</li>
-          </ul>
-        </li>
-      </ul>
+            <h5 class="text-warning">5️⃣ Refresh Token Grant</h5>
+            <ul>
+              <li><strong>Flow:</strong> Client uses refresh token to obtain a new access token without user login.</li>
+              <li><strong>Example:</strong> Long-lived sessions in mobile apps or web apps.</li>
+              <li><strong>Real World:</strong> Gmail mobile app refreshing tokens silently in background.</li>
+              <li><strong>Advantages:</strong>
+                <ul>
+                  <li>Improves UX by avoiding repeated logins.</li>
+                  <li>Reduces exposure of user credentials.</li>
+                </ul>
+              </li>
+              <li><strong>Disadvantages:</strong>
+                <ul>
+                  <li>Refresh token compromise can lead to unauthorized access.</li>
+                </ul>
+              </li>
+            </ul>
 
-      <h5 class="text-success">📌 Summary Table</h5>
-      <table class="table table-dark table-striped">
-        <thead>
-          <tr>
-            <th>Grant Type</th>
-            <th>Use Case</th>
-            <th>Real World Example</th>
-            <th>Advantages</th>
-            <th>Disadvantages</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Authorization Code</td>
-            <td>Web apps with backend</td>
-            <td>Google/GitHub OAuth login</td>
-            <td>Secure, supports refresh token</td>
-            <td>Complex, requires server-side code</td>
-          </tr>
-          <tr>
-            <td>Implicit</td>
-            <td>Browser-only SPAs</td>
-            <td>Old Facebook login in JS apps</td>
-            <td>Simple, no server needed</td>
-            <td>Less secure, no refresh token</td>
-          </tr>
-          <tr>
-            <td>Client Credentials</td>
-            <td>Service-to-service</td>
-            <td>Microservices internal APIs</td>
-            <td>No user context, secure for servers</td>
-            <td>Cannot perform user-specific actions</td>
-          </tr>
-          <tr>
-            <td>Password</td>
-            <td>Trusted first-party apps</td>
-            <td>Legacy mobile apps</td>
-            <td>Fast, simple</td>
-            <td>Insecure for third-party apps</td>
-          </tr>
-          <tr>
-            <td>Refresh Token</td>
-            <td>Long-lived sessions</td>
-            <td>Gmail mobile app</td>
-            <td>Improves UX, avoids repeated logins</td>
-            <td>Token compromise risk</td>
-          </tr>
-        </tbody>
-      </table>
+            <h5 class="text-success">📌 Summary Table</h5>
+            <table class="table table-dark table-striped">
+              <thead>
+                <tr>
+                  <th>Grant Type</th>
+                  <th>Use Case</th>
+                  <th>Real World Example</th>
+                  <th>Advantages</th>
+                  <th>Disadvantages</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Authorization Code</td>
+                  <td>Web apps with backend</td>
+                  <td>Google/GitHub OAuth login</td>
+                  <td>Secure, supports refresh token</td>
+                  <td>Complex, requires server-side code</td>
+                </tr>
+                <tr>
+                  <td>Implicit</td>
+                  <td>Browser-only SPAs</td>
+                  <td>Old Facebook login in JS apps</td>
+                  <td>Simple, no server needed</td>
+                  <td>Less secure, no refresh token</td>
+                </tr>
+                <tr>
+                  <td>Client Credentials</td>
+                  <td>Service-to-service</td>
+                  <td>Microservices internal APIs</td>
+                  <td>No user context, secure for servers</td>
+                  <td>Cannot perform user-specific actions</td>
+                </tr>
+                <tr>
+                  <td>Password</td>
+                  <td>Trusted first-party apps</td>
+                  <td>Legacy mobile apps</td>
+                  <td>Fast, simple</td>
+                  <td>Insecure for third-party apps</td>
+                </tr>
+                <tr>
+                  <td>Refresh Token</td>
+                  <td>Long-lived sessions</td>
+                  <td>Gmail mobile app</td>
+                  <td>Improves UX, avoids repeated logins</td>
+                  <td>Token compromise risk</td>
+                </tr>
+              </tbody>
+            </table>
 
-      <h5 class="text-success">🚀 Key Takeaway</h5>
-      <p>
-        Choose the grant type based on who is requesting the token (user vs service) and the environment (web, mobile, SPA, or microservice). 
-        <strong>Authorization Code</strong is preferred for modern web apps, <strong>Client Credentials</strong> for private service-to-service communication, 
-        and <strong>Refresh Token</strong> to maintain long-lived sessions securely.
-      </p>
+            <h5 class="text-success">🚀 Key Takeaway</h5>
+            <p>
+              Choose the grant type based on who is requesting the token (user vs service) and the environment (web,
+              mobile, SPA, or microservice).
+              <strong>Authorization Code</strong is preferred for modern web apps, <strong>Client Credentials</strong>
+              for private service-to-service communication,
+              and <strong>Refresh Token</strong> to maintain long-lived sessions securely.
+            </p>
 
-    </div>
-  </div>
-</div>
+          </div>
+        </div>
+      </div>
 
       <div class="accordion-item">
-  <h2 class="accordion-header" id="headingTimeoutConfig">
-    <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
-      data-bs-target="#springBootTimeout" aria-expanded="false" aria-controls="springBootTimeout">
-      ⏱️ Spring Boot REST API Timeout Configuration
-    </button>
-  </h2>
-  <div id="springBootTimeout" class="accordion-collapse collapse" aria-labelledby="headingTimeoutConfig"
-    data-bs-parent="#springBootChallengeAccordion">
-    <div class="accordion-body">
+        <h2 class="accordion-header" id="headingTimeoutConfig">
+          <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+            data-bs-target="#springBootTimeout" aria-expanded="false" aria-controls="springBootTimeout">
+            ⏱️ Spring Boot REST API Timeout Configuration
+          </button>
+        </h2>
+        <div id="springBootTimeout" class="accordion-collapse collapse" aria-labelledby="headingTimeoutConfig"
+          data-bs-parent="#springBootChallengeAccordion">
+          <div class="accordion-body">
 
-      <pre><code class="language-text">
+            <pre><code class="language-text">
 Context:
   By default, Spring Boot (with embedded Tomcat) does not enforce a strict global REST timeout.
   However, connection and read timeouts are handled by the underlying HTTP client or server.
@@ -1504,9 +2511,9 @@ Key Takeaway:
   to ensure reliability and predictable performance in microservices.
       </code></pre>
 
-    </div>
-  </div>
-</div>
+          </div>
+        </div>
+      </div>
 
 
       <div class="accordion-item">
@@ -1768,7 +2775,8 @@ export default function PaymentAlerts() {
             <h5 class="text-success mt-3">🔹 WebSocket Communication</h5>
             <ul>
               <li><b>Pattern:</b> Persistent full-duplex TCP connection between a <b>client</b> (browser/app) and a
-                <b>gateway/service</b>.</li>
+                <b>gateway/service</b>.
+              </li>
               <li><b>Flow:</b> After the handshake, either side can push messages instantly over the same connection.
               </li>
               <li><b>Direction:</b> <b>Client &lt;—&gt; Server</b>, typically to deliver real-time data to users.</li>
@@ -2140,7 +3148,8 @@ public String callApiWithRetry() {
                 <li>Annotation based: <code>@Retry(name="serviceName")</code>.</li>
                 <li>Programmatic: <code>Retry.decorateSupplier()</code> or <code>Retry.decorateCallable()</code>.</li>
                 <li>Combine with <strong>Timeout</strong>, <strong>RateLimiter</strong>, or
-                  <strong>CircuitBreaker</strong> for production-grade resilience.</li>
+                  <strong>CircuitBreaker</strong> for production-grade resilience.
+                </li>
               </ul>
             </div>
           </div>
@@ -2282,46 +3291,47 @@ while (attempts &lt; 3) {
         </div>
       </div>
       <div class="accordion-item">
-  <h2 class="accordion-header" id="headingExternalizedConfig">
-    <button class="accordion-button collapsed search-item text-success" type="button" data-bs-toggle="collapse"
-      data-bs-target="#collapseExternalizedConfig" aria-expanded="false" aria-controls="collapseExternalizedConfig">
-      🌍 Spring Boot 3 — Externalized Configuration (Env Vars, Profiles, Vault)
-    </button>
-  </h2>
-  <div id="collapseExternalizedConfig" class="accordion-collapse collapse" aria-labelledby="headingExternalizedConfig"
-    data-bs-parent="#springBootAdvancedTopics">
-    <div class="accordion-body">
+        <h2 class="accordion-header" id="headingExternalizedConfig">
+          <button class="accordion-button collapsed search-item text-success" type="button" data-bs-toggle="collapse"
+            data-bs-target="#collapseExternalizedConfig" aria-expanded="false"
+            aria-controls="collapseExternalizedConfig">
+            🌍 Spring Boot 3 — Externalized Configuration (Env Vars, Profiles, Vault)
+          </button>
+        </h2>
+        <div id="collapseExternalizedConfig" class="accordion-collapse collapse"
+          aria-labelledby="headingExternalizedConfig" data-bs-parent="#springBootAdvancedTopics">
+          <div class="accordion-body">
 
-      <h6 class="text-info">1️⃣ What is Externalized Configuration?</h6>
-      <ul>
-        <li>Allows you to move configuration out of your code into external sources.</li>
-        <li>Spring Boot loads properties in this priority order (highest → lowest):
-          <ol>
-            <li>Command-line arguments</li>
-            <li>Environment variables</li>
-            <li><code>application-{profile}.yml</code> or <code>.properties</code></li>
-            <li><code>application.yml</code></li>
-            <li>Defaults (in code via <code>@Value</code> or <code>@ConfigurationProperties</code>)</li>
-          </ol>
-        </li>
-      </ul>
+            <h6 class="text-info">1️⃣ What is Externalized Configuration?</h6>
+            <ul>
+              <li>Allows you to move configuration out of your code into external sources.</li>
+              <li>Spring Boot loads properties in this priority order (highest → lowest):
+                <ol>
+                  <li>Command-line arguments</li>
+                  <li>Environment variables</li>
+                  <li><code>application-{profile}.yml</code> or <code>.properties</code></li>
+                  <li><code>application.yml</code></li>
+                  <li>Defaults (in code via <code>@Value</code> or <code>@ConfigurationProperties</code>)</li>
+                </ol>
+              </li>
+            </ul>
 
-      <hr>
+            <hr>
 
-      <h6 class="text-warning">2️⃣ Using Environment Variables</h6>
-      <ul>
-        <li>Set environment variables in your OS or Docker.</li>
-        <li>Spring automatically maps <code>ENV_VAR_NAME</code> → <code>env.var.name</code> style.</li>
-        <li><b>Example:</b></li>
-      </ul>
+            <h6 class="text-warning">2️⃣ Using Environment Variables</h6>
+            <ul>
+              <li>Set environment variables in your OS or Docker.</li>
+              <li>Spring automatically maps <code>ENV_VAR_NAME</code> → <code>env.var.name</code> style.</li>
+              <li><b>Example:</b></li>
+            </ul>
 
-      <pre><code># Terminal / Docker
+            <pre><code># Terminal / Docker
 export DB_URL=jdbc:mysql://localhost:3306/appdb
 export DB_USER=root
 export DB_PASS=secret123
       </code></pre>
 
-      <pre><code>application.yml
+            <pre><code>application.yml
 spring:
   datasource:
     url: ${DB_URL}
@@ -2329,16 +3339,16 @@ spring:
     password: ${DB_PASS}
       </code></pre>
 
-      <p class="text-secondary"><b>✅ Benefit:</b> Secrets are not hard-coded in Git.</p>
+            <p class="text-secondary"><b>✅ Benefit:</b> Secrets are not hard-coded in Git.</p>
 
-      <hr>
+            <hr>
 
-      <h6 class="text-warning">3️⃣ Using Spring Profiles</h6>
-      <ul>
-        <li>Create environment-specific config files like:</li>
-      </ul>
+            <h6 class="text-warning">3️⃣ Using Spring Profiles</h6>
+            <ul>
+              <li>Create environment-specific config files like:</li>
+            </ul>
 
-      <pre><code>application-dev.yml
+            <pre><code>application-dev.yml
 server:
   port: 8081
 spring:
@@ -2353,25 +3363,25 @@ spring:
     url: jdbc:mysql://mysql-prod:3306/proddb
       </code></pre>
 
-      <ul>
-        <li>Activate profile:
-          <ul>
-            <li>Command-line: <code>--spring.profiles.active=prod</code></li>
-            <li>Env var: <code>SPRING_PROFILES_ACTIVE=dev</code></li>
-          </ul>
-        </li>
-      </ul>
+            <ul>
+              <li>Activate profile:
+                <ul>
+                  <li>Command-line: <code>--spring.profiles.active=prod</code></li>
+                  <li>Env var: <code>SPRING_PROFILES_ACTIVE=dev</code></li>
+                </ul>
+              </li>
+            </ul>
 
-      <p class="text-secondary"><b>✅ Benefit:</b> Separate configs for Dev/Test/Prod with one codebase.</p>
+            <p class="text-secondary"><b>✅ Benefit:</b> Separate configs for Dev/Test/Prod with one codebase.</p>
 
-      <hr>
+            <hr>
 
-      <h6 class="text-warning">4️⃣ Integrating with HashiCorp Vault (End to End)</h6>
-      <ul>
-        <li>Vault is a secure secrets manager — Spring Boot can auto-fetch values from it.</li>
-      </ul>
+            <h6 class="text-warning">4️⃣ Integrating with HashiCorp Vault (End to End)</h6>
+            <ul>
+              <li>Vault is a secure secrets manager — Spring Boot can auto-fetch values from it.</li>
+            </ul>
 
-      <pre><code>Step 1️⃣: Start Vault (Dev mode)
+            <pre><code>Step 1️⃣: Start Vault (Dev mode)
 vault server -dev
 
 # Set environment variable for token
@@ -2379,18 +3389,18 @@ export VAULT_TOKEN=root
 export VAULT_ADDR=http://127.0.0.1:8200
       </code></pre>
 
-      <pre><code>Step 2️⃣: Add secrets in Vault
+            <pre><code>Step 2️⃣: Add secrets in Vault
 vault kv put secret/application db.username=root db.password=secret123
       </code></pre>
 
-      <pre><code>Step 3️⃣: Add Spring Vault dependency (Maven)
+            <pre><code>Step 3️⃣: Add Spring Vault dependency (Maven)
 &lt;dependency&gt;
   &lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;
   &lt;artifactId&gt;spring-cloud-starter-vault-config&lt;/artifactId&gt;
 &lt;/dependency&gt;
       </code></pre>
 
-      <pre><code>Step 4️⃣: Configure Vault in bootstrap.yml (Spring Boot 3)
+            <pre><code>Step 4️⃣: Configure Vault in bootstrap.yml (Spring Boot 3)
 spring:
   application:
     name: demo-app
@@ -2411,7 +3421,7 @@ spring:
           enabled: true
       </code></pre>
 
-      <pre><code>Step 5️⃣: Access Vault properties in code
+            <pre><code>Step 5️⃣: Access Vault properties in code
 @Value("${db.username}")
 private String username;
 
@@ -2419,31 +3429,33 @@ private String username;
 private String password;
       </code></pre>
 
-      <p class="text-secondary"><b>✅ Benefit:</b> Centralized secrets management, no exposure in Git or environment files.</p>
+            <p class="text-secondary"><b>✅ Benefit:</b> Centralized secrets management, no exposure in Git or
+              environment files.</p>
 
-      <hr>
+            <hr>
 
-      <h6 class="text-info">5️⃣ End-to-End Flow Summary</h6>
-      <ol>
-        <li>Spring reads <b>Vault</b> → <b>Env Vars</b> → <b>application.yml</b> → <b>defaults</b>.</li>
-        <li>Vault secrets override YAML and environment values if same key exists.</li>
-        <li>Supports dynamic secret rotation without redeployment.</li>
-      </ol>
+            <h6 class="text-info">5️⃣ End-to-End Flow Summary</h6>
+            <ol>
+              <li>Spring reads <b>Vault</b> → <b>Env Vars</b> → <b>application.yml</b> → <b>defaults</b>.</li>
+              <li>Vault secrets override YAML and environment values if same key exists.</li>
+              <li>Supports dynamic secret rotation without redeployment.</li>
+            </ol>
 
-      <hr>
+            <hr>
 
-      <h6 class="text-success">6️⃣ Verification</h6>
-      <ul>
-        <li>Start Vault and your Spring Boot app.</li>
-        <li>Visit <code>/actuator/env</code> to confirm Vault-loaded values.</li>
-        <li>Temporarily update Vault secret and restart app → new value appears.</li>
-      </ul>
+            <h6 class="text-success">6️⃣ Verification</h6>
+            <ul>
+              <li>Start Vault and your Spring Boot app.</li>
+              <li>Visit <code>/actuator/env</code> to confirm Vault-loaded values.</li>
+              <li>Temporarily update Vault secret and restart app → new value appears.</li>
+            </ul>
 
-      <p class="text-secondary"><b>🔐 Real-World Tip:</b> In production, use Vault with AppRole or AWS IAM auth instead of dev token.</p>
+            <p class="text-secondary"><b>🔐 Real-World Tip:</b> In production, use Vault with AppRole or AWS IAM auth
+              instead of dev token.</p>
 
-    </div>
-  </div>
-</div>
+          </div>
+        </div>
+      </div>
 
 
       <div class="accordion-item">
@@ -2645,7 +3657,8 @@ spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
             <ul>
               <li><b>MySQL Dialect</b> → <code>SELECT * FROM users LIMIT 10 OFFSET 20</code></li>
               <li><b>Oracle Dialect</b> →
-                <code>SELECT * FROM (SELECT u.*, ROWNUM r FROM users u) WHERE r BETWEEN 21 AND 30</code></li>
+                <code>SELECT * FROM (SELECT u.*, ROWNUM r FROM users u) WHERE r BETWEEN 21 AND 30</code>
+              </li>
               <li><b>SQL Server Dialect</b> → <code>SELECT TOP 10 * FROM users ORDER BY id OFFSET 20 ROWS</code></li>
             </ul>
             <p>
@@ -2907,7 +3920,8 @@ public record UserProfile(User user, List&lt;Order&gt; orders, Payment payment) 
 
             <h5 class="text-info">📌 1) MVC (Servlet) Apps — Use a <code>HandlerInterceptor</code></h5>
             <p>Works for Spring MVC controllers. Captures <b>start</b>, <b>end</b>, <b>duration</b>, <b>method</b>,
-              <b>URI</b>, <b>status</b>, client IP, and puts a <b>traceId</b> into MDC for every log line.</p>
+              <b>URI</b>, <b>status</b>, client IP, and puts a <b>traceId</b> into MDC for every log line.
+            </p>
             <pre class="language-java"><code>
 package com.example.logging;
 
@@ -3330,7 +4344,8 @@ public interface BClient {
               <li><code>X-B3-Sampled</code>, <code>X-B3-Flags</code></li>
             </ul>
             <p>Micrometer Tracing can also do <b>W3C Trace Context</b> (<code>traceparent</code>,
-              <code>tracestate</code>) if configured.</p>
+              <code>tracestate</code>) if configured.
+            </p>
           </div>
         </div>
       </div>
@@ -3382,7 +4397,8 @@ public interface BClient {
               <li><b>DB calls</b>: use JDBC/ORM instrumentation to see spans for queries (Micrometer Observations can
                 capture this).</li>
               <li><b>Feign/WebClient/RestTemplate</b>: Boot auto-instruments many; the
-                <code>ObservationRestTemplateInterceptor</code> ensures RestTemplate carries context.</li>
+                <code>ObservationRestTemplateInterceptor</code> ensures RestTemplate carries context.
+              </li>
             </ul>
           </div>
         </div>
@@ -3547,7 +4563,8 @@ class CController {
               <li><b>Propagation:</b> W3C <code>traceparent</code>/<code>tracestate</code> by default with OTel; B3 also
                 possible.</li>
               <li><b>Logs correlation:</b> set Log4j2 pattern to include <code>%X{traceId}</code> and
-                <code>%X{spanId}</code>.</li>
+                <code>%X{spanId}</code>.
+              </li>
             </ul>
 
             <h5 class="text-info">✅ TL;DR</h5>
@@ -3574,7 +4591,8 @@ class CController {
             </p>
             <ul>
               <li><b>Operational audit fields</b> on each row: <code>createdDate</code>, <code>updatedDate</code>,
-                <code>createdBy</code>, <code>updatedBy</code>.</li>
+                <code>createdBy</code>, <code>updatedBy</code>.
+              </li>
               <li><b>Historical change log</b> (who changed what, when, old/new values) across versions of an entity.
               </li>
             </ul>
@@ -3648,7 +4666,8 @@ public class Customer extends AuditableBase {
               <li>Dates come from Spring’s <b>AuditingDateTimeProvider</b> (uses system clock). You can override for
                 fixed UTC.</li>
               <li><code>@CreatedBy</code>/<code>@LastModifiedBy</code> resolved via your
-                <code>AuditorAware&lt;String&gt;</code>.</li>
+                <code>AuditorAware&lt;String&gt;</code>.
+              </li>
             </ul>
           </div>
         </div>
@@ -3849,7 +4868,8 @@ public class AuditAspect {
           <div class="accordion-body">
             <ul>
               <li><b>Just need 4 columns (created/updated/by/date):</b> Use <b>Spring Data JPA Auditing</b> +
-                <code>AuditorAware</code>.</li>
+                <code>AuditorAware</code>.
+              </li>
               <li><b>Need full history with old/new values:</b> Use <b>Hibernate Envers</b>.</li>
               <li><b>Non–Spring Data or special rules:</b> Use <b>Hibernate Event Listeners</b>.</li>
               <li><b>Cross-cutting logs with business context:</b> Add <b>AOP</b> (can co-exist).</li>
@@ -3860,7 +4880,8 @@ public class AuditAspect {
             <ul>
               <li>Use <b>UTC</b> (<code>Instant</code>) for dates; avoid local timezone drift.</li>
               <li>Resolve <b>user id</b> in <code>AuditorAware</code> from <code>SecurityContext</code> or a
-                <code>RequestContext</code> (fallback to <code>system</code>).</li>
+                <code>RequestContext</code> (fallback to <code>system</code>).
+              </li>
               <li>Mark <code>created*</code> fields <b>non-updatable</b> (<code>updatable = false</code>).</li>
               <li>Add DB defaults/constraints for consistency.</li>
               <li>If soft deletes: pair with <code>@SQLDelete</code> + <code>@Where</code> and audit delete actor/time.
@@ -3972,7 +4993,8 @@ public class JpaAuditConfig {
             <h5 class="text-info">📌 Result</h5>
             <ul>
               <li><code>createdBy</code> and <code>updatedBy</code> fields in entities will automatically use the
-                <b>userId from JWT</b>.</li>
+                <b>userId from JWT</b>.
+              </li>
               <li>Logs can also include <code>%X{userId}</code> via MDC if you inject it per request.</li>
             </ul>
 
@@ -4197,7 +5219,8 @@ class UserMediaController {
               <li><b>Deprecate</b> with <code>Deprecation</code>/<code>Sunset</code> headers and docs; set EOL date.
               </li>
               <li><b>Document</b> with OpenAPI (springdoc): create groups per path <code>/v1/**</code>,
-                <code>/v2/**</code>.</li>
+                <code>/v2/**</code>.
+              </li>
             </ul>
 
             <h5 class="text-info">📝 Spring Boot “versioning” (project releases)</h5>
@@ -4846,7 +5869,8 @@ public class AsyncConfig {
 
             <h5 class="text-info">📌 2. Handle Exceptions Properly</h5>
             <p>Use <code>CompletableFuture</code> handling or a global <code>AsyncUncaughtExceptionHandler</code> for
-              <code>void</code> methods.</p>
+              <code>void</code> methods.
+            </p>
             <pre class="language-java"><code>
 @Service
 public class InvoiceService {
@@ -4969,7 +5993,8 @@ public Mono&lt;String&gt; readFile(@PathVariable String id) {
 
             <h5 class="text-info">📌 8. Combine Async Tasks Safely</h5>
             <p>Use <code>CompletableFuture.allOf/anyOf</code> and compose chains with
-              <code>thenCompose/thenCombine</code>.</p>
+              <code>thenCompose/thenCombine</code>.
+            </p>
             <pre class="language-java"><code>
 CompletableFuture&lt;User&gt; u = userSvc.fetch(id);
 CompletableFuture&lt;List&lt;Order&gt;&gt; o = orderSvc.listFor(id);
@@ -5010,7 +6035,8 @@ MeterBinder poolMetrics(@Qualifier("appExecutor") ThreadPoolTaskExecutor ex) {
 
             <h5 class="text-info">📌 11. Choose the Right Rejection Policy</h5>
             <p><code>CallerRuns</code> provides backpressure; <code>AbortPolicy</code> fails fast;
-              <code>Discard/DiscardOldest</code> drop load. Pick per endpoint/SLA.</p>
+              <code>Discard/DiscardOldest</code> drop load. Pick per endpoint/SLA.
+            </p>
             <pre class="language-java"><code>
 ex.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy()); // backpressure to callers
       </code></pre>
