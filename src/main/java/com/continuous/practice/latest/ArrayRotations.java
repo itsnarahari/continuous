@@ -3,6 +3,9 @@ package com.continuous.practice.latest;
 import java.util.Arrays;
 
 public class ArrayRotations {
+
+//    int[] inputs = {1, 2, 3, 4, 5, 6};
+//    int k = 2;
     public static int[] leftToRight(int arr[], int k) {
         for (int i = 1; i <= k; i++) {
             int temp = arr[0];

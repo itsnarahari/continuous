@@ -12,7 +12,7 @@ public class CompletableFutureExample {
         CompletableFuture.supplyAsync(() -> {
             System.out.println("Get Employees" + Thread.currentThread().getName());
             return EmployeeDatasource.getEmployees();
-        }).thenApplyAsync(employees -> {
+        }).thenApply(employees -> {
             System.out.println("Filter by email time" + Thread.currentThread().getName());
             return employees.stream().filter(employee -> employee.getModeOfContact().equalsIgnoreCase("email"))
                     .collect(Collectors.toList());
@@ -32,7 +32,6 @@ public class CompletableFutureExample {
     }
 
     public static void main(String[] args) {
-
         CompletableFutureExample completableFutureExample = new CompletableFutureExample();
         completableFutureExample.sendNotifications();
 

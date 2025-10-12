@@ -34,6 +34,6 @@ class Details {
 
     @Override
     public int hashCode() {
-        return 1;
+        return super.hashCode();
     }
 }

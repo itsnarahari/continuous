@@ -2,32 +2,28 @@ package com.continuous.practice.latest;
 
 import com.continuous.practice.utils.Ex;
 
+import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.Map;
 
 class Parent {
-
     public String m2() throws Exception {
         System.out.println("parent m2");
         return null;
     }
-
     private static void m3() {
         System.out.println("parent m2");
     }
-
     static final void m4() {
         System.out.println("parent m2");
     }
-
     public void m1() throws RuntimeException {
         System.out.println("parent m1");
     }
 }
 
 class Child extends Parent {
-
-    public String m2() throws RuntimeException {
+    public String m2() throws FileNotFoundException{
         System.out.println("child m2");
         return null;
     }

@@ -42,6 +42,16 @@ public class SeptemberTest {
 //        4. Group words by their starting letter and print them (using Method References)
         System.out.println("4. Group words by their starting letter and print them (using Method References");
 
+        List<Integer> integerList = List.of(3, 0, 2, 4, 8, 9, 0, 0, 9, 56, 0, 3, 0);
+
+        Map<Boolean, List<Integer>> collect1 = integerList.stream().collect(Collectors.partitioningBy(integer -> integer > 0));
+        System.out.println(collect1);
+
+        Integer i1= Integer.valueOf(1);
+        Integer i2= Integer.valueOf(1);
+        System.out.println(i1.equals(i2));
+        System.out.println(i1==i2);
+
 
     }
 }
