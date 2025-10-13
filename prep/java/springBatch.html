@@ -541,6 +541,773 @@ public IntegrationFlow workerFlow() {
                 </div>
             </div>
 
+            <div class="accordion-item">
+  <h2 class="accordion-header" id="headingSpringBatchComponents">
+    <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+      data-bs-target="#springBatchComponentsSection" aria-expanded="false" aria-controls="springBatchComponentsSection">
+      🏗️ Spring Batch Components – Core Building Blocks
+    </button>
+  </h2>
+
+  <div id="springBatchComponentsSection" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p class="highlight-yellow">
+        Spring Batch is built around a set of core components that define how **jobs are executed, monitored, and managed**. Understanding these components is essential for designing robust batch jobs.
+      </p>
+
+      <h5 class="text-warning">1️⃣ Job</h5>
+      <ul>
+        <li>The **top-level container** representing a batch job.</li>
+        <li>Defines the **workflow**, composed of one or more <strong>steps</strong>.</li>
+        <li>Job metadata and execution state are stored in the <strong>JobRepository</strong>.</li>
+      </ul>
+
+      <h5 class="text-warning mt-4">2️⃣ Step</h5>
+      <ul>
+        <li>Represents a **single unit of work** in a job.</li>
+        <li>Two main types of steps:
+          <ul>
+            <li><strong>Tasklet Step:</strong> Executes a single task (simple or custom logic).</li>
+            <li><strong>Chunk-Oriented Step:</strong> Processes data in chunks (read → process → write).</li>
+          </ul>
+        </li>
+        <li>Each step maintains its own **StepExecution metadata**.</li>
+      </ul>
+
+      <h5 class="text-warning mt-4">3️⃣ ItemReader</h5>
+      <ul>
+        <li>Reads data from a source (file, database, queue, etc.) one item at a time.</li>
+        <li>Supports multiple formats: FlatFileItemReader, JdbcCursorItemReader, JpaPagingItemReader, etc.</li>
+        <li>Handles state management for restartability.</li>
+      </ul>
+
+      <h5 class="text-warning mt-4">4️⃣ ItemProcessor</h5>
+      <ul>
+        <li>Optional component used to **transform or validate** data read by the ItemReader.</li>
+        <li>Accepts an input item, performs processing, and returns the output item to be written.</li>
+        <li>Can also filter items by returning <code>null</code>.</li>
+      </ul>
+
+      <h5 class="text-warning mt-4">5️⃣ ItemWriter</h5>
+      <ul>
+        <li>Writes processed items to a destination (database, file, queue, etc.).</li>
+        <li>Supports batch writes for efficiency.</li>
+        <li>Ensures commit within the transaction defined by the chunk size.</li>
+      </ul>
+
+      <h5 class="text-warning mt-4">6️⃣ JobRepository</h5>
+      <ul>
+        <li>Stores **job execution metadata**, checkpoints, and parameters.</li>
+        <li>Essential for **restartability** and tracking job progress.</li>
+        <li>Typically backed by a relational database.</li>
+      </ul>
+
+      <h5 class="text-warning mt-4">7️⃣ JobLauncher</h5>
+      <ul>
+        <li>Triggers job execution.</li>
+        <li>Can launch jobs **synchronously or asynchronously**.</li>
+        <li>Accepts **JobParameters** to create a unique JobInstance.</li>
+      </ul>
+
+      <h5 class="text-warning mt-4">8️⃣ JobParameters & JobInstance</h5>
+      <ul>
+        <li><strong>JobParameters:</strong> Input parameters for a job (date, file name, etc.) to distinguish instances.</li>
+        <li><strong>JobInstance:</strong> Unique run of a job with specific parameters. Prevents re-running the same parameter combination unless explicitly restarted.</li>
+      </ul>
+
+      <h5 class="text-warning mt-4">9️⃣ StepExecution & JobExecution</h5>
+      <ul>
+        <li><strong>StepExecution:</strong> Tracks the state of a single step within a job run.</li>
+        <li><strong>JobExecution:</strong> Tracks the overall job run, combining all StepExecutions.</li>
+        <li>Both store status, start/end times, exit codes, and allow restart/retry.</li>
+      </ul>
+
+      <h5 class="text-warning mt-4">🔟 Additional Components</h5>
+      <ul>
+        <li><strong>Tasklet:</strong> A functional interface for single-task steps.</li>
+        <li><strong>SkipPolicy / RetryPolicy:</strong> Configurable policies for handling errors.</li>
+        <li><strong>Listeners:</strong> <code>JobExecutionListener</code>, <code>StepExecutionListener</code> for hooks before/after execution.</li>
+        <li><strong>Partitioner:</strong> Splits a step into multiple partitions for parallel processing.</li>
+        <li><strong>JobExplorer:</strong> Read-only access to job metadata for monitoring or dashboards.</li>
+      </ul>
+
+      <h5 class="text-success mt-4">📌 Summary</h5>
+      <ul>
+        <li>Spring Batch is modular — Jobs → Steps → Readers/Processors/Writers.</li>
+        <li>JobRepository ensures **restartability and traceability**.</li>
+        <li>JobLauncher triggers jobs with **JobParameters**, creating unique JobInstances.</li>
+        <li>StepExecutions track progress at step level; listeners and policies allow **error handling and monitoring**.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingControlM">
+    <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+      data-bs-target="#controlMSection" aria-expanded="false" aria-controls="controlMSection">
+      📅 Control-M – Triggering Spring Batch Jobs Automatically & Manually
+    </button>
+  </h2>
+
+  <div id="controlMSection" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p class="highlight-yellow">
+        <strong>Control-M</strong> is an enterprise job scheduler that can trigger Spring Batch jobs based on schedules, dependencies, or manual execution requests.
+      </p>
+
+      <h5 class="text-warning">1️⃣ Automatic Scheduling</h5>
+      <ul>
+        <li>Control-M can trigger a job **at a defined schedule**, such as daily, hourly, or based on a calendar.</li>
+        <li>For Spring Batch jobs, Control-M typically calls a **shell script or REST API endpoint** that invokes the job.</li>
+        <li>Example: Trigger a Spring Batch job via <code>JobLauncherCommandLineRunner</code> from the command line.</li>
+      </ul>
+
+      <pre class="language-bash"><code>
+# Shell script to run Spring Batch job
+#!/bin/bash
+java -jar my-batch-app.jar \
+    --spring.batch.job.names=myBatchJob \
+    --job.param.date=$(date +%Y-%m-%d)
+      </code></pre>
+
+      <ul>
+        <li>Control-M schedule: run the above script daily at 2:00 AM.</li>
+        <li>Job parameters (like date) can be passed dynamically from Control-M variables.</li>
+      </ul>
+
+      <h5 class="text-warning mt-4">2️⃣ Manual Triggering</h5>
+      <ul>
+        <li>Control-M allows users to **manually trigger a job** from the Control-M GUI or command line.</li>
+        <li>Useful for **ad-hoc processing**, testing, or re-running failed jobs.</li>
+        <li>Example using REST API (Spring Boot exposed endpoint for JobLauncher):</li>
+      </ul>
+
+      <pre class="language-bash"><code>
+# Trigger job manually via REST
+curl -X POST http://localhost:8080/batch/startJob \
+    -H "Content-Type: application/json" \
+    -d '{"jobName":"myBatchJob","jobParams":{"date":"2025-10-13"}}'
+      </code></pre>
+
+      <ul>
+        <li>Control-M can be configured to call this endpoint **manually or via a workflow dependency**.</li>
+        <li>Job parameters can be customized dynamically by the user at trigger time.</li>
+      </ul>
+
+      <h5 class="text-warning mt-4">3️⃣ Benefits of Using Control-M</h5>
+      <ul>
+        <li>Centralized scheduling and monitoring for **all batch jobs**.</li>
+        <li>Supports **dependency-based execution**, e.g., run this job only after another job succeeds.</li>
+        <li>Audit and logging of job execution history for compliance.</li>
+        <li>Supports both **automatic (calendar/time-based) and manual/ad-hoc triggers**.</li>
+      </ul>
+
+      <h5 class="text-warning mt-4">4️⃣ Example Workflow</h5>
+      <ul>
+        <li>Job sequence in Control-M:
+          <ol>
+            <li>Step 1: Trigger “Load Data” Spring Batch job at 2:00 AM.</li>
+            <li>Step 2: Trigger “Process Data” job after Step 1 succeeds.</li>
+            <li>Step 3: Notify via email/SMS after completion.</li>
+          </ol>
+        </li>
+        <li>Control-M ensures jobs are executed **in the correct order**, with retries if failures occur.</li>
+      </ul>
+
+      <h5 class="text-success mt-4">📌 Summary</h5>
+      <ul>
+        <li>Control-M triggers Spring Batch jobs **automatically or manually**.</li>
+        <li>Automatic: use **cron-like schedules** or dependency workflows calling scripts or REST endpoints.</li>
+        <li>Manual: triggered via **GUI, command line, or REST API**, with dynamic parameters.</li>
+        <li>Centralizes **monitoring, audit, and dependencies** across multiple jobs and environments.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion" id="batchAccordion">
+
+  <!-- 1️⃣ Spring Batch Components -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingSpringBatchComponents">
+      <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+        data-bs-target="#springBatchComponentsSection" aria-expanded="false" aria-controls="springBatchComponentsSection">
+        🏗️ Spring Batch Components – Core Building Blocks
+      </button>
+    </h2>
+    <div id="springBatchComponentsSection" class="accordion-collapse collapse">
+      <div class="accordion-body">
+        <p class="highlight-yellow">
+          Spring Batch is built around a set of core components that define how jobs are executed, monitored, and managed.
+        </p>
+        <h5 class="text-warning">Job</h5>
+        <ul>
+          <li>Top-level container representing a batch job, composed of Steps.</li>
+          <li>Job metadata and execution state are stored in JobRepository.</li>
+        </ul>
+        <h5 class="text-warning mt-4">Step</h5>
+        <ul>
+          <li>Single unit of work in a job.</li>
+          <li>Tasklet Step: single task; Chunk-Oriented Step: read → process → write.</li>
+        </ul>
+        <h5 class="text-warning mt-4">ItemReader / ItemProcessor / ItemWriter</h5>
+        <ul>
+          <li>Reader: reads data from source (file, DB, queue).</li>
+          <li>Processor: transforms/validates data.</li>
+          <li>Writer: writes data to destination.</li>
+        </ul>
+        <h5 class="text-warning mt-4">JobRepository / JobLauncher</h5>
+        <ul>
+          <li>JobRepository: stores metadata, enables restartability.</li>
+          <li>JobLauncher: triggers job execution with JobParameters.</li>
+        </ul>
+        <h5 class="text-warning mt-4">JobParameters, JobInstance, StepExecution</h5>
+        <ul>
+          <li>JobParameters: input parameters for uniqueness.</li>
+          <li>JobInstance: unique job run per parameters.</li>
+          <li>StepExecution: tracks individual step progress; JobExecution: overall job run.</li>
+        </ul>
+        <h5 class="text-warning mt-4">Additional Components</h5>
+        <ul>
+          <li>Tasklet, SkipPolicy/RetryPolicy, Listeners, Partitioner, JobExplorer.</li>
+        </ul>
+        <h5 class="text-success mt-4">Summary</h5>
+        <ul>
+          <li>Jobs → Steps → Reader/Processor/Writer; metadata in JobRepository; listeners and policies handle errors and monitoring.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2️⃣ ShedLock DB -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingShedLockFull">
+      <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+        data-bs-target="#shedLockFullSection" aria-expanded="false" aria-controls="shedLockFullSection">
+        🔒 ShedLock – Single-Instance Scheduled Jobs (DB)
+      </button>
+    </h2>
+    <div id="shedLockFullSection" class="accordion-collapse collapse">
+      <div class="accordion-body">
+        <p class="highlight-yellow">
+          ShedLock ensures that in a distributed environment, only one instance of a scheduled task runs at a time.
+        </p>
+        <h5 class="text-warning">Mechanism</h5>
+        <ul>
+          <li>Uses a database table as lock registry.</li>
+          <li>Instance acquires lock → executes task → releases lock on completion or expiration.</li>
+        </ul>
+        <h5 class="text-warning mt-4">DB Table Example</h5>
+        <table class="table table-bordered">
+          <thead>
+            <tr>
+              <th>name</th>
+              <th>locked_at</th>
+              <th>locked_by</th>
+              <th>lock_until</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>myScheduledJob</td>
+              <td>2025-10-13 12:05:00</td>
+              <td>instance-1</td>
+              <td>2025-10-13 12:15:00</td>
+            </tr>
+          </tbody>
+        </table>
+        <h5 class="text-warning mt-4">Spring Boot Example</h5>
+        <pre class="language-java"><code>
+@Scheduled(cron = "0 0 * * * *")
+@SchedulerLock(name = "myScheduledJob", lockAtMostFor = "10m", lockAtLeastFor = "1m")
+public void runScheduledTask() { log.info("Executing task"); }
+        </code></pre>
+        <h5 class="text-warning mt-4">Mermaid Diagram</h5>
+        <pre class="language-mermaid"><code>
+flowchart LR
+A1[Instance 1] --> L[Lock Table]
+A2[Instance 2] --> L
+L -->|Lock granted| A1
+L -->|Lock denied| A2
+A1 --> Task[Execute Job] --> L
+        </code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3️⃣ ShedLock Redis -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingShedLockRedis">
+      <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+        data-bs-target="#shedLockRedisSection" aria-expanded="false" aria-controls="shedLockRedisSection">
+        🔑 ShedLock with Redis – Sharded / Distributed
+      </button>
+    </h2>
+    <div id="shedLockRedisSection" class="accordion-collapse collapse">
+      <div class="accordion-body">
+        <p class="highlight-yellow">
+          Redis allows distributed locks with high performance, suitable for cloud/microservices.
+        </p>
+        <h5 class="text-warning">Spring Boot Example</h5>
+        <pre class="language-java"><code>
+@Bean
+public LockProvider lockProvider(RedisConnectionFactory redisConnectionFactory) {
+    return new RedisLockProvider(redisConnectionFactory);
+}
+
+@Scheduled(cron = "0 0 * * * *")
+@SchedulerLock(name = "myRedisJob", lockAtMostFor = "10m", lockAtLeastFor = "1m")
+public void runTask() { log.info("Executing task"); }
+        </code></pre>
+        <h5 class="text-warning mt-4">Notes</h5>
+        <ul>
+          <li>Supports sharded Redis.</li>
+          <li>TTL ensures lock expires if job crashes.</li>
+          <li>Dynamic, high-performance locking for variable execution jobs.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4️⃣ lockAtLeastFor behavior -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingShedLockLockAtLeastFor">
+      <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+        data-bs-target="#shedLockLockAtLeastForSection" aria-expanded="false" aria-controls="shedLockLockAtLeastForSection">
+        ⏱️ ShedLock – lockAtLeastFor Behavior
+      </button>
+    </h2>
+    <div id="shedLockLockAtLeastForSection" class="accordion-collapse collapse">
+      <div class="accordion-body">
+        <p class="highlight-yellow">
+          <code>lockAtLeastFor</code> ensures the lock exists for a minimum duration but the job **finishes immediately** after its logic completes.
+        </p>
+        <ul>
+          <li>Execution does not wait for the minimum time.</li>
+          <li>Other instances cannot acquire the lock until the minimum duration expires.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5️⃣ Alternatives for variable-time jobs -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingShedLockAlternative">
+      <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+        data-bs-target="#shedLockAlternativeSection" aria-expanded="false" aria-controls="shedLockAlternativeSection">
+        ⚡ Alternatives to ShedLock for Variable-Time Jobs
+      </button>
+    </h2>
+    <div id="shedLockAlternativeSection" class="accordion-collapse collapse">
+      <div class="accordion-body">
+        <ul>
+          <li>Distributed Queues (Kafka/RabbitMQ/SQS) → jobs triggered per message.</li>
+          <li>Database Row-Based Locking → dynamic lock per job row (SELECT … FOR UPDATE).</li>
+          <li>Distributed Lock with Heartbeat / Lease Renewal (Redis, Zookeeper, Consul).</li>
+          <li>Event-Driven Orchestration / Saga Pattern → trigger only when downstream completes.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6️⃣ Control-M -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingControlM">
+      <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+        data-bs-target="#controlMSection" aria-expanded="false" aria-controls="controlMSection">
+        📅 Control-M – Triggering Spring Batch Jobs Automatically & Manually
+      </button>
+    </h2>
+    <div id="controlMSection" class="accordion-collapse collapse">
+      <div class="accordion-body">
+        <p class="highlight-yellow">
+          Control-M triggers Spring Batch jobs via schedules, dependencies, or manual execution.
+        </p>
+        <h5 class="text-warning">Automatic Scheduling</h5>
+        <pre class="language-bash"><code>
+# Shell script invoked by Control-M
+java -jar my-batch-app.jar --spring.batch.job.names=myBatchJob --job.param.date=$(date +%Y-%m-%d)
+        </code></pre>
+        <h5 class="text-warning mt-4">Manual Trigger</h5>
+        <pre class="language-bash"><code>
+# Trigger via REST API
+curl -X POST http://localhost:8080/batch/startJob \
+    -H "Content-Type: application/json" \
+    -d '{"jobName":"myBatchJob","jobParams":{"date":"2025-10-13"}}'
+        </code></pre>
+        <h5 class="text-warning mt-4">Benefits</h5>
+        <ul>
+          <li>Centralized scheduling and monitoring.</li>
+          <li>Dependency-based execution.</li>
+          <li>Supports automatic (time-based) and manual triggers.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingSpringBatchAsync">
+    <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+      data-bs-target="#springBatchAsyncSection" aria-expanded="false" aria-controls="springBatchAsyncSection">
+      ⚙️ Does Spring Batch Run Asynchronously? Does It Create Threads?
+    </button>
+  </h2>
+  <div id="springBatchAsyncSection" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p class="highlight-yellow">
+        By default, <strong>Spring Batch runs jobs synchronously</strong> — meaning the thread that starts the job also executes all steps **in sequence**.  
+        However, Spring Batch provides several mechanisms to enable **asynchronous and parallel execution** when needed.
+      </p>
+
+      <h5 class="text-warning">1️⃣ Default Behavior – Synchronous Execution</h5>
+      <ul>
+        <li>When a job is launched using <code>JobLauncher.run()</code>, it executes in the same thread.</li>
+        <li>Each step (and chunk within it) runs **sequentially** in the same thread.</li>
+        <li>Good for predictable, ordered execution and transactional integrity.</li>
+      </ul>
+
+      <pre class="language-java"><code>
+jobLauncher.run(myJob, new JobParameters());
+      </code></pre>
+      <p>👉 The above runs synchronously — the caller waits until the entire job finishes.</p>
+
+      <h5 class="text-warning mt-4">2️⃣ Asynchronous Execution – AsyncJobLauncher</h5>
+      <ul>
+        <li>Spring provides <code>SimpleAsyncTaskExecutor</code> or <code>TaskExecutorJobLauncher</code> to run jobs asynchronously.</li>
+        <li>In this case, the job runs in a <strong>separate thread</strong>, and the caller gets control back immediately.</li>
+      </ul>
+
+      <pre class="language-java"><code>
+@Bean
+public JobLauncher asyncJobLauncher(JobRepository jobRepository) {
+    TaskExecutorJobLauncher launcher = new TaskExecutorJobLauncher();
+    launcher.setJobRepository(jobRepository);
+    launcher.setTaskExecutor(new SimpleAsyncTaskExecutor());
+    return launcher;
+}
+      </code></pre>
+
+      <p>🚀 Now when you call <code>jobLauncher.run()</code>, the job starts in a new thread asynchronously.</p>
+
+      <h5 class="text-warning mt-4">3️⃣ Parallelism Within Steps</h5>
+      <ul>
+        <li>Spring Batch allows **multi-threaded steps** using <code>TaskExecutor</code> at the Step level.</li>
+        <li>Each chunk (read-process-write unit) executes in a separate thread.</li>
+        <li>Useful when you have large data to process faster.</li>
+      </ul>
+
+      <pre class="language-java"><code>
+@Bean
+public Step multiThreadedStep() {
+    return stepBuilderFactory.get("multiThreadedStep")
+        .<Input, Output>chunk(100)
+        .reader(reader())
+        .processor(processor())
+        .writer(writer())
+        .taskExecutor(new SimpleAsyncTaskExecutor())  // creates multiple threads
+        .throttleLimit(5)                             // max 5 concurrent threads
+        .build();
+}
+      </code></pre>
+
+      <p>💡 Each chunk runs concurrently, but Spring Batch still maintains transaction boundaries and checkpoints per chunk.</p>
+
+      <h5 class="text-warning mt-4">4️⃣ Parallel Steps & Partitioning</h5>
+      <ul>
+        <li><strong>Split or Partition steps</strong> can execute multiple sub-steps or partitions in parallel threads.</li>
+        <li>Ideal for processing multiple data partitions (e.g., different files or DB ranges).</li>
+      </ul>
+
+      <pre class="language-java"><code>
+@Bean
+public Job parallelJob() {
+    return jobBuilderFactory.get("parallelJob")
+        .start(flow1())
+        .split(new SimpleAsyncTaskExecutor())
+        .add(flow2())
+        .end()
+        .build();
+}
+      </code></pre>
+
+      <p>🧩 Here <code>flow1</code> and <code>flow2</code> run in parallel threads.</p>
+
+      <h5 class="text-warning mt-4">5️⃣ Key Takeaways</h5>
+      <ul>
+        <li>✅ By default — Spring Batch runs synchronously (single-threaded).</li>
+        <li>⚙️ Asynchronous job launch — via <code>TaskExecutorJobLauncher</code>.</li>
+        <li>🚀 Parallel chunks — via <code>TaskExecutor</code> on steps.</li>
+        <li>🧩 Parallel steps — via <code>split()</code> or partitioning.</li>
+        <li>🧠 Spring Batch manages its own threads safely with transactions & checkpoints.</li>
+      </ul>
+
+      <h5 class="text-success mt-4">📌 Summary</h5>
+      <ul>
+        <li><strong>Default:</strong> Synchronous, single-threaded execution.</li>
+        <li><strong>Async options:</strong> Asynchronous job launchers, multi-threaded steps, parallel flows, or partitions.</li>
+        <li><strong>Thread safety:</strong> Spring Batch handles transactions & commits safely across threads.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingSpringBatchEventTrigger">
+    <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+      data-bs-target="#springBatchEventTriggerSection" aria-expanded="false" aria-controls="springBatchEventTriggerSection">
+      🔔 Spring Batch – Integration with Event-Based Triggers (Kafka, REST, Scheduler)
+    </button>
+  </h2>
+
+  <div id="springBatchEventTriggerSection" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p class="highlight-yellow">
+        Spring Batch jobs can be triggered not only by cron schedules but also by **external events** — like Kafka messages, REST API calls, or other schedulers.
+      </p>
+
+      <h5 class="text-warning">1️⃣ Kafka Trigger – Event-Driven Batch Start</h5>
+      <ul>
+        <li>Listen to a Kafka topic using <code>@KafkaListener</code>.</li>
+        <li>When a message arrives, trigger the batch job using <code>JobLauncher</code>.</li>
+      </ul>
+
+      <pre class="language-java"><code>
+@Component
+@RequiredArgsConstructor
+public class KafkaJobTrigger {
+
+    private final JobLauncher jobLauncher;
+    private final Job processDataJob;
+
+    @KafkaListener(topics = "trigger-batch-job", groupId = "batch-group")
+    public void onMessage(String message) throws Exception {
+        JobParameters params = new JobParametersBuilder()
+                .addString("messageId", message)
+                .addLong("time", System.currentTimeMillis())
+                .toJobParameters();
+
+        jobLauncher.run(processDataJob, params);
+        log.info("Spring Batch Job triggered by Kafka message: {}", message);
+    }
+}
+      </code></pre>
+
+      <ul>
+        <li>Kafka acts as an **event source** to start processing dynamically.</li>
+        <li>Useful for near-real-time or streaming-triggered batch loads.</li>
+      </ul>
+
+      <h5 class="text-warning mt-4">2️⃣ REST API Trigger – Manual / On-Demand Execution</h5>
+      <ul>
+        <li>Expose a REST endpoint that starts a Spring Batch job manually.</li>
+        <li>Useful for ad-hoc runs, re-processing, or integration with external systems.</li>
+      </ul>
+
+      <pre class="language-java"><code>
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/batch")
+public class JobController {
+
+    private final JobLauncher jobLauncher;
+    private final Job loadDataJob;
+
+    @PostMapping("/start")
+    public ResponseEntity&lt;String&gt; startJob(@RequestParam String fileName) {
+        try {
+            JobParameters jobParameters = new JobParametersBuilder()
+                    .addString("fileName", fileName)
+                    .addLong("time", System.currentTimeMillis())
+                    .toJobParameters();
+
+            jobLauncher.run(loadDataJob, jobParameters);
+            return ResponseEntity.ok("Job started successfully for " + fileName);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Job failed: " + e.getMessage());
+        }
+    }
+}
+      </code></pre>
+
+      <ul>
+        <li>Triggered via <code>POST /batch/start?fileName=data.csv</code>.</li>
+        <li>Can be called by Control-M, Jenkins, or external APIs.</li>
+      </ul>
+
+      <h5 class="text-warning mt-4">3️⃣ Scheduler Trigger – Time-Based / Recurring Jobs</h5>
+      <ul>
+        <li>Use Spring’s <code>@Scheduled</code> annotation to run jobs automatically on a fixed schedule.</li>
+        <li>Ideal for daily, hourly, or weekly recurring tasks.</li>
+      </ul>
+
+      <pre class="language-java"><code>
+@Component
+@RequiredArgsConstructor
+public class SchedulerJobTrigger {
+
+    private final JobLauncher jobLauncher;
+    private final Job aggregateJob;
+
+    @Scheduled(cron = "0 0 2 * * *")  // every day at 2 AM
+    public void runJob() throws Exception {
+        JobParameters params = new JobParametersBuilder()
+                .addLong("time", System.currentTimeMillis())
+                .toJobParameters();
+
+        jobLauncher.run(aggregateJob, params);
+        log.info("Spring Batch job triggered by scheduler at 2 AM");
+    }
+}
+      </code></pre>
+
+      <ul>
+        <li>Spring Scheduler, Quartz, or Control-M can handle timing.</li>
+        <li>Combined with ShedLock for distributed locking (to avoid duplicate execution).</li>
+      </ul>
+
+      <h5 class="text-success mt-4">📌 Summary</h5>
+      <ul>
+        <li><strong>Kafka Trigger:</strong> Real-time event → Batch job starts on message arrival.</li>
+        <li><strong>REST Trigger:</strong> On-demand → Trigger via API call (manual/automated).</li>
+        <li><strong>Scheduler Trigger:</strong> Time-based → Cron or Control-M triggers the job automatically.</li>
+        <li>All triggers internally use <code>JobLauncher.run()</code> with <code>JobParameters</code>.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingMFUseCase">
+    <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+      data-bs-target="#mfUseCaseSection" aria-expanded="false" aria-controls="mfUseCaseSection">
+      💰 Mutual Fund Broker Apps – How Spring Batch Fits In (NAV, Calculations, Reconciliation)
+    </button>
+  </h2>
+
+  <div id="mfUseCaseSection" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p class="highlight-yellow">
+        Mutual Fund broker platforms rely heavily on **batch processing** to handle NAV updates, daily calculations, transaction settlements, and compliance reports.  
+        <strong>Spring Batch</strong> is ideal for these nightly or event-driven data workflows.
+      </p>
+
+      <h5 class="text-warning">1️⃣ Problem – Before Batch Processing</h5>
+      <ul>
+        <li>Each broker or fintech app manually fetched NAV, holdings, and transactions from the **fund house** APIs or files.</li>
+        <li>Processing was **slow, error-prone**, and often overlapped between instances (duplicate calculations).</li>
+        <li>No proper checkpointing or resume ability — if failed midway, the entire run restarted.</li>
+      </ul>
+
+      <p>Example: A broker app manually downloads NAV files and computes portfolio values for thousands of users.</p>
+
+      <h5 class="text-warning mt-4">2️⃣ How Spring Batch Solves It</h5>
+      <ul>
+        <li>Spring Batch defines a structured <strong>Job → Step → Reader / Processor / Writer</strong> pipeline.</li>
+        <li>Jobs can be triggered:
+          <ul>
+            <li>⏰ Nightly (via Control-M or <code>@Scheduled</code>)</li>
+            <li>📥 Event-based (via Kafka when NAV file arrives)</li>
+            <li>🖐️ On-demand (via REST API)</li>
+          </ul>
+        </li>
+        <li>Supports <strong>fault tolerance</strong>, <strong>restartability</strong>, and <strong>transactional consistency</strong>.</li>
+        <li>Integrates with ShedLock to ensure only one instance runs the NAV update job at a time.</li>
+      </ul>
+
+      <h5 class="text-warning mt-4">3️⃣ Example Use Case – NAV Calculation Job</h5>
+      <ul>
+        <li>Every night, the fund maintainer publishes new NAV values in a file or Kafka event.</li>
+        <li>Spring Batch job runs to read that NAV data, calculate user portfolio values, and persist results.</li>
+      </ul>
+
+      <pre class="language-java"><code>
+@Component
+@RequiredArgsConstructor
+public class NavUpdateJobTrigger {
+
+    private final JobLauncher jobLauncher;
+    private final Job navCalculationJob;
+
+    // Trigger automatically every night at 2 AM
+    @Scheduled(cron = "0 0 2 * * *")
+    @SchedulerLock(name = "navCalculationJob", lockAtMostFor = "1h", lockAtLeastFor = "10m")
+    public void triggerNavJob() throws Exception {
+        JobParameters params = new JobParametersBuilder()
+                .addLong("time", System.currentTimeMillis())
+                .toJobParameters();
+        jobLauncher.run(navCalculationJob, params);
+        log.info("Triggered NAV Calculation Job for all funds.");
+    }
+}
+      </code></pre>
+
+      <h5 class="text-warning mt-4">4️⃣ Event-Driven Alternative (Kafka)</h5>
+      <p>If the MF maintainer publishes NAV data into a Kafka topic:</p>
+      <pre class="language-java"><code>
+@KafkaListener(topics = "nav-updates")
+public void onNavUpdate(String navJson) throws Exception {
+    JobParameters params = new JobParametersBuilder()
+            .addString("navJson", navJson)
+            .addLong("time", System.currentTimeMillis())
+            .toJobParameters();
+
+    jobLauncher.run(navCalculationJob, params);
+}
+      </code></pre>
+
+      <ul>
+        <li>Automatically processes NAV updates as soon as they arrive.</li>
+        <li>No waiting for nightly schedule — near-real-time processing possible.</li>
+      </ul>
+
+      <h5 class="text-warning mt-4">5️⃣ What the Job Might Do Internally</h5>
+      <ul>
+        <li><strong>Reader:</strong> Read NAV data from CSV, database, or Kafka payload.</li>
+        <li><strong>Processor:</strong> Calculate new portfolio value per user using NAV.</li>
+        <li><strong>Writer:</strong> Update holdings, valuations, and reports in DB.</li>
+      </ul>
+
+      <pre class="language-java"><code>
+@Bean
+public Step navCalculationStep() {
+    return stepBuilderFactory.get("navCalculationStep")
+        .<FundNav, PortfolioValuation>chunk(1000)
+        .reader(navReader())
+        .processor(navProcessor())
+        .writer(navWriter())
+        .build();
+}
+      </code></pre>
+
+      <h5 class="text-warning mt-4">6️⃣ Benefits in the Mutual Fund Context</h5>
+      <ul>
+        <li>✅ Ensures **only one NAV job** runs at a time (via ShedLock or DB lock).</li>
+        <li>💾 Supports **restartability** if failure occurs midway.</li>
+        <li>⚙️ Integrates with **Control-M** or **Scheduler** for nightly automation.</li>
+        <li>📈 Can scale for millions of records with chunk processing & parallel threads.</li>
+        <li>🔄 Can mix **batch + streaming** via Kafka triggers for hybrid processing.</li>
+      </ul>
+
+      <h5 class="text-success mt-4">📌 Summary</h5>
+      <ul>
+        <li><strong>Spring Batch</strong> provides reliability, transaction safety, and scalability for financial workflows.</li>
+        <li>Ideal for nightly NAV updates, reconciliations, compliance calculations, or settlement processing.</li>
+        <li>Event triggers (Kafka/REST/Scheduler) make it adaptable for both batch and near-real-time systems.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+
         </div>
     </div>
 

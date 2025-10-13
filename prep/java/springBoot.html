@@ -95,6 +95,526 @@
     <div class="accordion" id="googleAccordion">
 
       <div class="accordion-item">
+  <h2 class="accordion-header" id="headingShedLock">
+    <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+      data-bs-target="#shedLockSection" aria-expanded="false" aria-controls="shedLockSection">
+      🔒 ShedLock – Preventing Multiple Instances of Scheduled Jobs
+    </button>
+  </h2>
+
+  <div id="shedLockSection" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p class="highlight-yellow">
+        <strong>ShedLock</strong> ensures that in a distributed Spring Boot environment, **only one instance of a scheduled task runs at a time**, even if multiple app instances are running.
+      </p>
+
+      <h5 class="text-warning">1️⃣ Purpose</h5>
+      <ul>
+        <li>Prevent duplicate executions of <code>@Scheduled</code> tasks across multiple instances.</li>
+        <li>Works in **clustered or cloud deployments** where multiple app instances share the same job.</li>
+      </ul>
+
+      <h5 class="text-warning mt-4">2️⃣ Mechanism</h5>
+      <ul>
+        <li>Uses a **shared storage** (database, Redis, MongoDB) as a lock registry.</li>
+        <li>Steps:
+          <ol>
+            <li>An instance tries to acquire the lock in the shared storage.</li>
+            <li>If the lock is free or expired, the instance writes a lock record and executes the job.</li>
+            <li>Other instances attempting to acquire the lock **fail and skip execution**.</li>
+            <li>Lock is released after job completion or when <code>lockAtMostFor</code> expires.</li>
+          </ol>
+        </li>
+      </ul>
+
+      <h5 class="text-warning mt-4">3️⃣ Database Lock Example</h5>
+      <p>Simplified ShedLock table:</p>
+      <table class="table table-bordered table-dark">
+        <thead>
+          <tr>
+            <th>name</th>
+            <th>locked_at</th>
+            <th>locked_by</th>
+            <th>lock_until</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>myScheduledJob</td>
+            <td>2025-10-13 12:05:00</td>
+            <td>instance-1</td>
+            <td>2025-10-13 12:15:00</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <ul>
+        <li><strong>name:</strong> unique job identifier.</li>
+        <li><strong>locked_at:</strong> timestamp when lock was acquired.</li>
+        <li><strong>locked_by:</strong> the instance holding the lock.</li>
+        <li><strong>lock_until:</strong> time until which this lock is valid.</li>
+      </ul>
+
+      <h5 class="text-warning mt-4">4️⃣ Spring Boot + ShedLock Example</h5>
+      <pre class="language-java"><code>
+@Scheduled(cron = "0 0 * * * *")
+@SchedulerLock(
+    name = "myScheduledJob",
+    lockAtMostFor = "10m",
+    lockAtLeastFor = "1m"
+)
+public void runScheduledTask() {
+    log.info("Executing scheduled task at " + LocalDateTime.now());
+}
+      </code></pre>
+
+      <ul>
+        <li><strong>lockAtMostFor:</strong> Maximum time the lock is held (prevents stuck tasks).</li>
+        <li><strong>lockAtLeastFor:</strong> Minimum lock duration (prevents too frequent execution).</li>
+      </ul>
+
+      <h5 class="text-success mt-4">5️⃣ Summary</h5>
+      <ul>
+        <li>ShedLock prevents duplicate execution across **multiple instances** by locking on the shared storage.</li>
+        <li>Works seamlessly with <code>@Scheduled</code> tasks in clustered environments.</li>
+        <li>It ensures **single-instance execution**, but does not replace transaction management or concurrency control within batch jobs.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingShedLockDiagram">
+    <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+      data-bs-target="#shedLockDiagramSection" aria-expanded="false" aria-controls="shedLockDiagramSection">
+      🖼️ ShedLock Visualization – Multi-Instance Locking
+    </button>
+  </h2>
+
+  <div id="shedLockDiagramSection" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p class="highlight-yellow">
+        This diagram illustrates how multiple instances of the same Spring Boot application interact with the ShedLock table in the database to ensure only one scheduled task executes at a time.
+      </p>
+
+      <pre class="language-mermaid"><code>
+flowchart LR
+    subgraph App Instances
+        A1[Instance 1] 
+        A2[Instance 2]
+        A3[Instance 3]
+    end
+
+    subgraph DB["Shared Database (ShedLock Table)"]
+        L[Lock Table]
+    end
+
+    A1 -->|Try to acquire lock| L
+    A2 -->|Try to acquire lock| L
+    A3 -->|Try to acquire lock| L
+
+    L -->|Lock granted to Instance 1| A1
+    L -->|Lock denied| A2
+    L -->|Lock denied| A3
+
+    A1 -->|Execute scheduled task| Task[Scheduled Task Execution]
+    Task -->|Release lock / Expire| L
+    A2 -->|Next schedule tries again| L
+    A3 -->|Next schedule tries again| L
+      </code></pre>
+
+      <h5 class="text-warning mt-4">Explanation:</h5>
+      <ul>
+        <li>All instances attempt to acquire the lock in the shared ShedLock table simultaneously.</li>
+        <li>The database ensures **atomicity**: only one instance can insert/update the lock record successfully.</li>
+        <li>The instance that acquires the lock executes the scheduled task.</li>
+        <li>Other instances detect the lock exists and skip execution.</li>
+        <li>Once the task completes or the lock expires, the next scheduled run can acquire the lock.</li>
+      </ul>
+
+      <h5 class="text-success mt-4">Key Takeaways:</h5>
+      <ul>
+        <li>✔ Ensures **single-instance execution** across a cluster.</li>
+        <li>✔ Uses the **database as a coordination mechanism**.</li>
+        <li>✔ Protects against overlapping executions even in **multi-instance environments**.</li>
+        <li>✔ Simple to integrate with Spring Boot using <code>@SchedulerLock</code>.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingShedLockFull">
+    <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+      data-bs-target="#shedLockFullSection" aria-expanded="false" aria-controls="shedLockFullSection">
+      🔒 ShedLock – Single-Instance Scheduled Jobs with Diagram & Example
+    </button>
+  </h2>
+
+  <div id="shedLockFullSection" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p class="highlight-yellow">
+        <strong>ShedLock</strong> ensures that in a distributed Spring Boot environment, only **one instance of a scheduled task** runs at a time, even if multiple app instances are deployed.
+      </p>
+
+      <h5 class="text-warning">1️⃣ Purpose</h5>
+      <ul>
+        <li>Prevent duplicate executions of <code>@Scheduled</code> tasks across multiple instances.</li>
+        <li>Works in **clustered or cloud deployments** where multiple app instances share the same job.</li>
+      </ul>
+
+      <h5 class="text-warning mt-4">2️⃣ Mechanism</h5>
+      <ul>
+        <li>Uses a **shared storage** (database, Redis, MongoDB) as a lock registry.</li>
+        <li>Steps:
+          <ol>
+            <li>An instance tries to acquire the lock in the shared storage.</li>
+            <li>If the lock is free or expired, the instance writes a lock record and executes the job.</li>
+            <li>Other instances attempting to acquire the lock **fail and skip execution**.</li>
+            <li>Lock is released after job completion or when <code>lockAtMostFor</code> expires.</li>
+          </ol>
+        </li>
+      </ul>
+
+      <h5 class="text-warning mt-4">3️⃣ Database Lock Example</h5>
+      <p>Simplified ShedLock table:</p>
+      <table class="table table-bordered table-dark">
+        <thead>
+          <tr>
+            <th>name</th>
+            <th>locked_at</th>
+            <th>locked_by</th>
+            <th>lock_until</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>myScheduledJob</td>
+            <td>2025-10-13 12:05:00</td>
+            <td>instance-1</td>
+            <td>2025-10-13 12:15:00</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <ul>
+        <li><strong>name:</strong> unique job identifier.</li>
+        <li><strong>locked_at:</strong> timestamp when lock was acquired.</li>
+        <li><strong>locked_by:</strong> the instance holding the lock.</li>
+        <li><strong>lock_until:</strong> time until which this lock is valid.</li>
+      </ul>
+
+      <h5 class="text-warning mt-4">4️⃣ Spring Boot + ShedLock Example</h5>
+      <pre class="language-java"><code>
+@Scheduled(cron = "0 0 * * * *")
+@SchedulerLock(
+    name = "myScheduledJob",
+    lockAtMostFor = "10m",
+    lockAtLeastFor = "1m"
+)
+public void runScheduledTask() {
+    log.info("Executing scheduled task at " + LocalDateTime.now());
+}
+      </code></pre>
+
+      <ul>
+        <li><strong>lockAtMostFor:</strong> Maximum time the lock is held (prevents stuck tasks).</li>
+        <li><strong>lockAtLeastFor:</strong> Minimum lock duration (prevents too frequent execution).</li>
+      </ul>
+
+      <h5 class="text-warning mt-4">5️⃣ Multi-Instance Visualization</h5>
+      <pre class="language-mermaid"><code>
+flowchart LR
+    subgraph App Instances
+        A1[Instance 1] 
+        A2[Instance 2]
+        A3[Instance 3]
+    end
+
+    subgraph DB["Shared Database (ShedLock Table)"]
+        L[Lock Table]
+    end
+
+    A1 -->|Try to acquire lock| L
+    A2 -->|Try to acquire lock| L
+    A3 -->|Try to acquire lock| L
+
+    L -->|Lock granted to Instance 1| A1
+    L -->|Lock denied| A2
+    L -->|Lock denied| A3
+
+    A1 -->|Execute scheduled task| Task[Scheduled Task Execution]
+    Task -->|Release lock / Expire| L
+    A2 -->|Next schedule tries again| L
+    A3 -->|Next schedule tries again| L
+      </code></pre>
+
+      <h5 class="text-warning mt-4">Explanation</h5>
+      <ul>
+        <li>All instances attempt to acquire the lock in the shared ShedLock table simultaneously.</li>
+        <li>The database ensures **atomicity**: only one instance can insert/update the lock record successfully.</li>
+        <li>The instance that acquires the lock executes the scheduled task; others skip execution.</li>
+        <li>Once the task completes or the lock expires, the next scheduled run can acquire the lock.</li>
+      </ul>
+
+      <h5 class="text-success mt-4">6️⃣ Key Takeaways</h5>
+      <ul>
+        <li>✔ Ensures **single-instance execution** across a cluster.</li>
+        <li>✔ Uses the **database as a coordination mechanism**.</li>
+        <li>✔ Protects against overlapping executions in **multi-instance environments**.</li>
+        <li>✔ Easy integration with Spring Boot using <code>@SchedulerLock</code>.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingShedLockRedis">
+    <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+      data-bs-target="#shedLockRedisSection" aria-expanded="false" aria-controls="shedLockRedisSection">
+      🔑 ShedLock with Redis – Single-Instance Scheduled Jobs in Distributed Systems
+    </button>
+  </h2>
+
+  <div id="shedLockRedisSection" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p class="highlight-yellow">
+        Using **Redis (or sharded Redis)** as the lock registry allows ShedLock to coordinate scheduled tasks **without relying on a relational database**, suitable for cloud-native or microservice environments.
+      </p>
+
+      <h5 class="text-warning">1️⃣ How it Works</h5>
+      <ul>
+        <li>ShedLock creates a **lock key** in Redis for each scheduled task.</li>
+        <li>When a task is triggered:
+          <ol>
+            <li>The instance attempts to **set the lock key atomically** using Redis commands (like <code>SET key value NX PX timeout</code>).</li>
+            <li>If the key is **successfully set**, the instance executes the scheduled job.</li>
+            <li>If the key already exists, **other instances skip execution**.</li>
+            <li>When the job finishes, the lock expires automatically after the configured TTL (<code>lockAtMostFor</code>).</li>
+          </ol>
+        </li>
+        <li>Sharded Redis is fully supported: ShedLock uses the **Redis client** (Lettuce or Jedis) to interact with the cluster, ensuring atomic key operations per shard.</li>
+      </ul>
+
+      <h5 class="text-warning mt-4">2️⃣ Spring Boot + Redis Example</h5>
+      <pre class="language-java"><code>
+@Configuration
+@EnableScheduling
+@EnableSchedulerLock(defaultLockAtMostFor = "10m")
+public class SchedulerConfig {
+
+    @Bean
+    public LockProvider lockProvider(RedisConnectionFactory redisConnectionFactory) {
+        return new RedisLockProvider(redisConnectionFactory);
+    }
+}
+
+@Component
+public class ScheduledTasks {
+
+    @Scheduled(cron = "0 0 * * * *")
+    @SchedulerLock(
+        name = "myRedisScheduledJob",
+        lockAtMostFor = "10m",
+        lockAtLeastFor = "1m"
+    )
+    public void runTask() {
+        log.info("Executing scheduled task at " + LocalDateTime.now());
+    }
+}
+      </code></pre>
+
+      <h5 class="text-warning mt-4">3️⃣ Advantages of Redis-based Lock</h5>
+      <ul>
+        <li>⚡ **High performance** – Redis is in-memory and very fast.</li>
+        <li>☁️ **Cloud-friendly** – works well in Kubernetes, Docker, and microservices.</li>
+        <li>🔀 **Sharded Redis support** – can coordinate locks across distributed clusters.</li>
+        <li>🔒 Atomic operations ensure **only one instance executes the job**.</li>
+        <li>🕒 TTL ensures **stale locks are automatically released**.</li>
+      </ul>
+
+      <h5 class="text-warning mt-4">4️⃣ Notes & Best Practices</h5>
+      <ul>
+        <li>Use **RedisLockProvider** with Lettuce or Jedis clients.</li>
+        <li>Set **lockAtMostFor** slightly longer than the maximum job execution time to avoid duplicate runs.</li>
+        <li>For **highly critical jobs**, monitor lock acquisition failures to detect skipped executions.</li>
+        <li>Sharded Redis handles **automatic failover**, but make sure all nodes can see the lock key consistently.</li>
+      </ul>
+
+      <h5 class="text-success mt-4">📌 Summary</h5>
+      <ul>
+        <li>ShedLock with Redis provides **distributed, high-performance locks** for scheduled jobs.</li>
+        <li>Sharded Redis ensures **scalable, fault-tolerant coordination** across multiple instances.</li>
+        <li>TTL-based locks prevent **stuck executions** and maintain single-instance guarantees.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingShedLockLockAtLeastFor">
+    <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+      data-bs-target="#shedLockLockAtLeastForSection" aria-expanded="false" aria-controls="shedLockLockAtLeastForSection">
+      ⏱️ ShedLock – Behavior of lockAtLeastFor
+    </button>
+  </h2>
+
+  <div id="shedLockLockAtLeastForSection" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p class="highlight-yellow">
+        In ShedLock, <code>lockAtLeastFor</code> guarantees that the lock **will not be released before a minimum duration**, but it does **not force the job to wait**.
+      </p>
+
+      <h5 class="text-warning">1️⃣ How lockAtLeastFor Works</h5>
+      <ul>
+        <li><code>lockAtLeastFor</code> ensures that **the lock itself is held at least for the given duration**.</li>
+        <li>However, the **scheduled method execution completes immediately** once the task logic finishes.</li>
+        <li>This prevents **another instance from acquiring the lock too soon**, even if the current job finished very quickly.</li>
+      </ul>
+
+      <h5 class="text-warning mt-4">2️⃣ Example</h5>
+      <pre class="language-java"><code>
+@Scheduled(cron = "0 * * * * *")
+@SchedulerLock(
+    name = "myTask",
+    lockAtMostFor = "10m",
+    lockAtLeastFor = "2m"
+)
+public void myTask() {
+    log.info("Task started");
+    // Simulate short task
+    Thread.sleep(30_000); // 30 seconds
+    log.info("Task finished");
+}
+      </code></pre>
+
+      <ul>
+        <li>Task duration: 30 seconds</li>
+        <li><code>lockAtLeastFor</code>: 2 minutes</li>
+        <li>Behavior:
+          <ul>
+            <li>Task finishes in 30 seconds → execution completes immediately</li>
+            <li>Lock is still held for remaining 1.5 minutes</li>
+            <li>Other instances attempting to acquire the lock during this period **will skip execution**</li>
+          </ul>
+        </li>
+      </ul>
+
+      <h5 class="text-warning mt-4">3️⃣ Key Takeaways</h5>
+      <ul>
+        <li>✅ <strong>Job execution is never artificially delayed</strong> — it completes as soon as its logic finishes.</li>
+        <li>✅ <strong>Lock duration is enforced</strong> so no other instance can run the job before the minimum time.</li>
+        <li>✅ Prevents **too frequent execution** in a clustered environment.</li>
+      </ul>
+
+      <h5 class="text-success mt-4">📌 Summary</h5>
+      <ul>
+        <li><strong>lockAtMostFor</strong> → ensures a max lock duration to avoid stuck jobs.</li>
+        <li><strong>lockAtLeastFor</strong> → ensures a min lock duration so another instance won’t start too soon.</li>
+        <li>Execution finishes as fast as possible; the lock may continue to exist until <code>lockAtLeastFor</code> expires.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingShedLockAlternative">
+    <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+      data-bs-target="#shedLockAlternativeSection" aria-expanded="false" aria-controls="shedLockAlternativeSection">
+      ⚡ Alternatives to ShedLock for Variable-Time Jobs with Downstream Dependencies
+    </button>
+  </h2>
+
+  <div id="shedLockAlternativeSection" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p class="highlight-yellow">
+        When a job depends on downstream services with **unpredictable response times**, fixed-time locks may fail. Here are **more robust alternatives**:
+      </p>
+
+      <h5 class="text-warning">1️⃣ Distributed Queues (Message-Driven Scheduling)</h5>
+      <ul>
+        <li>Use **RabbitMQ, Kafka, or SQS** to trigger jobs instead of fixed schedules.</li>
+        <li>Each job is **represented as a message** in a queue.</li>
+        <li>Consumers (instances) **process messages one by one**, or with controlled concurrency.</li>
+        <li>Guarantees **exactly-once or at-least-once processing** depending on your queue setup.</li>
+      </ul>
+
+      <pre class="language-java"><code>
+// Kafka consumer example
+@KafkaListener(topics = "job-queue")
+public void processJob(JobPayload payload) {
+    log.info("Processing job: " + payload.getId());
+    downstreamService.call(payload);
+}
+      </code></pre>
+
+      <h5 class="text-warning mt-4">2️⃣ Database Row-Based Locking</h5>
+      <ul>
+        <li>Instead of fixed-duration locks, acquire a **row lock in the database** at the time of processing:</li>
+        <ul>
+          <li>Use `SELECT ... FOR UPDATE` in a transaction.</li>
+          <li>Only one instance can acquire the lock for a particular job row.</li>
+          <li>When the job completes (even if it’s slow), the transaction releases the lock.</li>
+        </ul>
+        <li>Advantages:
+          <ul>
+            <li>Dynamic — lock duration **matches actual job execution time**.</li>
+            <li>Works well for jobs stored as **database entries** (like batch jobs or tasks table).</li>
+          </ul>
+        </li>
+      </ul>
+
+      <h5 class="text-warning mt-4">3️⃣ Distributed Lock with Heartbeat / Lease Renewal</h5>
+      <ul>
+        <li>Use distributed lock systems that support **dynamic lease renewal**:
+          <ul>
+            <li>Redis (Redisson), Zookeeper, Consul, etc.</li>
+            <li>Acquire a lock with a **short TTL**, then periodically **renew the lock** while the job is running.</li>
+            <li>If the job crashes, lock expires automatically.</li>
+          </ul>
+        </li>
+        <li>Advantages:
+          <ul>
+            <li>Handles **variable execution time** automatically.</li>
+            <li>Prevents another instance from starting until the job truly finishes.</li>
+          </ul>
+        </li>
+      </ul>
+
+      <h5 class="text-warning mt-4">4️⃣ Event-Driven Orchestration / Saga Pattern</h5>
+      <ul>
+        <li>Instead of a fixed schedule, trigger jobs based on **events** from downstream services.</li>
+        <li>Each event signals that **upstream work is done** and processing can start safely.</li>
+        <li>Can be combined with **message queues or distributed locks** to ensure **single execution**.</li>
+      </ul>
+
+      <h5 class="text-success mt-4">📌 Summary</h5>
+      <ul>
+        <li>Fixed-duration locks (ShedLock) are **not ideal** when job time is unpredictable.</li>
+        <li>Better alternatives:
+          <ul>
+            <li>Distributed queues (Kafka, RabbitMQ) → jobs triggered per message</li>
+            <li>Database row-level locks → dynamic lock duration</li>
+            <li>Distributed lock with heartbeat/lease renewal → variable execution support</li>
+            <li>Event-driven orchestration → start only when downstream work is complete</li>
+          </ul>
+        </li>
+        <li>All approaches ensure **single-instance execution** while adapting to unpredictable job durations.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+
+      <div class="accordion-item">
         <h2 class="accordion-header" id="headingOOMSpringBoot">
           <button class="accordion-button collapsed search-item text-danger" type="button" data-bs-toggle="collapse"
             data-bs-target="#springBootOOMError" aria-expanded="false" aria-controls="springBootOOMError">
@@ -12668,7 +13188,7 @@ public void executeTransaction() { ... }
       </code></pre>
 
             <h5 class="text-primary">🔹 Summary Table</h5>
-            <table class="table table-bordered text-light">
+            <table class="table table-bordered table-dark">
               <thead>
                 <tr class="bg-info">
                   <th>Parameter</th>
