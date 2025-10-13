@@ -288,6 +288,787 @@ public class OrderService {
     </div>
   </div>
 </div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingSingleTaskProcessing">
+    <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+      data-bs-target="#singleTaskProcessingSection" aria-expanded="false" aria-controls="singleTaskProcessingSection">
+      ⚙️ Ensuring Single Task Processing Across Multiple Spring Boot Instances
+    </button>
+  </h2>
+  <div id="singleTaskProcessingSection" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p class="highlight-yellow">
+        When running multiple instances of a Spring Boot service (for example, in Kubernetes or a load-balanced setup),
+        asynchronous or scheduled jobs may accidentally execute <strong>in parallel</strong> on each instance.
+        To guarantee that <strong>only one instance</strong> processes a task at a time, you can use several techniques.
+      </p>
+
+      <h5 class="text-warning">1️⃣ Use Distributed Locking</h5>
+      <ul>
+        <li>Distributed locks prevent multiple instances from executing the same job simultaneously.</li>
+        <li>Common implementations: <strong>Redis</strong>, <strong>Database</strong>, or <strong>Zookeeper</strong>.</li>
+      </ul>
+
+      <!-- Tabs navigation -->
+      <ul class="nav nav-tabs mt-3" id="lockTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="java-tab" data-bs-toggle="tab" data-bs-target="#javaCode" type="button"
+            role="tab" aria-controls="javaCode" aria-selected="true">💻 Java (Redisson)</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="redis-tab" data-bs-toggle="tab" data-bs-target="#redisConfig" type="button"
+            role="tab" aria-controls="redisConfig" aria-selected="false">🧠 Redis Config</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="db-tab" data-bs-toggle="tab" data-bs-target="#dbLock" type="button"
+            role="tab" aria-controls="dbLock" aria-selected="false">🗄️ Database Lock</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="kube-tab" data-bs-toggle="tab" data-bs-target="#kubeLeader" type="button"
+            role="tab" aria-controls="kubeLeader" aria-selected="false">☸️ Kubernetes Leader Election</button>
+        </li>
+      </ul>
+
+      <!-- Tabs content -->
+      <div class="tab-content border p-3" id="lockTabsContent">
+
+        <!-- Java (Redisson) -->
+        <div class="tab-pane fade show active" id="javaCode" role="tabpanel" aria-labelledby="java-tab">
+          <pre class="language-java"><code>
+@Service
+public class FileProcessor {
+
+    private final RLock lock;
+
+    public FileProcessor(RedissonClient redissonClient) {
+        this.lock = redissonClient.getLock("file-processing-lock");
+    }
+
+    @Async
+    public void processFile() {
+        if (lock.tryLock()) {
+            try {
+                // Only one instance executes this block
+                loadDataFromSource();
+            } finally {
+                lock.unlock();
+            }
+        }
+    }
+}
+          </code></pre>
+        </div>
+
+        <!-- Redis Config -->
+        <div class="tab-pane fade" id="redisConfig" role="tabpanel" aria-labelledby="redis-tab">
+          <pre class="language-yaml"><code>
+spring:
+  redis:
+    host: localhost
+    port: 6379
+
+# Add Redisson dependency
+# Maven:
+# &lt;dependency&gt;
+#   &lt;groupId&gt;org.redisson&lt;/groupId&gt;
+#   &lt;artifactId&gt;redisson-spring-boot-starter&lt;/artifactId&gt;
+#   &lt;version&gt;3.23.0&lt;/version&gt;
+# &lt;/dependency&gt;
+          </code></pre>
+        </div>
+
+        <!-- DB Lock -->
+        <div class="tab-pane fade" id="dbLock" role="tabpanel" aria-labelledby="db-tab">
+          <pre class="language-sql"><code>
+-- Simple database locking approach
+UPDATE job_table
+SET status = 'IN_PROGRESS'
+WHERE job_name = 'fileJob' AND status = 'PENDING';
+          </code></pre>
+          <pre class="language-java"><code>
+@Scheduled(fixedDelay = 60000)
+public void runJob() {
+    boolean locked = jobRepository.tryAcquireLock("fileJob");
+    if (locked) {
+        try {
+            loadDataFromSource();
+        } finally {
+            jobRepository.releaseLock("fileJob");
+        }
+    }
+}
+          </code></pre>
+        </div>
+
+        <!-- Kubernetes Leader -->
+        <div class="tab-pane fade" id="kubeLeader" role="tabpanel" aria-labelledby="kube-tab">
+          <pre class="language-yaml"><code>
+# Kubernetes Deployment Example (Leader Election)
+apiVersion: v1
+kind: Pod
+metadata:
+  name: file-job-worker
+spec:
+  leaderElection:
+    enabled: true
+    leaseDuration: 15s
+          </code></pre>
+          <pre class="language-java"><code>
+@Component
+public class LeaderJob implements SmartLifecycle {
+
+    @Override
+    public void start() {
+        if (isLeader()) {
+            loadDataFromSource();
+        }
+    }
+
+    private boolean isLeader() {
+        // Check Kubernetes lease object or coordination API
+        return true;
+    }
+
+    @Override public void stop() {}
+    @Override public boolean isRunning() { return true; }
+}
+          </code></pre>
+        </div>
+      </div>
+
+      <h5 class="text-warning mt-4">2️⃣ Use ShedLock for @Scheduled Jobs</h5>
+      <ul>
+        <li><strong>ShedLock</strong> ensures that only one instance executes scheduled tasks.</li>
+        <li>Works with both SQL and Redis — easy to integrate with Spring Boot.</li>
+      </ul>
+      <pre class="language-java"><code>
+@Scheduled(cron = "0 0 * * * *")
+@SchedulerLock(name = "fileJob", lockAtMostFor = "10m", lockAtLeastFor = "1m")
+public void processFile() {
+    loadDataFromSource();
+}
+      </code></pre>
+
+      <h5 class="text-success mt-4">📌 Summary</h5>
+      <ul>
+        <li>Use <strong>Redis / ShedLock</strong> for simple async or scheduled tasks.</li>
+        <li>Use <strong>Leader Election</strong> for clustered microservices.</li>
+        <li>Use <strong>Message Queue</strong> (Kafka/RabbitMQ) for scalable distributed tasks.</li>
+        <li>Use <strong>DB Lock</strong> for lightweight single-node coordination.</li>
+      </ul>
+
+      <p class="highlight-yellow">
+        ✅ Recommendation:
+        <ul>
+          <li>For <strong>2-instance setups</strong> → Redis or ShedLock.</li>
+          <li>For <strong>Kubernetes</strong> → Leader Election or Queue-based design.</li>
+        </ul>
+      </p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingSpringBatchInstances">
+    <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+      data-bs-target="#springBatchInstancesSection" aria-expanded="false" aria-controls="springBatchInstancesSection">
+      🧩 Spring Batch in Multi-Instance Environments
+    </button>
+  </h2>
+  <div id="springBatchInstancesSection" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p class="highlight-yellow">
+        In a distributed Spring Boot setup (multiple app instances running the same Spring Batch job), 
+        concurrency and duplicate execution can occur if not configured properly.
+        Spring Batch provides built-in mechanisms to ensure that <strong>only one instance processes a job</strong> at a time.
+      </p>
+
+      <h5 class="text-warning">1️⃣ Default Behavior</h5>
+      <ul>
+        <li>Spring Batch uses a shared <strong>JobRepository</strong> (usually database-backed) to coordinate job executions.</li>
+        <li>When one instance starts a job, it creates an entry in tables like <code>BATCH_JOB_INSTANCE</code> and <code>BATCH_JOB_EXECUTION</code>.</li>
+        <li>If another instance tries to start the same job with identical parameters, 
+          Spring Batch throws:
+          <ul>
+            <li><code>JobExecutionAlreadyRunningException</code></li>
+            <li><code>JobInstanceAlreadyCompleteException</code></li>
+          </ul>
+          ensuring only one instance runs it.</li>
+      </ul>
+
+      <h5 class="text-warning">2️⃣ Required Setup — Shared JobRepository</h5>
+      <ul>
+        <li>All service instances must share the <strong>same database</strong> for job metadata.</li>
+        <li>Each instance reads and writes to the same tables:
+          <ul>
+            <li><code>BATCH_JOB_INSTANCE</code></li>
+            <li><code>BATCH_JOB_EXECUTION</code></li>
+            <li><code>BATCH_STEP_EXECUTION</code></li>
+          </ul>
+        </li>
+        <li>This database acts as a <strong>distributed lock</strong> between instances.</li>
+      </ul>
+
+      <!-- Tabs Navigation -->
+      <ul class="nav nav-tabs mt-3" id="batchTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="java-batch-tab" data-bs-toggle="tab" data-bs-target="#javaBatchCode" type="button"
+            role="tab" aria-controls="javaBatchCode" aria-selected="true">💻 Java Config</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="db-batch-tab" data-bs-toggle="tab" data-bs-target="#dbBatchSchema" type="button"
+            role="tab" aria-controls="dbBatchSchema" aria-selected="false">🗄️ Database Schema</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="coord-batch-tab" data-bs-toggle="tab" data-bs-target="#coordinationBatch" type="button"
+            role="tab" aria-controls="coordinationBatch" aria-selected="false">⚙️ Distributed Coordination</button>
+        </li>
+      </ul>
+
+      <!-- Tabs Content -->
+      <div class="tab-content border p-3" id="batchTabsContent">
+
+        <!-- Java Config -->
+        <div class="tab-pane fade show active" id="javaBatchCode" role="tabpanel" aria-labelledby="java-batch-tab">
+          <pre class="language-java"><code>
+@Configuration
+@EnableBatchProcessing
+public class BatchConfig {
+
+    @Bean
+    public JobRepository jobRepository(DataSource dataSource, PlatformTransactionManager txManager)
+            throws Exception {
+        JobRepositoryFactoryBean factory = new JobRepositoryFactoryBean();
+        factory.setDataSource(dataSource);
+        factory.setTransactionManager(txManager);
+        factory.setIsolationLevelForCreate("ISOLATION_REPEATABLE_READ");
+        factory.afterPropertiesSet();
+        return factory.getObject();
+    }
+
+    @Bean
+    public JobLauncher jobLauncher(JobRepository jobRepository) {
+        SimpleJobLauncher launcher = new SimpleJobLauncher();
+        launcher.setJobRepository(jobRepository);
+        return launcher;
+    }
+}
+          </code></pre>
+        </div>
+
+        <!-- Database Schema -->
+        <div class="tab-pane fade" id="dbBatchSchema" role="tabpanel" aria-labelledby="db-batch-tab">
+          <pre class="language-sql"><code>
+-- Spring Batch Metadata Tables (auto-created if not present)
+BATCH_JOB_INSTANCE
+BATCH_JOB_EXECUTION
+BATCH_STEP_EXECUTION
+BATCH_JOB_EXECUTION_PARAMS
+BATCH_STEP_EXECUTION_CONTEXT
+BATCH_JOB_EXECUTION_CONTEXT
+
+-- Ensure all instances share the same database for these tables.
+          </code></pre>
+          <p>
+            ✅ Spring Batch uses row-level locking and transaction isolation to prevent concurrent updates to the same job instance.
+          </p>
+        </div>
+
+        <!-- Distributed Coordination -->
+        <div class="tab-pane fade" id="coordinationBatch" role="tabpanel" aria-labelledby="coord-batch-tab">
+          <h6 class="text-info">Option 1 — Use Shared JobRepository (Default, Recommended)</h6>
+          <p>
+            Each instance consults the shared repository before starting a job. 
+            If another instance has already started the same job, it will skip or fail gracefully.
+          </p>
+
+          <h6 class="text-info mt-3">Option 2 — External Lock (Redis / ShedLock)</h6>
+          <pre class="language-java"><code>
+@Scheduled(fixedDelay = 60000)
+@SchedulerLock(name = "batchJobLock", lockAtMostFor = "10m")
+public void triggerBatchJob() {
+    jobLauncher.run(myJob, new JobParameters());
+}
+          </code></pre>
+
+          <h6 class="text-info mt-3">Option 3 — Partitioned or Remote Chunking</h6>
+          <p>
+            For parallel processing across instances, use Spring Batch’s 
+            <strong>partitioned step</strong> or <strong>remote chunking</strong> to divide data among workers safely.
+          </p>
+          <pre class="language-java"><code>
+@Bean
+public Step managerStep(Step slaveStep) {
+    return stepBuilderFactory.get("managerStep")
+            .partitioner(slaveStep.getName(), new CustomPartitioner())
+            .step(slaveStep)
+            .gridSize(4)
+            .taskExecutor(new SimpleAsyncTaskExecutor())
+            .build();
+}
+          </code></pre>
+        </div>
+      </div>
+
+      <h5 class="text-warning mt-4">3️⃣ Common Mistakes to Avoid</h5>
+      <ul>
+        <li>❌ Using <code>MapJobRepositoryFactoryBean</code> → creates in-memory job repository, not shared.</li>
+        <li>❌ Deploying multiple instances without a common database connection.</li>
+        <li>❌ Manually launching the same job with identical parameters on each node.</li>
+      </ul>
+
+      <h5 class="text-success">📌 Summary</h5>
+      <ul>
+        <li>✅ Spring Batch prevents duplicate execution via <strong>JobRepository database locking</strong>.</li>
+        <li>✅ All instances must share the <strong>same Batch metadata tables</strong>.</li>
+        <li>⚙️ For safe concurrency, use <strong>ShedLock</strong> or <strong>Leader Election</strong> when scheduling jobs externally.</li>
+        <li>🚀 For parallel scalability, prefer <strong>Partitioned Steps</strong> or <strong>Remote Chunking</strong>.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingSpringBatchScaling">
+    <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+      data-bs-target="#springBatchScalingSection" aria-expanded="false" aria-controls="springBatchScalingSection">
+      🚀 Scaling Spring Batch with Partitioning & Remote Chunking
+    </button>
+  </h2>
+  <div id="springBatchScalingSection" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p class="highlight-yellow">
+        When Spring Batch jobs need to process large data sets efficiently or across multiple instances, 
+        you can use <strong>Partitioning</strong> or <strong>Remote Chunking</strong>.  
+        Both techniques ensure scalability while maintaining data integrity and coordination between nodes.
+      </p>
+
+      <h5 class="text-warning">1️⃣ Partitioning (Multi-threaded or Multi-node Execution)</h5>
+      <ul>
+        <li>Used when you want to <strong>split a job into multiple partitions</strong> that can be processed in parallel.</li>
+        <li>Each partition handles a portion of the data (e.g., specific ID ranges or file sections).</li>
+        <li>Spring Batch manages synchronization through the shared <strong>JobRepository</strong>.</li>
+      </ul>
+
+      <!-- Tabs Navigation -->
+      <ul class="nav nav-tabs mt-3" id="partitionTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="manager-tab" data-bs-toggle="tab" data-bs-target="#managerCode" type="button"
+            role="tab" aria-controls="managerCode" aria-selected="true">💻 Manager (Master Node)</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="worker-tab" data-bs-toggle="tab" data-bs-target="#workerCode" type="button"
+            role="tab" aria-controls="workerCode" aria-selected="false">⚙️ Worker (Slave Steps)</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="partitioner-tab" data-bs-toggle="tab" data-bs-target="#partitionerCode" type="button"
+            role="tab" aria-controls="partitionerCode" aria-selected="false">🧩 Custom Partitioner</button>
+        </li>
+      </ul>
+
+      <!-- Tabs Content -->
+      <div class="tab-content border p-3" id="partitionTabsContent">
+
+        <!-- Manager -->
+        <div class="tab-pane fade show active" id="managerCode" role="tabpanel" aria-labelledby="manager-tab">
+          <pre class="language-java"><code>
+@Bean
+public Step managerStep(Step slaveStep) {
+    return stepBuilderFactory.get("managerStep")
+        .partitioner(slaveStep.getName(), new RangePartitioner())
+        .step(slaveStep)
+        .gridSize(4) // number of partitions
+        .taskExecutor(new SimpleAsyncTaskExecutor()) // or ThreadPoolTaskExecutor
+        .build();
+}
+          </code></pre>
+          <p>
+            💡 The <code>managerStep</code> acts as the orchestrator. It divides work into multiple partitions and runs each in parallel.
+          </p>
+        </div>
+
+        <!-- Worker -->
+        <div class="tab-pane fade" id="workerCode" role="tabpanel" aria-labelledby="worker-tab">
+          <pre class="language-java"><code>
+@Bean
+public Step slaveStep() {
+    return stepBuilderFactory.get("slaveStep")
+        .<User, User>chunk(100)
+        .reader(itemReader(null, null))
+        .processor(itemProcessor())
+        .writer(itemWriter())
+        .build();
+}
+          </code></pre>
+          <p>
+            Each <code>slaveStep</code> processes one partition of data independently.
+          </p>
+        </div>
+
+        <!-- Partitioner -->
+        <div class="tab-pane fade" id="partitionerCode" role="tabpanel" aria-labelledby="partitioner-tab">
+          <pre class="language-java"><code>
+public class RangePartitioner implements Partitioner {
+    @Override
+    public Map&lt;String, ExecutionContext&gt; partition(int gridSize) {
+        Map&lt;String, ExecutionContext&gt; result = new HashMap&lt;&gt;();
+        int range = 1000;
+        for (int i = 0; i &lt; gridSize; i++) {
+            ExecutionContext context = new ExecutionContext();
+            context.putInt("minId", i * range + 1);
+            context.putInt("maxId", (i + 1) * range);
+            result.put("partition" + i, context);
+        }
+        return result;
+    }
+}
+          </code></pre>
+          <p>
+            ✅ Each partition carries its own execution context defining the data range it should process.
+          </p>
+        </div>
+      </div>
+
+      <h5 class="text-warning mt-4">2️⃣ Remote Chunking (Distributed Worker Nodes)</h5>
+      <ul>
+        <li>Used when batch processing should be <strong>distributed across multiple application instances or servers</strong>.</li>
+        <li>The manager node sends chunks of data to remote worker nodes via <strong>message queues</strong> (e.g., RabbitMQ, Kafka).</li>
+        <li>Workers process and return results asynchronously.</li>
+      </ul>
+
+      <!-- Tabs Navigation -->
+      <ul class="nav nav-tabs mt-3" id="chunkTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="remote-manager-tab" data-bs-toggle="tab" data-bs-target="#remoteManager" type="button"
+            role="tab" aria-controls="remoteManager" aria-selected="true">💻 Manager Node</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="remote-worker-tab" data-bs-toggle="tab" data-bs-target="#remoteWorker" type="button"
+            role="tab" aria-controls="remoteWorker" aria-selected="false">⚙️ Worker Node</button>
+        </li>
+      </ul>
+
+      <!-- Tabs Content -->
+      <div class="tab-content border p-3" id="chunkTabsContent">
+
+        <!-- Remote Manager -->
+        <div class="tab-pane fade show active" id="remoteManager" role="tabpanel" aria-labelledby="remote-manager-tab">
+          <pre class="language-java"><code>
+@Bean
+public Step managerStep(JmsTemplate jmsTemplate) {
+    return stepBuilderFactory.get("managerStep")
+        .<User, User>chunk(100)
+        .reader(itemReader())
+        .writer(messagingItemWriter(jmsTemplate))
+        .build();
+}
+          </code></pre>
+          <pre class="language-java"><code>
+@Bean
+public MessagingItemWriter&lt;User&gt; messagingItemWriter(JmsTemplate jmsTemplate) {
+    MessagingItemWriter&lt;User&gt; writer = new MessagingItemWriter&lt;&gt;();
+    writer.setJmsTemplate(jmsTemplate);
+    writer.setDestinationName("userChunkQueue");
+    return writer;
+}
+          </code></pre>
+          <p>
+            The manager node reads data and sends chunks to the message queue for remote processing.
+          </p>
+        </div>
+
+        <!-- Remote Worker -->
+        <div class="tab-pane fade" id="remoteWorker" role="tabpanel" aria-labelledby="remote-worker-tab">
+          <pre class="language-java"><code>
+@Bean
+public IntegrationFlow workerFlow() {
+    return IntegrationFlows
+        .from(Jms.messageDrivenChannelAdapter(connectionFactory())
+            .destination("userChunkQueue"))
+        .handle(chunkProcessorChunkHandler())
+        .get();
+}
+
+@Bean
+public ChunkProcessorChunkHandler&lt;User&gt; chunkProcessorChunkHandler() {
+    ChunkProcessorChunkHandler&lt;User&gt; handler = new ChunkProcessorChunkHandler&lt;&gt;();
+    handler.setChunkProcessor(new SimpleChunkProcessor&lt;&gt;(itemProcessor(), itemWriter()));
+    return handler;
+}
+          </code></pre>
+          <p>
+            Each worker node listens to the queue, processes data chunks, and reports completion back to the manager.
+          </p>
+        </div>
+      </div>
+
+      <h5 class="text-warning mt-4">3️⃣ Choosing Between Partitioning & Remote Chunking</h5>
+      <ul>
+        <li><strong>Partitioning</strong> → Best for multi-threaded or single-cluster setups.</li>
+        <li><strong>Remote Chunking</strong> → Best for multi-server or cloud-based distributed workloads.</li>
+      </ul>
+
+      <h5 class="text-success">📌 Summary</h5>
+      <ul>
+        <li>⚙️ <strong>Partitioning:</strong> Splits job into parallel chunks processed by local threads or multiple instances.</li>
+        <li>☁️ <strong>Remote Chunking:</strong> Manager distributes work to remote worker nodes via queues.</li>
+        <li>✅ Both rely on the shared <strong>JobRepository</strong> for coordination and recovery.</li>
+        <li>🚀 Enables true horizontal scalability while maintaining data integrity.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingAsyncSchedulerBatch">
+    <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+      data-bs-target="#asyncSchedulerBatchSection" aria-expanded="false" aria-controls="asyncSchedulerBatchSection">
+      🧵 How @Async, @Scheduled, and Spring Batch Interact in Distributed Systems (Best Practices + Common Pitfalls)
+    </button>
+  </h2>
+
+  <div id="asyncSchedulerBatchSection" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p class="highlight-yellow">
+        In a distributed Spring application, combining <strong>@Async</strong>, <strong>@Scheduled</strong>, and 
+        <strong>Spring Batch</strong> can lead to powerful automation — or unexpected race conditions — if not properly managed.  
+        This section explains how they behave, when to use them together, and how to ensure that only one instance executes a job at a time.
+      </p>
+
+      <h5 class="text-warning">1️⃣ @Scheduled in Multi-Instance Environments</h5>
+      <ul>
+        <li><code>@Scheduled</code> tasks are triggered independently in each running instance by default.</li>
+        <li>In clustered deployments, this means multiple servers could start the same task simultaneously ⚠️</li>
+        <li>To prevent duplicate runs, you can:
+          <ul>
+            <li>Use a <strong>DB-based lock</strong> or <strong>Redis-based lock</strong> (e.g., using ShedLock).</li>
+            <li>Delegate scheduling to a single node (using Kubernetes leader election or a cron job).</li>
+          </ul>
+        </li>
+      </ul>
+
+      <pre class="language-java"><code>
+@Scheduled(cron = "0 0 * * * *")
+@SchedulerLock(name = "dataCleanupJob", lockAtMostFor = "10m", lockAtLeastFor = "1m")
+public void runCleanupJob() {
+    log.info("Running cleanup job...");
+    cleanupService.execute();
+}
+      </code></pre>
+      <p>
+        💡 <strong>ShedLock</strong> ensures that only one node acquires the lock and executes the scheduled task at any given time.
+      </p>
+
+      <h5 class="text-warning mt-4">2️⃣ @Async with Spring Batch</h5>
+      <ul>
+        <li><code>@Async</code> is used for concurrent task execution in separate threads.</li>
+        <li>Spring Batch, however, already handles its own threading (via <code>TaskExecutor</code> in steps).</li>
+        <li>Using <code>@Async</code> directly around batch jobs can cause:
+          <ul>
+            <li>Race conditions in job parameters or repository states.</li>
+            <li>Difficulty tracking job completion and exceptions.</li>
+          </ul>
+        </li>
+      </ul>
+
+      <h6 class="text-success">✅ Recommended Approach:</h6>
+      <ul>
+        <li>Use <code>@Async</code> only for non-batch operations (e.g., launching jobs asynchronously via JobLauncher).</li>
+      </ul>
+
+      <pre class="language-java"><code>
+@Async
+public void triggerJob(String jobName) {
+    JobParameters params = new JobParametersBuilder()
+        .addLong("timestamp", System.currentTimeMillis())
+        .toJobParameters();
+    jobLauncher.run(jobMap.get(jobName), params);
+}
+      </code></pre>
+      <p>
+        🧩 This way, each async thread safely launches a new, uniquely identified batch instance.
+      </p>
+
+      <h5 class="text-warning mt-4">3️⃣ Combining @Scheduled + @Async + Spring Batch</h5>
+      <ul>
+        <li>Common pattern in enterprise apps: Schedule → Launch Job → Run in Async thread.</li>
+        <li>Example flow:
+          <ul>
+            <li><code>@Scheduled</code> triggers every hour.</li>
+            <li>It calls an <code>@Async</code> service to start a Spring Batch job asynchronously.</li>
+            <li>The Batch Job executes in a dedicated thread pool.</li>
+          </ul>
+        </li>
+      </ul>
+
+      <pre class="language-java"><code>
+@Scheduled(cron = "0 0 * * * *")
+public void scheduleUserSync() {
+    asyncJobService.triggerJob("userSyncJob");
+}
+      </code></pre>
+
+      <h6 class="text-success">✅ Benefits:</h6>
+      <ul>
+        <li>Non-blocking scheduling — job launch doesn’t hold up the scheduler thread.</li>
+        <li>Automatic retry/relaunch if one job fails (based on JobRepository state).</li>
+      </ul>
+
+      <h6 class="text-danger">⚠️ Pitfalls:</h6>
+      <ul>
+        <li>Running the same job concurrently on multiple nodes (use locks).</li>
+        <li>Memory exhaustion due to unbounded async threads (always define <code>ThreadPoolTaskExecutor</code>).</li>
+        <li>Overlapping job runs (set <code>preventRestart=true</code> or check running status before launch).</li>
+      </ul>
+
+      <h5 class="text-warning mt-4">4️⃣ Preventing Overlaps & Duplicates</h5>
+      <p>
+        Combine these strategies for distributed reliability:
+      </p>
+      <ul>
+        <li>🧭 Use <strong>ShedLock</strong> or <strong>DB locking</strong> for @Scheduled.</li>
+        <li>🔄 Use <strong>JobExplorer</strong> to check active executions before starting a new batch run.</li>
+        <li>⚙️ Configure <code>JobLauncher</code> with <code>TaskExecutor</code> that limits concurrency.</li>
+      </ul>
+
+      <pre class="language-java"><code>
+if (!jobExplorer.findRunningJobExecutions("dataJob").isEmpty()) {
+    log.info("Job already running, skipping launch.");
+    return;
+}
+jobLauncher.run(job, new JobParametersBuilder()
+    .addLong("timestamp", System.currentTimeMillis())
+    .toJobParameters());
+      </code></pre>
+
+      <h5 class="text-success mt-4">📌 Summary</h5>
+      <ul>
+        <li>🕐 <strong>@Scheduled</strong>: Controls timing — use distributed locking for multi-instance safety.</li>
+        <li>⚡ <strong>@Async</strong>: Runs non-blocking logic — best for triggering batch jobs, not inside steps.</li>
+        <li>📦 <strong>Spring Batch</strong>: Handles long-running, stateful processes — best used with partitioning or remote chunking for scaling.</li>
+        <li>🚦 Always combine these with <strong>JobRepository</strong> & <strong>JobExplorer</strong> checks to avoid collisions.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingBatchKafkaMicroservices">
+    <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+      data-bs-target="#batchKafkaMicroservicesSection" aria-expanded="false" aria-controls="batchKafkaMicroservicesSection">
+      🧠 Real-World Patterns: Combining Spring Batch, Kafka, and Microservices for Event-Driven Data Pipelines
+    </button>
+  </h2>
+
+  <div id="batchKafkaMicroservicesSection" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p class="highlight-yellow">
+        Modern enterprise systems often combine <strong>Spring Batch</strong> for heavy data processing, 
+        <strong>Kafka</strong> for reliable event streaming, and <strong>Microservices</strong> for scalability.
+        This section explains how these components work together to achieve <strong>fault-tolerant, exactly-once pipelines</strong>.
+      </p>
+
+      <h5 class="text-warning">1️⃣ Typical Architecture Overview</h5>
+      <ul>
+        <li><strong>Producer Service:</strong> Publishes events (e.g., file upload, new record, transaction).</li>
+        <li><strong>Kafka Broker:</strong> Stores and streams these events across partitions.</li>
+        <li><strong>Consumer Service:</strong> Listens to Kafka topics, triggers batch or async jobs.</li>
+        <li><strong>Spring Batch Service:</strong> Processes bulk data, stores execution state in JobRepository.</li>
+      </ul>
+
+      <pre class="language-mermaid"><code>
+flowchart LR
+    A[Producer Service] -->|Event JSON| B[(Kafka Topic)]
+    B --> C[Consumer Service (@KafkaListener)]
+    C -->|Trigger| D[Spring Batch JobLauncher]
+    D --> E[JobRepository + Database]
+      </code></pre>
+
+      <h5 class="text-warning mt-4">2️⃣ Key Integration Patterns</h5>
+      <ul>
+        <li>🧩 <strong>Event-Triggered Batch Jobs:</strong> Kafka message triggers a Spring Batch job via <code>JobLauncher</code>.</li>
+        <li>📦 <strong>Chunk-Based Processing:</strong> Each Kafka event represents a small batch of work (processed via steps).</li>
+        <li>🔁 <strong>Stateful JobRepository:</strong> Tracks progress, retries failed steps without reprocessing entire batch.</li>
+        <li>🚦 <strong>Idempotent Consumers:</strong> Prevents duplicate processing when Kafka retries occur.</li>
+      </ul>
+
+      <pre class="language-java"><code>
+@KafkaListener(topics = "file-upload-topic", groupId = "batch-consumers")
+public void listen(FileEvent event) {
+    if (jobExplorer.findRunningJobExecutions("fileLoadJob").isEmpty()) {
+        JobParameters params = new JobParametersBuilder()
+            .addString("fileName", event.getFileName())
+            .addLong("timestamp", System.currentTimeMillis())
+            .toJobParameters();
+        jobLauncher.run(fileLoadJob, params);
+    } else {
+        log.info("File load already running for {}", event.getFileName());
+    }
+}
+      </code></pre>
+
+      <h5 class="text-warning mt-4">3️⃣ Ensuring Exactly-Once Processing</h5>
+      <ul>
+        <li>🧭 <strong>Transactional Kafka Consumers:</strong> Use <code>@Transactional</code> with Kafka to ensure DB + offset commits are atomic.</li>
+        <li>🪣 <strong>Idempotent Writes:</strong> Use unique keys (like eventId or fileName) to skip duplicates on reprocessing.</li>
+        <li>🔒 <strong>Distributed Locks:</strong> Use <code>ShedLock</code> or <code>RedisLock</code> around batch jobs if multiple consumers exist.</li>
+      </ul>
+
+      <pre class="language-java"><code>
+@Transactional
+@KafkaListener(topics = "order-topic")
+public void processOrder(OrderEvent event) {
+    if (orderRepository.existsByEventId(event.getId())) {
+        log.info("Duplicate event ignored: {}", event.getId());
+        return;
+    }
+    orderRepository.save(convert(event));
+    kafkaTemplate.send("order-processed-topic", event);
+}
+      </code></pre>
+
+      <h5 class="text-warning mt-4">4️⃣ Scaling Approaches</h5>
+      <ul>
+        <li>⚙️ <strong>Partitioned Batch Jobs:</strong> Split a large dataset into partitions handled by worker nodes.</li>
+        <li>🧠 <strong>Remote Chunking:</strong> Master service sends data chunks to worker microservices for parallel processing.</li>
+        <li>📡 <strong>Kafka-based Partition Assignment:</strong> Each microservice consumes specific Kafka partitions to ensure order.</li>
+      </ul>
+
+      <h5 class="text-success mt-4">5️⃣ Real-World Use Case Example</h5>
+      <ul>
+        <li><strong>Data Ingestion Service:</strong> Publishes file metadata events after upload.</li>
+        <li><strong>Batch Processor:</strong> Consumes events, validates data, writes to staging tables.</li>
+        <li><strong>Analytics Service:</strong> Listens for completion events and runs transformations using another batch job.</li>
+      </ul>
+
+      <pre class="language-mermaid"><code>
+flowchart LR
+    U[User Uploads File] --> I[Ingestion Service]
+    I --> K[(Kafka Topic: file-upload)]
+    K --> B[Batch Processor Job]
+    B -->|Processed Data| D[(Database)]
+    D --> A[Analytics Batch Job]
+    A --> R[(Reports / Insights)]
+      </code></pre>
+
+      <h5 class="text-success mt-4">📌 Summary</h5>
+      <ul>
+        <li>🔄 Kafka enables <strong>real-time, event-driven orchestration</strong> of Spring Batch jobs.</li>
+        <li>🧱 Use <strong>JobRepository + JobExplorer</strong> to coordinate across services safely.</li>
+        <li>🪝 Use <strong>idempotent writes</strong> and <strong>transactional Kafka</strong> for exactly-once semantics.</li>
+        <li>📈 Combine <strong>partitioning or remote chunking</strong> to scale batch workloads horizontally.</li>
+        <li>🛡️ Protect jobs using <strong>distributed locks</strong> and job status checks to prevent duplicates.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+
 
       <div class="accordion-item">
         <h2 class="accordion-header" id="headingBehavioralAgile">
