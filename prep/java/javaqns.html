@@ -511,6 +511,376 @@ System.out.println(test);
   </div>
 </div>
 
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingUpiCollect">
+    <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+      data-bs-target="#upiCollectSection" aria-expanded="false" aria-controls="upiCollectSection">
+      🧾 How UPI "Collect" / UPI-ID Payments Work (Step-by-step, Sync vs Async, REST vs Event)
+    </button>
+  </h2>
+  <div id="upiCollectSection" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p class="highlight-yellow">
+        When a merchant or payment gateway asks for a UPI ID and then a payment is initiated/approved in the payer's app (GPay / PhonePe / Paytm),
+        the end-to-end flow is a mix of <strong>synchronous API calls</strong> and <strong>asynchronous events/callbacks</strong>.
+        Below are the typical flows (Collect / Intent / QR) with clear origin→destination steps and whether each hop is sync or async.
+      </p>
+
+      <h5 class="text-warning">1️⃣ High-level options you will see in the wild</h5>
+      <ul>
+        <li><strong>Push-Collect (Collect Request):</strong> Merchant/PG sends a collect request to the payer’s UPI app (via NPCI/PSP). Payer accepts/declines in their app.</li>
+        <li><strong>Intent / Deep-link (App-to-App):</strong> Merchant redirects user to the payer’s UPI app (deep-link/intent). User approves payment in app and is redirected back.</li>
+        <li><strong>QR Code / Static QR:</strong> Merchant shows a QR (with VPA/UPI address), payer scans and approves in their app (app-driven).</li>
+      </ul>
+
+      <h5 class="text-warning mt-3">2️⃣ Push-Collect (detailed step-by-step) — typical for "enter UPI ID" on gateway</h5>
+      <ol>
+        <li>
+          <strong>Merchant Frontend → Merchant Backend</strong>  
+          <br><em>(Sync - REST)</em>  
+          User enters UPI ID on checkout page; frontend posts it to merchant backend to create an order and trigger collection.
+        </li>
+
+        <li>
+          <strong>Merchant Backend → Payment Gateway (PG) / PSP Integration</strong>  
+          <br><em>(Sync - REST or gRPC)</em>  
+          Merchant backend calls the PG's REST API: create collect request with amount, payer VPA (UPI ID), order id, callback URL.  
+          <pre><code>{
+  "type":"collect",
+  "amount":"250.00",
+  "vpa":"narahari@okhdfcbank",
+  "orderId":"ORD123",
+  "callbackUrl":"https://merchant.com/upi/callback"
+}</code></pre>
+        </li>
+
+        <li>
+          <strong>PG → NPCI / Acquiring PSP / Issuer PSP</strong>  
+          <br><em>(Usually Sync request/response between PSPs and NPCI over secure ISO/SSL channels — but logically this is a "request created" step)</em>  
+          The PG (or merchant's PSP) forwards the collect request into the UPI network (NPCI). NPCI routes the request to the payer’s PSP (the bank/UPI app that hosts that VPA).
+          The network will respond with an acknowledgement that the request was accepted/queued — but NOT final settlement.
+        </li>
+
+        <li>
+          <strong>NPCI / Payer’s Bank → Payer's UPI App</strong>  
+          <br><em>(Async push to app via bank/PSP and push notifications to device; the app shows the collect prompt)</em>  
+          The payer's UPI app receives a push/notification (or the bank's backend triggers a notification). The app shows "Collect request for ₹250 from Merchant — Accept / Decline".
+        </li>
+
+        <li>
+          <strong>Payer (user) Accepts / Declines in their App</strong>  
+          <br><em>(Async user action)</em>  
+          The user authenticates (PIN/biometric) and approves. This is human-driven and therefore asynchronous.
+        </li>
+
+        <li>
+          <strong>Payer’s PSP → NPCI → PG (or Merchant PSP)</strong>  
+          <br><em>(Sync-ish settlement/confirmation messages inside banking network, but treated as asynchronous end-to-end since user action can be delayed)</em>  
+          Once user approves, the payer PSP executes the UPI transfer (debits payer account, credits payee PSP or merchant settlement account). NPCI updates states and notifies involved PSPs.
+        </li>
+
+        <li>
+          <strong>PG → Merchant (Callback / Webhook)</strong>  
+          <br><em>(Async - Webhook or Event)</em>  
+          Payment gateway sends an asynchronous callback/webhook to the merchant's callback URL with final status (SUCCESS/FAIL/EXPIRED). Merchant updates order state.
+          <pre><code>{
+  "orderId":"ORD123",
+  "upiRef":"UPI-REF-9876",
+  "status":"SUCCESS",
+  "amount":"250.00",
+  "timestamp":"2025-10-15T08:21:00Z"
+}</code></pre>
+        </li>
+
+        <li>
+          <strong>Merchant acknowledges webhook (200 OK)</strong>  
+          <br><em>(Sync HTTP response to webhook)</em>  
+          Merchant returns 200 OK; PG may mark callback delivered.
+        </li>
+      </ol>
+
+      <h5 class="text-warning mt-3">3️⃣ Intent / Deep-link flow (app-to-app) — step-by-step</h5>
+      <ol>
+        <li>
+          <strong>Merchant Frontend → Merchant Backend</strong>  
+          <br><em>(Sync)</em>  
+          Merchant prepares payment request and returns a deep-link / intent URL.
+        </li>
+        <li>
+          <strong>Merchant Frontend → UPI App (via deep-link / intent)</strong>  
+          <br><em>(Sync app-open, but user action is async)</em>  
+          Browser or WebView launches the payer's UPI app (GPay/PhonePe) with pre-filled amount and merchant details.
+        </li>
+        <li>
+          <strong>User approves in UPI App</strong>  
+          <br><em>(Async user action)</em>
+        </li>
+        <li>
+          <strong>UPI App → NPCI / PSP → Merchant</strong>  
+          <br><em>(Async callback / deep-link return to merchant app / webhook via PG)</em>  
+          App returns result by deep-link back to merchant app or the PG receives confirmation and sends webhook to merchant backend.
+        </li>
+      </ol>
+
+      <h5 class="text-warning mt-3">4️⃣ QR Code flow (static/dynamic QR)</h5>
+      <ul>
+        <li>Merchant shows QR (static or dynamic). User scans with UPI app → app opens payment screen → user approves → network processes payment.</li>
+        <li>Confirmation flows back to merchant via PG webhook or reconciliation (async).</li>
+      </ul>
+
+      <h5 class="text-warning mt-3">5️⃣ Sync vs Async — quick map</h5>
+      <ul>
+        <li><strong>Sync (HTTP request/response):</strong> Merchant → PG (create request), PG → NPCI (request), PSP↔NPCI internal calls — these often return immediate ack/accept responses synchronously on the control channel.</li>
+        <li><strong>Async (event / webhook / push):</strong> User approval, push notifications to app, final settlement notifications, and merchant webhooks are asynchronous events.</li>
+        <li>Important: even when internal PSP↔NPCI calls are sync at protocol level, the overall user approval step makes the entire transaction asynchronous from a merchant perspective.</li>
+      </ul>
+
+      <h5 class="text-warning mt-3">6️⃣ REST API vs Event Mechanism — who uses what?</h5>
+      <ul>
+        <li><strong>REST / RPC:</strong> Merchant ↔ PG (most integrations are REST over HTTPS), PG ↔ Bank/PSP (could be REST, gRPC, or bank's own APIs).</li>
+        <li><strong>Bank / NPCI internal protocol:</strong> Often uses secure, bank-grade message protocols (ISO-8583 like constructs or NPCI’s proprietary APIs) over secure channels — not plain public REST.</li>
+        <li><strong>Events / Webhooks:</strong> Final payment confirmations are delivered asynchronously via webhooks or pub/sub events to merchant systems. Push notifications to devices use mobile push (FCM / APNs) triggered by PSP backends.</li>
+      </ul>
+
+      <h5 class="text-warning mt-3">7️⃣ Reliability & reconciliations (practical details)</h5>
+      <ul>
+        <li>Gateways use webhooks + polling/reconciliation — if webhook delivery fails, merchant systems must support idempotent retries or polling PG for transaction status.</li>
+        <li>PGs provide a transaction reference (UPI ref / bank ref) — merchant should use that for reconciliation with settlement reports.</li>
+        <li>Timeouts / expiries: collect requests expire if payer does not act within TTL. Merchant receives EXPIRED callback.</li>
+      </ul>
+
+      <h5 class="text-warning mt-3">8️⃣ Security & anti-fraud</h5>
+      <ul>
+        <li>All HTTP calls use mutual TLS / HTTPS and strong authentication (API keys, OAuth, signed payloads) between merchant and PG.</li>
+        <li>PG/PSP validate VPA format and may perform KYC / risk checks before issuing collect requests.</li>
+      </ul>
+
+      <h5 class="text-success mt-3">📌 Summary & recommended integration approach for merchants</h5>
+      <ul>
+        <li>Implement <strong>create-collect</strong> as a synchronous REST call to the PG, but treat the result as provisional — final state arrives asynchronously.</li>
+        <li>Expose an <strong>idempotent webhook</strong> endpoint to receive PG callbacks (SUCCESS/FAIL/EXPIRED). Always acknowledge with 200 OK.</li>
+        <li>Support webhook retry and a <strong>polling endpoint</strong> to query transaction status if webhook not received.</li>
+        <li>Log and store PG-provided transaction references (UPI ref) for reconciliation.</li>
+      </ul>
+
+      <h5 class="text-success mt-3">🔧 Example minimal sequence — JSON & HTTP verbs</h5>
+      <pre class="language-bash"><code>POST /pg/api/v1/collect
+# Body: { amount, vpa, orderId, callbackUrl }
+# Response: 202 Accepted + { collectRequestId, status: "PENDING" }
+
+# Later (async)
+POST https://merchant.com/upi/callback
+# Body: { orderId, collectRequestId, upiRef, status: "SUCCESS" }</code></pre>
+
+      <p class="highlight-yellow mt-3">
+        ✅ Conclusion: The user-approval nature makes UPI payments inherently asynchronous from the merchant's POV.
+        Integrations use synchronous REST calls to create requests, and asynchronous events/webhooks (plus push notifications to devices) to communicate user action and final settlement.
+      </p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingUpiQrFlow">
+    <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+      data-bs-target="#upiQrFlowSection" aria-expanded="false" aria-controls="upiQrFlowSection">
+      🧾 UPI QR Code Payment Flow — PhonePe/GPay → Merchant Bank — Sync vs Async, Debit/Credit Mechanism
+    </button>
+  </h2>
+
+  <div id="upiQrFlowSection" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <p class="highlight-yellow">
+        When you scan a <strong>UPI QR code</strong> using PhonePe, GPay, or Paytm, the flow is different from the UPI Collect flow.
+        There is no "request sent to you" — instead, <strong>you (the payer) initiate the transaction directly</strong>.  
+        The entire money movement is done through <strong>synchronous communication inside the UPI network</strong>,  
+        but the merchant side confirmation uses <strong>asynchronous notification/webhook</strong>.
+      </p>
+
+      <h5 class="text-warning">1️⃣ What Happens When You Scan a UPI QR Code</h5>
+      <ul>
+        <li>The QR code contains a special <strong>UPI deep link (URI)</strong> with merchant details.</li>
+        <li>Example:  
+          <code>upi://pay?pa=merchant@icici&amp;pn=ABC%20Store&amp;am=250.00&amp;tn=Order%20#123</code>
+        </li>
+        <li>It encodes:
+          <ul>
+            <li>Merchant’s VPA (Virtual Payment Address)</li>
+            <li>Merchant’s name, amount, transaction note</li>
+            <li>Optional order reference</li>
+          </ul>
+        </li>
+        <li>When scanned, the payer app (PhonePe/GPay) parses this URI and initiates a payment to the merchant’s VPA.</li>
+      </ul>
+
+      <h5 class="text-warning mt-3">2️⃣ Step-by-Step Flow — Origin to Destination</h5>
+
+      <ol>
+        <li>
+          <strong>User scans QR code in PhonePe/GPay app</strong><br/>
+          <em>Origin:</em> Mobile app camera → <em>Destination:</em> PSP app internal payment intent handler.<br/>
+          <strong>Type:</strong> Local (device-level), synchronous parse of QR data.
+        </li>
+
+        <li>
+          <strong>Payer PSP (e.g., PhonePe) → NPCI UPI Switch</strong><br/>
+          <em>Origin:</em> Payer’s PSP backend → <em>Destination:</em> NPCI UPI central switch.<br/>
+          <strong>Type:</strong> <strong>Synchronous REST/SOAP (secure banking API)</strong><br/>
+          <ul>
+            <li>The PSP backend sends a “<code>PAY</code>” request to NPCI with:
+              <ul>
+                <li>Payer VPA (e.g. narahari@okaxis)</li>
+                <li>Merchant VPA (e.g. merchant@icici)</li>
+                <li>Amount, transaction id, authentication credentials</li>
+              </ul>
+            </li>
+            <li>NPCI validates format, forwards to merchant’s PSP (acquirer bank).</li>
+          </ul>
+        </li>
+
+        <li>
+          <strong>NPCI → Acquiring PSP / Merchant Bank</strong><br/>
+          <em>Origin:</em> NPCI → Merchant PSP backend.<br/>
+          <strong>Type:</strong> <strong>Synchronous backend-to-backend API call</strong> (over UPI’s secure network).
+          <ul>
+            <li>Merchant’s PSP verifies merchant VPA, credits the merchant’s account.</li>
+            <li>Sends a “success/failure” acknowledgment back to NPCI instantly.</li>
+          </ul>
+        </li>
+
+        <li>
+          <strong>NPCI → Payer PSP (final confirmation)</strong><br/>
+          <em>Origin:</em> NPCI → PhonePe/GPay backend.<br/>
+          <strong>Type:</strong> <strong>Synchronous callback/response</strong> over UPI network.<br/>
+          <ul>
+            <li>NPCI sends the final transaction result (Success / Failed / Timeout).</li>
+            <li>Payer PSP then shows success screen to the user.</li>
+          </ul>
+        </li>
+
+        <li>
+          <strong>Payer App shows “Payment Successful” with UPI Ref. ID (UTR)</strong><br/>
+          <em>Origin:</em> PSP backend → <em>Destination:</em> Mobile app UI.<br/>
+          <strong>Type:</strong> <strong>Async UI update</strong> triggered by network result.
+        </li>
+
+        <li>
+          <strong>Merchant’s PSP → Merchant System (Webhook/API)</strong><br/>
+          <em>Origin:</em> PSP / Acquirer → <em>Destination:</em> Merchant backend (if merchant is integrated via payment gateway or bank API).<br/>
+          <strong>Type:</strong> <strong>Asynchronous webhook or API callback</strong>.<br/>
+          <ul>
+            <li>The merchant gets notified that UPI Ref ID (UTR) XYZ was credited.</li>
+            <li>Some merchants also poll the payment gateway for confirmation.</li>
+          </ul>
+        </li>
+      </ol>
+
+      <pre class="language-mermaid"><code>
+sequenceDiagram
+  participant U as User App (PhonePe)
+  participant P as Payer PSP
+  participant N as NPCI UPI Switch
+  participant M as Merchant PSP / Bank
+  participant MB as Merchant Backend
+
+  U->>P: Initiate payment (scan QR)
+  P->>N: Send UPI PAY request (REST/SOAP - Sync)
+  N->>M: Route to merchant PSP (Sync)
+  M->>M: Debit/Credit internally
+  M-->>N: Send result (Sync)
+  N-->>P: Payment status (Sync)
+  P-->>U: Show success screen (Async UI)
+  M-->>MB: Webhook / callback (Async)
+      </code></pre>
+
+      <h5 class="text-warning mt-3">3️⃣ Communication Pattern Summary</h5>
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>Link</th>
+            <th>Direction</th>
+            <th>Type</th>
+            <th>Mechanism</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>User → PSP App</td>
+            <td>Device-local</td>
+            <td>Sync</td>
+            <td>QR scan / Intent</td>
+          </tr>
+          <tr>
+            <td>PSP → NPCI</td>
+            <td>Server → Server</td>
+            <td>Sync</td>
+            <td>REST/SOAP over UPI rails</td>
+          </tr>
+          <tr>
+            <td>NPCI → Merchant PSP</td>
+            <td>Server → Server</td>
+            <td>Sync</td>
+            <td>UPI API (bank network)</td>
+          </tr>
+          <tr>
+            <td>Merchant PSP → Merchant System</td>
+            <td>Server → Server</td>
+            <td>Async</td>
+            <td>Webhook or reconciliation report</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h5 class="text-warning mt-3">4️⃣ Debit & Credit Flow</h5>
+      <ul>
+        <li>💳 <strong>Debit:</strong> The payer’s bank (linked to the payer PSP) debits the payer’s account instantly after authentication (PIN entered in app).</li>
+        <li>💰 <strong>Credit:</strong> Merchant’s bank (through merchant PSP) receives the credit in real time (T+0 settlement within seconds).</li>
+        <li>NPCI acts as the <strong>switch</strong> coordinating debit & credit requests and confirming both ends atomically.</li>
+      </ul>
+
+      <pre class="language-mermaid"><code>
+flowchart LR
+  A[Payer Account] -- Debit --> B[NPCI Switch]
+  B -- Credit --> C[Merchant Account]
+  C --> D[Merchant Notification/Webhook]
+      </code></pre>
+
+      <h5 class="text-warning mt-3">5️⃣ Sync vs Async Summary</h5>
+      <ul>
+        <li><strong>Inside UPI network:</strong> Mostly <span class="text-success">Synchronous</span> (real-time debit & credit).</li>
+        <li><strong>Merchant Notification:</strong> <span class="text-warning">Asynchronous</span> (webhook / status API).</li>
+        <li><strong>UI Display:</strong> <span class="text-success">Near real-time Async</span> (triggered from sync backend response).</li>
+      </ul>
+
+      <h5 class="text-warning mt-3">6️⃣ Key Advantages of QR Flow</h5>
+      <ul>
+        <li>✅ Instant payment initiation by payer (no waiting for collect request).</li>
+        <li>✅ Works offline — merchant only needs printed/static QR.</li>
+        <li>✅ NPCI handles debit/credit atomically — ensures consistency.</li>
+        <li>✅ Simple UX: scan → enter PIN → done.</li>
+      </ul>
+
+      <h5 class="text-danger mt-3">7️⃣ Limitations</h5>
+      <ul>
+        <li>⚠️ Merchant doesn’t control initiation — payer must scan manually.</li>
+        <li>⚠️ Settlement confirmations rely on asynchronous callbacks or reconciliation files.</li>
+        <li>⚠️ Limited metadata support vs dynamic collect requests.</li>
+        <li>⚠️ Cannot auto-expire or auto-cancel like a collect request can.</li>
+      </ul>
+
+      <h5 class="text-success mt-3">📌 Summary (one-liner)</h5>
+      <p>
+        In UPI QR flow, the payer app initiates the transaction and sends a <strong>synchronous payment request through NPCI</strong>,
+        which handles <strong>instant debit and credit between banks</strong>.  
+        The merchant learns about the payment via an <strong>asynchronous webhook or reconciliation event</strong>.
+      </p>
+
+    </div>
+  </div>
+</div>
+
       <div class="accordion-item">
   <h2 class="accordion-header" id="headingPriorityQueue">
     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
