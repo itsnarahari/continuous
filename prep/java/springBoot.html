@@ -95,6 +95,199 @@
     <div class="accordion" id="googleAccordion">
 
       <div class="accordion-item">
+  <h2 class="accordion-header" id="q-transactional-h">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q-transactional">
+      Spring Boot @Transactional – Deep Dive
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+
+  <div id="q-transactional" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What is @Transactional?</h5>
+      <ul>
+        <li>`@Transactional` is a **declarative transaction management annotation** provided by Spring.</li>
+        <li>It ensures **atomicity, consistency, isolation, and durability (ACID)** of database operations.</li>
+        <li>Can be applied at **class or method level** to manage transaction boundaries automatically.</li>
+      </ul>
+
+      <h5 class="text-info">📌 How it Works Internally</h5>
+      <ul>
+        <li>Spring creates a **proxy object** for the bean containing `@Transactional` methods (JDK dynamic proxy or CGLIB proxy).</li>
+        <li>When a method annotated with `@Transactional` is called, the **call goes through the proxy** first.</li>
+        <li>The proxy uses a **PlatformTransactionManager** (e.g., `DataSourceTransactionManager` for JDBC or `JpaTransactionManager` for JPA) to manage transactions.</li>
+        <li>Steps inside the proxy:
+          <ol>
+            <li>Check if a **transaction is already active** (propagation rules).</li>
+            <li>If not active, **start a new transaction** using TransactionManager.</li>
+            <li>Call the actual target method.</li>
+            <li>If method succeeds → **commit transaction**.</li>
+            <li>If method throws exception → **rollback transaction** (based on rollback rules).</li>
+          </ol>
+        </li>
+      </ul>
+
+      <h5 class="text-info">📌 Who Creates the Query?</h5>
+      <ul>
+        <li>If using **JDBC template**, the developer writes SQL, Spring executes it within the transaction.</li>
+        <li>If using **Spring Data JPA**, query creation can happen in three ways:
+          <ul>
+            <li>**Method names** – Spring derives queries from repository method names (`findByName`, etc.).</li>
+            <li>**@Query annotation** – Custom JPQL or native SQL query.</li>
+            <li>**Criteria API / QueryDSL** – Programmatically build queries.</li>
+          </ul>
+        </li>
+        <li>Spring doesn’t generate SQL for every method—it either delegates to **JPA provider (Hibernate/EclipseLink)** or uses developer-defined SQL.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Query Execution Flow</h5>
+      <ol>
+        <li>Transaction proxy starts transaction.</li>
+        <li>JPA repository method invoked.</li>
+        <li>Spring Data JPA delegates call to **EntityManager**.</li>
+        <li>EntityManager uses **Hibernate/JPA provider** to create SQL query.</li>
+        <li>SQL sent to **database via JDBC**.</li>
+        <li>Database executes query, returns results to EntityManager.</li>
+        <li>Transaction proxy commits or rolls back based on success or exception.</li>
+      </ol>
+
+      <h5 class="text-info">📌 Example – @Transactional</h5>
+      <pre class="language-java"><code>
+@Service
+public class UserService {
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Transactional
+    public void createUsers() {
+        userRepository.save(new User("Alice"));
+        userRepository.save(new User("Bob"));
+        // If exception occurs here, both saves are rolled back
+    }
+}</code></pre>
+
+      <h5 class="text-info">📌 Key Points</h5>
+      <ul>
+        <li>Spring uses **AOP proxy** to manage transaction boundaries.</li>
+        <li>Actual SQL execution is delegated to **JPA provider or JDBC**.</li>
+        <li>`@Transactional` supports:
+          <ul>
+            <li>Propagation (REQUIRED, REQUIRES_NEW, etc.)</li>
+            <li>Isolation levels (READ_COMMITTED, SERIALIZABLE, etc.)</li>
+            <li>Rollback rules (by default rollback on unchecked exceptions)</li>
+          </ul>
+        </li>
+        <li>Without a proxy (e.g., calling method internally in same class), `@Transactional` **won’t work**.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Analogy</h5>
+      <ul>
+        <li>Transaction proxy = Bank teller ensuring atomicity for multiple operations.</li>
+        <li>Repository method = Person requesting multiple operations (insert, update).</li>
+        <li>Database = Vault executing commands.</li>
+        <li>If anything fails → proxy rolls back all operations.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="q-reflection-spring-h">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q-reflection-spring">
+      Reflection in Spring Framework – Uses & Example
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+
+  <div id="q-reflection-spring" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What is Reflection?</h5>
+      <ul>
+        <li>Reflection is a **Java feature** that allows inspecting and manipulating **classes, methods, fields, and constructors at runtime**.</li>
+        <li>It allows Spring (or any framework) to **instantiate classes, call methods, and inject dependencies dynamically** without knowing the class at compile-time.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Why Spring Uses Reflection</h5>
+      <ul>
+        <li>Spring IoC / DI (Inversion of Control / Dependency Injection) uses reflection to **create beans dynamically**.</li>
+        <li>Enables **setter / constructor injection** without explicit class instantiation.</li>
+        <li>Spring AOP uses reflection to **wrap methods in proxies**.</li>
+        <li>Spring MVC uses reflection to **call controller methods dynamically** based on HTTP requests.</li>
+        <li>Allows **reading annotations at runtime** (`@Autowired`, `@Transactional`, `@RequestMapping`).</li>
+      </ul>
+
+      <h5 class="text-info">📌 How Spring Uses Reflection – Example</h5>
+      <pre class="language-java"><code>
+// Example: Manual Reflection
+Class&lt;?&gt; clazz = Class.forName("com.example.UserService");
+Object obj = clazz.getDeclaredConstructor().newInstance();
+
+// Accessing fields
+Field field = clazz.getDeclaredField("userRepository");
+field.setAccessible(true); // bypass private
+field.set(obj, new UserRepository());
+
+// Invoking methods
+Method method = clazz.getDeclaredMethod("createUser", String.class);
+method.invoke(obj, "Alice");</code></pre>
+
+      <h5 class="text-info">📌 Spring Example with DI</h5>
+      <pre class="language-java"><code>
+@Service
+public class UserService {
+    @Autowired
+    private UserRepository userRepository;
+
+    public void createUser(String name) {
+        userRepository.save(new User(name));
+    }
+}
+
+// What Spring does internally:
+Class&lt;?&gt; clazz = UserService.class;
+Object obj = clazz.getDeclaredConstructor().newInstance();
+Field field = clazz.getDeclaredField("userRepository");
+field.setAccessible(true);
+field.set(obj, new UserRepository()); // Inject dependency via reflection</code></pre>
+
+      <h5 class="text-info">📌 Key Points</h5>
+      <ul>
+        <li>Reflection allows **dynamic object creation and method invocation**.</li>
+        <li>Enables Spring to **inject dependencies** at runtime, not compile-time.</li>
+        <li>Helps **scan classes for annotations** like `@Controller`, `@Service`, `@Repository`.</li>
+        <li>Used heavily in **Spring AOP, Spring MVC, and Spring Data**.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Advantages</h5>
+      <ul>
+        <li>Dynamic instantiation of classes and objects.</li>
+        <li>Annotation processing at runtime.</li>
+        <li>Frameworks like Spring can **automate wiring and method calls**.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Disadvantages</h5>
+      <ul>
+        <li>Performance overhead compared to normal method calls.</li>
+        <li>May bypass **compile-time checks**, leading to runtime errors.</li>
+        <li>Code readability can suffer if overused manually.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Analogy</h5>
+      <ul>
+        <li>Reflection = Remote control that can **operate any appliance** without knowing its type in advance.</li>
+        <li>Spring uses reflection like a universal remote to **create beans, inject dependencies, and call methods dynamically**.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+      <div class="accordion-item">
   <h2 class="accordion-header" id="headingShedLock">
     <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
       data-bs-target="#shedLockSection" aria-expanded="false" aria-controls="shedLockSection">
@@ -184,6 +377,7 @@ public void runScheduledTask() {
     </div>
   </div>
 </div>
+
 <div class="accordion-item">
   <h2 class="accordion-header" id="headingShedLockDiagram">
     <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"

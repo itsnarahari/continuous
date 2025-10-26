@@ -370,6 +370,13 @@ public class StreamsApiTest {
                         Collectors.toList(),
                         Collections::unmodifiableList));
         System.out.println("Unmodifiable List: " + unmodifiableList);
+
+        // Ascending
+        Arrays.stream(arr).boxed().sorted().skip(arr.length - 2).forEach(value -> System.out.println(value));
+
+        // Descending
+        Arrays.stream(arr).boxed().sorted((o1, o2) -> o2 - o1).skip(arr.length - 2).forEach(value -> System.out.println(value));
+
     }
 }
 
