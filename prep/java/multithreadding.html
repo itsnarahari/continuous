@@ -93,6 +93,682 @@
 
         <div class="accordion" id="multiThreading">
             <div class="accordion-item">
+  <h2 class="accordion-header" id="q-thread-sync-h">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q-thread-sync">
+      Thread Synchronization – Example Analysis
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+
+  <div id="q-thread-sync" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Code Summary</h5>
+      <pre class="language-java"><code>
+public class A {
+    public static void main (String args[]) throws InterruptedException {
+        NamePrinter namePrinter1 = new NamePrinter(new NameHolder().name("Name-1"));
+        NamePrinter namePrinter2 = new NamePrinter(new NameHolder().name("Name-2"));
+        namePrinter1.start();
+        namePrinter2.start();
+        namePrinter2.join();
+        namePrinter1.join();
+    }
+}
+
+class NamePrinter extends Thread {
+    private Object obj = new Object();
+    private NameHolder name;
+
+    public NamePrinter(NameHolder name) {
+        this.name = name;
+    }
+
+    public void run() {
+        Thread.yield();
+        synchronized(obj) {
+           System.out.println(name.getName());
+        }
+    }
+}
+
+class NameHolder {
+    private String name;
+    public String getName() { return this.name; }
+    public NameHolder name(String name) {
+        this.name = name;
+        return this;
+    }
+}
+      </code></pre>
+
+      <h5 class="text-info">📌 Step-by-Step Execution</h5>
+      <ul>
+        <li>Main thread creates two threads:
+          <ul>
+            <li><code>namePrinter1</code> → prints <b>"Name-1"</b></li>
+            <li><code>namePrinter2</code> → prints <b>"Name-2"</b></li>
+          </ul>
+        </li>
+        <li>Both threads are started using <code>start()</code>.</li>
+        <li><code>main()</code> waits for both threads to finish using <code>join()</code>.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Behavior of Each Thread</h5>
+      <ul>
+        <li>Each thread has its own <code>obj = new Object()</code>.</li>
+        <li><code>synchronized(obj)</code> only locks on that specific object — not shared across threads.</li>
+        <li><code>Thread.yield()</code> just hints the CPU scheduler to pause, but it’s not guaranteed.</li>
+        <li>Both threads print independently.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Output</h5>
+      <pre><code>
+Name-1
+Name-2
+      </code></pre>
+      or
+      <pre><code>
+Name-2
+Name-1
+      </code></pre>
+      <ul>
+        <li>Output order is <b>non-deterministic</b> — depends on thread scheduling.</li>
+        <li>No actual synchronization happens between threads since locks are not shared.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Key Concepts</h5>
+      <ul>
+        <li><b>Thread.yield()</b> → Suggests current thread to pause temporarily (not guaranteed).</li>
+        <li><b>synchronized(obj)</b> → Locks on a specific object; here each thread has its own.</li>
+        <li><b>join()</b> → Main thread waits for child threads to complete.</li>
+        <li><b>Concurrency</b> → Threads run independently; order of execution is unpredictable.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Summary</h5>
+      <ul>
+        <li>Each thread prints its name independently.</li>
+        <li>No shared synchronization, so execution order varies.</li>
+        <li>Demonstrates concurrent thread behavior with isolated locks.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="q-static-obj-h">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q-static-obj">
+      Effect of Static Object in Synchronization
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+
+  <div id="q-static-obj" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Code Change</h5>
+      <pre class="language-java"><code>
+class NamePrinter extends Thread {
+
+    private static Object obj = new Object(); // 🔹 Now static shared object
+    private NameHolder name;
+
+    public NamePrinter(NameHolder name) {
+        this.name = name;
+    }
+
+    public void run() {
+        Thread.yield();
+        synchronized(obj) {
+           System.out.println(name.getName());
+        }
+    }
+}
+      </code></pre>
+
+      <h5 class="text-info">📌 What Changed?</h5>
+      <ul>
+        <li>Earlier, each thread had its <b>own</b> <code>obj</code> instance → separate locks.</li>
+        <li>Now, <code>obj</code> is <b>static</b>, meaning it’s <b>shared across all threads</b> of the class.</li>
+        <li>So, all threads will now try to acquire the <b>same lock</b> before entering the <code>synchronized</code> block.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Internal Behavior</h5>
+      <ol>
+        <li>When Thread-1 executes <code>synchronized(obj)</code>, it locks the shared <code>obj</code>.</li>
+        <li>Thread-2 must wait until Thread-1 releases that lock.</li>
+        <li>Once Thread-1 finishes and releases the lock, Thread-2 can proceed.</li>
+        <li>This ensures that <b>only one thread</b> executes the synchronized block at a time.</li>
+      </ol>
+
+      <h5 class="text-info">📌 Output</h5>
+      <pre><code>
+Name-1
+Name-2
+      </code></pre>
+      or
+      <pre><code>
+Name-2
+Name-1
+      </code></pre>
+      <ul>
+        <li>Order is still not guaranteed, but output will never be interleaved.</li>
+        <li>One complete print happens before the next thread starts printing.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Key Concepts</h5>
+      <ul>
+        <li><b>Static Object</b> → Shared among all instances of the class.</li>
+        <li><b>Synchronized Block</b> → Ensures mutual exclusion using the shared lock.</li>
+        <li><b>Thread Safety</b> → Achieved for the code inside the synchronized block.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Summary</h5>
+      <ul>
+        <li>With <code>static obj</code>, all threads share a common lock → true synchronization occurs.</li>
+        <li>Only one thread can print at a time.</li>
+        <li>Guarantees atomicity of the synchronized section across all threads.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="q-public-lock-h">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q-public-lock">
+      Does 'public' affect synchronization lock in Java?
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+
+  <div id="q-public-lock" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Short Answer</h5>
+      <p><b>No.</b> The <code>synchronized(obj)</code> lock depends on the <b>object reference</b> itself, 
+      not on whether the variable is declared <code>public</code>, <code>private</code>, or <code>static</code>.</p>
+
+      <h5 class="text-info">📌 Detailed Explanation</h5>
+      <ul>
+        <li>The <b>lock</b> is taken on the <b>object instance</b> passed to <code>synchronized(obj)</code>.</li>
+        <li>Access modifiers (<code>public</code>, <code>private</code>, <code>protected</code>) 
+            only control <b>visibility</b>, not synchronization behavior.</li>
+        <li>Even if <code>obj</code> is <b>private</b>, other threads within the same class can still synchronize on it.</li>
+        <li>If multiple threads share the <b>same object reference</b>, they will synchronize properly — regardless of the field’s access level.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Example</h5>
+      <pre class="language-java"><code>
+// Works even if 'obj' is private
+class Example {
+    private static final Object obj = new Object();
+
+    public void print() {
+        synchronized (obj) {
+            System.out.println(Thread.currentThread().getName());
+        }
+    }
+}
+      </code></pre>
+
+      <h5 class="text-info">📌 Comparison Table</h5>
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>Modifier</th>
+            <th>Affects Visibility?</th>
+            <th>Affects Locking?</th>
+            <th>Explanation</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>private</code></td>
+            <td>Yes</td>
+            <td>❌ No</td>
+            <td>Only visible inside the class; synchronization still works.</td>
+          </tr>
+          <tr>
+            <td><code>public</code></td>
+            <td>Yes</td>
+            <td>❌ No</td>
+            <td>Visible to other classes, but locking behavior unchanged.</td>
+          </tr>
+          <tr>
+            <td><code>static</code></td>
+            <td>Shared across class</td>
+            <td>✅ Yes</td>
+            <td>All instances share the same lock → true synchronization.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h5 class="text-info">📌 Summary</h5>
+      <ul>
+        <li><b>Public/private</b> affects who can see the variable, not locking.</li>
+        <li><b>Static</b> determines whether all threads share the same lock.</li>
+        <li>Synchronization depends only on the <b>shared object reference</b>.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="q-instance-vs-class-lock-h">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q-instance-vs-class-lock">
+      Instance-level vs Class-level Locks in Java
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+
+  <div id="q-instance-vs-class-lock" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Overview</h5>
+      <ul>
+        <li>In Java, every object and class has a **lock (monitor)** associated with it.</li>
+        <li>The type of lock you acquire depends on whether you synchronize on:
+          <ul>
+            <li>an **object instance** → <b>instance-level lock</b></li>
+            <li>a **class object** → <b>class-level lock</b></li>
+          </ul>
+        </li>
+      </ul>
+
+      <h5 class="text-info">📌 1️⃣ Instance-Level Lock</h5>
+      <pre class="language-java"><code>
+class Printer {
+    public synchronized void printData() {
+        System.out.println(Thread.currentThread().getName() + " printing...");
+    }
+}
+      </code></pre>
+
+      <ul>
+        <li>Lock is acquired on the **current instance (this)**.</li>
+        <li>Each object has its **own monitor lock**.</li>
+        <li>Multiple threads can execute the synchronized method <b>on different objects</b> at the same time.</li>
+      </ul>
+
+      <h6 class="text-secondary">Example:</h6>
+      <pre class="language-java"><code>
+Printer p1 = new Printer();
+Printer p2 = new Printer();
+
+new Thread(() -> p1.printData()).start();
+new Thread(() -> p2.printData()).start();
+      </code></pre>
+      <p>✅ Both threads can run <b>in parallel</b> since they lock on different instances.</p>
+
+      <hr>
+
+      <h5 class="text-info">📌 2️⃣ Class-Level Lock</h5>
+      <pre class="language-java"><code>
+class Printer {
+    public static synchronized void printData() {
+        System.out.println(Thread.currentThread().getName() + " printing...");
+    }
+}
+      </code></pre>
+
+      <ul>
+        <li>Lock is acquired on the <b>Class object (Printer.class)</b>.</li>
+        <li>Only one thread across all instances can execute a class-level synchronized method at a time.</li>
+        <li>This ensures **global synchronization** for all instances of the class.</li>
+      </ul>
+
+      <h6 class="text-secondary">Example:</h6>
+      <pre class="language-java"><code>
+Printer p1 = new Printer();
+Printer p2 = new Printer();
+
+new Thread(() -> p1.printData()).start();
+new Thread(() -> p2.printData()).start();
+      </code></pre>
+      <p>🚫 Only one thread executes at a time, even though there are two instances.</p>
+
+      <hr>
+
+      <h5 class="text-info">📌 Comparison Table</h5>
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>Aspect</th>
+            <th>Instance-level Lock</th>
+            <th>Class-level Lock</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Lock Object</td>
+            <td>Instance (<code>this</code>)</td>
+            <td>Class (<code>ClassName.class</code>)</td>
+          </tr>
+          <tr>
+            <td>Applies To</td>
+            <td>Non-static synchronized methods / blocks</td>
+            <td>Static synchronized methods / blocks</td>
+          </tr>
+          <tr>
+            <td>Lock Scope</td>
+            <td>Per object instance</td>
+            <td>Per class (shared by all instances)</td>
+          </tr>
+          <tr>
+            <td>Parallel Execution</td>
+            <td>Possible if threads use different objects</td>
+            <td>Not possible — all threads must wait</td>
+          </tr>
+          <tr>
+            <td>Example Lock</td>
+            <td><code>synchronized(this)</code></td>
+            <td><code>synchronized(Printer.class)</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h5 class="text-info">📌 Summary</h5>
+      <ul>
+        <li><b>Instance-level lock</b> → Synchronizes per object.</li>
+        <li><b>Class-level lock</b> → Synchronizes across all instances of the class.</li>
+        <li>Choose instance-level for independent objects; class-level for shared/static resources.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="q-best-lock-h">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q-best-lock">
+      What is the Best Way to Lock in Java? (Locking Best Practices)
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+
+  <div id="q-best-lock" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Overview</h5>
+      <p>
+        Locking is used to ensure **thread safety** — preventing multiple threads from corrupting shared data.
+        But <b>not all locks are equal</b> — the "best" approach depends on what kind of resource you’re protecting and your performance goals.
+      </p>
+
+      <h5 class="text-info">📌 Common Locking Approaches</h5>
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>Approach</th>
+            <th>Description</th>
+            <th>Pros</th>
+            <th>Cons</th>
+            <th>Best Use Case</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>synchronized(this)</code></td>
+            <td>Locks on the current object instance.</td>
+            <td>Simple, built-in, safe.</td>
+            <td>Blocks entire method for that object.</td>
+            <td>When you need to protect instance variables.</td>
+          </tr>
+          <tr>
+            <td><code>synchronized(ClassName.class)</code></td>
+            <td>Locks on the class — shared by all instances.</td>
+            <td>Ensures only one thread across the class.</td>
+            <td>Reduces parallelism; global bottleneck.</td>
+            <td>When protecting static/shared resources.</td>
+          </tr>
+          <tr>
+            <td><code>synchronized(obj)</code></td>
+            <td>Locks on a specific object reference.</td>
+            <td>Fine-grained control; flexible.</td>
+            <td>Need to ensure same object is shared across threads.</td>
+            <td>When different resources need independent locks.</td>
+          </tr>
+          <tr>
+            <td><code>ReentrantLock</code></td>
+            <td>Explicit lock from <code>java.util.concurrent.locks</code>.</td>
+            <td>More control (tryLock, interruptible, fairness policy).</td>
+            <td>Requires manual unlock; more code.</td>
+            <td>High-performance or timeout-based locking.</td>
+          </tr>
+          <tr>
+            <td><code>ReadWriteLock</code></td>
+            <td>Allows multiple readers but only one writer.</td>
+            <td>Better concurrency when reads are frequent.</td>
+            <td>Complex to manage correctly.</td>
+            <td>Read-heavy shared data (e.g., caches).</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h5 class="text-info">📌 Best Practices</h5>
+      <ul>
+        <li>✅ Use <b>fine-grained locks</b> — lock only what’s necessary.</li>
+        <li>✅ Prefer <b>synchronized blocks</b> over synchronized methods — gives better control of the critical section.</li>
+        <li>✅ If using advanced concurrency (timeouts, fairness), prefer <b>ReentrantLock</b>.</li>
+        <li>✅ Avoid locking on <b>public objects</b> or <b>strings</b> (risk of external interference).</li>
+        <li>✅ Keep synchronized sections <b>as small as possible</b> for performance.</li>
+        <li>✅ Avoid <b>nested locks</b> — can lead to deadlocks.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Recommended Approach (Industry Standard)</h5>
+      <pre class="language-java"><code>
+class SafeCounter {
+    private final Object lock = new Object(); // private lock object
+    private int count = 0;
+
+    public void increment() {
+        synchronized (lock) {
+            count++;
+        }
+    }
+
+    public int getCount() {
+        synchronized (lock) {
+            return count;
+        }
+    }
+}
+      </code></pre>
+      <ul>
+        <li>Uses a <b>private final lock object</b> — prevents external access.</li>
+        <li>Synchronizes only the small part of code that needs safety.</li>
+        <li>This is considered the <b>best practice</b> for thread-safe locking.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Summary</h5>
+      <ul>
+        <li><b>Use synchronized blocks</b> with private final lock objects for simplicity and safety.</li>
+        <li><b>Use ReentrantLock</b> if you need timeouts, fairness, or non-blocking attempts.</li>
+        <li><b>Do not rely solely on static or class-level locks</b> — they limit concurrency.</li>
+        <li>Always design locking strategy to balance <b>safety vs performance</b>.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="q-sync-vs-lock-h">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q-sync-vs-lock">
+      Difference Between synchronized and ReentrantLock in Java
+      <span class="badge bg-warning text-dark ms-2">Concurrency Deep Dive</span>
+    </button>
+  </h2>
+
+  <div id="q-sync-vs-lock" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 1. Basic Definition</h5>
+      <ul>
+        <li><b>synchronized</b> — A Java keyword that provides an implicit monitor lock. Automatically handles acquire/release.</li>
+        <li><b>ReentrantLock</b> — A class in <code>java.util.concurrent.locks</code> providing explicit locking and unlocking with more flexibility.</li>
+      </ul>
+
+      <h5 class="text-info">📌 2. Syntax Example</h5>
+      <pre class="language-java"><code>
+// Using synchronized
+synchronized (lock) {
+   // critical section
+}
+
+// Using ReentrantLock
+lock.lock();
+try {
+   // critical section
+} finally {
+   lock.unlock();
+}
+      </code></pre>
+
+      <h5 class="text-info">📌 3. Internal Working</h5>
+      <ul>
+        <li><b>synchronized</b> — Uses JVM-level monitor mechanism (object header + MonitorEnter/Exit bytecode).</li>
+        <li><b>ReentrantLock</b> — Uses <b>AQS (AbstractQueuedSynchronizer)</b> — a queue-based framework that manages thread access manually.</li>
+      </ul>
+
+      <h5 class="text-info">📌 4. Feature Comparison</h5>
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>synchronized</th>
+            <th>ReentrantLock</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Lock Type</td>
+            <td>Implicit (handled by JVM)</td>
+            <td>Explicit (you control lock/unlock)</td>
+          </tr>
+          <tr>
+            <td>Fairness</td>
+            <td>Not possible</td>
+            <td>Can be set to fair (<code>new ReentrantLock(true)</code>)</td>
+          </tr>
+          <tr>
+            <td>Interruptible Lock</td>
+            <td>No (thread waits indefinitely)</td>
+            <td>Yes (<code>lockInterruptibly()</code>)</td>
+          </tr>
+          <tr>
+            <td>Try-Lock (non-blocking)</td>
+            <td>No</td>
+            <td>Yes (<code>tryLock()</code>)</td>
+          </tr>
+          <tr>
+            <td>Condition Variables</td>
+            <td>No (only <code>wait()/notify()</code>)</td>
+            <td>Yes (<code>newCondition()</code> gives multiple wait sets)</td>
+          </tr>
+          <tr>
+            <td>Performance (Java 8+)</td>
+            <td>Very good (due to biased & lightweight locking)</td>
+            <td>Good, but slightly more overhead</td>
+          </tr>
+          <tr>
+            <td>Automatic Unlock</td>
+            <td>Yes (released automatically even if exception)</td>
+            <td>No (must call <code>unlock()</code> in finally)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h5 class="text-info">📌 5. Pros & Cons Summary</h5>
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th></th>
+            <th>✅ Advantages</th>
+            <th>❌ Disadvantages</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>synchronized</b></td>
+            <td>
+              <ul>
+                <li>Simple and less error-prone.</li>
+                <li>Automatically releases lock (safe for exceptions).</li>
+                <li>Optimized by JVM for most cases.</li>
+              </ul>
+            </td>
+            <td>
+              <ul>
+                <li>No try-lock or interruptibility.</li>
+                <li>No fairness control.</li>
+                <li>Single wait set (less flexible).</li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td><b>ReentrantLock</b></td>
+            <td>
+              <ul>
+                <li>Can try-lock or timeout-lock.</li>
+                <li>Supports interruptible and fair locking.</li>
+                <li>Multiple condition variables.</li>
+              </ul>
+            </td>
+            <td>
+              <ul>
+                <li>Must release manually (risk of deadlock if missed).</li>
+                <li>Slightly more verbose code.</li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h5 class="text-info">📌 6. When to Use Which</h5>
+      <ul>
+        <li>✅ Use <b>synchronized</b> — for simple critical sections or object-level protection. (90% cases)</li>
+        <li>✅ Use <b>ReentrantLock</b> — when you need:
+          <ul>
+            <li>Timeout-based locking (<code>tryLock(5, TimeUnit.SECONDS)</code>)</li>
+            <li>Fairness between threads</li>
+            <li>Multiple condition queues</li>
+            <li>Interruptible lock waiting</li>
+          </ul>
+        </li>
+      </ul>
+
+      <h5 class="text-info">📌 7. Quick Example — Using tryLock</h5>
+      <pre class="language-java"><code>
+ReentrantLock lock = new ReentrantLock();
+
+if(lock.tryLock(2, TimeUnit.SECONDS)) {
+    try {
+        // critical section
+    } finally {
+        lock.unlock();
+    }
+} else {
+    System.out.println("Couldn't acquire lock, skip this task");
+}
+      </code></pre>
+
+      <h5 class="text-info">📌 Summary</h5>
+      <ul>
+        <li><b>synchronized</b> — simpler, safer, ideal for most use cases.</li>
+        <li><b>ReentrantLock</b> — more flexible, used in advanced concurrent frameworks.</li>
+        <li>Both are <b>reentrant</b>, meaning same thread can acquire lock multiple times.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+            <div class="accordion-item">
                 <h2 class="accordion-header" id="q-concurrency-h">
                     <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
                         data-bs-target="#q-concurrency">

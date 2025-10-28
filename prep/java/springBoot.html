@@ -95,6 +95,545 @@
     <div class="accordion" id="googleAccordion">
 
       <div class="accordion-item">
+  <h2 class="accordion-header" id="q-encryption-h">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q-encryption">
+      Spring Boot Dynamic Bean Selection – Multiple Implementations
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+
+  <div id="q-encryption" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Problem Statement</h5>
+      <ul>
+        <li>You have multiple implementations of the same interface (e.g., <code>EncryptionX</code> and <code>EncryptionY</code>).</li>
+        <li>You want Spring Boot to **dynamically pick one implementation** based on configuration or runtime condition.</li>
+        <li>Example use case: different encryption algorithms for different environments (DEV, QA, PROD).</li>
+      </ul>
+
+      <h5 class="text-info">📌 Interface and Implementations</h5>
+      <pre class="language-java"><code>
+public interface Encryption {
+    void encrypt();
+}
+
+@Service("encryptionX")
+class EncryptionX implements Encryption {
+    public void encrypt() {
+        // Encryption logic X
+    }
+}
+
+@Service("encryptionY")
+class EncryptionY implements Encryption {
+    public void encrypt() {
+        // Encryption logic Y
+    }
+}</code></pre>
+
+      <h5 class="text-info">📌 1️⃣ Approach 1 – Map Injection (Best for Dynamic Runtime Switching)</h5>
+      <ul>
+        <li>Inject all available beans as a <code>Map&lt;String, Encryption&gt;</code>.</li>
+        <li>Spring automatically populates the map with bean name → bean instance pairs.</li>
+        <li>Choose which one to use based on the property value.</li>
+      </ul>
+
+      <pre class="language-java"><code>
+@Component
+@RequiredArgsConstructor
+public class EncryptionService {
+
+    @Value("${encryption.type:encryptionX}")
+    private String encryptionType;
+
+    private final Map&lt;String, Encryption&gt; encryptions;
+
+    public void encrypt() {
+        Encryption encryption = encryptions.get(encryptionType);
+        if (encryption == null) {
+            throw new IllegalArgumentException("Invalid encryption type: " + encryptionType);
+        }
+        encryption.encrypt();
+    }
+}</code></pre>
+
+      <h6 class="text-info">📘 application.yml</h6>
+      <pre class="language-yaml"><code>
+encryption:
+  type: encryptionY
+</code></pre>
+
+      <ul>
+        <li>Set the property to switch between implementations.</li>
+        <li>No restart needed if property value changes dynamically (can also expose via API).</li>
+      </ul>
+
+      <h5 class="text-info">📌 2️⃣ Approach 2 – Factory Pattern</h5>
+      <ul>
+        <li>Encapsulate selection logic in a separate factory class.</li>
+        <li>Cleaner design when you want to keep logic isolated.</li>
+      </ul>
+
+      <pre class="language-java"><code>
+@Component
+@RequiredArgsConstructor
+public class EncryptionFactory {
+
+    private final EncryptionX encryptionX;
+    private final EncryptionY encryptionY;
+
+    @Value("${encryption.type:encryptionX}")
+    private String encryptionType;
+
+    public Encryption getEncryption() {
+        return switch (encryptionType) {
+            case "encryptionY" -> encryptionY;
+            default -> encryptionX;
+        };
+    }
+}
+
+@Service
+@RequiredArgsConstructor
+public class EncryptionService {
+    private final EncryptionFactory encryptionFactory;
+
+    public void encrypt() {
+        encryptionFactory.getEncryption().encrypt();
+    }
+}</code></pre>
+
+      <h5 class="text-info">📌 3️⃣ Approach 3 – @ConditionalOnProperty (Best for Environment-Based Configuration)</h5>
+      <ul>
+        <li>Spring will create only the bean that matches the property value.</li>
+        <li>Useful when you want one active implementation per environment (e.g., QA uses X, PROD uses Y).</li>
+      </ul>
+
+      <pre class="language-java"><code>
+@Service
+@ConditionalOnProperty(name = "encryption.type", havingValue = "encryptionX", matchIfMissing = true)
+class EncryptionX implements Encryption {
+    public void encrypt() { ... }
+}
+
+@Service
+@ConditionalOnProperty(name = "encryption.type", havingValue = "encryptionY")
+class EncryptionY implements Encryption {
+    public void encrypt() { ... }
+}</code></pre>
+
+      <h5 class="text-info">📌 Key Points</h5>
+      <ul>
+        <li><b>Map Injection:</b> Inject all beans → select dynamically → good for runtime switching.</li>
+        <li><b>Factory Pattern:</b> Centralize logic → good for cleaner architecture.</li>
+        <li><b>@ConditionalOnProperty:</b> Only one bean is created → best for environment-based configs.</li>
+        <li>Avoid manually creating beans with <code>new EncryptionX()</code> inside Spring components – breaks DI and AOP.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Analogy</h5>
+      <ul>
+        <li>Think of each <code>Encryption</code> as a different encryption machine.</li>
+        <li>Spring is the factory manager deciding which machine to use based on config.</li>
+        <li>You just pass the type (“X” or “Y”), and Spring routes to the correct one automatically.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header" id="q-encryption-h">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q-encryption">
+      Spring Boot Dynamic Bean Selection – Multiple Implementations (Runtime Switch)
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+
+  <div id="q-encryption" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Problem Statement</h5>
+      <ul>
+        <li>You have multiple implementations of an interface (e.g., <code>EncryptionX</code> and <code>EncryptionY</code>).</li>
+        <li>You want Spring Boot to dynamically select which implementation to use **based on configuration or API call at runtime**.</li>
+        <li>Goal: No application restart required when switching algorithms.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Interface and Implementations</h5>
+      <pre class="language-java"><code>
+public interface Encryption {
+    void encrypt();
+}
+
+@Service("encryptionX")
+class EncryptionX implements Encryption {
+    public void encrypt() {
+        System.out.println("🔒 Encrypting with Algorithm X");
+    }
+}
+
+@Service("encryptionY")
+class EncryptionY implements Encryption {
+    public void encrypt() {
+        System.out.println("🔐 Encrypting with Algorithm Y");
+    }
+}</code></pre>
+
+      <h5 class="text-info">📌 1️⃣ Map Injection Approach – with Runtime Switching</h5>
+      <ul>
+        <li>Inject all implementations as a <code>Map&lt;String, Encryption&gt;</code>.</li>
+        <li>Maintain a dynamic variable for currently active type.</li>
+        <li>Allow change via REST API at runtime.</li>
+      </ul>
+
+      <pre class="language-java"><code>
+@Service
+@RequiredArgsConstructor
+public class EncryptionService {
+
+    private final Map&lt;String, Encryption&gt; encryptions;
+    private String activeEncryptionType = "encryptionX"; // default
+
+    public void setActiveEncryptionType(String type) {
+        if (!encryptions.containsKey(type)) {
+            throw new IllegalArgumentException("Invalid encryption type: " + type);
+        }
+        this.activeEncryptionType = type;
+        System.out.println("✅ Switched encryption to: " + type);
+    }
+
+    public void encrypt() {
+        Encryption encryption = encryptions.get(activeEncryptionType);
+        encryption.encrypt();
+    }
+}</code></pre>
+
+      <h5 class="text-info">📌 2️⃣ Controller to Switch at Runtime</h5>
+      <ul>
+        <li>Expose simple endpoints to view and change the active encryption algorithm.</li>
+        <li>This can be used by DevOps or Admin panels to toggle behavior dynamically.</li>
+      </ul>
+
+      <pre class="language-java"><code>
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/encryption")
+public class EncryptionController {
+
+    private final EncryptionService encryptionService;
+
+    @PostMapping("/switch")
+    public ResponseEntity&lt;String&gt; switchEncryption(@RequestParam String type) {
+        encryptionService.setActiveEncryptionType(type);
+        return ResponseEntity.ok("Switched to: " + type);
+    }
+
+    @GetMapping("/encrypt")
+    public ResponseEntity&lt;String&gt; performEncryption() {
+        encryptionService.encrypt();
+        return ResponseEntity.ok("Encryption done with current algorithm");
+    }
+}</code></pre>
+
+      <h5 class="text-info">📘 Example Usage</h5>
+      <pre class="language-shell"><code>
+# Default type = encryptionX
+GET  http://localhost:8080/encryption/encrypt
+→ 🔒 Encrypting with Algorithm X
+
+# Switch to encryptionY at runtime
+POST http://localhost:8080/encryption/switch?type=encryptionY
+→ ✅ Switched encryption to: encryptionY
+
+# Now encrypt again
+GET  http://localhost:8080/encryption/encrypt
+→ 🔐 Encrypting with Algorithm Y
+</code></pre>
+
+      <h5 class="text-info">📌 Key Points</h5>
+      <ul>
+        <li><b>Map Injection</b> lets you access all beans by their names.</li>
+        <li>You can store the currently active bean name and switch it at runtime.</li>
+        <li>This avoids manual instantiation (<code>new</code>) and keeps everything under Spring’s control.</li>
+        <li>Supports AOP, proxying, and other Spring features fully.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Optional Configuration (application.yml)</h5>
+      <pre class="language-yaml"><code>
+encryption:
+  type: encryptionX  # default type at startup
+</code></pre>
+
+      <h5 class="text-info">📌 Analogy</h5>
+      <ul>
+        <li>Each <code>Encryption</code> implementation is like a different lock machine.</li>
+        <li>The <code>EncryptionService</code> acts as the security officer deciding which lock to use.</li>
+        <li>You can tell the officer (via API) to use a new lock type anytime without restarting the system.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="q-encryption-h">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q-encryption">
+      Spring Boot Dynamic Bean Selection – Multiple Implementations (Config + Runtime Switch)
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+
+  <div id="q-encryption" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Problem Statement</h5>
+      <ul>
+        <li>You have multiple implementations of an interface (e.g., <code>EncryptionX</code>, <code>EncryptionY</code>).</li>
+        <li>You want to:
+          <ul>
+            <li>Select one implementation by default using <code>application.yml</code>.</li>
+            <li>Switch implementations at runtime without restarting the app.</li>
+          </ul>
+        </li>
+      </ul>
+
+      <h5 class="text-info">📌 Interface and Implementations</h5>
+      <pre class="language-java"><code>
+public interface Encryption {
+    void encrypt();
+}
+
+@Service("encryptionX")
+class EncryptionX implements Encryption {
+    public void encrypt() {
+        System.out.println("🔒 Encrypting with Algorithm X");
+    }
+}
+
+@Service("encryptionY")
+class EncryptionY implements Encryption {
+    public void encrypt() {
+        System.out.println("🔐 Encrypting with Algorithm Y");
+    }
+}</code></pre>
+
+      <h5 class="text-info">📌 Configuration Class</h5>
+      <ul>
+        <li>Use <code>@ConfigurationProperties</code> to automatically bind YAML values to a config object.</li>
+        <li>Helps you avoid hardcoding property names in code.</li>
+      </ul>
+
+      <pre class="language-java"><code>
+@Component
+@ConfigurationProperties(prefix = "encryption")
+@Data
+public class EncryptionConfig {
+    private String type = "encryptionX"; // default
+}</code></pre>
+
+      <h5 class="text-info">📘 application.yml</h5>
+      <pre class="language-yaml"><code>
+encryption:
+  type: encryptionY  # can be encryptionX or encryptionY
+</code></pre>
+
+      <h5 class="text-info">📌 Encryption Service – Dynamic Selection</h5>
+      <ul>
+        <li>Inject all beans as a <code>Map&lt;String, Encryption&gt;</code>.</li>
+        <li>On startup, use the default type from config.</li>
+        <li>Allow runtime switching through a setter method.</li>
+      </ul>
+
+      <pre class="language-java"><code>
+@Service
+@RequiredArgsConstructor
+public class EncryptionService {
+
+    private final Map&lt;String, Encryption&gt; encryptions;
+    private final EncryptionConfig config;
+
+    public void setActiveEncryptionType(String type) {
+        if (!encryptions.containsKey(type)) {
+            throw new IllegalArgumentException("❌ Invalid encryption type: " + type);
+        }
+        config.setType(type);
+        System.out.println("✅ Switched encryption to: " + type);
+    }
+
+    public void encrypt() {
+        Encryption encryption = encryptions.get(config.getType());
+        if (encryption == null) {
+            throw new IllegalArgumentException("Encryption type not found: " + config.getType());
+        }
+        encryption.encrypt();
+    }
+}</code></pre>
+
+      <h5 class="text-info">📌 REST Controller – Switch at Runtime</h5>
+      <pre class="language-java"><code>
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/encryption")
+public class EncryptionController {
+
+    private final EncryptionService encryptionService;
+
+    @PostMapping("/switch")
+    public ResponseEntity&lt;String&gt; switchEncryption(@RequestParam String type) {
+        encryptionService.setActiveEncryptionType(type);
+        return ResponseEntity.ok("Switched to: " + type);
+    }
+
+    @GetMapping("/encrypt")
+    public ResponseEntity&lt;String&gt; performEncryption() {
+        encryptionService.encrypt();
+        return ResponseEntity.ok("Encryption done with current algorithm");
+    }
+}</code></pre>
+
+      <h5 class="text-info">📘 Example Usage</h5>
+      <pre class="language-shell"><code>
+# Default type from application.yml = encryptionY
+GET  http://localhost:8080/encryption/encrypt
+→ 🔐 Encrypting with Algorithm Y
+
+# Switch dynamically to encryptionX
+POST http://localhost:8080/encryption/switch?type=encryptionX
+→ ✅ Switched encryption to: encryptionX
+
+# Encrypt again
+GET  http://localhost:8080/encryption/encrypt
+→ 🔒 Encrypting with Algorithm X
+</code></pre>
+
+      <h5 class="text-info">📌 Key Points</h5>
+      <ul>
+        <li><b>@ConfigurationProperties</b> cleanly binds config from <code>application.yml</code>.</li>
+        <li><b>Map Injection</b> lets you access all implementations by bean name.</li>
+        <li><b>Runtime switching</b> updates the active encryption algorithm instantly.</li>
+        <li>No need for <code>new</code> — Spring manages the beans (AOP, lifecycle, etc.).</li>
+      </ul>
+
+      <h5 class="text-info">📌 Analogy</h5>
+      <ul>
+        <li>Each <code>Encryption</code> implementation is like a different security lock.</li>
+        <li><code>EncryptionConfig</code> stores which lock is currently active.</li>
+        <li><code>EncryptionService</code> acts as the locksmith, using whichever lock type you configure or switch to.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="q-microservices-disadv-h">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q-microservices-disadv">
+      Disadvantages of Microservices Architecture
+      <span class="badge bg-danger ms-2">hariPrep</span>
+    </button>
+  </h2>
+
+  <div id="q-microservices-disadv" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 1️⃣ Increased Complexity</h5>
+      <ul>
+        <li>Microservices are distributed systems made up of multiple smaller deployable units — this adds **operational and architectural complexity**.</li>
+        <li>Developers must handle **service discovery, communication, fault tolerance, monitoring**, and **distributed logging**.</li>
+        <li>Teams need to be skilled in **DevOps, CI/CD, containerization (Docker, Kubernetes)** to manage them effectively.</li>
+      </ul>
+
+      <h5 class="text-info">📌 2️⃣ Distributed System Challenges</h5>
+      <ul>
+        <li>Services communicate via network calls (REST, gRPC, Kafka), which introduces **latency and potential failures**.</li>
+        <li>Need additional mechanisms like:
+          <ul>
+            <li>✅ Circuit breakers (e.g., Resilience4j, Hystrix)</li>
+            <li>✅ Retries and timeouts</li>
+            <li>✅ Service discovery and load balancing</li>
+          </ul>
+        </li>
+        <li>Debugging distributed issues across multiple nodes is harder than in a monolithic app.</li>
+      </ul>
+
+      <h5 class="text-info">📌 3️⃣ Data Management Complexity</h5>
+      <ul>
+        <li>Each microservice usually manages its **own database** to ensure loose coupling.</li>
+        <li>This makes **cross-service transactions** difficult to maintain (no simple ACID guarantees).</li>
+        <li>Requires handling **eventual consistency** and implementing patterns like **Saga** or **CQRS** for data coordination.</li>
+      </ul>
+
+      <h5 class="text-info">📌 4️⃣ Deployment & Versioning Overhead</h5>
+      <ul>
+        <li>With multiple services, **build, deploy, and manage pipelines** multiply.</li>
+        <li>Keeping APIs **backward compatible** across versions adds overhead.</li>
+        <li>Requires sophisticated **CI/CD automation** and orchestration (Kubernetes, Jenkins, etc.).</li>
+      </ul>
+
+      <h5 class="text-info">📌 5️⃣ Higher Resource Usage</h5>
+      <ul>
+        <li>Each service might run in its own container or JVM — leading to **higher memory and CPU usage**.</li>
+        <li>For small-scale applications, this can become **less efficient** than a monolith.</li>
+      </ul>
+
+      <h5 class="text-info">📌 6️⃣ Complex Testing & Debugging</h5>
+      <ul>
+        <li>End-to-end testing involves spinning up **multiple dependent services**, making it slower and complex.</li>
+        <li>Tracing a request across services requires **distributed tracing tools** (Zipkin, Jaeger, Sleuth).</li>
+        <li>Simple bugs can be hard to reproduce locally.</li>
+      </ul>
+
+      <h5 class="text-info">📌 7️⃣ Operational and Monitoring Challenges</h5>
+      <ul>
+        <li>Need centralized solutions for:
+          <ul>
+            <li>📊 Metrics (Prometheus, Grafana)</li>
+            <li>📜 Logs (ELK Stack, Loki)</li>
+            <li>📡 Traces (Zipkin, Jaeger)</li>
+          </ul>
+        </li>
+        <li>Without good observability tools, diagnosing production issues becomes difficult.</li>
+      </ul>
+
+      <h5 class="text-info">📌 8️⃣ Communication Overhead</h5>
+      <ul>
+        <li>In a monolith, methods communicate in-process; in microservices, it’s **inter-process communication (IPC)** via network.</li>
+        <li>This adds **serialization/deserialization**, network cost, and higher response time.</li>
+      </ul>
+
+      <h5 class="text-info">📌 9️⃣ Skill and Team Requirements</h5>
+      <ul>
+        <li>Microservices demand broader skills — **DevOps, CI/CD, container orchestration, observability, distributed tracing, etc.**</li>
+        <li>Harder to maintain for small teams or organizations without dedicated DevOps support.</li>
+      </ul>
+
+      <h5 class="text-info">📌 10️⃣ When Not to Use Microservices</h5>
+      <ul>
+        <li>❌ Small-scale or early-stage projects — simpler monolithic design is better.</li>
+        <li>❌ Teams without distributed system experience.</li>
+        <li>❌ When latency, simplicity, or tight consistency are higher priorities than scalability.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Summary</h5>
+      <ul>
+        <li>Microservices offer scalability and modularity but come at the cost of **operational, architectural, and data complexity**.</li>
+        <li>Best suited for **large-scale systems** with multiple independent teams and mature DevOps culture.</li>
+        <li>Otherwise, a **modular monolith** might be a more practical and efficient starting point.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Analogy</h5>
+      <ul>
+        <li>Monolith = One big ship with all facilities in one place (easy to steer but harder to scale).</li>
+        <li>Microservices = A fleet of smaller boats (flexible, scalable, but needs coordination, communication, and strong navigation control).</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+      <div class="accordion-item">
   <h2 class="accordion-header" id="q-transactional-h">
     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
       data-bs-target="#q-transactional">

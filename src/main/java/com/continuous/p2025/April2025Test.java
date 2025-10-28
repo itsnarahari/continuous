@@ -9,13 +9,13 @@ public class April2025Test {
 
     public static void main(String... args) {
 //        1. Java program to Find Odd or Even number
-        findOddOrEvenNumber(11);
-        findPrimeOrNotNumber(0);
+//        findOddOrEvenNumber(11);
+//        findPrimeOrNotNumber(0);
         findFibonacciSeries(10);
-        reverseANumber(10);
-        isArmStrongOrNot(9474);
-        reverseAString("abc");
-        findDuplicatesCharsInAString("abccd1eeee222fghh....%%%%");
+//        reverseANumber(10);
+//        isArmStrongOrNot(9474);
+//        reverseAString("abc");
+//        findDuplicatesCharsInAString("abccd1eeee222fghh....%%%%");
     }
 
     //    1. Java program to Find Odd or Even number

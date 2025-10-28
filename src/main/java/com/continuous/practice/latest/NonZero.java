@@ -52,6 +52,7 @@ public class NonZero {
         return arr;
     }
 
+    //new int[]{3, 0, 2, 4, 8, 9, 0, 0, 9, 56, 0, 3, 0}
     public static int[] zerosToFirst(int array[]) {
         System.out.println(Arrays.toString(array));
         int count = array.length - 1;
