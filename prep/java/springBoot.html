@@ -242,6 +242,1477 @@ class EncryptionY implements Encryption {
     </div>
   </div>
 </div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="q-transactions-h">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q-transactions">
+      Spring Boot Transaction Management – @Transactional, Propagation & Isolation
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+
+  <div id="q-transactions" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Problem Statement</h5>
+      <ul>
+        <li>Understanding why <code>@Transactional</code> sometimes doesn’t start a transaction.</li>
+        <li>Why **self-invocation** (calling another method of the same class) doesn’t trigger a transaction.</li>
+        <li>How **Propagation** and **Isolation** affect transaction behavior and rollback rules.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Why Self-Invocation Fails</h5>
+      <ul>
+        <li>Spring creates a <b>proxy</b> around beans annotated with <code>@Transactional</code>.</li>
+        <li>When you call a method from <b>outside</b> the bean, the call goes through the proxy — transaction starts ✅.</li>
+        <li>When you call another method from the <b>same class</b>, it’s a direct <code>this.method()</code> call — bypasses the proxy ❌.</li>
+      </ul>
+
+      <pre class="language-java"><code>
+@Service
+public class UserService {
+
+    @Transactional
+    public void createUser() {
+        // This call will NOT trigger @Transactional for saveAudit()
+        saveAudit();
+    }
+
+    @Transactional
+    public void saveAudit() {
+        // Transaction ignored if called from same class
+    }
+}
+</code></pre>
+
+      <h6 class="text-info">✅ Fix Options</h6>
+      <ul>
+        <li>Move <code>saveAudit()</code> into another <code>@Service</code> class and inject it.</li>
+        <li>Or use <code>AopContext.currentProxy()</code> to call via proxy (requires <code>@EnableAspectJAutoProxy(exposeProxy = true)</code>).</li>
+        <li>Or publish an event and handle it using <code>@TransactionalEventListener</code>.</li>
+      </ul>
+
+      <pre class="language-java"><code>
+@Service
+public class AuditService {
+    @Transactional
+    public void saveAudit() { ... }
+}
+
+@Service
+public class UserService {
+    @Autowired
+    private AuditService auditService;
+
+    @Transactional
+    public void createUser() {
+        auditService.saveAudit(); // Works ✅
+    }
+}
+</code></pre>
+
+      <h5 class="text-info">📌 Behavior Inside Repositories</h5>
+      <ul>
+        <li>If you call two transactional methods inside the same repository class:</li>
+        <li><code>method1()</code> → starts TX; <code>method2()</code> → called internally = self-invocation (no new TX).</li>
+        <li>But since <code>method1()</code> already has an active TX, both run under the same transaction ✅.</li>
+        <li>If <code>method2()</code> uses <code>REQUIRES_NEW</code>, it won’t work here — because proxy is bypassed ❌.</li>
+      </ul>
+
+      <pre class="language-java"><code>
+@Repository
+public class UserRepository {
+
+    @Transactional
+    public void method1() {
+        // TX starts
+        method2(); // self-invocation
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void method2() {
+        // Ignored new TX, runs in existing one
+    }
+}
+</code></pre>
+
+      <h5 class="text-info">📌 Propagation Explained</h5>
+      <ul>
+        <li>Defines how a transactional method behaves when called by another transactional method.</li>
+      </ul>
+
+      <table class="table table-bordered table-dark">
+        <thead>
+          <tr><th>Propagation Type</th><th>Behavior</th><th>Use Case</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>REQUIRED</td><td>Joins current TX if exists, else creates new.</td><td>Default, most common.</td></tr>
+          <tr><td>REQUIRES_NEW</td><td>Suspends existing TX, starts new one.</td><td>Audit/logs — independent of main TX.</td></tr>
+          <tr><td>SUPPORTS</td><td>Runs with TX if exists, else non-transactional.</td><td>Optional transactional work.</td></tr>
+          <tr><td>MANDATORY</td><td>Throws exception if no TX exists.</td><td>Force caller to manage TX.</td></tr>
+          <tr><td>NOT_SUPPORTED</td><td>Suspends TX and runs non-transactionally.</td><td>For read-only queries.</td></tr>
+          <tr><td>NEVER</td><td>Throws if TX exists.</td><td>For safety, avoid TX side effects.</td></tr>
+          <tr><td>NESTED</td><td>Runs in a nested TX (savepoint).</td><td>Partial rollback possible.</td></tr>
+        </tbody>
+      </table>
+
+      <pre class="language-java"><code>
+@Service
+public class OrderService {
+    @Transactional
+    public void createOrder() {
+        paymentService.chargeCustomer();
+    }
+}
+
+@Service
+public class PaymentService {
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void chargeCustomer() {
+        // Independent TX
+    }
+}
+</code></pre>
+
+      <h5 class="text-info">📌 Isolation Levels Explained</h5>
+      <ul>
+        <li>Control how concurrent transactions see each other’s data.</li>
+      </ul>
+
+      <table class="table table-bordered table-dark">
+        <thead>
+          <tr><th>Isolation Level</th><th>Dirty Reads?</th><th>Non-Repeatable Reads?</th><th>Phantom Reads?</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>READ_UNCOMMITTED</td><td>❌</td><td>❌</td><td>❌</td><td>Fast but unsafe.</td></tr>
+          <tr><td>READ_COMMITTED</td><td>✅</td><td>❌</td><td>❌</td><td>Default in most DBs.</td></tr>
+          <tr><td>REPEATABLE_READ</td><td>✅</td><td>✅</td><td>❌</td><td>Ensures same result for same query in TX.</td></tr>
+          <tr><td>SERIALIZABLE</td><td>✅</td><td>✅</td><td>✅</td><td>Strictest, slowest — full isolation.</td></tr>
+        </tbody>
+      </table>
+
+      <pre class="language-java"><code>
+@Transactional(
+    propagation = Propagation.REQUIRED,
+    isolation = Isolation.REPEATABLE_READ
+)
+public void processOrder() {
+    // Transaction logic
+}
+</code></pre>
+
+      <h5 class="text-info">📌 Propagation Demo Example</h5>
+      <ul>
+        <li>Shows difference between <code>REQUIRED</code> and <code>REQUIRES_NEW</code>.</li>
+      </ul>
+
+      <pre class="language-java"><code>
+@Service
+public class PaymentService {
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void chargeCustomer() {
+        log.info("PaymentService TX active: {}", 
+            TransactionSynchronizationManager.isActualTransactionActive());
+        throw new RuntimeException("Payment failed ❌");
+    }
+}
+
+@Service
+public class OrderService {
+    @Transactional
+    public void createOrder() {
+        log.info("OrderService TX active: {}", 
+            TransactionSynchronizationManager.isActualTransactionActive());
+        try {
+            paymentService.chargeCustomer();
+        } catch (Exception e) {
+            log.warn("Caught: {}", e.getMessage());
+        }
+    }
+}
+</code></pre>
+
+      <ul>
+        <li><b>REQUIRED:</b> Both share same TX → rollback together.</li>
+        <li><b>REQUIRES_NEW:</b> Independent TX → outer continues, inner rolls back only.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Summary</h5>
+      <ul>
+        <li><b>@Transactional</b> works via proxies → self-invocation breaks it.</li>
+        <li><b>Propagation</b> → decides how nested methods join or create transactions.</li>
+        <li><b>Isolation</b> → controls visibility of data between concurrent TXs.</li>
+        <li>Best practice: apply transactions at the <b>Service layer</b>, not inside repositories.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="q-transactional-h">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q-transactional">
+      How @Transactional Works Internally in Spring Boot
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+
+  <div id="q-transactional" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 High-Level Concept</h5>
+      <ul>
+        <li><code>@Transactional</code> in Spring is not a keyword — it’s implemented using <b>AOP (Aspect-Oriented Programming)</b>.</li>
+        <li>When you mark a method or class with <code>@Transactional</code>, Spring wraps that bean with a **proxy object**.</li>
+        <li>This proxy intercepts method calls, starts and commits (or rolls back) database transactions automatically.</li>
+      </ul>
+
+      <h5 class="text-info">🧩 Step-by-Step Flow</h5>
+      <ol>
+        <li>At startup, Spring scans for <code>@Transactional</code> annotations.</li>
+        <li>For every bean that uses it, Spring creates a **proxy** (either JDK Dynamic Proxy or CGLIB subclass).</li>
+        <li>When a transactional method is called externally (through the proxy):</li>
+        <ul>
+          <li>The proxy intercepts the call.</li>
+          <li>It checks the current transaction status (none, active, suspended).</li>
+          <li>Depending on <code>Propagation</code> and <code>Isolation</code>, it starts a new transaction or joins an existing one.</li>
+          <li>The real method executes inside this transaction context.</li>
+          <li>If the method completes normally → commit ✅; if an exception is thrown → rollback ❌ (based on rules).</li>
+        </ul>
+        <li>When a method is called internally (same bean → self-invocation): proxy is bypassed, no transaction logic runs.</li>
+      </ol>
+
+      <h5 class="text-info">🧠 Internal Architecture</h5>
+      <pre><code>
+Controller
+   ↓
+Service (Proxy Bean)
+   ↓
+[ TransactionInterceptor ]
+   ↓
+PlatformTransactionManager (e.g. DataSourceTransactionManager)
+   ↓
+Connection → BEGIN / COMMIT / ROLLBACK
+   ↓
+Repository (JDBC / JPA / Hibernate)
+</code></pre>
+
+      <h5 class="text-info">📘 Example</h5>
+      <pre class="language-java"><code>
+@Service
+public class PaymentService {
+
+    @Transactional
+    public void makePayment() {
+        // Proxy intercepts here → starts transaction
+        debitAccount();
+        creditAccount();
+        // Commit transaction
+    }
+}
+</code></pre>
+
+      <ul>
+        <li>If <code>makePayment()</code> runs fine → Spring commits the DB transaction.</li>
+        <li>If it throws a <code>RuntimeException</code> → Spring rolls back automatically.</li>
+      </ul>
+
+      <h5 class="text-info">⚙️ Behind the Scenes</h5>
+      <ul>
+        <li>The proxy applies <code>TransactionInterceptor</code>, which delegates to <code>PlatformTransactionManager</code>.</li>
+        <li>Common managers include:
+          <ul>
+            <li><code>DataSourceTransactionManager</code> → for JDBC</li>
+            <li><code>JpaTransactionManager</code> → for JPA/Hibernate</li>
+          </ul>
+        </li>
+        <li>Transaction boundaries are managed via <code>Connection.setAutoCommit(false)</code>, <code>commit()</code>, and <code>rollback()</code>.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Proxy Types</h5>
+      <ul>
+        <li><b>JDK Dynamic Proxy:</b> Used if your bean implements an interface.</li>
+        <li><b>CGLIB Proxy:</b> Used if it’s a concrete class with no interface.</li>
+        <li>You can force CGLIB by setting:
+          <pre><code>@EnableTransactionManagement(proxyTargetClass = true)</code></pre>
+        </li>
+      </ul>
+
+      <h5 class="text-info">🚫 Why Self-Invocation Fails</h5>
+      <ul>
+        <li>When you call <code>this.method2()</code> inside <code>method1()</code>, the call never goes through the proxy.</li>
+        <li>Therefore, <code>TransactionInterceptor</code> is never triggered.</li>
+        <li>Spring skips transaction creation for that internal call.</li>
+      </ul>
+
+      <h5 class="text-info">📘 Quick Analogy</h5>
+      <ul>
+        <li>Think of the proxy as a “security guard” who wraps the door to your service.</li>
+        <li>Anyone entering from outside must pass through the guard (proxy) — he starts & stops the transaction.</li>
+        <li>But if you already are inside and move room to room yourself, the guard never sees you — hence no transaction logic executes.</li>
+      </ul>
+
+      <h5 class="text-info">✅ Summary</h5>
+      <ul>
+        <li>@Transactional works using AOP proxies + TransactionInterceptor.</li>
+        <li>External calls → go through proxy → transaction created.</li>
+        <li>Internal calls → bypass proxy → no transaction behavior.</li>
+        <li>Uses PlatformTransactionManager under the hood.</li>
+        <li>Can customize via <code>propagation</code>, <code>isolation</code>, <code>timeout</code>, <code>rollbackFor</code>, etc.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="q-tx-rollback-h">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q-tx-rollback">
+      How Spring Decides to Commit or Rollback a Transaction
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+
+  <div id="q-tx-rollback" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Default Rule</h5>
+      <ul>
+        <li>By default, Spring rolls back a transaction only for <b>unchecked exceptions</b> (subclasses of <code>RuntimeException</code> or <code>Error</code>).</li>
+        <li>Checked exceptions (<code>IOException</code>, <code>SQLException</code>, etc.) do <b>not</b> trigger a rollback automatically.</li>
+        <li>After successful method execution → transaction is committed ✅.</li>
+      </ul>
+
+      <h5 class="text-info">🧩 Example</h5>
+      <pre class="language-java"><code>
+@Service
+public class OrderService {
+
+    @Transactional
+    public void placeOrder() {
+        saveOrder(); // success
+        if (true) throw new RuntimeException("Payment failed!");
+        // will rollback automatically
+    }
+
+    @Transactional
+    public void processOrder() throws IOException {
+        saveOrder();
+        throw new IOException("File issue!"); // checked exception
+        // will NOT rollback by default ❌
+    }
+}
+</code></pre>
+
+      <h5 class="text-info">📋 Log Output Example</h5>
+      <pre><code>
+[TX] Transaction started
+saveOrder() executed successfully
+Exception: RuntimeException -> triggering rollback
+[TX] Rolling back transaction ❌
+------------------------------------------------
+[TX] Transaction started
+saveOrder() executed successfully
+Exception: IOException -> not marked for rollback
+[TX] Committing transaction ✅
+</code></pre>
+
+      <h5 class="text-info">⚙️ Customizing Rollback Behavior</h5>
+      <ul>
+        <li>You can change which exceptions cause rollback using the <code>rollbackFor</code> or <code>noRollbackFor</code> attributes.</li>
+      </ul>
+
+      <pre class="language-java"><code>
+@Transactional(rollbackFor = IOException.class)
+public void processOrder() throws IOException {
+    saveOrder();
+    throw new IOException("Will rollback now ✅");
+}
+</code></pre>
+
+      <ul>
+        <li><code>rollbackFor</code>: adds checked exceptions to rollback list.</li>
+        <li><code>noRollbackFor</code>: excludes some runtime exceptions from rollback.</li>
+      </ul>
+
+      <h5 class="text-info">📘 Internal Decision Flow</h5>
+      <pre><code>
+TransactionInterceptor
+    ↓
+try {
+   methodInvocation.proceed();
+   commitIfNecessary();
+} catch (Throwable ex) {
+   if (shouldRollbackOn(ex))
+       rollback();
+   else
+       commit();
+   throw ex;
+}
+</code></pre>
+
+      <ul>
+        <li><code>shouldRollbackOn()</code> → checks the type of exception thrown.</li>
+        <li>By default:
+          <ul>
+            <li><b>RuntimeException / Error</b> → rollback ✅</li>
+            <li><b>Checked Exception</b> → commit ❌ (unless specified)</li>
+          </ul>
+        </li>
+      </ul>
+
+      <h5 class="text-info">🧠 Advanced Tip: Nested Calls</h5>
+      <ul>
+        <li>If a nested transactional method throws an exception and is caught by the outer one, rollback depends on how it’s handled.</li>
+      </ul>
+
+      <pre class="language-java"><code>
+@Transactional
+public void outerTx() {
+    try {
+        innerTx();  // throws RuntimeException
+    } catch (Exception e) {
+        // caught - no rollback if you handle manually
+    }
+}
+</code></pre>
+
+      <ul>
+        <li>Here, even though <code>innerTx()</code> threw a <code>RuntimeException</code>, since it was caught, the outer TX may still commit.</li>
+        <li>You can manually mark rollback using:</li>
+      </ul>
+
+      <pre class="language-java"><code>
+TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+</code></pre>
+
+      <h5 class="text-info">✅ Summary</h5>
+      <ul>
+        <li><b>Default rollback:</b> on <code>RuntimeException</code> or <code>Error</code>.</li>
+        <li><b>No rollback:</b> on checked exceptions (unless declared).</li>
+        <li>Use <code>rollbackFor</code> to include checked exceptions.</li>
+        <li>Use <code>noRollbackFor</code> to exclude specific runtime exceptions.</li>
+        <li>Manually mark rollback using <code>setRollbackOnly()</code> if caught inside TX.</li>
+      </ul>
+
+      <h5 class="text-info">📘 Analogy</h5>
+      <ul>
+        <li>Think of <code>@Transactional</code> like a banking operation — if an unexpected system crash happens (RuntimeException), rollback all changes ✅.</li>
+        <li>But if a planned issue like “file not found” (checked exception) occurs, Spring assumes you’ll handle it — so it commits by default ❌.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="q-tx-propagation-h">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q-tx-propagation">
+      Transaction Propagation in Spring Boot
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+
+  <div id="q-tx-propagation" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What Is Propagation?</h5>
+      <ul>
+        <li><b>Propagation</b> defines how a method’s transaction behaves when it’s called by another method that already has a transaction.</li>
+        <li>Example: <code>serviceA()</code> calls <code>serviceB()</code> — should <code>serviceB()</code> run in the same transaction or a new one?</li>
+      </ul>
+
+      <h5 class="text-info">🧩 Example Setup</h5>
+      <pre class="language-java"><code>
+@Service
+public class OrderService {
+    @Autowired private PaymentService paymentService;
+
+    @Transactional
+    public void placeOrder() {
+        // TX1 starts
+        paymentService.processPayment(); // how this behaves depends on propagation
+    }
+}
+
+@Service
+public class PaymentService {
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void processPayment() {
+        // TX2 (maybe new transaction)
+    }
+}
+</code></pre>
+
+      <h5 class="text-info">📘 Common Propagation Types</h5>
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Behavior</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>REQUIRED</code></td>
+            <td>Join existing TX if available, else start a new one.</td>
+            <td>Default behavior — most commonly used ✅</td>
+          </tr>
+          <tr>
+            <td><code>REQUIRES_NEW</code></td>
+            <td>Always start a new TX, suspends the existing one.</td>
+            <td>Used for independent operations (e.g., audit logging).</td>
+          </tr>
+          <tr>
+            <td><code>SUPPORTS</code></td>
+            <td>Join existing TX if present; else run non-transactionally.</td>
+            <td>Used for read-only or optional transactional methods.</td>
+          </tr>
+          <tr>
+            <td><code>MANDATORY</code></td>
+            <td>Must run within an existing TX, else throws exception.</td>
+            <td>Useful for ensuring the caller always runs in a TX.</td>
+          </tr>
+          <tr>
+            <td><code>NOT_SUPPORTED</code></td>
+            <td>Run non-transactionally, suspends any existing TX.</td>
+            <td>Used when an operation must not be part of a TX (e.g., slow queries).</td>
+          </tr>
+          <tr>
+            <td><code>NEVER</code></td>
+            <td>Must run outside of a TX, else throws exception.</td>
+            <td>Rarely used — mostly for safety checks.</td>
+          </tr>
+          <tr>
+            <td><code>NESTED</code></td>
+            <td>Run inside a nested transaction within the parent TX (savepoint-based).</td>
+            <td>Rollback affects only the inner TX, not outer one (if DB supports it).</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h5 class="text-info">📊 Visual Flow Example</h5>
+      <pre><code>
+Propagation.REQUIRED
+   Caller TX → [join same transaction]
+   └── Both commit or rollback together
+
+Propagation.REQUIRES_NEW
+   Caller TX (suspended)
+   └── New TX started
+   └── On error, inner rollback but outer unaffected
+
+Propagation.NESTED
+   Caller TX → [savepoint created]
+   └── Rollback only inner part (not whole TX)
+</code></pre>
+
+      <h5 class="text-info">🧠 Real-World Use Cases</h5>
+      <ul>
+        <li><b>REQUIRED:</b> Normal flow — all DB operations succeed or fail together.</li>
+        <li><b>REQUIRES_NEW:</b> Logging, auditing, notification — should commit even if main TX fails.</li>
+        <li><b>NESTED:</b> Child operation rollback should not affect outer TX (if supported by DB).</li>
+        <li><b>SUPPORTS:</b> Reuse TX if available, else ignore — good for caching or optional operations.</li>
+      </ul>
+
+      <h5 class="text-info">⚙️ Example - REQUIRED vs REQUIRES_NEW</h5>
+      <pre class="language-java"><code>
+@Transactional
+public void mainTx() {
+    saveMain(); // TX1
+    try {
+        auditService.log(); // REQUIRES_NEW
+    } catch(Exception e) {
+        // TX2 rollback only
+    }
+}
+</code></pre>
+
+      <pre><code>
+TX1 (Main) started
+ → TX2 (Audit) started separately
+TX2 fails → rolled back ❌
+TX1 continues → commits ✅
+</code></pre>
+
+      <h5 class="text-info">📘 NESTED Example</h5>
+      <pre class="language-java"><code>
+@Transactional
+public void parentTx() {
+    saveParent();
+    childService.childTx(); // NESTED
+}
+
+@Transactional(propagation = Propagation.NESTED)
+public void childTx() {
+    saveChild();
+    throw new RuntimeException("child failed!");
+}
+</code></pre>
+
+      <pre><code>
+TX1 (Parent) started
+ → TX1.1 (Savepoint created for child)
+Child fails → rollback to savepoint
+Parent TX continues ✅
+</code></pre>
+
+      <h5 class="text-info">📘 Analogy</h5>
+      <ul>
+        <li><b>REQUIRED:</b> You and your friend share one bill — if one fails to pay, both lose.</li>
+        <li><b>REQUIRES_NEW:</b> You and your friend pay separately — independent bills.</li>
+        <li><b>NESTED:</b> You both share one bill, but your friend’s items can be voided (savepoint) without affecting yours.</li>
+      </ul>
+
+      <h5 class="text-info">✅ Summary</h5>
+      <ul>
+        <li><code>REQUIRED</code> → Join or create transaction (default).</li>
+        <li><code>REQUIRES_NEW</code> → Always new, suspends old.</li>
+        <li><code>NESTED</code> → Sub-transaction with savepoint (DB support needed).</li>
+        <li>Pick propagation based on business consistency and isolation needs.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="q-tx-isolation-h">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q-tx-isolation">
+      Transaction Isolation Levels in Spring Boot
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+
+  <div id="q-tx-isolation" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 What Is Isolation?</h5>
+      <ul>
+        <li><b>Isolation</b> controls how transaction integrity is visible between concurrent transactions.</li>
+        <li>It prevents problems like <b>dirty reads, non-repeatable reads, phantom reads</b>.</li>
+        <li>Spring delegates this to the underlying database (via <code>Connection.setTransactionIsolation()</code>).</li>
+      </ul>
+
+      <h5 class="text-info">🧩 Syntax Example</h5>
+      <pre class="language-java"><code>
+@Transactional(isolation = Isolation.REPEATABLE_READ)
+public void updateAccount() {
+    // code here executes under REPEATABLE_READ isolation
+}
+</code></pre>
+
+      <h5 class="text-info">📘 Isolation Levels Overview</h5>
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>Isolation Level</th>
+            <th>Prevents</th>
+            <th>Allows</th>
+            <th>Use Case</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>READ_UNCOMMITTED</code></td>
+            <td>Nothing</td>
+            <td>Dirty, Non-Repeatable, Phantom Reads</td>
+            <td>Rarely used; fastest, least safe.</td>
+          </tr>
+          <tr>
+            <td><code>READ_COMMITTED</code></td>
+            <td>Dirty Reads</td>
+            <td>Non-Repeatable, Phantom Reads</td>
+            <td>Default in most databases (e.g., Oracle, PostgreSQL).</td>
+          </tr>
+          <tr>
+            <td><code>REPEATABLE_READ</code></td>
+            <td>Dirty, Non-Repeatable Reads</td>
+            <td>Phantom Reads</td>
+            <td>Default in MySQL; balances consistency and concurrency.</td>
+          </tr>
+          <tr>
+            <td><code>SERIALIZABLE</code></td>
+            <td>All (Dirty, Non-Repeatable, Phantom)</td>
+            <td>None</td>
+            <td>Strongest isolation, but slowest; rarely used.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h5 class="text-info">📊 Common Problems Explained</h5>
+      <ul>
+        <li><b>Dirty Read:</b> Read uncommitted data from another transaction.</li>
+        <li><b>Non-Repeatable Read:</b> A row value changes between two reads in same TX.</li>
+        <li><b>Phantom Read:</b> A new row appears/disappears between two queries in same TX.</li>
+      </ul>
+
+      <pre><code>
+Transaction A              | Transaction B
+-------------------------------------------------
+Read salary = 50000        |
+                           | Update salary = 60000 (not committed)
+Read salary again = 60000  | ← Dirty Read (if READ_UNCOMMITTED)
+</code></pre>
+
+      <h5 class="text-info">⚙️ Real Example</h5>
+      <pre class="language-java"><code>
+@Transactional(isolation = Isolation.READ_COMMITTED)
+public void checkBalance() {
+    BigDecimal balance1 = accountRepo.getBalance(101);
+    Thread.sleep(5000); // simulate delay
+    BigDecimal balance2 = accountRepo.getBalance(101);
+    System.out.println(balance1 + " -> " + balance2);
+}
+</code></pre>
+
+      <ul>
+        <li>If another transaction updates the same row and commits during the sleep period, balance2 reflects new value (non-repeatable read).</li>
+        <li>But dirty reads (uncommitted values) are not visible in <code>READ_COMMITTED</code>.</li>
+      </ul>
+
+      <h5 class="text-info">📘 Analogy</h5>
+      <ul>
+        <li><b>READ_UNCOMMITTED:</b> Reading your friend’s draft message — might still change.</li>
+        <li><b>READ_COMMITTED:</b> You can only read once it’s officially sent.</li>
+        <li><b>REPEATABLE_READ:</b> You take a screenshot — you’ll always see the same version.</li>
+        <li><b>SERIALIZABLE:</b> Only one person edits at a time — total order enforced.</li>
+      </ul>
+
+      <h5 class="text-info">⚡ Performance Impact</h5>
+      <ul>
+        <li>Higher isolation → more locking → less concurrency.</li>
+        <li>Choose based on consistency vs performance needs:</li>
+      </ul>
+
+      <pre><code>
+READ_UNCOMMITTED → 🔥 Fastest but unsafe
+READ_COMMITTED → ⚖️ Balanced (default)
+REPEATABLE_READ → ✅ Safe for most cases
+SERIALIZABLE → 🧱 Strongest but slowest
+</code></pre>
+
+      <h5 class="text-info">✅ Summary</h5>
+      <ul>
+        <li>Spring uses DB isolation via <code>PlatformTransactionManager</code>.</li>
+        <li>Defaults depend on your DB vendor (Oracle → READ_COMMITTED, MySQL → REPEATABLE_READ).</li>
+        <li>Adjust using <code>@Transactional(isolation = ...)</code> at method level.</li>
+        <li>Higher levels reduce concurrency — use only where required.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="q-jpa-vs-jdbc-h">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q-jpa-vs-jdbc">
+      Why JPA Is Slower Than JDBC
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+
+  <div id="q-jpa-vs-jdbc" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Problem Statement</h5>
+      <ul>
+        <li>Developers often notice that <b>JPA/Hibernate queries are slower</b> than plain JDBC queries.</li>
+        <li>Goal: Understand <b>why</b> this happens internally and <b>when it’s still useful</b> to use JPA.</li>
+      </ul>
+
+      <h5 class="text-info">📘 Core Reason</h5>
+      <p>JPA adds an <b>Object-Relational Mapping (ORM)</b> abstraction layer on top of JDBC.  
+      While this simplifies development, it introduces extra processing between your entity and the database.</p>
+
+      <h5 class="text-info">⚙️ Detailed Reasons for Slower Performance</h5>
+      <ol>
+        <li><b>ORM Abstraction Overhead:</b>  
+          Hibernate translates entity operations into SQL at runtime — unlike JDBC, where SQL is pre-written and directly executed.</li>
+        <li><b>Reflection and Proxy Usage:</b>  
+          Entities are managed dynamically via reflection, bytecode enhancement, and proxies — all of which cost CPU cycles.</li>
+        <li><b>Dirty Checking:</b>  
+          Hibernate tracks every managed entity in the persistence context and compares old vs new values during flush — adding overhead.</li>
+        <li><b>Automatic Flushing:</b>  
+          Before executing queries or committing, Hibernate might flush pending changes, triggering unexpected extra queries.</li>
+        <li><b>First-Level Cache Synchronization:</b>  
+          Each entity is stored and managed in the session context — increasing memory footprint and synchronization time.</li>
+        <li><b>N+1 Query Issue (Lazy Loading):</b>  
+          Lazy relationships often cause multiple SQL queries instead of a single optimized join — especially when fetching child entities.</li>
+        <li><b>SQL Generation Cost:</b>  
+          Hibernate dynamically builds SQL strings based on entity metadata, joins, and criteria queries — JDBC skips all this.</li>
+      </ol>
+
+      <h5 class="text-info">📊 Example Comparison</h5>
+      <pre class="language-java"><code>
+// --- JDBC Example ---
+String sql = "SELECT id, name FROM employee WHERE dept_id = ?";
+try (PreparedStatement ps = con.prepareStatement(sql)) {
+    ps.setInt(1, 10);
+    ResultSet rs = ps.executeQuery();
+    while (rs.next()) {
+        System.out.println(rs.getString("name"));
+    }
+}
+
+// --- JPA Example ---
+List&lt;Employee&gt; employees = em.createQuery(
+    "SELECT e FROM Employee e WHERE e.department.id = :id", Employee.class)
+    .setParameter("id", 10)
+    .getResultList();
+</code></pre>
+
+      <ul>
+        <li>JDBC sends SQL directly → faster execution path.</li>
+        <li>JPA parses JPQL → translates to SQL → executes via JDBC → maps result to entity → tracks it in context.</li>
+      </ul>
+
+      <h5 class="text-info">🚀 When to Still Use JPA</h5>
+      <ul>
+        <li>When productivity and maintainability matter more than micro-performance.</li>
+        <li>When you deal with complex domain models and relationships.</li>
+        <li>When you want transaction management, caching, and lazy/eager control handled automatically.</li>
+        <li>When the slight performance loss (<5–15%) is acceptable.</li>
+      </ul>
+
+      <h5 class="text-info">⚡ How to Improve JPA Performance</h5>
+      <ul>
+        <li>Use <code>@BatchSize</code> or <code>fetch join</code> to avoid N+1 queries.</li>
+        <li>Prefer projections (<code>DTO</code> queries) instead of full entities when reading only partial data.</li>
+        <li>Clear the persistence context (<code>entityManager.clear()</code>) periodically in batch operations.</li>
+        <li>Turn off dirty checking using <code>FlushModeType.COMMIT</code> when updates are not needed.</li>
+        <li>Use second-level cache (Ehcache, Redis) for frequently-read data.</li>
+      </ul>
+
+      <h5 class="text-info">📘 Key Takeaways</h5>
+      <ul>
+        <li><b>JPA = Abstraction + Convenience + Safety</b>, but with extra runtime cost.</li>
+        <li><b>JDBC = Raw Speed</b> — but more manual code and less flexibility.</li>
+        <li>Use JDBC for batch-heavy or latency-critical modules (e.g., ETL, analytics).</li>
+        <li>Use JPA for business-logic-heavy applications with moderate data volume.</li>
+      </ul>
+
+      <h5 class="text-info">💡 Analogy</h5>
+      <ul>
+        <li>Think of JDBC as a “manual gear” car — faster but requires more control.</li>
+        <li>JPA is an “automatic transmission” — easier to drive but has slight performance overhead.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="q-transactional-internal-h">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q-transactional-internal">
+      How @Transactional Works Internally in Spring Boot
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+
+  <div id="q-transactional-internal" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Problem Statement</h5>
+      <ul>
+        <li>We often use <code>@Transactional</code> in services or repositories to handle transactions automatically.</li>
+        <li>But how does Spring internally begin, commit, or rollback the transaction?</li>
+        <li>Let’s break down what actually happens behind the scenes.</li>
+      </ul>
+
+      <h5 class="text-info">🧠 Step-by-Step Internal Working</h5>
+      <ol>
+        <li><b>Proxy Creation:</b>  
+          When Spring sees <code>@Transactional</code> on a bean, it creates a **proxy** (using JDK Dynamic Proxy or CGLIB).  
+          <ul>
+            <li>The proxy wraps the target bean and intercepts method calls.</li>
+            <li>That proxy is registered in the ApplicationContext instead of the original bean.</li>
+          </ul>
+        </li>
+
+        <li><b>Method Invocation:</b>  
+          When you call a transactional method through the Spring container (e.g., from another bean),  
+          the **proxy intercepts** the call before the real method executes.</li>
+
+        <li><b>Transaction Interceptor:</b>  
+          The proxy delegates to <code>TransactionInterceptor</code> (part of Spring AOP), which decides:  
+          <ul>
+            <li>Should a new transaction be created or joined? (based on propagation)</li>
+            <li>What isolation level to use?</li>
+          </ul>
+        </li>
+
+        <li><b>Transaction Manager Involvement:</b>  
+          The interceptor interacts with <code>PlatformTransactionManager</code> (like <code>JpaTransactionManager</code>):  
+          <ul>
+            <li>Calls <code>getTransaction()</code> → starts or joins a DB transaction.</li>
+            <li>Then executes your method inside a <code>try</code>/<code>catch</code> block.</li>
+          </ul>
+        </li>
+
+        <li><b>Commit / Rollback:</b>  
+          After the method finishes:
+          <ul>
+            <li>If no exception → <code>commit()</code> the transaction.</li>
+            <li>If a <code>RuntimeException</code> or <code>Error</code> → <code>rollback()</code>.</li>
+            <li>Checked exceptions do <b>not</b> trigger rollback by default (can be overridden).</li>
+          </ul>
+        </li>
+
+        <li><b>Return to Caller:</b>  
+          Finally, control returns to the original caller, and the proxy unbinds the transaction from the thread.</li>
+      </ol>
+
+      <h5 class="text-info">🧩 Simplified Flow Diagram</h5>
+      <pre><code>
+Caller → Proxy → TransactionInterceptor
+       ↳ PlatformTransactionManager
+             ↳ Begin Transaction
+             ↳ Invoke Target Method
+             ↳ Commit / Rollback
+      </code></pre>
+
+      <h5 class="text-info">⚠️ Important Detail: Self Invocation</h5>
+      <ul>
+        <li>If a method within the same class calls another <code>@Transactional</code> method,
+          the proxy is bypassed (direct method call via <code>this</code>), so no new transaction is started.</li>
+        <li>Solution: Move that inner method to another Spring-managed bean or use <code>AopContext.currentProxy()</code> (advanced case).</li>
+      </ul>
+
+      <h5 class="text-info">📋 Example</h5>
+      <pre class="language-java"><code>
+@Service
+public class OrderService {
+
+    @Transactional
+    public void createOrder() {
+        System.out.println("Transaction started by proxy");
+        saveOrder(); // self-invocation → proxy not applied
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void saveOrder() {
+        System.out.println("New transaction? ❌ No, same TX (proxy bypassed)");
+    }
+}
+</code></pre>
+
+      <h5 class="text-info">💡 Under the Hood Classes</h5>
+      <ul>
+        <li><code>TransactionInterceptor</code> → Core AOP advice handling transaction start/end.</li>
+        <li><code>TransactionAspectSupport</code> → Common utility class that contains main logic.</li>
+        <li><code>PlatformTransactionManager</code> → Abstracts actual transaction system (JPA, JDBC, JTA, etc.).</li>
+      </ul>
+
+      <h5 class="text-info">📘 Key Takeaways</h5>
+      <ul>
+        <li><b>@Transactional</b> works through <b>Spring AOP proxies</b>.</li>
+        <li>Actual transaction management happens via <b>PlatformTransactionManager</b>.</li>
+        <li>Only external (proxied) calls trigger transactional logic.</li>
+        <li>Rollbacks happen for runtime exceptions by default.</li>
+      </ul>
+
+      <h5 class="text-info">💡 Analogy</h5>
+      <ul>
+        <li>Think of the proxy as a **“transaction bodyguard”** standing in front of your service.</li>
+        <li>It opens a transaction before your method starts, and closes it when it ends — commit or rollback based on outcome.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="q-transaction-propagation-h">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q-transaction-propagation">
+      Transaction Propagation & Isolation in Spring Boot
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+
+  <div id="q-transaction-propagation" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Problem Statement</h5>
+      <ul>
+        <li>Spring offers <b>Propagation</b> and <b>Isolation</b> levels inside <code>@Transactional</code> to control transactional behavior.</li>
+        <li>Goal: Understand how these affect real DB operations — when new transactions start, join, or isolate.</li>
+      </ul>
+
+      <h5 class="text-info">🧠 1️⃣ Transaction Propagation</h5>
+      <p>
+        Defines what happens when a transactional method is called from another transactional context.
+      </p>
+
+      <h6 class="text-info">⚙️ Common Propagation Types</h6>
+      <table class="table table-bordered table-sm">
+        <thead class="table-light">
+          <tr>
+            <th>Propagation Type</th>
+            <th>Behavior</th>
+            <th>Example Use Case</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>REQUIRED</code></td>
+            <td>Join existing transaction if present, else create a new one (default).</td>
+            <td>Main business flow calling repository methods.</td>
+          </tr>
+          <tr>
+            <td><code>REQUIRES_NEW</code></td>
+            <td>Always suspend current transaction and start a new one.</td>
+            <td>Logging, audit, or notification logic that must commit even if main TX rolls back.</td>
+          </tr>
+          <tr>
+            <td><code>SUPPORTS</code></td>
+            <td>Join current TX if exists; if not, run non-transactionally.</td>
+            <td>Read-only operations that don’t need guaranteed consistency.</td>
+          </tr>
+          <tr>
+            <td><code>MANDATORY</code></td>
+            <td>Must be called within an existing TX; throws exception otherwise.</td>
+            <td>When operation is only valid inside another TX (e.g., save detail within master).</td>
+          </tr>
+          <tr>
+            <td><code>NEVER</code></td>
+            <td>Must be called without a TX; throws exception if one exists.</td>
+            <td>Reporting operations that can’t run inside a transactional context.</td>
+          </tr>
+          <tr>
+            <td><code>NESTED</code></td>
+            <td>Starts a sub-transaction with its own savepoint inside the main TX.</td>
+            <td>Partial rollback scenarios where inner operation can roll back independently.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h5 class="text-info">🧩 Example</h5>
+      <pre class="language-java"><code>
+@Service
+public class PaymentService {
+
+    @Transactional(propagation = Propagation.REQUIRED)
+    public void makePayment() {
+        System.out.println("Main TX started");
+        auditService.logTransaction(); // REQUIRES_NEW
+        System.out.println("Main TX continues");
+    }
+}
+
+@Service
+public class AuditService {
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void logTransaction() {
+        System.out.println("New TX started for audit");
+    }
+}
+</code></pre>
+
+      <h6 class="text-info">🧾 Transaction Log Output</h6>
+      <pre><code>
+[PaymentService] → begin TX1
+[AuditService]   → suspend TX1, begin TX2
+[AuditService]   → commit TX2
+[PaymentService] → resume TX1, continue
+[PaymentService] → commit TX1
+      </code></pre>
+
+      <ul>
+        <li>Even if <code>makePayment()</code> fails later, audit log still commits successfully ✅.</li>
+      </ul>
+
+      <hr/>
+
+      <h5 class="text-info">🧠 2️⃣ Isolation Levels</h5>
+      <p>
+        Defines how much one transaction is isolated from others — i.e., visibility of uncommitted changes.
+      </p>
+
+      <h6 class="text-info">⚙️ Common Isolation Levels</h6>
+      <table class="table table-bordered table-sm">
+        <thead class="table-light">
+          <tr>
+            <th>Isolation Level</th>
+            <th>Prevents</th>
+            <th>Allows</th>
+            <th>Use Case</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>READ_UNCOMMITTED</code></td>
+            <td>Nothing</td>
+            <td>Dirty, non-repeatable, phantom reads</td>
+            <td>Rare; analytics where performance > consistency.</td>
+          </tr>
+          <tr>
+            <td><code>READ_COMMITTED</code></td>
+            <td>Dirty reads</td>
+            <td>Non-repeatable, phantom reads</td>
+            <td>Default in most databases (e.g., Oracle, Postgres).</td>
+          </tr>
+          <tr>
+            <td><code>REPEATABLE_READ</code></td>
+            <td>Dirty, non-repeatable reads</td>
+            <td>Phantom reads</td>
+            <td>Ensures consistent data for repeated queries in one TX (MySQL default).</td>
+          </tr>
+          <tr>
+            <td><code>SERIALIZABLE</code></td>
+            <td>All anomalies</td>
+            <td>None</td>
+            <td>Highest isolation, but slowest — used for strict financial operations.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h5 class="text-info">📋 Example Usage</h5>
+      <pre class="language-java"><code>
+@Transactional(isolation = Isolation.REPEATABLE_READ)
+public void fetchAccountBalance(Long id) {
+    // Reads same data multiple times consistently
+}
+</code></pre>
+
+      <h5 class="text-info">📘 Key Takeaways</h5>
+      <ul>
+        <li><b>Propagation</b> controls <i>transaction joining or creation</i>.</li>
+        <li><b>Isolation</b> controls <i>data visibility and concurrency</i>.</li>
+        <li>Higher isolation = safer but slower due to more locking.</li>
+        <li>Most enterprise apps use <code>Propagation.REQUIRED</code> and <code>Isolation.READ_COMMITTED</code>.</li>
+      </ul>
+
+      <h5 class="text-info">💡 Analogy</h5>
+      <ul>
+        <li><b>Propagation</b> = who pays the restaurant bill — join friend’s bill or open new one.</li>
+        <li><b>Isolation</b> = whether you peek into other people’s plates before finishing yours 🍽️.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="q-transaction-rollback-h">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q-transaction-rollback">
+      Transaction Rollback Rules & Best Practices in Spring Boot
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+
+  <div id="q-transaction-rollback" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Problem Statement</h5>
+      <ul>
+        <li>By default, Spring rolls back only for <b>unchecked exceptions</b> (subclasses of <code>RuntimeException</code>).</li>
+        <li>However, many business operations use <b>checked exceptions</b> like <code>SQLException</code> or custom exceptions.</li>
+        <li>We need to understand how rollback rules work and how to configure them properly.</li>
+      </ul>
+
+      <h5 class="text-info">🧠 Default Rollback Behavior</h5>
+      <ul>
+        <li>✅ Rolls back on: <code>RuntimeException</code>, <code>Error</code></li>
+        <li>❌ Does <b>not</b> roll back on: Checked exceptions (like <code>IOException</code>, <code>SQLException</code>)</li>
+      </ul>
+
+      <pre class="language-java"><code>
+@Transactional
+public void processPayment() {
+    if (somethingWrong) {
+        throw new RuntimeException("Rollback triggered automatically");
+    }
+}
+</code></pre>
+
+      <ul>
+        <li>Spring automatically rolls back since it’s a runtime exception.</li>
+      </ul>
+
+      <h5 class="text-info">⚙️ Rollback for Checked Exceptions</h5>
+      <p>
+        If you throw a checked exception but still want rollback, you must explicitly configure it:
+      </p>
+
+      <pre class="language-java"><code>
+@Transactional(rollbackFor = SQLException.class)
+public void updateOrder() throws SQLException {
+    // If SQLException occurs → transaction will rollback
+}
+</code></pre>
+
+      <ul>
+        <li>You can specify multiple exceptions using <code>{}</code> array:</li>
+      </ul>
+
+      <pre class="language-java"><code>
+@Transactional(rollbackFor = {IOException.class, SQLException.class})
+</code></pre>
+
+      <h5 class="text-info">⚠️ Common Mistakes</h5>
+      <ol>
+        <li><b>Swallowing exceptions:</b> Catching exceptions inside the same method prevents rollback because the proxy never sees them.</li>
+        <li><b>Calling methods internally (self-invocation):</b> Skips the proxy, so rollback logic is not applied.</li>
+        <li><b>Mixing async and transactional:</b> @Async runs in a separate thread — transaction context does not propagate automatically.</li>
+      </ol>
+
+      <pre class="language-java"><code>
+// ❌ Wrong: Rollback won't happen
+@Transactional
+public void wrongExample() {
+    try {
+        orderRepository.save(order);
+    } catch (Exception e) {
+        log.error("Caught exception: {}", e.getMessage());
+    }
+}
+
+// ✅ Correct
+@Transactional
+public void correctExample() {
+    orderRepository.save(order);
+    if (errorCondition) {
+        throw new CustomBusinessException("Force rollback");
+    }
+}
+</code></pre>
+
+      <h5 class="text-info">💡 Best Practices</h5>
+      <ul>
+        <li>Always throw exceptions instead of swallowing them if rollback is expected.</li>
+        <li>Use <code>rollbackFor</code> when working with checked exceptions.</li>
+        <li>Keep transactional methods <b>public</b> — private/protected methods are ignored by proxies.</li>
+        <li>Place <code>@Transactional</code> only at service level (not repository or controller).</li>
+        <li>Use custom exceptions extending <code>RuntimeException</code> for clean rollback handling.</li>
+      </ul>
+
+      <h5 class="text-info">📘 Example with Custom Business Exception</h5>
+      <pre class="language-java"><code>
+public class BusinessException extends RuntimeException {
+    public BusinessException(String msg) { super(msg); }
+}
+
+@Service
+public class UserService {
+
+    @Transactional
+    public void registerUser(User user) {
+        userRepo.save(user);
+        if (user.isDuplicate()) {
+            throw new BusinessException("Duplicate user - rollback happens");
+        }
+    }
+}
+</code></pre>
+
+      <ul>
+        <li>Since <code>BusinessException</code> extends <code>RuntimeException</code>, rollback happens automatically ✅.</li>
+      </ul>
+
+      <h5 class="text-info">📊 Summary Table</h5>
+      <table class="table table-bordered table-sm">
+        <thead class="table-light">
+          <tr>
+            <th>Exception Type</th>
+            <th>Default Rollback?</th>
+            <th>How to Enable Rollback</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>RuntimeException / Error</td>
+            <td>✅ Yes</td>
+            <td>Automatic</td>
+          </tr>
+          <tr>
+            <td>Checked Exception</td>
+            <td>❌ No</td>
+            <td><code>@Transactional(rollbackFor = Exception.class)</code></td>
+          </tr>
+          <tr>
+            <td>Caught Exception (not rethrown)</td>
+            <td>❌ No</td>
+            <td>Re-throw exception or mark rollback manually</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h5 class="text-info">⚙️ Manual Rollback Control</h5>
+      <pre class="language-java"><code>
+@Transactional
+public void saveData() {
+    try {
+        repository.save(...);
+    } catch (Exception e) {
+        TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+    }
+}
+</code></pre>
+
+      <h5 class="text-info">📘 Key Takeaways</h5>
+      <ul>
+        <li>Spring rolls back only on <b>RuntimeExceptions</b> by default.</li>
+        <li>Use <code>rollbackFor</code> for checked exceptions.</li>
+        <li>Never swallow exceptions silently — Spring proxy must “see” them.</li>
+        <li>Keep transactions at the <b>service layer</b> for clarity and consistency.</li>
+      </ul>
+
+      <h5 class="text-info">💡 Analogy</h5>
+      <ul>
+        <li><b>RuntimeException:</b> Sudden crash → car stops automatically (rollback).</li>
+        <li><b>Checked Exception:</b> Warning light → you must press brake manually (<code>rollbackFor</code>).</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="q-transaction-lifecycle-h">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q-transaction-lifecycle">
+      Spring Transaction Lifecycle (Step-by-Step Flow)
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+
+  <div id="q-transaction-lifecycle" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">🎯 Goal</h5>
+      <p>
+        Understand what happens internally when a method annotated with <code>@Transactional</code> is invoked in a
+        Spring Boot application — from start to finish.
+      </p>
+
+      <h5 class="text-info">🧩 Step-by-Step Lifecycle</h5>
+
+      <ol class="list-group list-group-numbered mb-3">
+        <li class="list-group-item">
+          <b>1️⃣ Bean Proxy Creation</b>  
+          When Spring detects <code>@Transactional</code> on a bean method, it wraps that bean in a proxy
+          (JDK dynamic proxy or CGLIB).  
+          <br>➡️ This proxy intercepts method calls and manages the transaction lifecycle.
+        </li>
+
+        <li class="list-group-item">
+          <b>2️⃣ Method Invocation</b>  
+          When a client (like a controller or another bean) calls a <code>@Transactional</code> method,  
+          the call goes first to the proxy — <b>not directly</b> to the target object.
+        </li>
+
+        <li class="list-group-item">
+          <b>3️⃣ Transaction Interceptor</b>  
+          The proxy delegates to <code>TransactionInterceptor</code> (part of Spring AOP),  
+          which retrieves the configured <code>PlatformTransactionManager</code> (usually <code>DataSourceTransactionManager</code>).
+        </li>
+
+        <li class="list-group-item">
+          <b>4️⃣ Transaction Begins</b>  
+          <code>TransactionManager.getTransaction()</code> is called →  
+          it checks if an existing transaction exists based on propagation rules.  
+          If not, it creates a new one and binds it to the current thread using
+          <code>TransactionSynchronizationManager</code>.
+        </li>
+
+        <li class="list-group-item">
+          <b>5️⃣ Target Method Execution</b>  
+          The interceptor invokes the actual business logic (target method).  
+          <br>During this step:
+          <ul>
+            <li>The Persistence Context (Hibernate Session) is created and bound to the thread.</li>
+            <li>All entity operations occur within this context.</li>
+          </ul>
+        </li>
+
+        <li class="list-group-item">
+          <b>6️⃣ Commit or Rollback</b>  
+          When the method completes:
+          <ul>
+            <li>If no exception occurs → <b>commit</b> is called on <code>TransactionManager</code>.</li>
+            <li>If a RuntimeException or Error occurs → <b>rollback</b> is triggered.</li>
+            <li>If a Checked Exception occurs → rollback only happens if configured via <code>rollbackFor</code>.</li>
+          </ul>
+        </li>
+
+        <li class="list-group-item">
+          <b>7️⃣ Cleanup Phase</b>  
+          Spring unbinds the transaction from the thread, clears thread-locals,  
+          and closes any resources (Hibernate Session, JDBC Connection, etc.).
+        </li>
+      </ol>
+
+      <h5 class="text-info">📊 Transaction Lifecycle Diagram</h5>
+      <pre class="language-text"><code>
+┌─────────────────────────────────────────────────────────────┐
+│          Spring Transaction Lifecycle (Simplified)           │
+├─────────────────────────────────────────────────────────────┤
+│ 1️⃣ Proxy intercepts @Transactional method call              │
+│ 2️⃣ TransactionInterceptor invokes TransactionManager         │
+│ 3️⃣ getTransaction() → starts or joins transaction            │
+│ 4️⃣ Target method executes                                   │
+│ 5️⃣ On success → commit()                                   │
+│ 6️⃣ On exception → rollback()                               │
+│ 7️⃣ Cleanup (unbinds thread, closes session)                 │
+└─────────────────────────────────────────────────────────────┘
+      </code></pre>
+
+      <h5 class="text-info">🧠 Example Code with Logs</h5>
+
+      <pre class="language-java"><code>
+@Service
+public class OrderService {
+
+    @Transactional
+    public void createOrder() {
+        log.info("Inside createOrder()");
+        orderRepository.save(new Order());
+        if (true) throw new RuntimeException("Simulated Failure");
+    }
+}
+</code></pre>
+
+      <h6 class="text-secondary">🧾 Console Logs (Simplified)</h6>
+      <pre class="language-text"><code>
+[DEBUG] Opening new transaction for [OrderService.createOrder]
+[DEBUG] Beginning transaction on DataSource
+[INFO ] Inside createOrder()
+[ERROR] RuntimeException occurred — rolling back transaction
+[DEBUG] Rolling back JDBC transaction on Connection
+[DEBUG] Releasing JDBC Connection after transaction
+      </code></pre>
+
+      <h5 class="text-info">📘 Key Classes Involved</h5>
+      <ul>
+        <li><code>TransactionInterceptor</code> — main AOP interceptor for @Transactional.</li>
+        <li><code>PlatformTransactionManager</code> — defines commit/rollback behavior.</li>
+        <li><code>TransactionSynchronizationManager</code> — binds resources (connection/session) to current thread.</li>
+        <li><code>DataSourceTransactionManager</code> — default JDBC transaction manager.</li>
+      </ul>
+
+      <h5 class="text-info">💡 Real-World Analogy</h5>
+      <ul>
+        <li><b>Proxy:</b> Bank teller who starts and ends a transaction for you.</li>
+        <li><b>TransactionManager:</b> The bank system ensuring money moves safely.</li>
+        <li><b>Commit:</b> Teller finalizes your deposit successfully.</li>
+        <li><b>Rollback:</b> Teller cancels the transaction if an error occurs.</li>
+      </ul>
+
+      <h5 class="text-info">✅ Summary</h5>
+      <ul>
+        <li>@Transactional creates a proxy → manages begin/commit/rollback automatically.</li>
+        <li>Transaction context is thread-bound via <code>TransactionSynchronizationManager</code>.</li>
+        <li>Self-invocation skips the proxy — so transaction may not apply.</li>
+        <li>Rollback rules depend on the type of exception.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+
 
 <div class="accordion-item">
   <h2 class="accordion-header" id="q-encryption-h">
@@ -2322,567 +3793,6 @@ flowchart LR
   </div>
 </div>
 
-
-      <div class="accordion-item">
-        <h2 class="accordion-header" id="headingBehavioralAgile">
-          <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
-            data-bs-target="#behavioralAgileQuestions" aria-expanded="false" aria-controls="behavioralAgileQuestions">
-            💼 Manager/Director Level — Behavioral, Situational & Agile Questions
-          </button>
-        </h2>
-        <div id="behavioralAgileQuestions" class="accordion-collapse collapse">
-          <div class="accordion-body">
-
-            <p class="highlight-yellow">
-              At manager and director levels, interviews often focus on leadership, decision-making, conflict
-              resolution, and Agile mindset. Below are common behavioral, situational, and Agile-related questions with
-              suggested answers.
-            </p>
-
-            <h5 class="text-warning">1️⃣ Behavioral Questions</h5>
-
-            <h6 class="text-info">Q: Describe a time when your team missed a critical deadline. How did you handle it?
-            </h6>
-            <p><strong>Answer:</strong> I first analyzed why the deadline was missed—whether due to resource allocation,
-              scope creep, or technical blockers. Then I communicated transparently with stakeholders, re-prioritized
-              tasks, and implemented interim checkpoints to prevent future delays. We also conducted a retrospective to
-              identify process improvements.</p>
-
-            <h6 class="text-info">Q: How do you handle conflicts between team members?</h6>
-            <p><strong>Answer:</strong> I listen to both sides to understand the root cause, mediate the discussion to
-              find common ground, and focus on aligning everyone to the project goals. If needed, I provide coaching or
-              adjust responsibilities to minimize friction.</p>
-
-            <h6 class="text-info">Q: Tell me about a situation where you had to make a difficult decision with
-              incomplete information.</h6>
-            <p><strong>Answer:</strong> I gather as much relevant data as possible within the time constraints, weigh
-              risks and benefits, consult key stakeholders, and make a decision while documenting assumptions. Later, I
-              track outcomes and adjust strategy if necessary.</p>
-
-            <h5 class="text-warning">2️⃣ Situational Questions</h5>
-
-            <h6 class="text-info">Q: Your product feature is delayed, and stakeholders are unhappy. How do you
-              communicate and manage expectations?</h6>
-            <p><strong>Answer:</strong> I provide a clear status update highlighting the reasons for the delay, the
-              impact on timelines, and the mitigation plan. I also propose alternative solutions, like phased releases
-              or resource adjustments, to maintain trust.</p>
-
-            <h6 class="text-info">Q: A critical production issue arises outside business hours. How would you manage
-              your team?</h6>
-            <p><strong>Answer:</strong> I first ensure the incident is assigned to available on-call engineers and
-              provide support or guidance. I coordinate communication with stakeholders, document the incident, and lead
-              a post-mortem session to prevent recurrence.</p>
-
-            <h6 class="text-info">Q: A new technology needs adoption, but the team is resistant. What do you do?</h6>
-            <p><strong>Answer:</strong> I explain the business and technical benefits, provide training and support,
-              start with a pilot project to demonstrate value, and involve team members in decision-making to gain
-              buy-in.</p>
-
-            <h5 class="text-warning">3️⃣ Agile & Leadership Questions</h5>
-
-            <h6 class="text-info">Q: How do you scale Agile practices across multiple teams?</h6>
-            <p><strong>Answer:</strong> I implement frameworks like SAFe or LeSS where needed, ensure consistent
-              ceremonies (standups, sprint planning, retrospectives), align on objectives via OKRs, and foster
-              collaboration through shared backlog refinement sessions and cross-team communication.</p>
-
-            <h6 class="text-info">Q: How do you measure team productivity and success in Agile?</h6>
-            <p><strong>Answer:</strong> Metrics like velocity, cycle time, defect rate, and customer satisfaction are
-              monitored. I emphasize outcomes over output and encourage continuous improvement through retrospectives
-              and process adaptation.</p>
-
-            <h6 class="text-info">Q: How do you handle scope creep in Agile projects?</h6>
-            <p><strong>Answer:</strong> I work with the Product Owner to assess the impact of new requirements,
-              prioritize against existing backlog, communicate trade-offs with stakeholders, and incorporate changes in
-              future sprints without compromising sprint commitments.</p>
-
-            <h5 class="text-success">📌 Key Takeaways</h5>
-            <ul>
-              <li>Demonstrate leadership, problem-solving, and decision-making skills.</li>
-              <li>Show ability to handle conflict and change positively.</li>
-              <li>Highlight understanding of Agile principles, scaling, and metrics.</li>
-              <li>Provide structured, real-world examples using STAR (Situation, Task, Action, Result) format.</li>
-            </ul>
-
-          </div>
-        </div>
-      </div>
-      <div class="accordion-item">
-        <h2 class="accordion-header" id="headingBehavioralAgile2">
-          <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
-            data-bs-target="#behavioralAgileQuestions2" aria-expanded="false" aria-controls="behavioralAgileQuestions2">
-            💼 More Manager/Director Level — Behavioral, Situational & Agile Questions
-          </button>
-        </h2>
-        <div id="behavioralAgileQuestions2" class="accordion-collapse collapse">
-          <div class="accordion-body">
-
-            <p class="highlight-yellow">
-              Additional questions for senior leadership interviews, focusing on strategic thinking, team management,
-              and Agile practices.
-            </p>
-
-            <h5 class="text-warning">1️⃣ Behavioral Questions</h5>
-
-            <h6 class="text-info">Q: Describe a time when you had to influence senior stakeholders to adopt your
-              proposal.</h6>
-            <p><strong>Answer:</strong> I presented a data-driven analysis of the proposed solution, highlighted
-              potential ROI and risks, and facilitated discussions to address concerns. By demonstrating alignment with
-              business goals and providing a phased implementation plan, I gained stakeholder buy-in.</p>
-
-            <h6 class="text-info">Q: How do you foster a culture of accountability in your teams?</h6>
-            <p><strong>Answer:</strong> I set clear expectations, define measurable goals, encourage ownership of
-              deliverables, and provide regular feedback. Recognition of achievements and transparent discussions about
-              missed targets reinforce accountability.</p>
-
-            <h6 class="text-info">Q: Tell me about a time when a project you were responsible for failed. How did you
-              handle it?</h6>
-            <p><strong>Answer:</strong> I accepted ownership of the outcome, analyzed root causes, communicated
-              transparently with stakeholders, and implemented corrective actions. Lessons learned were documented and
-              shared to prevent recurrence across teams.</p>
-
-            <h5 class="text-warning">2️⃣ Situational Questions</h5>
-
-            <h6 class="text-info">Q: Multiple teams are delivering features that conflict with each other. How do you
-              resolve it?</h6>
-            <p><strong>Answer:</strong> I facilitate cross-team backlog grooming sessions to identify dependencies and
-              conflicts, prioritize based on business value, and define integration guidelines. I also implement regular
-              synchronization meetings to prevent future conflicts.</p>
-
-            <h6 class="text-info">Q: You inherit a team with low morale. How do you turn it around?</h6>
-            <p><strong>Answer:</strong> I first meet team members individually to understand concerns, celebrate quick
-              wins to build confidence, provide clarity on goals and expectations, and create opportunities for skill
-              development and ownership. Regular feedback loops and recognition help improve engagement.</p>
-
-            <h6 class="text-info">Q: One of your key projects is at risk of missing deadlines. How do you handle this
-              situation?</h6>
-            <p><strong>Answer:</strong> I assess project scope, resources, and blockers, re-prioritize deliverables,
-              communicate risks to stakeholders, and implement mitigation strategies like parallel workstreams or
-              additional resources. I also set up daily checkpoints to monitor progress.</p>
-
-            <h5 class="text-warning">3️⃣ Agile & Leadership Questions</h5>
-
-            <h6 class="text-info">Q: How do you implement Agile in an organization that is currently Waterfall?</h6>
-            <p><strong>Answer:</strong> I start with pilot teams to demonstrate value, train teams on Agile principles,
-              implement iterative planning and reviews, and gradually expand adoption. I also align leadership on
-              metrics, reporting, and culture shift required for successful Agile adoption.</p>
-
-            <h6 class="text-info">Q: How do you ensure your teams are delivering value rather than just output?</h6>
-            <p><strong>Answer:</strong> I focus on outcomes and business impact by aligning sprint goals with KPIs,
-              involve Product Owners in prioritization, track customer satisfaction, and encourage regular demos and
-              feedback from stakeholders to validate value delivery.</p>
-
-            <h6 class="text-info">Q: How do you handle remote or distributed teams in Agile?</h6>
-            <p><strong>Answer:</strong> I ensure effective communication with video standups, asynchronous updates, and
-              clear documentation. I use collaboration tools, track progress with visible dashboards, and foster team
-              cohesion through virtual team-building and regular feedback.</p>
-
-            <h5 class="text-success">📌 Key Takeaways</h5>
-            <ul>
-              <li>Showcase leadership, coaching, and strategic thinking skills.</li>
-              <li>Demonstrate ability to manage conflict, influence stakeholders, and drive outcomes.</li>
-              <li>Emphasize Agile mindset, value delivery, and team engagement practices.</li>
-              <li>Answer using STAR (Situation, Task, Action, Result) for clarity and impact.</li>
-            </ul>
-
-          </div>
-        </div>
-      </div>
-      <div class="accordion-item">
-        <h2 class="accordion-header" id="headingManagerDirectorQuestions">
-          <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
-            data-bs-target="#managerDirectorQuestions" aria-expanded="false" aria-controls="managerDirectorQuestions">
-            💼 Manager & Director Level — Complete Behavioral, Situational & Agile Question Bank
-          </button>
-        </h2>
-        <div id="managerDirectorQuestions" class="accordion-collapse collapse">
-          <div class="accordion-body">
-
-            <p class="highlight-yellow">
-              A comprehensive set of behavioral, situational, and Agile questions and answers for Manager/Director level
-              interviews. Use STAR (Situation, Task, Action, Result) format for structured answers.
-            </p>
-
-            <h5 class="text-warning">1️⃣ Behavioral Questions</h5>
-
-            <h6 class="text-info">Q: Describe a time when your team missed a critical deadline. How did you handle it?
-            </h6>
-            <p><strong>Answer:</strong> Analyze reasons, communicate with stakeholders, re-prioritize tasks, implement
-              checkpoints, and conduct a retrospective for process improvements.</p>
-
-            <h6 class="text-info">Q: How do you handle conflicts between team members?</h6>
-            <p><strong>Answer:</strong> Listen to both sides, mediate, focus on project goals, provide coaching, or
-              adjust responsibilities to minimize friction.</p>
-
-            <h6 class="text-info">Q: Tell me about a situation where you had to make a difficult decision with
-              incomplete information.</h6>
-            <p><strong>Answer:</strong> Gather available data, weigh risks and benefits, consult stakeholders, make a
-              decision, document assumptions, track outcomes, and adjust strategy if needed.</p>
-
-            <h6 class="text-info">Q: Describe a time when you had to influence senior stakeholders to adopt your
-              proposal.</h6>
-            <p><strong>Answer:</strong> Present data-driven analysis, highlight ROI and risks, facilitate discussion,
-              provide phased plan, gain buy-in.</p>
-
-            <h6 class="text-info">Q: How do you foster a culture of accountability in your teams?</h6>
-            <p><strong>Answer:</strong> Set clear expectations, define measurable goals, encourage ownership, provide
-              feedback, recognize achievements.</p>
-
-            <h6 class="text-info">Q: Tell me about a project you were responsible for that failed. How did you handle
-              it?</h6>
-            <p><strong>Answer:</strong> Accept ownership, analyze root causes, communicate transparently, implement
-              corrective actions, share lessons learned.</p>
-
-            <h5 class="text-warning">2️⃣ Situational Questions</h5>
-
-            <h6 class="text-info">Q: Your product feature is delayed, and stakeholders are unhappy. How do you manage
-              expectations?</h6>
-            <p><strong>Answer:</strong> Provide status update with reasons, impact, mitigation plan, propose
-              alternatives like phased releases, maintain trust.</p>
-
-            <h6 class="text-info">Q: A critical production issue arises outside business hours. How would you manage
-              your team?</h6>
-            <p><strong>Answer:</strong> Assign on-call engineers, guide as needed, communicate with stakeholders,
-              document incident, conduct post-mortem.</p>
-
-            <h6 class="text-info">Q: A new technology needs adoption, but the team is resistant. What do you do?</h6>
-            <p><strong>Answer:</strong> Explain benefits, provide training, start with pilot, involve team in
-              decision-making to gain buy-in.</p>
-
-            <h6 class="text-info">Q: Multiple teams are delivering features that conflict with each other. How do you
-              resolve it?</h6>
-            <p><strong>Answer:</strong> Facilitate backlog grooming sessions, prioritize by business value, define
-              integration guidelines, hold regular sync meetings.</p>
-
-            <h6 class="text-info">Q: You inherit a team with low morale. How do you turn it around?</h6>
-            <p><strong>Answer:</strong> Meet individually to understand concerns, celebrate quick wins, clarify goals,
-              provide development opportunities, use feedback and recognition.</p>
-
-            <h6 class="text-info">Q: One of your key projects is at risk of missing deadlines. How do you handle this
-              situation?</h6>
-            <p><strong>Answer:</strong> Assess scope, resources, and blockers, re-prioritize deliverables, communicate
-              risks, implement mitigation strategies, set daily checkpoints.</p>
-
-            <h5 class="text-warning">3️⃣ Agile & Leadership Questions</h5>
-
-            <h6 class="text-info">Q: How do you scale Agile practices across multiple teams?</h6>
-            <p><strong>Answer:</strong> Implement SAFe or LeSS if needed, ensure consistent ceremonies, align objectives
-              with OKRs, foster collaboration via shared backlog refinement and cross-team communication.</p>
-
-            <h6 class="text-info">Q: How do you measure team productivity and success in Agile?</h6>
-            <p><strong>Answer:</strong> Monitor velocity, cycle time, defect rate, customer satisfaction; focus on
-              outcomes over output; use retrospectives for continuous improvement.</p>
-
-            <h6 class="text-info">Q: How do you handle scope creep in Agile projects?</h6>
-            <p><strong>Answer:</strong> Assess impact with Product Owner, prioritize against backlog, communicate
-              trade-offs, incorporate changes in future sprints.</p>
-
-            <h6 class="text-info">Q: How do you implement Agile in an organization that is currently Waterfall?</h6>
-            <p><strong>Answer:</strong> Start with pilot teams, train on Agile principles, implement iterative planning,
-              expand adoption gradually, align leadership on metrics and culture shift.</p>
-
-            <h6 class="text-info">Q: How do you ensure your teams are delivering value rather than just output?</h6>
-            <p><strong>Answer:</strong> Align sprint goals with KPIs, involve Product Owners in prioritization, track
-              customer satisfaction, demonstrate value via demos and feedback.</p>
-
-            <h6 class="text-info">Q: How do you handle remote or distributed teams in Agile?</h6>
-            <p><strong>Answer:</strong> Use video standups, asynchronous updates, clear documentation, collaboration
-              tools, visible dashboards, virtual team-building, and regular feedback.</p>
-
-            <h5 class="text-success">📌 Key Takeaways</h5>
-            <ul>
-              <li>Demonstrate leadership, decision-making, and conflict resolution skills.</li>
-              <li>Show ability to influence stakeholders and manage expectations.</li>
-              <li>Highlight Agile mindset, value delivery, and process improvement.</li>
-              <li>Answer in STAR format with structured examples for maximum impact.</li>
-            </ul>
-
-          </div>
-        </div>
-      </div>
-      <div class="accordion-item">
-        <h2 class="accordion-header" id="headingDirectorCaseStudies">
-          <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
-            data-bs-target="#directorCaseStudies" aria-expanded="false" aria-controls="directorCaseStudies">
-            🎯 Director-Level Real-World Scenario Case Studies
-          </button>
-        </h2>
-        <div id="directorCaseStudies" class="accordion-collapse collapse">
-          <div class="accordion-body">
-
-            <p class="highlight-yellow">
-              Real-world scenarios designed for Director-level interviews to test technical leadership, strategic
-              thinking, and business decision-making.
-            </p>
-
-            <h5 class="text-warning">1️⃣ Scenario: Multi-Million Users Service Performance</h5>
-            <p><strong>Situation:</strong> Your e-commerce platform’s checkout API latency spikes from 200ms to 20s
-              under peak traffic.</p>
-            <p><strong>Task:</strong> Identify root causes, implement fixes, and ensure SLAs are met.</p>
-            <p><strong>Action:</strong></p>
-            <ul>
-              <li>Review metrics & distributed tracing to locate bottlenecks.</li>
-              <li>Scale services horizontally and optimize DB queries.</li>
-              <li>Implement caching and asynchronous processing.</li>
-              <li>Communicate plan and progress to stakeholders.</li>
-            </ul>
-            <p><strong>Result:</strong> Checkout latency reduced to ~250ms, SLA achieved, and monitoring alerts
-              established for future spikes.</p>
-
-            <h5 class="text-warning">2️⃣ Scenario: Security Breach Risk</h5>
-            <p><strong>Situation:</strong> A critical microservice exposed an unprotected endpoint internally; risk of
-              data leak.</p>
-            <p><strong>Task:</strong> Secure service-to-service communication and prevent unauthorized access.</p>
-            <p><strong>Action:</strong></p>
-            <ul>
-              <li>Implement OAuth2 Client Credentials Grant for internal microservices.</li>
-              <li>Rotate secrets, enable mTLS, and audit access logs.</li>
-              <li>Educate teams on secure development practices.</li>
-            </ul>
-            <p><strong>Result:</strong> Endpoint secured, internal services authenticated, risk minimized, and incident
-              report communicated to leadership.</p>
-
-            <h5 class="text-warning">3️⃣ Scenario: Merging Two Teams Post-Acquisition</h5>
-            <p><strong>Situation:</strong> Two engineering teams from different companies with different cultures must
-              merge.</p>
-            <p><strong>Task:</strong> Ensure smooth integration, maintain productivity, and align on shared goals.</p>
-            <p><strong>Action:</strong></p>
-            <ul>
-              <li>Conduct joint workshops to align processes and coding standards.</li>
-              <li>Assign mentors and cross-functional pairing to build trust.</li>
-              <li>Set unified KPIs and performance metrics.</li>
-              <li>Monitor team morale and intervene if conflicts arise.</li>
-            </ul>
-            <p><strong>Result:</strong> Teams successfully integrated, collaboration improved, and delivery schedules
-              maintained.</p>
-
-            <h5 class="text-warning">4️⃣ Scenario: Cloud Cost Optimization</h5>
-            <p><strong>Situation:</strong> Monthly cloud expenses increase 40% year-over-year due to underutilized
-              resources.</p>
-            <p><strong>Task:</strong> Reduce cost without compromising performance or uptime.</p>
-            <p><strong>Action:</strong></p>
-            <ul>
-              <li>Analyze usage metrics and identify underutilized instances.</li>
-              <li>Introduce auto-scaling policies and reserved instances.</li>
-              <li>Enforce tagging and budgeting for projects.</li>
-            </ul>
-            <p><strong>Result:</strong> Cloud costs reduced by 25%, with optimized resource allocation and alerts for
-              future anomalies.</p>
-
-            <h5 class="text-warning">5️⃣ Scenario: Product Launch with Tight Deadlines</h5>
-            <p><strong>Situation:</strong> New product launch scheduled in 3 weeks; backend system not ready.</p>
-            <p><strong>Task:</strong> Ensure successful launch without compromising quality.</p>
-            <p><strong>Action:</strong></p>
-            <ul>
-              <li>Identify MVP features required for launch.</li>
-              <li>Implement feature toggles to release incrementally.</li>
-              <li>Deploy automated testing pipelines and monitoring.</li>
-              <li>Communicate risk and mitigation plan to executives.</li>
-            </ul>
-            <p><strong>Result:</strong> Product launched successfully, minimal post-launch issues, and phased rollout
-              plan for remaining features.</p>
-
-            <h5 class="text-success">📌 Key Takeaways</h5>
-            <ul>
-              <li>Always combine technical expertise with business impact when answering scenarios.</li>
-              <li>Focus on structured decision-making and stakeholder communication.</li>
-              <li>Show ability to mitigate risks, lead teams, and deliver outcomes under pressure.</li>
-              <li>STAR format works best: clearly explain Situation, Task, Action, Result.</li>
-            </ul>
-
-          </div>
-        </div>
-      </div>
-
-      <div class="accordion" id="megaManagerDirectorPrep">
-
-        <!-- Section 1: Behavioral Questions -->
-        <div class="accordion-item">
-          <h2 class="accordion-header" id="headingBehavioral">
-            <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
-              data-bs-target="#behavioralSection" aria-expanded="false" aria-controls="behavioralSection">
-              💼 Behavioral Questions — Manager & Director Level
-            </button>
-          </h2>
-          <div id="behavioralSection" class="accordion-collapse collapse">
-            <div class="accordion-body">
-
-              <p class="highlight-yellow">
-                Questions designed to evaluate leadership, decision-making, and conflict resolution skills.
-              </p>
-
-              <h6 class="text-info">Q: Describe a time when your team missed a critical deadline. How did you handle it?
-              </h6>
-              <p><strong>Answer:</strong> Analyze reasons, communicate with stakeholders, re-prioritize tasks, implement
-                checkpoints, and conduct a retrospective for process improvements.</p>
-
-              <h6 class="text-info">Q: How do you handle conflicts between team members?</h6>
-              <p><strong>Answer:</strong> Listen to both sides, mediate, focus on project goals, provide coaching, or
-                adjust responsibilities to minimize friction.</p>
-
-              <h6 class="text-info">Q: Tell me about a situation where you had to make a difficult decision with
-                incomplete information.</h6>
-              <p><strong>Answer:</strong> Gather available data, weigh risks and benefits, consult stakeholders, make a
-                decision, document assumptions, track outcomes, and adjust strategy if needed.</p>
-
-              <h6 class="text-info">Q: Describe a time when you had to influence senior stakeholders to adopt your
-                proposal.</h6>
-              <p><strong>Answer:</strong> Present data-driven analysis, highlight ROI and risks, facilitate discussion,
-                provide phased plan, gain buy-in.</p>
-
-              <h6 class="text-info">Q: How do you foster a culture of accountability in your teams?</h6>
-              <p><strong>Answer:</strong> Set clear expectations, define measurable goals, encourage ownership, provide
-                feedback, recognize achievements.</p>
-
-              <h6 class="text-info">Q: Tell me about a project you were responsible for that failed. How did you handle
-                it?</h6>
-              <p><strong>Answer:</strong> Accept ownership, analyze root causes, communicate transparently, implement
-                corrective actions, share lessons learned.</p>
-
-            </div>
-          </div>
-        </div>
-
-        <!-- Section 2: Situational Questions -->
-        <div class="accordion-item">
-          <h2 class="accordion-header" id="headingSituational">
-            <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
-              data-bs-target="#situationalSection" aria-expanded="false" aria-controls="situationalSection">
-              ⚡ Situational Questions — Manager & Director Level
-            </button>
-          </h2>
-          <div id="situationalSection" class="accordion-collapse collapse">
-            <div class="accordion-body">
-
-              <p class="highlight-yellow">
-                Questions designed to evaluate problem-solving and decision-making under real-world scenarios.
-              </p>
-
-              <h6 class="text-info">Q: Your product feature is delayed, and stakeholders are unhappy. How do you manage
-                expectations?</h6>
-              <p><strong>Answer:</strong> Provide status update with reasons, impact, mitigation plan, propose
-                alternatives like phased releases, maintain trust.</p>
-
-              <h6 class="text-info">Q: A critical production issue arises outside business hours. How would you manage
-                your team?</h6>
-              <p><strong>Answer:</strong> Assign on-call engineers, guide as needed, communicate with stakeholders,
-                document incident, conduct post-mortem.</p>
-
-              <h6 class="text-info">Q: A new technology needs adoption, but the team is resistant. What do you do?</h6>
-              <p><strong>Answer:</strong> Explain benefits, provide training, start with pilot, involve team in
-                decision-making to gain buy-in.</p>
-
-              <h6 class="text-info">Q: Multiple teams are delivering features that conflict with each other. How do you
-                resolve it?</h6>
-              <p><strong>Answer:</strong> Facilitate backlog grooming sessions, prioritize by business value, define
-                integration guidelines, hold regular sync meetings.</p>
-
-              <h6 class="text-info">Q: You inherit a team with low morale. How do you turn it around?</h6>
-              <p><strong>Answer:</strong> Meet individually to understand concerns, celebrate quick wins, clarify goals,
-                provide development opportunities, use feedback and recognition.</p>
-
-              <h6 class="text-info">Q: One of your key projects is at risk of missing deadlines. How do you handle this
-                situation?</h6>
-              <p><strong>Answer:</strong> Assess scope, resources, and blockers, re-prioritize deliverables, communicate
-                risks, implement mitigation strategies, set daily checkpoints.</p>
-
-            </div>
-          </div>
-        </div>
-
-        <!-- Section 3: Agile & Leadership Questions -->
-        <div class="accordion-item">
-          <h2 class="accordion-header" id="headingAgile">
-            <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
-              data-bs-target="#agileSection" aria-expanded="false" aria-controls="agileSection">
-              🏃 Agile & Leadership Questions
-            </button>
-          </h2>
-          <div id="agileSection" class="accordion-collapse collapse">
-            <div class="accordion-body">
-
-              <p class="highlight-yellow">
-                Questions designed to evaluate Agile mindset, scaling, metrics, and leadership skills.
-              </p>
-
-              <h6 class="text-info">Q: How do you scale Agile practices across multiple teams?</h6>
-              <p><strong>Answer:</strong> Implement SAFe or LeSS if needed, ensure consistent ceremonies, align
-                objectives with OKRs, foster collaboration via shared backlog refinement and cross-team communication.
-              </p>
-
-              <h6 class="text-info">Q: How do you measure team productivity and success in Agile?</h6>
-              <p><strong>Answer:</strong> Monitor velocity, cycle time, defect rate, customer satisfaction; focus on
-                outcomes over output; use retrospectives for continuous improvement.</p>
-
-              <h6 class="text-info">Q: How do you handle scope creep in Agile projects?</h6>
-              <p><strong>Answer:</strong> Assess impact with Product Owner, prioritize against backlog, communicate
-                trade-offs, incorporate changes in future sprints.</p>
-
-              <h6 class="text-info">Q: How do you implement Agile in an organization that is currently Waterfall?</h6>
-              <p><strong>Answer:</strong> Start with pilot teams, train on Agile principles, implement iterative
-                planning, expand adoption gradually, align leadership on metrics and culture shift.</p>
-
-              <h6 class="text-info">Q: How do you ensure your teams are delivering value rather than just output?</h6>
-              <p><strong>Answer:</strong> Align sprint goals with KPIs, involve Product Owners in prioritization, track
-                customer satisfaction, demonstrate value via demos and feedback.</p>
-
-              <h6 class="text-info">Q: How do you handle remote or distributed teams in Agile?</h6>
-              <p><strong>Answer:</strong> Use video standups, asynchronous updates, clear documentation, collaboration
-                tools, visible dashboards, virtual team-building, and regular feedback.</p>
-
-            </div>
-          </div>
-        </div>
-
-        <!-- Section 4: Technical Scenario-Based Questions -->
-        <div class="accordion-item">
-          <h2 class="accordion-header" id="headingTechnicalScenarios">
-            <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
-              data-bs-target="#technicalScenarioSection" aria-expanded="false" aria-controls="technicalScenarioSection">
-              ⚙️ Technical Scenario-Based Questions
-            </button>
-          </h2>
-          <div id="technicalScenarioSection" class="accordion-collapse collapse">
-            <div class="accordion-body">
-
-              <p class="highlight-yellow">
-                Real-world scenarios to test decision-making, strategic thinking, and technical leadership.
-              </p>
-
-              <h6 class="text-info">Q: Multi-Million Users Service Performance</h6>
-              <p><strong>Situation:</strong> Checkout API latency spikes from 200ms to 20s under peak traffic.</p>
-              <p><strong>Action:</strong> Analyze metrics & tracing, optimize DB queries, scale services, implement
-                caching, communicate plan.</p>
-              <p><strong>Result:</strong> Latency reduced to ~250ms, SLA met, monitoring alerts established.</p>
-
-              <h6 class="text-info">Q: Security Breach Risk</h6>
-              <p><strong>Situation:</strong> Unprotected internal endpoint exposed risk of data leak.</p>
-              <p><strong>Action:</strong> Implement OAuth2 Client Credentials, rotate secrets, enable mTLS, audit logs,
-                educate teams.</p>
-              <p><strong>Result:</strong> Endpoint secured, risk minimized, incident report communicated.</p>
-
-              <h6 class="text-info">Q: Merging Two Teams Post-Acquisition</h6>
-              <p><strong>Situation:</strong> Two engineering teams from different companies with different cultures must
-                merge.</p>
-              <p><strong>Action:</strong> Conduct workshops, assign mentors, set unified KPIs, monitor morale.</p>
-              <p><strong>Result:</strong> Teams integrated, collaboration improved, delivery maintained.</p>
-
-              <h6 class="text-info">Q: Cloud Cost Optimization</h6>
-              <p><strong>Situation:</strong> Monthly cloud expenses increasing 40% YoY.</p>
-              <p><strong>Action:</strong> Analyze usage, implement auto-scaling, enforce tagging & budgeting.</p>
-              <p><strong>Result:</strong> Costs reduced 25%, resources optimized, anomaly alerts configured.</p>
-
-              <h6 class="text-info">Q: Product Launch with Tight Deadlines</h6>
-              <p><strong>Situation:</strong> Backend system not ready for launch in 3 weeks.</p>
-              <p><strong>Action:</strong> Identify MVP, implement feature toggles, automated testing & monitoring,
-                communicate risk.</p>
-              <p><strong>Result:</strong> Product launched successfully, minimal issues, phased rollout plan executed.
-              </p>
-
-            </div>
-          </div>
-        </div>
-
-      </div>
       <div class="accordion" id="megaTechLeadershipPrep">
 
         <!-- Section 1: Microservices & Security -->
