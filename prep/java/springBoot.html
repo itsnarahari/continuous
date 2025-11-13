@@ -243,6 +243,244 @@ class EncryptionY implements Encryption {
   </div>
 </div>
 <div class="accordion-item">
+  <h2 class="accordion-header" id="q-spring-security-threadlocal-h">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q-spring-security-threadlocal">
+      How Spring Boot & Spring Security hold current user details when multiple users hit same server?
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+
+  <div id="q-spring-security-threadlocal" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Problem Statement</h5>
+      <ul>
+        <li>Multiple users are sending concurrent requests to the same Spring Boot server.</li>
+        <li>Still, each user gets their **own authentication and user details**, isolated from others.</li>
+        <li>How does Spring Security handle this safely?</li>
+      </ul>
+
+      <h5 class="text-info">📘 Core Concept – ThreadLocal & SecurityContext</h5>
+      <ul>
+        <li>Spring Security stores the currently authenticated user’s details in a thread-safe context called <code>SecurityContext</code>.</li>
+        <li>This context is held in a <code>ThreadLocal</code> variable by <code>SecurityContextHolder</code>.</li>
+        <li>Since each HTTP request is processed in a separate thread (in most servlet containers like Tomcat), each user request has its **own SecurityContext**.</li>
+      </ul>
+
+      <pre class="language-java"><code>
+// Inside Spring Security
+public class SecurityContextHolder {
+    private static final ThreadLocal&lt;SecurityContext&gt; contextHolder = new ThreadLocal&lt;&gt;();
+
+    public static SecurityContext getContext() {
+        return contextHolder.get();
+    }
+
+    public static void setContext(SecurityContext context) {
+        contextHolder.set(context);
+    }
+
+    public static void clearContext() {
+        contextHolder.remove();
+    }
+}
+</code></pre>
+
+      <h5 class="text-info">📘 How Request Flow Works</h5>
+      <ol>
+        <li><b>1️⃣ User sends a request</b> — e.g., calling <code>/api/orders</code> with JWT or session cookie.</li>
+        <li><b>2️⃣ Security Filter Chain</b> — request passes through filters like:
+          <ul>
+            <li><code>UsernamePasswordAuthenticationFilter</code></li>
+            <li><code>JwtAuthenticationFilter</code> (custom)</li>
+            <li><code>SecurityContextPersistenceFilter</code></li>
+          </ul>
+        </li>
+        <li><b>3️⃣ Authentication</b> — user credentials are verified (JWT decoded or DB lookup).</li>
+        <li><b>4️⃣ SecurityContext Creation</b> — Spring creates a <code>SecurityContext</code> and stores the <code>Authentication</code> object.</li>
+        <li><b>5️⃣ SecurityContextHolder.setContext()</b> — the context is stored in <code>ThreadLocal</code> for that request’s thread.</li>
+        <li><b>6️⃣ Controller executes</b> — any call to <code>SecurityContextHolder.getContext().getAuthentication()</code> returns current user.</li>
+        <li><b>7️⃣ Request completes</b> — the <code>SecurityContextPersistenceFilter</code> clears the ThreadLocal to avoid leakage to next request.</li>
+      </ol>
+
+      <h5 class="text-info">📘 Example: Getting Current User</h5>
+      <pre class="language-java"><code>
+@GetMapping("/profile")
+public ResponseEntity&lt;UserDetails&gt; getProfile() {
+    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    return ResponseEntity.ok((UserDetails) auth.getPrincipal());
+}
+</code></pre>
+
+      <h5 class="text-info">📘 Multiple Users Scenario</h5>
+      <ul>
+        <li>Each incoming request is handled by a different thread (Tomcat thread pool).</li>
+        <li>Each thread has its **own ThreadLocal SecurityContext**.</li>
+        <li>Even though all requests hit the same JVM and same app, user data is isolated per thread.</li>
+      </ul>
+
+      <h5 class="text-info">📘 What About Async / @Async Calls?</h5>
+      <ul>
+        <li><code>ThreadLocal</code> is not automatically propagated to new threads.</li>
+        <li>Spring provides <code>DelegatingSecurityContextRunnable</code> and <code>DelegatingSecurityContextExecutorService</code> to pass SecurityContext to async threads.</li>
+      </ul>
+
+      <pre class="language-java"><code>
+executor.submit(new DelegatingSecurityContextRunnable(() -> {
+    // This thread will have same SecurityContext as caller
+}));
+</code></pre>
+
+      <h5 class="text-info">📘 Key Points</h5>
+      <ul>
+        <li><b>SecurityContextHolder:</b> holds Authentication info in ThreadLocal.</li>
+        <li><b>Per-request isolation:</b> each HTTP request runs in its own thread.</li>
+        <li><b>Filters:</b> handle storing/clearing security context at request boundaries.</li>
+        <li><b>Async Safety:</b> use <code>DelegatingSecurityContext*</code> wrappers.</li>
+      </ul>
+
+      <h5 class="text-info">📘 Analogy</h5>
+      <ul>
+        <li>Think of the server as a hotel (Tomcat) with many rooms (threads).</li>
+        <li>Each guest (user) gets their own locker (ThreadLocal) for storing keys (SecurityContext).</li>
+        <li>When they leave, the locker is cleaned for the next guest — preventing leakage.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="q-spring-security-threadlocal-h">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q-spring-security-threadlocal">
+      How Spring Boot & Spring Security hold current user details when multiple users hit same server?
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+
+  <div id="q-spring-security-threadlocal" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📘 Spring Security Request Flow Diagram</h5>
+      <p>The below diagram shows how the request moves through Spring Security filters, 
+      controller, and ThreadLocal handling per user request.</p>
+
+      <!-- 🖼️ Add your image here -->
+      <img src="src/securityChain.png"
+           alt="Spring Security Request Flow Diagram"
+           class="img-fluid rounded shadow-sm my-3" />
+
+      <h5 class="text-info">📘 Explanation</h5>
+      <ul>
+        <li>Each user request passes through multiple security filters (JWT, Authentication, etc.).</li>
+        <li>The authenticated user info is stored in <code>SecurityContextHolder</code>’s ThreadLocal.</li>
+        <li>Each request thread has its own SecurityContext, ensuring user isolation.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header" id="q-spring-security-architecture-h">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q-spring-security-architecture">
+      Spring Security Architecture – Internal Working Explained
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+
+  <div id="q-spring-security-architecture" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Overview</h5>
+      <ul>
+        <li>Spring Security is a **filter-based** framework that intercepts every HTTP request before it reaches your controller.</li>
+        <li>It handles **authentication**, **authorization**, and **context propagation** for secure access control.</li>
+        <li>Internally, it relies heavily on the <code>SecurityContextHolder</code> and <code>AuthenticationManager</code> architecture.</li>
+      </ul>
+
+      <h5 class="text-info">📘 High-Level Components</h5>
+      <ul>
+        <li><b>1️⃣ Security Filter Chain:</b> a set of filters that process every incoming request.</li>
+        <li><b>2️⃣ AuthenticationManager:</b> validates credentials and returns an <code>Authentication</code> object.</li>
+        <li><b>3️⃣ AuthenticationProvider(s):</b> perform actual authentication (e.g., check DB, LDAP, JWT, etc.).</li>
+        <li><b>4️⃣ SecurityContextHolder:</b> stores the authenticated user details per thread.</li>
+        <li><b>5️⃣ AccessDecisionManager:</b> decides if the user can access a given resource (authorization).</li>
+        <li><b>6️⃣ UserDetailsService:</b> loads user information from DB or external source.</li>
+      </ul>
+
+      <h5 class="text-info">📘 Request Flow – Step by Step</h5>
+      <ol>
+        <li><b>1️⃣ Request Intercepted:</b> Every HTTP request goes through Spring’s <code>DelegatingFilterProxy</code>.</li>
+        <li><b>2️⃣ Security Filter Chain:</b> The request passes through multiple filters in order, such as:
+          <ul>
+            <li><code>SecurityContextPersistenceFilter</code></li>
+            <li><code>UsernamePasswordAuthenticationFilter</code> or <code>JwtAuthenticationFilter</code></li>
+            <li><code>ExceptionTranslationFilter</code></li>
+            <li><code>FilterSecurityInterceptor</code></li>
+          </ul>
+        </li>
+        <li><b>3️⃣ Authentication:</b> Credentials are extracted and validated using <code>AuthenticationManager</code> and <code>AuthenticationProvider</code>.</li>
+        <li><b>4️⃣ SecurityContext Creation:</b> Upon successful authentication, Spring creates a <code>SecurityContext</code> holding the user’s <code>Authentication</code> object.</li>
+        <li><b>5️⃣ Controller Access:</b> Now the request reaches your controller — you can access the current user via <code>SecurityContextHolder.getContext().getAuthentication()</code>.</li>
+        <li><b>6️⃣ Authorization:</b> When accessing secured endpoints, <code>AccessDecisionManager</code> checks roles/authorities.</li>
+        <li><b>7️⃣ Cleanup:</b> After response, <code>SecurityContextPersistenceFilter</code> clears the context to prevent memory leaks.</li>
+      </ol>
+
+      <h5 class="text-info">🧩 Diagram – Spring Security Architecture</h5>
+      <p>The diagram below shows how request flows through filters, authentication managers, and the controller:</p>
+
+      <img src="A_flowchart_in_the_image_illustrates_the_request_h.png"
+           alt="Spring Security Architecture Flow"
+           class="img-fluid rounded shadow-sm my-3" />
+
+      <h5 class="text-info">📘 Example Code (JWT-Based Authentication)</h5>
+      <pre class="language-java"><code>
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+
+  @Bean
+  public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    return http
+      .csrf().disable()
+      .authorizeHttpRequests(auth -> auth
+        .requestMatchers("/api/public/**").permitAll()
+        .anyRequest().authenticated()
+      )
+      .addFilterBefore(new JwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
+      .build();
+  }
+}
+</code></pre>
+
+      <h5 class="text-info">📘 Key Points</h5>
+      <ul>
+        <li>Spring Security = **chain of filters** + **thread-local context**.</li>
+        <li>Each request → new thread → isolated SecurityContext.</li>
+        <li>Authentication (who you are) → Authorization (what you can do).</li>
+        <li>SecurityContext is cleared after each request to avoid leakage.</li>
+      </ul>
+
+      <h5 class="text-info">📘 Analogy</h5>
+      <ul>
+        <li>Think of Spring Security as a **multi-stage airport security check**:
+          <ul>
+            <li>Each filter = a checkpoint (passport check, baggage scan, boarding pass validation).</li>
+            <li>Only after passing all checks do you reach your gate (controller).</li>
+            <li>Security tags (SecurityContext) travel with you through the process, but are removed after flight (response).</li>
+          </ul>
+        </li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+
+<div class="accordion-item">
   <h2 class="accordion-header" id="q-transactions-h">
     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
       data-bs-target="#q-transactions">

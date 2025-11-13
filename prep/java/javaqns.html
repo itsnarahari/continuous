@@ -512,6 +512,1082 @@ System.out.println(test);
       </div>
 
       <div class="accordion-item">
+  <h2 class="accordion-header" id="q-trycatch-circuit-h">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q-trycatch-circuit">
+      Java Try-Catch vs Circuit Breaker
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+
+  <div id="q-trycatch-circuit" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Problem Statement</h5>
+      <ul>
+        <li>You are calling an **external service or database** that may fail intermittently.</li>
+        <li>You can handle exceptions using <code>try-catch</code>, but repeated failures can cause **system overload or cascading failures**.</li>
+        <li>To prevent that, you can use a **Circuit Breaker** pattern.</li>
+      </ul>
+
+      <h5 class="text-info">📘 Try-Catch Approach (Traditional Error Handling)</h5>
+      <pre class="language-java"><code>
+public class PaymentService {
+
+    public String callPaymentAPI() {
+        try {
+            // Simulate API call
+            if (Math.random() > 0.7) {
+                throw new RuntimeException("Payment API failed!");
+            }
+            return "✅ Payment Success!";
+        } catch (Exception e) {
+            System.out.println("❌ Error calling payment API: " + e.getMessage());
+            return "❌ Payment Failed! Please retry.";
+        }
+    }
+}
+
+public class App {
+    public static void main(String[] args) {
+        PaymentService service = new PaymentService();
+        for (int i = 0; i < 5; i++) {
+            System.out.println(service.callPaymentAPI());
+        }
+    }
+}</code></pre>
+
+      <ul>
+        <li><b>✅ Pros:</b> Simple and built into Java.</li>
+        <li><b>❌ Cons:</b> Keeps retrying even when system is already failing.</li>
+        <li><b>❌ Issue:</b> No mechanism to “pause” calls when downstream service is continuously failing.</li>
+      </ul>
+
+      <h5 class="text-info">📘 Circuit Breaker Approach (Resilient Design)</h5>
+      <ul>
+        <li>Uses a **state machine** with three states — <b>Closed → Open → Half-Open</b>.</li>
+        <li>Stops calling the failing service for a while after threshold failures.</li>
+        <li>Automatically tries again after a cooldown period.</li>
+      </ul>
+
+      <pre class="language-java"><code>
+// Example using Resilience4j CircuitBreaker
+
+import io.github.resilience4j.circuitbreaker.*;
+import java.util.function.Supplier;
+
+public class PaymentServiceWithCircuitBreaker {
+
+    private final CircuitBreaker circuitBreaker;
+
+    public PaymentServiceWithCircuitBreaker() {
+        CircuitBreakerConfig config = CircuitBreakerConfig.custom()
+                .failureRateThreshold(50)        // open if 50% calls fail
+                .waitDurationInOpenState(java.time.Duration.ofSeconds(5))
+                .slidingWindowSize(5)
+                .build();
+
+        circuitBreaker = CircuitBreaker.of("paymentService", config);
+    }
+
+    public String callPaymentAPI() {
+        Supplier<String> decoratedSupplier = CircuitBreaker
+            .decorateSupplier(circuitBreaker, this::makePaymentCall);
+
+        try {
+            return decoratedSupplier.get();
+        } catch (Exception e) {
+            return "⚠️ CircuitBreaker Blocked or Failed: " + e.getMessage();
+        }
+    }
+
+    private String makePaymentCall() {
+        if (Math.random() > 0.7) {
+            throw new RuntimeException("Payment API failed!");
+        }
+        return "✅ Payment Success!";
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        PaymentServiceWithCircuitBreaker service = new PaymentServiceWithCircuitBreaker();
+
+        for (int i = 0; i < 15; i++) {
+            System.out.println(service.callPaymentAPI());
+            Thread.sleep(1000);
+        }
+    }
+}</code></pre>
+
+      <h5 class="text-info">📊 State Transitions</h5>
+      <ul>
+        <li><b>Closed:</b> All calls allowed. If failures exceed threshold, move to <b>Open</b>.</li>
+        <li><b>Open:</b> No calls allowed for a cooldown period (prevents cascading failures).</li>
+        <li><b>Half-Open:</b> Allows a few trial calls to test if service is back.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Key Differences</h5>
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>Aspect</th>
+            <th>Try-Catch</th>
+            <th>Circuit Breaker</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Error Handling</td>
+            <td>Catches exceptions locally</td>
+            <td>Monitors and manages repeated failures globally</td>
+          </tr>
+          <tr>
+            <td>Retry Logic</td>
+            <td>No built-in retry or cooldown</td>
+            <td>Has cool-down and recovery mechanism</td>
+          </tr>
+          <tr>
+            <td>System Load</td>
+            <td>Still makes requests during failure</td>
+            <td>Stops calling failing service temporarily</td>
+          </tr>
+          <tr>
+            <td>Use Case</td>
+            <td>Single operation failure</td>
+            <td>External API or microservice stability</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h5 class="text-info">📘 Analogy</h5>
+      <ul>
+        <li><b>Try-Catch:</b> Like a seatbelt — protects you when there’s an accident, but doesn’t prevent one.</li>
+        <li><b>Circuit Breaker:</b> Like an electrical fuse — it stops the flow to prevent damage when failures are frequent.</li>
+      </ul>
+
+      <h5 class="text-info">📌 Summary</h5>
+      <ul>
+        <li>Use <code>try-catch</code> for handling **individual errors**.</li>
+        <li>Use <code>Circuit Breaker</code> for **resilience** in distributed or microservice systems.</li>
+        <li>Libraries: <code>Resilience4j</code>, <code>Hystrix</code>, <code>Spring Cloud Circuit Breaker</code>.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="q-async-thread-h">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q-async-thread">
+      Async vs Independent Calls vs Threads in Java / Microservices
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+
+  <div id="q-async-thread" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Problem Statement</h5>
+      <ul>
+        <li>You want to execute multiple tasks — e.g., calling 3 different microservices (User, Payment, Notification).</li>
+        <li>How do you handle them efficiently? Should you use <b>Threads</b>, <b>Async calls</b>, or just treat them as <b>Independent</b> services?</li>
+      </ul>
+
+      <hr>
+      <h5 class="text-info">1️⃣ Independent Calls</h5>
+      <ul>
+        <li>Each microservice runs in its own process — no shared memory or threading dependency.</li>
+        <li>Completely isolated — one service failing doesn’t affect the others.</li>
+      </ul>
+
+      <h6>💡 Example:</h6>
+      <pre class="language-java"><code>
+// Each microservice runs separately
+
+// Service A → OrderService
+// Service B → PaymentService
+// Service C → NotificationService
+
+// Each service has its own thread pool, DB, and logic
+// Communication happens via REST/Kafka (network level)
+</code></pre>
+
+      <ul>
+        <li><b>✅ Pros:</b> High isolation, easy scaling, independent deployment.</li>
+        <li><b>❌ Cons:</b> Communication overhead (network calls), eventual consistency.</li>
+      </ul>
+
+      <h6>🧠 Analogy:</h6>
+      <ul>
+        <li>Like different departments (HR, Finance, IT) in a company — all independent but communicate via emails (API calls).</li>
+      </ul>
+
+      <hr>
+      <h5 class="text-info">2️⃣ Threads (Low-level Concurrency)</h5>
+      <ul>
+        <li>Each thread executes a task in parallel within the same application (process).</li>
+        <li>Used for CPU or I/O parallelism inside one service.</li>
+      </ul>
+
+      <h6>💡 Example:</h6>
+      <pre class="language-java"><code>
+public class ThreadExample {
+    public static void main(String[] args) {
+        Thread t1 = new Thread(() -> System.out.println("Task 1 - Fetch user data"));
+        Thread t2 = new Thread(() -> System.out.println("Task 2 - Fetch payment data"));
+
+        t1.start();
+        t2.start();
+    }
+}
+</code></pre>
+
+      <ul>
+        <li><b>✅ Pros:</b> True parallel execution within one service.</li>
+        <li><b>❌ Cons:</b> Manual thread management (join, interrupt, pool exhaustion).</li>
+        <li><b>❌ Not scalable</b> for large workloads — limited by JVM thread count.</li>
+      </ul>
+
+      <h6>🧠 Analogy:</h6>
+      <ul>
+        <li>Like having multiple workers in the same office doing different tasks simultaneously.</li>
+      </ul>
+
+      <hr>
+      <h5 class="text-info">3️⃣ Async Calls (High-level Abstraction using Threads)</h5>
+      <ul>
+        <li>Asynchronous = non-blocking — caller does not wait for task to finish.</li>
+        <li>Built on top of threads (using thread pool / event loop).</li>
+      </ul>
+
+      <h6>💡 Example using CompletableFuture:</h6>
+      <pre class="language-java"><code>
+import java.util.concurrent.*;
+
+public class AsyncExample {
+    public static void main(String[] args) throws Exception {
+        CompletableFuture<String> user = CompletableFuture.supplyAsync(() -> {
+            return "👤 User data loaded";
+        });
+
+        CompletableFuture<String> payment = CompletableFuture.supplyAsync(() -> {
+            return "💳 Payment info loaded";
+        });
+
+        CompletableFuture<Void> all = CompletableFuture.allOf(user, payment);
+        all.join();
+
+        System.out.println(user.get());
+        System.out.println(payment.get());
+    }
+}
+</code></pre>
+
+      <ul>
+        <li><b>✅ Pros:</b> Non-blocking, easier than raw threads, uses managed thread pool.</li>
+        <li><b>✅ Efficient:</b> Executes multiple I/O operations in parallel (API/database calls).</li>
+        <li><b>❌ Cons:</b> Still within the same service → not independent.</li>
+      </ul>
+
+      <h6>🧠 Analogy:</h6>
+      <ul>
+        <li>Like giving two workers their tasks at once — you don’t wait for one to finish before assigning the next.</li>
+      </ul>
+
+      <hr>
+      <h5 class="text-info">📊 Comparison Table</h5>
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>Aspect</th>
+            <th>Independent Service</th>
+            <th>Thread</th>
+            <th>Async</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Scope</td>
+            <td>Across microservices</td>
+            <td>Within same process</td>
+            <td>Within same process</td>
+          </tr>
+          <tr>
+            <td>Isolation</td>
+            <td>Complete (different JVMs)</td>
+            <td>Shared memory</td>
+            <td>Shared memory</td>
+          </tr>
+          <tr>
+            <td>Blocking</td>
+            <td>Independent</td>
+            <td>Blocking unless managed</td>
+            <td>Non-blocking</td>
+          </tr>
+          <tr>
+            <td>Implementation</td>
+            <td>REST, Kafka, gRPC</td>
+            <td>Thread / ExecutorService</td>
+            <td>CompletableFuture / @Async</td>
+          </tr>
+          <tr>
+            <td>Use Case</td>
+            <td>Microservice isolation</td>
+            <td>Parallel work inside service</td>
+            <td>Concurrent I/O or API calls</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <hr>
+      <h5 class="text-info">📘 Summary</h5>
+      <ul>
+        <li><b>Threads:</b> Raw low-level concurrency (you control threads).</li>
+        <li><b>Async:</b> High-level abstraction over threads — easier, non-blocking.</li>
+        <li><b>Independent:</b> Entirely separate services/processes — communicate via APIs/events.</li>
+      </ul>
+
+      <h6>✅ Typical Modern Stack:</h6>
+      <ul>
+        <li>Use <code>@Async</code> or <code>CompletableFuture</code> for parallel work inside a service.</li>
+        <li>Use <code>Kafka</code>, <code>REST</code>, or <code>gRPC</code> for independent microservices.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="q-idempotency-h">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q-idempotency">
+      Idempotency Handling in Spring Boot Microservices
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+
+  <div id="q-idempotency" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Problem Statement</h5>
+      <ul>
+        <li>In distributed systems or REST APIs, **duplicate requests** can occur due to network retries, browser refreshes, or client timeouts.</li>
+        <li>We must ensure that **replaying the same request does not change the system state twice.**</li>
+        <li>This property is called <b>Idempotency</b>.</li>
+      </ul>
+
+      <h5 class="text-info">📘 What is Idempotency?</h5>
+      <ul>
+        <li>An operation is <b>idempotent</b> if performing it multiple times has the **same effect as performing it once.**</li>
+      </ul>
+
+      <pre><code>
+// Example
+DELETE /orders/101  → deletes order 101 once
+DELETE /orders/101  → same result if called again (no new effect)
+
+// ✅ Idempotent: GET, PUT, DELETE
+// ❌ Non-idempotent: POST (creates new data)
+</code></pre>
+
+      <h5 class="text-info">📘 Example Scenario</h5>
+      <ul>
+        <li>Client sends <code>POST /payments</code> twice due to timeout.</li>
+        <li>Without idempotency, two payment records may be created — **double charge problem** 💸.</li>
+        <li>With idempotency, the second request is detected as a duplicate and ignored.</li>
+      </ul>
+
+      <hr>
+      <h5 class="text-info">1️⃣ Idempotency Using <code>Idempotency-Key</code> Header</h5>
+      <ul>
+        <li>Client sends a unique <b>Idempotency-Key</b> with each request (UUID or hash).</li>
+        <li>Server stores this key and response in a cache or DB.</li>
+        <li>If the same key is received again → server returns the same response without reprocessing.</li>
+      </ul>
+
+      <h6>💡 Example:</h6>
+      <pre class="language-java"><code>
+@RestController
+@RequiredArgsConstructor
+public class PaymentController {
+
+    private final IdempotencyService idempotencyService;
+
+    @PostMapping("/payments")
+    public ResponseEntity&lt;PaymentResponse&gt; makePayment(
+        @RequestHeader("Idempotency-Key") String key,
+        @RequestBody PaymentRequest request) {
+
+        // Check if already processed
+        Optional&lt;PaymentResponse&gt; cached = idempotencyService.getCachedResponse(key);
+        if (cached.isPresent()) {
+            return ResponseEntity.ok(cached.get());
+        }
+
+        // Process the payment normally
+        PaymentResponse response = processPayment(request);
+
+        // Store result
+        idempotencyService.storeResponse(key, response);
+
+        return ResponseEntity.ok(response);
+    }
+}
+</code></pre>
+
+      <h6>📘 Service Example:</h6>
+      <pre class="language-java"><code>
+@Service
+public class IdempotencyService {
+
+    private final Map&lt;String, PaymentResponse&gt; store = new ConcurrentHashMap&lt;&gt;();
+
+    public Optional&lt;PaymentResponse&gt; getCachedResponse(String key) {
+        return Optional.ofNullable(store.get(key));
+    }
+
+    public void storeResponse(String key, PaymentResponse response) {
+        store.putIfAbsent(key, response);
+    }
+}
+</code></pre>
+
+      <ul>
+        <li><b>✅ Pros:</b> Simple and reliable.</li>
+        <li><b>✅ Works with REST and message-based systems.</li>
+        <li><b>❌ Cons:</b> Needs centralized cache (like Redis) for horizontal scaling.</li>
+      </ul>
+
+      <hr>
+      <h5 class="text-info">2️⃣ Idempotency Using Database Constraints</h5>
+      <ul>
+        <li>For example, make a column like <code>requestId</code> unique in DB.</li>
+        <li>If same request comes twice → DB rejects duplicate insert automatically.</li>
+      </ul>
+
+      <pre class="language-java"><code>
+@Entity
+@Table(name = "payment", uniqueConstraints = @UniqueConstraint(columnNames = "requestId"))
+public class PaymentEntity {
+    @Id @GeneratedValue
+    private Long id;
+    private String requestId;  // same as Idempotency-Key
+    private Double amount;
+    private String status;
+}
+</code></pre>
+
+      <ul>
+        <li>✅ Simple and transactional — avoids race conditions.</li>
+        <li>❌ Only works within the same service/database boundary.</li>
+      </ul>
+
+      <hr>
+      <h5 class="text-info">3️⃣ Idempotency in Message Queues (Kafka / RabbitMQ)</h5>
+      <ul>
+        <li>When microservices communicate asynchronously, messages can be duplicated.</li>
+        <li>Use a unique <code>messageId</code> and maintain a log of processed IDs.</li>
+      </ul>
+
+      <pre class="language-java"><code>
+@KafkaListener(topics = "payment-topic")
+public void consume(PaymentEvent event) {
+    if (processedIds.contains(event.getMessageId())) {
+        log.info("Duplicate event ignored: {}", event.getMessageId());
+        return;
+    }
+    processPayment(event);
+    processedIds.add(event.getMessageId());
+}
+</code></pre>
+
+      <hr>
+      <h5 class="text-info">📘 Comparison Table</h5>
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th>Where Applied</th>
+            <th>How It Works</th>
+            <th>Best For</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Idempotency-Key Header</td>
+            <td>HTTP APIs</td>
+            <td>Store key-response pair</td>
+            <td>Payment APIs, External calls</td>
+          </tr>
+          <tr>
+            <td>Unique DB Constraint</td>
+            <td>Database</td>
+            <td>Reject duplicate inserts</td>
+            <td>Internal services, transactional logic</td>
+          </tr>
+          <tr>
+            <td>Message ID Log</td>
+            <td>Event-driven systems</td>
+            <td>Ignore re-processed messages</td>
+            <td>Kafka, RabbitMQ, Event sourcing</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <hr>
+      <h5 class="text-info">📘 Analogy</h5>
+      <ul>
+        <li><b>Without Idempotency:</b> Like clicking “Pay Now” twice and being charged twice 💳💳.</li>
+        <li><b>With Idempotency:</b> System detects same transaction ID and charges only once ✅.</li>
+      </ul>
+
+      <hr>
+      <h5 class="text-info">📌 Summary</h5>
+      <ul>
+        <li>Idempotency ensures **safe retries** and **data consistency** in microservices.</li>
+        <li>Spring Boot handles this via:</li>
+        <ul>
+          <li><b>Idempotency-Key</b> headers (REST level)</li>
+          <li><b>Unique constraints</b> (DB level)</li>
+          <li><b>Message deduplication</b> (Event level)</li>
+        </ul>
+        <li>Tools like <b>Redis</b> or <b>Hazelcast</b> are often used to store idempotency keys for distributed apps.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="q-streams-rules">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#streams-rules">
+      Java Streams — Non-Interference & Statelessness
+      <span class="badge bg-primary ms-2">Java 8 Core Concept</span>
+    </button>
+  </h2>
+
+  <div id="streams-rules" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📘 Overview</h5>
+      <p>Java Streams are designed for **functional-style**, **parallelizable**, and **side-effect-free** data processing.  
+      To achieve this, the Stream API enforces two key rules:</p>
+
+      <ol>
+        <li><b>Non-Interference</b> — Stream operations must not modify the source.</li>
+        <li><b>Statelessness</b> — Each operation should not depend on mutable state outside its scope.</li>
+      </ol>
+
+      <hr>
+
+      <h5 class="text-info">1️⃣ Non-Interference</h5>
+      <ul>
+        <li>Means the **data source must not be modified** during the stream pipeline execution.</li>
+        <li>Stream operations should **not interfere** with the source they are iterating over.</li>
+        <li>Otherwise, results are **unpredictable** and may throw exceptions (especially with parallel streams).</li>
+      </ul>
+
+      <pre class="language-java"><code>
+List&lt;String&gt; names = new ArrayList&lt;&gt;(List.of("Hari", "Ravi", "Kiran"));
+
+// ❌ Bad: modifying source during stream processing
+names.stream()
+     .peek(n -> {
+         if (n.equals("Ravi")) names.add("Suresh"); // causes ConcurrentModificationException
+     })
+     .forEach(System.out::println);
+</code></pre>
+
+      <h6>💡 Correct way (Non-interfering):</h6>
+      <pre class="language-java"><code>
+List&lt;String&gt; names = new ArrayList&lt;&gt;(List.of("Hari", "Ravi", "Kiran"));
+names.stream()
+     .map(String::toUpperCase)
+     .forEach(System.out::println);
+
+// ✅ Source not modified during processing
+</code></pre>
+
+      <ul>
+        <li><b>Why:</b> Stream may use internal iterators and parallel threads — concurrent modification breaks the contract.</li>
+        <li><b>Rule:</b> Do not mutate or structurally modify the collection once a stream is created from it.</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-info">2️⃣ Statelessness</h5>
+      <ul>
+        <li>Each element’s processing in a stream operation should be **independent** of others.</li>
+        <li>Stream intermediate operations (like <code>map()</code>, <code>filter()</code>, <code>flatMap()</code>) must not depend on shared mutable state.</li>
+      </ul>
+
+      <pre class="language-java"><code>
+List&lt;Integer&gt; list = List.of(1, 2, 3, 4, 5);
+List&lt;Integer&gt; results = new ArrayList&lt;&gt;();
+
+// ❌ Violates statelessness — modifies external mutable state
+list.parallelStream()
+    .map(x -> {
+        results.add(x * 2); // thread-unsafe, causes race condition
+        return x * 2;
+    })
+    .forEach(System.out::println);
+</code></pre>
+
+      <h6>💡 Correct (Stateless):</h6>
+      <pre class="language-java"><code>
+List&lt;Integer&gt; doubled = list.parallelStream()
+                             .map(x -> x * 2)
+                             .collect(Collectors.toList());
+
+// ✅ Each element processed independently
+</code></pre>
+
+      <ul>
+        <li><b>Why:</b> Stateless operations are required for **safe parallelism**.</li>
+        <li><b>Rule:</b> Do not use mutable variables or shared lists inside lambdas used in stream operations.</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-info">📘 Quick Comparison</h5>
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>Concept</th>
+            <th>Definition</th>
+            <th>Example of Violation</th>
+            <th>Why Important</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Non-Interference</td>
+            <td>Stream ops shouldn’t modify the source</td>
+            <td>Adding/removing elements from list during streaming</td>
+            <td>Ensures predictable results</td>
+          </tr>
+          <tr>
+            <td>Statelessness</td>
+            <td>Each element processed independently</td>
+            <td>Updating shared variable in map/filter</td>
+            <td>Allows safe parallel processing</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <hr>
+
+      <h5 class="text-info">📘 Interview Summary</h5>
+      <ul>
+        <li><b>Non-Interference:</b> Stream pipeline should not alter or depend on mutable source.</li>
+        <li><b>Statelessness:</b> Each element’s transformation must not rely on mutable or shared state.</li>
+        <li>Both ensure the stream behaves **deterministically** and supports **parallel execution**.</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-info">📘 Real-life Analogy</h5>
+      <ul>
+        <li><b>Non-Interference:</b> You can’t keep adding items to a conveyor belt while it’s being processed — it breaks the flow.</li>
+        <li><b>Statelessness:</b> Each item on the belt is handled independently by a worker; workers don’t depend on others’ progress.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="q-stream-duplicate-map">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#stream-duplicate-map">
+      Java Streams – Collectors.toMap() Duplicate Key Issue
+      <span class="badge bg-warning text-dark ms-2">Java 8 Stream</span>
+    </button>
+  </h2>
+
+  <div id="stream-duplicate-map" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Problem Statement</h5>
+      <ul>
+        <li>You are collecting a <code>List&lt;Book&gt;</code> into a <code>Map</code> using <code>Collectors.toMap()</code>.</li>
+        <li>Two books have the same <code>isbn</code>, which causes a **duplicate key conflict**.</li>
+      </ul>
+
+      <pre class="language-java"><code>
+record Book(String isbn, String title) {}
+
+List&lt;Book&gt; books = List.of(
+    new Book("1", "A"),
+    new Book("1", "A (Second Edition)")
+);
+
+Map&lt;String, String&gt; byIsbn = books.stream()
+    .collect(Collectors.toMap(Book::isbn, Book::title));
+</code></pre>
+
+      <h5 class="text-info">📘 What Happens</h5>
+      <ul>
+        <li>When <code>Collectors.toMap()</code> encounters the second book with the same key (<code>"1"</code>), it throws:</li>
+      </ul>
+
+      <pre class="language-plaintext"><code>
+java.lang.IllegalStateException: Duplicate key 1 
+(attempted merging values A and A (Second Edition))
+</code></pre>
+
+      <ul>
+        <li>Because by default, <code>Collectors.toMap()</code> does **not allow duplicate keys**.</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-info">✅ Solution – Provide a Merge Function</h5>
+      <p>You can specify how to handle key collisions by adding a **merge function** as the third argument.</p>
+
+      <h6>1️⃣ Keep the New Value</h6>
+      <pre class="language-java"><code>
+Map&lt;String, String&gt; byIsbn = books.stream()
+    .collect(Collectors.toMap(
+        Book::isbn,
+        Book::title,
+        (oldVal, newVal) -> newVal  // overwrite old with new
+    ));
+</code></pre>
+      <p><b>Result:</b> <code>{1=A (Second Edition)}</code></p>
+
+      <h6>2️⃣ Keep the Old Value</h6>
+      <pre class="language-java"><code>
+Map&lt;String, String&gt; byIsbn = books.stream()
+    .collect(Collectors.toMap(
+        Book::isbn,
+        Book::title,
+        (oldVal, newVal) -> oldVal  // ignore duplicate
+    ));
+</code></pre>
+      <p><b>Result:</b> <code>{1=A}</code></p>
+
+      <h6>3️⃣ Merge Both Values</h6>
+      <pre class="language-java"><code>
+Map&lt;String, String&gt; byIsbn = books.stream()
+    .collect(Collectors.toMap(
+        Book::isbn,
+        Book::title,
+        (oldVal, newVal) -> oldVal + " / " + newVal
+    ));
+</code></pre>
+      <p><b>Result:</b> <code>{1=A / A (Second Edition)}</code></p>
+
+      <hr>
+
+      <h5 class="text-info">📘 Summary Table</h5>
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>Case</th>
+            <th>Behavior</th>
+            <th>Result / Exception</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>No merge function</td>
+            <td>Default (no duplicates allowed)</td>
+            <td><code>IllegalStateException</code></td>
+          </tr>
+          <tr>
+            <td>(old, new) → new</td>
+            <td>Keeps latest value</td>
+            <td>{1=A (Second Edition)}</td>
+          </tr>
+          <tr>
+            <td>(old, new) → old</td>
+            <td>Keeps first value</td>
+            <td>{1=A}</td>
+          </tr>
+          <tr>
+            <td>(old, new) → old + "/" + new</td>
+            <td>Combines values</td>
+            <td>{1=A / A (Second Edition)}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <hr>
+
+      <h5 class="text-info">📘 Interview Summary</h5>
+      <ul>
+        <li><b>Issue:</b> <code>Collectors.toMap()</code> throws <code>IllegalStateException</code> for duplicate keys.</li>
+        <li><b>Fix:</b> Provide a merge function to define how duplicates should be resolved.</li>
+        <li><b>Tip:</b> Always specify a merge function when key uniqueness is not guaranteed.</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-info">📘 Real-world Analogy</h5>
+      <ul>
+        <li>Think of ISBNs as unique product IDs in a bookstore system.</li>
+        <li>If two books share the same ID, the system must decide — overwrite, ignore, or merge — instead of crashing.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="q-tomap-constructors">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#tomap-constructors">
+      Java Streams – All Collectors.toMap() Constructors Explained
+      <span class="badge bg-success ms-2">Core Streams API</span>
+    </button>
+  </h2>
+
+  <div id="tomap-constructors" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📘 Overview</h5>
+      <p><code>Collectors.toMap()</code> is a powerful factory method that creates a <code>Map</code> from a stream by extracting keys and values from each element.</p>
+      <p>It has <b>4 overloaded versions</b> that let you control how keys/values are generated, merged, and stored.</p>
+
+      <hr>
+
+      <h5 class="text-info">1️⃣ toMap(keyMapper, valueMapper)</h5>
+      <ul>
+        <li>Simplest version.</li>
+        <li>Collects elements into a map using two mapping functions — one for key, one for value.</li>
+        <li>⚠️ Throws <code>IllegalStateException</code> if duplicate keys occur.</li>
+      </ul>
+
+      <pre class="language-java"><code>
+List&lt;String&gt; names = List.of("Hari", "Ravi", "Kiran");
+
+Map&lt;Integer, String&gt; nameMap = names.stream()
+    .collect(Collectors.toMap(
+        String::length,  // keyMapper
+        Function.identity() // valueMapper
+    ));
+</code></pre>
+
+      <p><b>🧩 Result:</b> {4=Hari, 5=Kiran} (if no duplicates)</p>
+      <p><b>🚨 But:</b> If two strings have same length → <code>IllegalStateException</code></p>
+
+      <hr>
+
+      <h5 class="text-info">2️⃣ toMap(keyMapper, valueMapper, mergeFunction)</h5>
+      <ul>
+        <li>Used when duplicate keys may occur.</li>
+        <li>The <b>merge function</b> decides how to handle key collisions.</li>
+      </ul>
+
+      <pre class="language-java"><code>
+record Book(String isbn, String title) {}
+
+List&lt;Book&gt; books = List.of(
+    new Book("1", "A"),
+    new Book("1", "A (Second Edition)"),
+    new Book("2", "B")
+);
+
+Map&lt;String, String&gt; byIsbn = books.stream()
+    .collect(Collectors.toMap(
+        Book::isbn,     // keyMapper
+        Book::title,    // valueMapper
+        (oldVal, newVal) -> newVal // merge function (keep latest)
+    ));
+</code></pre>
+
+      <p><b>✅ Result:</b> {1=A (Second Edition), 2=B}</p>
+
+      <hr>
+
+      <h5 class="text-info">3️⃣ toMap(keyMapper, valueMapper, mergeFunction, mapSupplier)</h5>
+      <ul>
+        <li>Advanced version — lets you control the **Map implementation** (e.g., <code>LinkedHashMap</code>, <code>TreeMap</code>).</li>
+        <li>Useful when you want ordering or sorting in your result map.</li>
+      </ul>
+
+      <pre class="language-java"><code>
+Map&lt;String, String&gt; linkedMap = books.stream()
+    .collect(Collectors.toMap(
+        Book::isbn,
+        Book::title,
+        (oldVal, newVal) -> newVal,
+        LinkedHashMap::new  // supplier for map type
+    ));
+</code></pre>
+
+      <p><b>✅ Result:</b> {1=A (Second Edition), 2=B}</p>
+      <p><b>✅ Maintains insertion order</b> because of <code>LinkedHashMap</code>.</p>
+
+      <hr>
+
+      <h5 class="text-info">4️⃣ toMap(keyMapper, valueMapper, mergeFunction, supplier) – Generic form</h5>
+      <ul>
+        <li>This is the most flexible overload — it can collect into any <code>Map</code>-like structure you provide.</li>
+        <li>Example: collect into a <code>ConcurrentHashMap</code> for thread-safe operations.</li>
+      </ul>
+
+      <pre class="language-java"><code>
+Map&lt;String, String&gt; concurrentMap = books.parallelStream()
+    .collect(Collectors.toMap(
+        Book::isbn,
+        Book::title,
+        (oldVal, newVal) -> oldVal + " | " + newVal,
+        ConcurrentHashMap::new
+    ));
+</code></pre>
+
+      <p><b>✅ Result:</b> {1=A | A (Second Edition), 2=B}</p>
+      <p><b>✅ Thread-safe</b> collection suitable for parallel streams.</p>
+
+      <hr>
+
+      <h5 class="text-info">📘 Summary Table</h5>
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>Method Signature</th>
+            <th>Handles Duplicates?</th>
+            <th>Allows Custom Map Type?</th>
+            <th>Example Use Case</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>toMap(keyMapper, valueMapper)</code></td>
+            <td>❌ No</td>
+            <td>❌ No (uses HashMap)</td>
+            <td>Simple unique mappings</td>
+          </tr>
+          <tr>
+            <td><code>toMap(keyMapper, valueMapper, mergeFunction)</code></td>
+            <td>✅ Yes</td>
+            <td>❌ No (uses HashMap)</td>
+            <td>Duplicate key resolution</td>
+          </tr>
+          <tr>
+            <td><code>toMap(keyMapper, valueMapper, mergeFunction, mapSupplier)</code></td>
+            <td>✅ Yes</td>
+            <td>✅ Yes</td>
+            <td>Custom map type (LinkedHashMap, TreeMap)</td>
+          </tr>
+          <tr>
+            <td><code>toMap(..., ConcurrentHashMap::new)</code></td>
+            <td>✅ Yes</td>
+            <td>✅ Yes</td>
+            <td>Parallel-safe concurrent map</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <hr>
+
+      <h5 class="text-info">📘 Interview Key Points</h5>
+      <ul>
+        <li><b>Default map type:</b> <code>HashMap</code></li>
+        <li><b>Default duplicate behavior:</b> throws <code>IllegalStateException</code></li>
+        <li><b>To control duplicates:</b> use merge function</li>
+        <li><b>To control map type:</b> use supplier (like <code>LinkedHashMap::new</code>)</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-info">📘 Analogy</h5>
+      <ul>
+        <li>Think of <code>Collectors.toMap()</code> like filling a key–value table:</li>
+        <li>If two items have the same key, you decide — replace, merge, or keep order.</li>
+        <li>If you need a special table (ordered or concurrent), pass the supplier.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="q-toMap-duplicates-h">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+      data-bs-target="#q-toMap-duplicates">
+      Why Collectors.toMap() throws IllegalStateException for duplicate keys?
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+
+  <div id="q-toMap-duplicates" class="accordion-collapse collapse">
+    <div class="accordion-body">
+
+      <h5 class="text-info">📌 Problem Statement</h5>
+      <ul>
+        <li>You're using <code>Collectors.toMap()</code> to collect Stream elements into a <code>Map</code>.</li>
+        <li>But when the keys are **not unique**, it throws an <code>IllegalStateException</code>.</li>
+      </ul>
+
+      <pre class="language-java"><code>
+record Book(String isbn, String title) {}
+
+List&lt;Book&gt; books = List.of(
+    new Book("1", "A"),
+    new Book("1", "A - Second Edition")
+);
+
+Map&lt;String, String&gt; byIsbn = books.stream()
+    .collect(Collectors.toMap(Book::isbn, Book::title));
+</code></pre>
+
+      <h5 class="text-danger">💥 Output</h5>
+      <pre class="language-text"><code>
+Exception in thread "main" java.lang.IllegalStateException:
+Duplicate key A (attempted merging values A and A - Second Edition)
+</code></pre>
+
+      <h5 class="text-info">📘 Explanation</h5>
+      <ul>
+        <li><code>Collectors.toMap()</code> by default assumes all keys are <b>unique</b>.</li>
+        <li>When a duplicate key is encountered, it has no rule to resolve which value to keep.</li>
+        <li>So the internal collector throws an <code>IllegalStateException</code> to warn you of a logic error.</li>
+      </ul>
+
+      <h5 class="text-info">📘 Constructors of <code>Collectors.toMap()</code></h5>
+      <pre class="language-java"><code>
+// 1️⃣ Basic form (no merge function)
+toMap(keyMapper, valueMapper)
+
+// 2️⃣ With merge function (resolves duplicates)
+toMap(keyMapper, valueMapper, mergeFunction)
+
+// 3️⃣ With merge function + custom map supplier
+toMap(keyMapper, valueMapper, mergeFunction, mapSupplier)
+</code></pre>
+
+      <h5 class="text-info">✅ Correct Example (with merge function)</h5>
+      <pre class="language-java"><code>
+Map&lt;String, String&gt; byIsbn = books.stream()
+    .collect(Collectors.toMap(
+        Book::isbn,
+        Book::title,
+        (oldValue, newValue) -> newValue // keep the latest edition
+    ));
+
+System.out.println(byIsbn);
+// Output: {1=A - Second Edition}
+</code></pre>
+
+      <h5 class="text-info">📘 Key Points</h5>
+      <ul>
+        <li><b>Default behavior:</b> expects unique keys, else throws exception.</li>
+        <li><b>To allow duplicates:</b> provide a <b>merge function</b> deciding which value to keep.</li>
+        <li><b>Custom map type:</b> you can also supply a map like <code>TreeMap::new</code> or <code>LinkedHashMap::new</code>.</li>
+      </ul>
+
+      <h5 class="text-info">📘 Analogy</h5>
+      <ul>
+        <li>Think of <code>toMap()</code> like a librarian cataloging books by ISBN.</li>
+        <li>If two books have the same ISBN, he doesn’t know which to keep → <b>throws error</b>.</li>
+        <li>If you tell him a rule (e.g., “keep the latest edition”), he’ll handle duplicates gracefully.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+
+      <div class="accordion-item">
         <h2 class="accordion-header" id="headingUpiCollect">
           <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
             data-bs-target="#upiCollectSection" aria-expanded="false" aria-controls="upiCollectSection">
