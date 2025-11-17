@@ -1585,6 +1585,120 @@ System.out.println(byIsbn);
     </div>
   </div>
 </div>
+<div class="accordion-item">
+  <h2 class="accordion-header">
+    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#allInOne">
+      Checked vs Unchecked Exceptions Behaviour in Inheritance (All-in-One)
+    </button>
+  </h2>
+
+  <div id="allInOne" class="accordion-collapse collapse show">
+    <div class="accordion-body">
+
+      <h4 class="text-info">✔️ 1) Checked Exceptions (Compile-time)</h4>
+      <b>Rules:</b>
+      <ul>
+        <li>Child may throw the <b>same</b> checked exception</li>
+        <li>Child may throw a <b>subclass</b> of parent's checked exception</li>
+        <li>Child may throw <b>no</b> checked exception</li>
+        <li>❌ Child cannot throw a <b>broader</b> checked exception</li>
+        <li>❌ Child cannot introduce a completely <b>new checked exception</b></li>
+      </ul>
+
+      <b>❌ Illegal example – broader checked exception:</b>
+      <pre class="language-java"><code>
+class Parent {
+    void m1() throws IOException {}
+}
+
+class Child extends Parent {
+    void m1() throws Exception {} // ❌ Not allowed
+}
+      </code></pre>
+
+      <b>✔️ Legal example – same or subclass:</b>
+      <pre class="language-java"><code>
+class Parent {
+    void m1() throws IOException {}
+}
+
+class Child extends Parent {
+    void m1() throws FileNotFoundException {} // ✔️ Allowed
+}
+      </code></pre>
+
+      <b>✔️ Legal example – no exception:</b>
+      <pre class="language-java"><code>
+class Child extends Parent {
+    void m1() {} // ✔️ Allowed
+}
+      </code></pre>
+
+      <hr>
+
+      <h4 class="text-info">✔️ 2) Unchecked Exceptions (Runtime)</h4>
+      <b>Rules:</b>
+      <ul>
+        <li>Child can throw ANY runtime exception</li>
+        <li>Child can add new runtime exceptions</li>
+        <li>Child can remove runtime exceptions</li>
+        <li>Child can throw runtime exceptions even if parent throws none</li>
+        <li>⚠️ Unchecked exceptions don’t affect overriding rules</li>
+      </ul>
+
+      <b>✔️ Allowed example:</b>
+      <pre class="language-java"><code>
+class Parent {
+    void m1() {}
+}
+
+class Child extends Parent {
+    void m1() throws RuntimeException {} // ✔️ Allowed
+}
+      </code></pre>
+
+      <b>✔️ Allowed example – subclass unchecked:</b>
+      <pre class="language-java"><code>
+class Parent {
+    void m1() throws RuntimeException {}
+}
+
+class Child extends Parent {
+    void m1() throws NullPointerException {} // ✔️ Allowed
+}
+      </code></pre>
+
+      <hr>
+
+      <h4 class="text-info">✔️ 3) Summary Table</h4>
+      <pre><code>| Exception Type | Parent Throws        | Child Throws                 | Allowed? |
+|----------------|----------------------|-------------------------------|----------|
+| Checked        | None                 | Checked exception            | ❌ No     |
+| Checked        | IOException          | IOException                  | ✔️ Yes    |
+| Checked        | IOException          | FileNotFoundException        | ✔️ Yes    |
+| Checked        | FileNotFoundExc      | IOException (broader)        | ❌ No     |
+| Unchecked      | None                 | Any RuntimeException         | ✔️ Yes    |
+| Unchecked      | RuntimeException     | Any RuntimeException         | ✔️ Yes    |
+</code></pre>
+
+      <hr>
+
+      <h4 class="text-info">✔️ 4) Why these rules exist?</h4>
+      <p>
+        <b>Checked exceptions are part of the method contract.</b><br>
+        Compiler uses the <b>reference type (Parent)</b> to determine exception handling.  
+        So Child cannot add new or broader checked exceptions.
+      </p>
+
+      <p>
+        <b>Unchecked exceptions are NOT part of the method contract.</b><br>
+        Therefore, a Child method can freely add or remove runtime exceptions.
+      </p>
+
+    </div>
+  </div>
+</div>
+
 
 
       <div class="accordion-item">

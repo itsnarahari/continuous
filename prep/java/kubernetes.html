@@ -1,0 +1,6035 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Company Wise Q&A</title>
+
+  <!-- Bootstrap & Prism.js for Syntax Highlighting -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+
+  <style>
+    /* body {
+      background-color: #121212;
+      color: white;
+    } */
+
+    .accordion-button {
+      background-color: #343a40;
+      color: white;
+    }
+
+    .accordion-button:focus {
+      box-shadow: none;
+    }
+
+    .accordion-button:not(.collapsed) {
+      background-color: #007bff;
+      color: white;
+    }
+
+    .accordion-body {
+      background-color: #1e1e1e;
+      color: white;
+    }
+
+    .highlight-yellow {
+      color: #ffcc00;
+      /* Yellow */
+      font-weight: bold;
+    }
+
+    .highlight-blue {
+      color: #4db8ff;
+      /* Light blue */
+      font-weight: bold;
+    }
+
+    pre[class*="language-"] {
+      background: #1e1e1e !important;
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    /* Search Box Styling */
+    .search-container {
+      margin-bottom: 15px;
+      text-align: center;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #666;
+      background: #222;
+      color: white;
+      outline: none;
+      font-size: 16px;
+    }
+
+    .search-input::placeholder {
+      color: #aaa;
+    }
+  </style>
+</head>
+
+<body class="bg-dark text-light mb-4">
+  <div class="container">
+    <div class="header fw-bold text-center mb-4">Java Q&A</div>
+    <p id="questionCount" class="text-center">0 Questions</p>
+
+
+    <!-- Search Box in a Bootstrap Container -->
+    <div class="search-container">
+      <input type="text" class="search-input form-control" id="searchBox" placeholder="Search questions..."
+        onkeyup="searchQuestions()" />
+    </div>
+
+    <div class="accordion-item">
+  <h2 class="accordion-header" id="headingKubernetesIntro">
+    <button class="accordion-button collapsed search-item text-info" type="button" 
+      data-bs-toggle="collapse" data-bs-target="#collapseKubernetesIntro"
+      aria-expanded="false" aria-controls="collapseKubernetesIntro">
+      ☸️ Kubernetes – Introduction, Concepts, Advantages & Disadvantages
+    </button>
+  </h2>
+
+  <div id="collapseKubernetesIntro" class="accordion-collapse collapse" 
+       aria-labelledby="headingKubernetesIntro" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- Basic Intro -->
+      <h5 class="text-warning">1️⃣ What is Kubernetes?</h5>
+      <pre><code class="language-text">
+Kubernetes (K8s) is an open-source container orchestration platform that automates:
+✔ Deployment
+✔ Scaling
+✔ Load Balancing
+✔ Self-healing of containers
+
+It manages containerized applications across clusters of servers.
+      </code></pre>
+
+      <!-- Why Kubernetes -->
+      <h5 class="text-warning">2️⃣ Why do we need Kubernetes?</h5>
+      <pre><code class="language-text">
+Without Kubernetes:
+- You need to start containers manually
+- Restart them on failure
+- Scale up/down yourself
+- Manage load balancing
+- Handle deployments manually
+
+Kubernetes automates all these tasks!
+      </code></pre>
+
+      <!-- Core Concepts -->
+      <h5 class="text-warning">3️⃣ Kubernetes – Core Concepts (Very Important)</h5>
+      <pre><code class="language-text">
+Pod → Smallest deployable unit (contains one or more containers)
+Node → Machine (worker) where pods run
+Cluster → Group of nodes
+Deployment → Manages replica pods (rolling updates)
+Service → Exposes pods as network service (ClusterIP, NodePort, LoadBalancer)
+Ingress → Routes external HTTP/HTTPS traffic to services
+ConfigMap → Stores non-secret config
+Secret → Stores sensitive data (Base64 encoded)
+Namespace → Logical separation inside cluster
+      </code></pre>
+
+      <!-- Getting Started -->
+      <h5 class="text-warning">4️⃣ Getting Started – Create Deployment & Service</h5>
+      <pre><code class="language-yaml">
+# deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+        - name: my-app
+          image: nginx:latest
+          ports:
+            - containerPort: 80
+      </code></pre>
+
+      <pre><code class="language-yaml">
+# service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+spec:
+  type: NodePort
+  selector:
+    app: my-app
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30080
+      </code></pre>
+
+      <pre><code class="language-bash">
+# Apply YAML files
+kubectl apply -f deployment.yaml
+kubectl apply -f service.yaml
+
+# Get resources
+kubectl get pods
+kubectl get svc
+kubectl get deployments
+      </code></pre>
+
+      <!-- ConfigMap + Secret -->
+      <h5 class="text-warning">5️⃣ ConfigMap & Secret Example</h5>
+      <pre><code class="language-yaml">
+# configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  DB_URL: jdbc:mysql://localhost:3306/mydb
+      </code></pre>
+
+      <pre><code class="language-yaml">
+# secret.yaml (values must be Base64 encoded)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: db-secret
+type: Opaque
+data:
+  username: YWRtaW4=       # base64(admin)
+  password: cGFzc3dvcmQ=   # base64(password)
+      </code></pre>
+
+      <!-- Advantages -->
+      <h5 class="text-warning">6️⃣ Advantages of Kubernetes</h5>
+      <pre><code class="language-text">
+✔ Auto Scaling (HPA – Horizontal Pod Autoscaler)
+✔ Self-healing (auto restarts, rescheduling)
+✔ Declarative deployment (YAML)
+✔ Rolling updates & rollbacks
+✔ Efficient resource utilization
+✔ Works on any cloud (AWS, Azure, GCP), on-premise
+✔ Manages secrets & configs cleanly
+✔ Service discovery & load balancing
+      </code></pre>
+
+      <!-- Disadvantages -->
+      <h5 class="text-warning">7️⃣ Disadvantages of Kubernetes</h5>
+      <pre><code class="language-text">
+❌ Steep learning curve (too many components)
+❌ Setup and maintenance is complex
+❌ Requires strong DevOps knowledge
+❌ High resource usage (needs good hardware)
+❌ Monitoring & logging requires extra tools (Prometheus, Grafana, EFK)
+❌ Security must be managed carefully
+      </code></pre>
+
+      <!-- Real Industry Usage -->
+      <h5 class="text-warning">8️⃣ Where Kubernetes is used (Real Time)</h5>
+      <pre><code class="language-text">
+🔹 Big microservices applications  
+🔹 Fintech apps running 1000+ containers  
+🔹 E-commerce apps needing dynamic scaling  
+🔹 Streaming platforms (OTT, gaming)  
+🔹 AI/ML workloads  
+      </code></pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingK8sComponents">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseK8sComponents"
+      aria-expanded="false" aria-controls="collapseK8sComponents">
+      ☸️ Kubernetes Components – Master & Worker Nodes (Full Explanation)
+    </button>
+  </h2>
+
+  <div id="collapseK8sComponents" class="accordion-collapse collapse"
+    aria-labelledby="headingK8sComponents" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- Intro -->
+      <h5 class="text-warning">1️⃣ Kubernetes Architecture Overview</h5>
+      <pre><code class="language-text">
+Kubernetes cluster has two types of nodes:
+👉 Control Plane (Master Node)
+👉 Worker Nodes
+
+Control Plane = Brain of the cluster  
+Worker Nodes = Where your applications (pods) run
+      </code></pre>
+
+      <!-- Control Plane Components -->
+      <h5 class="text-warning">2️⃣ Control Plane (Master Node) Components</h5>
+
+      <pre><code class="language-text">
+📌 API Server (kube-apiserver)
+- The entry point to the cluster
+- All kubectl commands talk to API server
+- Validation + Authentication + Authorization
+
+📌 etcd
+- Distributed key-value database
+- Stores complete cluster state
+- Example: pods, deployments, configs
+
+📌 Controller Manager (kube-controller-manager)
+- Runs controllers that watch cluster state:
+  ✔ Node Controller
+  ✔ Deployment Controller
+  ✔ReplicaSet Controller
+  ✔ Endpoints Controller
+- Ensures desired state is maintained
+
+📌 Scheduler (kube-scheduler)
+- Decides which node will run the pod
+- Based on:
+  ✔ CPU/Memory availability
+  ✔ NodeSelector / Taints / Tolerations
+  ✔ Affinity rules
+
+📌 Cloud Controller Manager
+- Integrates K8s with cloud providers (AWS/Azure/GCP)
+- Manages:
+  ✔ Load balancers
+  ✔ Volumes
+  ✔ Route tables
+      </code></pre>
+
+      <!-- Worker Node Components -->
+      <h5 class="text-warning">3️⃣ Worker Node Components</h5>
+
+      <pre><code class="language-text">
+📌 Kubelet
+- Agent running on each worker node
+- Makes sure containers are running
+- Talks to API server
+- Reports node health
+
+📌 Kube-Proxy
+- Handles networking rules
+- Maintains cluster networking communication
+- Implements Service → Pod routing
+
+📌 Container Runtime
+- Software that runs containers
+- Examples:
+  ✔ containerd (default)
+  ✔ Docker
+  ✔ CRI-O
+- Pulls images & starts containers
+      </code></pre>
+
+      <!-- Additional Important K8s Objects -->
+      <h5 class="text-warning">4️⃣ Important Kubernetes Objects (User-facing Components)</h5>
+
+      <pre><code class="language-text">
+📌 Pod → Smallest deployable unit  
+📌 ReplicaSet → Ensures number of pods  
+📌 Deployment → Versioning, rolling updates  
+📌 Service → Exposes pods (ClusterIP, NodePort, LB)  
+📌 Ingress → HTTP/HTTPS routing  
+📌 ConfigMap → Store non-sensitive data  
+📌 Secret → Store passwords/tokens  
+📌 Namespace → Logical separation  
+📌 StatefulSet → For DB-like apps  
+📌 DaemonSet → One pod per node  
+📌 Jobs/CronJobs → One-time or scheduled jobs  
+      </code></pre>
+
+      <!-- High-level Architecture Summary -->
+      <h5 class="text-warning">5️⃣ Summary – How it works</h5>
+      <pre><code class="language-text">
+1) You apply a Deployment YAML  
+2) API server receives it  
+3) Scheduler picks a node  
+4) Kubelet starts the pod using container runtime  
+5) Kube-Proxy manages network routing  
+6) etcd stores the state  
+7) Controllers ensure pod count, health, etc.  
+      </code></pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingK8sArchFlow">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseK8sArchFlow"
+      aria-expanded="false" aria-controls="collapseK8sArchFlow">
+      ☸️ Kubernetes Architecture + Pod Creation Flow + Interview Questions
+    </button>
+  </h2>
+
+  <div id="collapseK8sArchFlow" class="accordion-collapse collapse"
+    aria-labelledby="headingK8sArchFlow" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- Architecture Diagram -->
+      <h5 class="text-warning">1️⃣ Kubernetes Architecture Diagram (ASCII)</h5>
+      <pre><code class="language-text">
+                     +------------------------------+
+                     |        CONTROL PLANE         |
+                     +------------------------------+
+                     |                              |
+                     |  [ API SERVER ]              |
+                     |        |                     |
+                     |        v                     |
+                     |      [ etcd ] (Cluster DB)   |
+                     |        |                     |
+                     |  [ Controller Manager ]      |
+                     |        |                     |
+                     |      [ Scheduler ]           |
+                     +--------------+---------------+
+                                    |
+         --------------------------------------------------------
+         |                        |                            |
++------------------+   +------------------+         +------------------+
+|    WORKER NODE   |   |    WORKER NODE   |         |    WORKER NODE   |
++------------------+   +------------------+         +------------------+
+| [Kubelet]        |   | [Kubelet]        |         | [Kubelet]        |
+| [Kube-Proxy]     |   | [Kube-Proxy]     |         | [Kube-Proxy]     |
+| [ContainerRuntime|   | [ContainerRuntime|         | [ContainerRuntime|
+|  (Docker/ctr)]   |   |   (containerd)]  |         |   (CRI-O)]       |
++------------------+   +------------------+         +------------------+
+|       PODS       |   |       PODS       |         |       PODS       |
+|   [Containers]   |   |   [Containers]   |         |   [Containers]   |
++------------------+   +------------------+         +------------------+
+      </code></pre>
+
+      <!-- Pod Creation Flow -->
+      <h5 class="text-warning">2️⃣ How a Pod Is Created Internally (Step-by-Step Flow)</h5>
+      <pre><code class="language-text">
+1️⃣ You run → kubectl apply -f deployment.yaml  
+2️⃣ kubectl sends request to API Server  
+3️⃣ API Server validates YAML  
+4️⃣ Stored in etcd (desired state)  
+5️⃣ Controller Manager sees new Deployment → creates ReplicaSet  
+6️⃣ ReplicaSet → requests required number of Pods  
+7️⃣ Scheduler picks the best worker node  
+8️⃣ Scheduler sends binding request to API Server  
+9️⃣ API Server notifies Kubelet on that worker node  
+🔟 Kubelet pulls the image using container runtime  
+1️⃣1️⃣ Kubelet starts the Pod + Container  
+1️⃣2️⃣ Kube-Proxy sets up networking rules  
+1️⃣3️⃣ Pod becomes RUNNING  
+      </code></pre>
+
+      <!-- Light YAML Example -->
+      <h5 class="text-warning">3️⃣ Pod Creation Example (YAML)</h5>
+      <pre><code class="language-yaml">
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mypod
+spec:
+  containers:
+    - name: app
+      image: nginx
+      ports:
+        - containerPort: 80
+      </code></pre>
+
+      <pre><code class="language-bash">
+kubectl apply -f pod.yaml
+kubectl get pods -o wide
+      </code></pre>
+
+      <!-- Top Interview Questions -->
+      <h5 class="text-warning">4️⃣ Kubernetes Top Interview Questions (Beginner to Advanced)</h5>
+      <pre><code class="language-text">
+1. What is Kubernetes and why do we use it?
+2. What is a Pod? How is it different from a container?
+3. What is the role of the API Server?
+4. What does Kubelet do?
+5. Difference between Deployment and StatefulSet?
+6. What is the use of ReplicaSet?
+7. What is etcd? Why is it important?
+8. Explain the Scheduler's responsibility.
+9. What is the difference between NodePort, ClusterIP, LoadBalancer?
+10. What is Ingress? Why do we need it?
+11. What are ConfigMaps and Secrets?
+12. When to use ConfigMap vs Secret?
+13. How does Horizontal Pod Autoscaling (HPA) work?
+14. What is a DaemonSet? Example usage?
+15. What is a Job/CronJob?
+16. What are Taints and Tolerations?
+17. What is Node Affinity vs Pod Affinity?
+18. How rolling updates and rollbacks work in K8s?
+19. What is namespace? Why use it?
+20. What is initContainer? Why is it used?
+21. What is sidecar container pattern?
+22. How service discovery works in Kubernetes?
+23. What happens when a node fails?
+24. How does Kubernetes handle self-healing?
+25. What are Admission Controllers?
+      </code></pre>
+
+      <!-- Summary -->
+      <h5 class="text-warning">5️⃣ Summary (Easy Memory Chart)</h5>
+      <pre><code class="language-text">
+CONTROL PLANE = Brain:
+API Server, etcd, Scheduler, Controller Manager, Cloud Controller
+
+WORKER NODE = Execution:
+Kubelet, Kube-Proxy, Container Runtime, Pods
+
+FLOW:
+YAML → API Server → etcd → Controllers → Scheduler → Kubelet → Pod Running
+      </code></pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingK8sArchitecture">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseK8sArchitecture"
+      aria-expanded="false" aria-controls="collapseK8sArchitecture">
+      ☸️ Kubernetes Architecture (Control Plane + Worker Nodes + Networking)
+    </button>
+  </h2>
+
+  <div id="collapseK8sArchitecture" class="accordion-collapse collapse"
+    aria-labelledby="headingK8sArchitecture" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- Architecture Diagram -->
+      <h5 class="text-warning">1️⃣ Kubernetes Architecture Diagram (ASCII)</h5>
+      <pre><code class="language-text">
+
+                     +------------------------------+
+                     |        CONTROL PLANE         |
+                     +------------------------------+
+                     |  [ API SERVER ]              |
+                     |        |                     |
+                     |        v                     |
+                     |      [ etcd ] (Cluster DB)   |
+                     |        |                     |
+                     |  [ Controller Manager ]      |
+                     |        |                     |
+                     |      [ Scheduler ]           |
+                     +--------------+---------------+
+                                    |
+        ----------------------------------------------------------
+        |                        |                            |
++------------------+   +------------------+        +------------------+
+|    WORKER NODE   |   |    WORKER NODE   |        |    WORKER NODE   |
++------------------+   +------------------+        +------------------+
+| [ Kubelet ]      |   | [ Kubelet ]      |        | [ Kubelet ]      |
+| [ Kube-Proxy ]   |   | [ Kube-Proxy ]   |        | [ Kube-Proxy ]   |
+| [ ContainerRuntime|  | [ ContainerRuntime|       | [ ContainerRuntime|
+|   (ctr/CRI-O) ]  |   |   (Docker/ctr) ] |        |   (containerd) ] |
++------------------+   +------------------+        +------------------+
+|       PODS       |   |       PODS       |        |       PODS       |
+|   [Containers]   |   |   [Containers]   |        |   [Containers]   |
++------------------+   +------------------+        +------------------+
+
+      </code></pre>
+
+      <!-- Components Explanation -->
+      <h5 class="text-warning">2️⃣ Kubernetes Architecture Components Explained</h5>
+      <pre><code class="language-text">
+CONTROL PLANE (Brain)
+---------------------
+API Server
+- Entry point for all operations (kubectl/UI/controllers)
+- Validates requests and stores them into etcd
+
+etcd
+- Distributed key-value store
+- Source of truth for cluster state
+
+Scheduler
+- Assigns Pods to Nodes based on resources, taints, affinity, etc.
+
+Controller Manager
+- Runs controllers like Deployment, ReplicaSet, Node, Job
+
+Cloud Controller Manager
+- Integrates Kubernetes with cloud provider resources
+
+
+WORKER NODE (Execution)
+------------------------
+Kubelet
+- Ensures containers are running as per PodSpec
+- Talks to container runtime
+
+Kube-Proxy
+- Handles service networking & load balancing
+
+Container Runtime
+- Runs containers
+- Examples: containerd, CRI-O, Docker (deprecated)
+
+Pods
+- Smallest deployable unit with 1 or more containers
+      </code></pre>
+
+      <!-- Networking Architecture -->
+      <h5 class="text-warning">3️⃣ Networking Architecture (CNI, Services, Ingress)</h5>
+      <pre><code class="language-text">
+Pod Network (CNI)
+- Each pod gets a unique IP
+- Pod-to-pod communication without NAT
+- Plugins: Calico, Cilium, Flannel
+
+Service Network
+- Stable virtual IP (ClusterIP, NodePort, LoadBalancer)
+- Load balances traffic across Pod replicas
+
+Ingress
+- HTTP/HTTPS routing into cluster
+- Uses Ingress Controller like NGINX/Istio/Traefik
+      </code></pre>
+
+      <!-- Architecture Flow -->
+      <h5 class="text-warning">4️⃣ High-Level Architecture Flow</h5>
+      <pre><code class="language-text">
+1. User applies YAML → kubectl → API Server
+2. API Server validates and stores state in etcd
+3. Controller Manager creates required objects (Deployment → ReplicaSet → Pods)
+4. Scheduler selects the best node
+5. API Server notifies Kubelet
+6. Kubelet pulls image via container runtime
+7. Container starts → Pod created
+8. Kube-Proxy adds service networking rules
+9. Pod becomes READY and RUNNING
+      </code></pre>
+
+      <!-- Summary -->
+      <h5 class="text-warning">5️⃣ Summary (Memory Chart)</h5>
+      <pre><code class="language-text">
+CONTROL PLANE = Brain
+API Server, etcd, Scheduler, Controller Manager, Cloud Controller
+
+WORKER NODE = Muscles
+Kubelet, Kube-Proxy, Container Runtime, Pods
+
+NETWORKING
+CNI → Pod IPs
+Service → Cluster IPs
+Ingress → External traffic routing
+
+FLOW
+YAML → API Server → etcd → Controllers → Scheduler → Kubelet → Pod Running
+      </code></pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingMasterWorker">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseMasterWorker"
+      aria-expanded="false" aria-controls="collapseMasterWorker">
+      ☸️ Kubernetes Master Node vs Worker Nodes – Full Explanation
+    </button>
+  </h2>
+
+  <div id="collapseMasterWorker" class="accordion-collapse collapse"
+    aria-labelledby="headingMasterWorker" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- Master Node -->
+      <h5 class="text-warning">1️⃣ What is a Master Node (Control Plane)?</h5>
+      <pre><code class="language-text">
+Master Node = Brain of the Kubernetes Cluster
+
+It handles:
+✔ Scheduling Pods  
+✔ Managing cluster state  
+✔ Validating YAML  
+✔ Self-healing decisions  
+✔ Scaling decisions  
+✔ Communication hub for the entire cluster  
+
+Master Node does NOT run your application containers.
+      </code></pre>
+
+      <h5 class="text-info">🔧 Components inside Master Node</h5>
+      <pre><code class="language-text">
+1. API Server → Entry point for kubectl & REST calls
+2. etcd → Cluster database storing state
+3. Scheduler → Decides which node runs which pod
+4. Controller Manager → Ensures desired state (replicas, endpoints, jobs)
+5. Cloud Controller Manager → Integrates with AWS/GCP/Azure resources
+      </code></pre>
+
+      <!-- Worker Node -->
+      <h5 class="text-warning">2️⃣ What is a Worker Node?</h5>
+      <pre><code class="language-text">
+Worker Nodes = Where your application actually runs.
+
+Each Worker Node hosts:
+✔ Pods  
+✔ Containers  
+✔ Kubelet  
+✔ Kube-Proxy  
+✔ Container Runtime (containerd / CRI-O / Docker*)  
+
+Applications NEVER run on Master Node; they run only on Worker Nodes.
+      </code></pre>
+
+      <h5 class="text-info">🔧 Components inside Worker Node</h5>
+      <pre><code class="language-text">
+1. Kubelet → Talks to API Server, runs containers
+2. Kube-Proxy → Networking rules & load balancing
+3. Container Runtime → Runs containers (containerd / CRI-O)
+4. Pods → Smallest deployable unit containing containers
+      </code></pre>
+
+      <!-- Difference Chart -->
+      <h5 class="text-warning">3️⃣ Master Node vs Worker Node (Quick Comparison)</h5>
+      <pre><code class="language-text">
+MASTER NODE (Control Plane)
+---------------------------
+• Makes decisions
+• Maintains cluster state
+• Schedules pods
+• Runs control components
+• No applications run here
+
+WORKER NODE
+---------------------------
+• Runs application Pods
+• Executes containers
+• Handles networking
+• Follows Master instructions
+• Kubelet + Kube-Proxy + Runtime
+      </code></pre>
+
+      <!-- Easy Memory Trick -->
+      <h5 class="text-warning">4️⃣ Easy Memory Trick</h5>
+      <pre><code class="language-text">
+MASTER NODE = 🧠 Brain + Control + Decision Maker  
+WORKER NODE = 💪 Execution + Runs Pods + Runs Containers  
+      </code></pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingEtcd">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseEtcd" aria-expanded="false" aria-controls="collapseEtcd">
+      How ETCD Works ?
+    </button>
+  </h2>
+  <div id="collapseEtcd" class="accordion-collapse collapse" aria-labelledby="headingEtcd">
+    <div class="accordion-body">
+
+      <pre><code class="language-java">
+🔹 **What is ETCD?**
+- ETCD is a distributed, consistent key-value store.
+- Kubernetes uses it as the "single source of truth".
+- Stores cluster state: Pods, Nodes, ConfigMaps, Secrets, etc.
+
+🔹 **How ETCD Works Internally**
+1️⃣ **Key–Value Store**
+   - Stores everything in simple **key-value** pairs.
+   - Example:
+     /registry/pods/default/myapp
+     /registry/services/kube-system/kube-dns
+
+2️⃣ **Uses Raft Consensus Algorithm**
+   - ETCD uses the **Raft** protocol to maintain consistency.
+   - Components:
+     - **Leader** → handles all writes.
+     - **Followers** → replicate leader’s data.
+   - Ensures:
+     ✔ No data loss  
+     ✔ All nodes have same data  
+     ✔ High availability  
+
+3️⃣ **Writes**
+   - All write requests go to the **leader**.
+   - Leader replicates changes to followers.
+   - Once majority (quorum) acknowledges → write is committed.
+
+4️⃣ **Reads**
+   - By default, reads can come from leader or followers (depending on consistency mode).
+
+5️⃣ **Watch**
+   - ETCD supports watching keys for real-time updates.
+   - Kubernetes controllers use this heavily.
+   - Example:
+     - Scheduler watches for “pending pods”
+     - Controller manager watches for "replicas count changes"
+
+6️⃣ **Snapshot & Backup**
+   - ETCD regularly stores snapshots.
+   - Helps in disaster recovery.
+
+🔹 **Why ETCD is Important for Kubernetes**
+- Stores entire cluster state.
+- If ETCD is down:
+  ❌ No scheduling  
+  ❌ No new pods  
+  ❌ No updates  
+  ❌ Cluster becomes read-only  
+
+🔹 **ETCD Cluster Setup**
+- Best practice:
+  - 3 or 5 node ETCD cluster
+  - Odd number ensures quorum
+  - Located on dedicated nodes
+      </code></pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingK8sSetup">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseK8sSetup" aria-expanded="false" aria-controls="collapseK8sSetup">
+      How to Setup Kubernetes in Windows & macOS ?
+    </button>
+  </h2>
+  <div id="collapseK8sSetup" class="accordion-collapse collapse" aria-labelledby="headingK8sSetup">
+    <div class="accordion-body">
+
+<pre><code class="language-java">
+🔹 **Best and Easiest Options for Both OS**
+You can install Kubernetes locally using:
+1) **Docker Desktop (Recommended)**
+2) **Minikube**
+3) **Kind (Kubernetes in Docker)**
+
+---------------------------------------------
+
+🪟 **1. Setup Kubernetes in Windows**
+
+✔ **Option A: Docker Desktop (Simple)**
+   - Install Docker Desktop for Windows
+   - Enable "Use WSL 2 Backend"
+   - Go to Settings → Kubernetes → “Enable Kubernetes”
+   - Click “Apply & Restart”
+   - Done! Single-node K8s cluster runs locally.
+
+✔ **Option B: Minikube**
+   Steps:
+   1. Install:
+      - Docker OR Hyper-V OR VirtualBox
+   2. Install Minikube:
+      ➤ choco install minikube
+   3. Start cluster:
+      ➤ minikube start --driver=docker
+   4. Verify:
+      ➤ kubectl get nodes
+
+✔ **Option C: Kind (Developer Friendly)**
+   Steps:
+   1. Install Docker
+   2. Install Kind:
+      ➤ choco install kind
+   3. Create cluster:
+      ➤ kind create cluster
+   4. Done!
+
+---------------------------------------------
+
+🍎 **2. Setup Kubernetes in macOS**
+
+✔ **Option A: Docker Desktop for Mac**
+   - Install Docker Desktop (Intel/M1/M2)
+   - Go to Settings → Kubernetes → “Enable Kubernetes”
+   - Wait for cluster setup
+   - Verify:
+     ➤ kubectl get nodes
+
+✔ **Option B: Minikube**
+   Steps:
+   1. Install a hypervisor:
+      - Docker OR HyperKit
+   2. Install Minikube:
+      ➤ brew install minikube
+   3. Start cluster:
+      ➤ minikube start --driver=docker
+   4. Verify:
+      ➤ kubectl get po -A
+
+✔ **Option C: Kind**
+   1. Install Docker
+   2. Install Kind:
+      ➤ brew install kind
+   3. Create cluster:
+      ➤ kind create cluster
+
+---------------------------------------------
+
+🔹 **Which Option Should You Choose?**
+- Docker Desktop → Easiest and clean UI  
+- Minikube → Good for learning, addons  
+- Kind → Best for testing CI/CD and local clusters  
+
+🔹 **kubectl Installation (Both OS)**
+If kubectl missing:
+   ➤ brew install kubectl   (mac)
+   ➤ choco install kubernetes-cli   (windows)
+
+---------------------------------------------
+
+🎯 **Final Output after Setup**
+Run:
+   ➤ kubectl get nodes
+
+You should see 1 node:
+   NAME        STATUS   VERSION
+   minikube    Ready    v1.x.x
+</code></pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingK8sVsDistributed">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseK8sVsDistributed" aria-expanded="false" aria-controls="collapseK8sVsDistributed">
+      Kubernetes vs Distributed Systems — How Kubernetes Helps?
+    </button>
+  </h2>
+  <div id="collapseK8sVsDistributed" class="accordion-collapse collapse" aria-labelledby="headingK8sVsDistributed">
+    <div class="accordion-body">
+
+<pre><code class="language-java">
+🔹 **1. What is a Distributed System?**
+A distributed system is a collection of independent computers (nodes) that work together.
+Examples:
+- Hadoop
+- Cassandra
+- Microservices running across many servers
+
+BUT:
+Distributed systems **don’t automatically manage deployment, scaling, healing, networking**.
+
+You must manually:
+- Deploy applications
+- Handle failures
+- Maintain network routing
+- Scale up/down
+- Manage configuration
+
+---------------------------------------------
+
+🔹 **2. What is a Kubernetes Cluster?**
+Kubernetes cluster is a **container orchestration** system built on top of distributed system concepts.
+
+It provides automation for:
+✔ Deploying apps  
+✔ Auto-scaling  
+✔ Load balancing  
+✔ Self-healing  
+✔ Rolling updates  
+✔ Service discovery  
+✔ Secrets & config management  
+✔ Monitoring  
+
+Kubernetes = Distributed system + Automation + Standardization
+
+---------------------------------------------
+
+🔹 **3. Key Differences**
+
+📌 **A. Abstraction**
+Distributed system → You manage machines  
+K8s → You manage Pods/Deployments (not machines)
+
+📌 **B. Self-Healing**
+Distributed system → You must detect & fix failures  
+K8s → Auto restarts, auto reschedules failed pods
+
+📌 **C. Scaling**
+Distributed system → Manual scaling  
+K8s → Auto-scaling (HPA, VPA, Cluster Autoscaler)
+
+📌 **D. Networking**
+Distributed system → Complex, manual  
+K8s → Built-in service discovery and networking model
+
+📌 **E. Deployment**
+Distributed system → Manual copying, running application  
+K8s → YAML deployment + rolling update/rollback
+
+📌 **F. Workload Distribution**
+Distributed system → You decide which node runs what  
+K8s Scheduler → Automatically assigns pods to best node
+
+---------------------------------------------
+
+🔹 **4. How Kubernetes Helps?**
+
+✔ **Reduces DevOps effort by 60–70%**  
+✔ **Provides cloud-native consistency across OS, machines & clouds**  
+✔ **Enables microservices to run reliably**  
+✔ **Ensures high availability (HA)**  
+✔ **Handles traffic routing and load balancing**  
+✔ **Improves application uptime**  
+✔ **Standardizes deployments**  
+✔ **Runs anywhere: on-prem, cloud, laptop, edge devices**
+
+---------------------------------------------
+
+🔹 **5. Simple One-Line Explanation**
+Distributed system = A group of computers  
+Kubernetes = A brain that manages those computers + your applications automatically  
+
+---------------------------------------------
+
+🎯 **Interview One-Liner:**
+"Kubernetes is a distributed system manager that automates deployment, scaling, self-healing, and networking of applications — something plain distributed systems do not provide."
+</code></pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingK8sSelectors">
+    <button class="accordion-button collapsed" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseK8sSelectors"
+      aria-expanded="false" aria-controls="collapseK8sSelectors">
+      🎯 How Selectors Help in Kubernetes?
+    </button>
+  </h2>
+
+  <div id="collapseK8sSelectors" class="accordion-collapse collapse"
+    aria-labelledby="headingK8sSelectors" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <h5 class="text-warning">1️⃣ What Is a Selector?</h5>
+      <pre><code class="language-text">
+Kubernetes selector = A filtering mechanism used to match objects using labels.
+
+It allows one resource (Service, Deployment, ReplicaSet, NetworkPolicy, HPA, etc.)
+to automatically target/find Pods based on labels.
+      </code></pre>
+
+      <h5 class="text-warning">2️⃣ Why Do We Need Selectors? (Real Benefits)</h5>
+      <pre><code class="language-text">
+✔ Helps Services find the correct Pods  
+✔ Helps ReplicaSets manage only specific Pods  
+✔ Helps Deployments control the correct ReplicaSets  
+✔ Helps NetworkPolicies apply only to selected Pods  
+✔ Helps Jobs, CronJobs associate with Pods  
+✔ Decouples configuration → You can update Pods without changing Service  
+✔ Enables rolling updates cleanly  
+✔ Allows multiple versions (blue/green, canary) to run
+      </code></pre>
+
+      <h5 class="text-warning">3️⃣ Types of Selectors</h5>
+      <pre><code class="language-text">
+1️⃣ Equality-based selectors  
+   Example:
+       app = myapp  
+       tier != db  
+
+2️⃣ Set-based selectors  
+   Example:
+       env in (dev, prod)  
+       version notin (v1, v2)
+      </code></pre>
+
+      <h5 class="text-warning">4️⃣ Example: Service Selecting Pods</h5>
+      <pre><code class="language-yaml">
+# Service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+spec:
+  selector:
+    app: web        # Service targets pods with this label
+  ports:
+    - port: 80
+      targetPort: 8080
+---
+# Pod.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: web        # This pod will be picked by service
+spec:
+  containers:
+    - name: app
+      image: nginx
+      </code></pre>
+
+      <pre><code class="language-text">
+➡ Service finds Pods automatically  
+➡ If new Pods with label app=web are created, service routes traffic to them  
+➡ If Pods are deleted, service updates endpoints automatically  
+      </code></pre>
+
+      <h5 class="text-warning">5️⃣ Example: Deployment → ReplicaSet → Pods</h5>
+      <pre><code class="language-yaml">
+selector:
+  matchLabels:
+    app: backend
+template:
+  metadata:
+    labels:
+      app: backend
+      </code></pre>
+
+      <pre><code class="language-text">
+✔ Deployment uses selector to manage ReplicaSets  
+✔ ReplicaSet uses same selector to manage Pods  
+✔ Ensures rolling updates work with ZERO conflict  
+      </code></pre>
+
+      <h5 class="text-warning">6️⃣ Why Selectors Are Mandatory?</h5>
+      <pre><code class="language-text">
+Mandatory because without selectors:
+
+❌ Services won’t know which Pods to route traffic to  
+❌ ReplicaSets won’t know which Pods to manage  
+❌ Deployments can accidentally adopt the wrong Pods  
+❌ NetworkPolicies won’t know where to apply rules  
+
+➡ Selectors maintain boundaries and grouping in Kubernetes.
+      </code></pre>
+
+      <h5 class="text-warning">7️⃣ Interview Answers</h5>
+      <pre><code class="language-text">
+Q: What is the use of selectors in Kubernetes?  
+A: Selectors allow Kubernetes components like Services, ReplicaSets, and Deployments 
+   to identify and manage Pods based on labels.
+
+Q: What if you don't specify selectors?  
+A: Kubernetes cannot link resources → Services won't route traffic, Deployments won't control Pods.
+
+Q: What is the difference between equality and set-based selectors?  
+A: Equality matches exact key-value pairs; set-based matches against multiple values.
+
+Q: How do selectors support rolling updates?  
+A: Deployment creates new ReplicaSet with same selectors → Kubernetes migrates traffic automatically.
+      </code></pre>
+
+      <h5 class="text-warning">8️⃣ Final Summary</h5>
+      <pre><code class="language-text">
+Labels = Identity  
+Selectors = Search Engine  
+Pods = Resources  
+Services/Deployments = Consumers  
+
+Selector is the glue that connects Kubernetes objects.
+      </code></pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingK8sNode">
+    <button class="accordion-button collapsed" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseK8sNode"
+      aria-expanded="false" aria-controls="collapseK8sNode">
+      🖥️ What is a Node in Kubernetes?
+    </button>
+  </h2>
+
+  <div id="collapseK8sNode" class="accordion-collapse collapse"
+    aria-labelledby="headingK8sNode" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <h5 class="text-warning">1️⃣ Is Node a Service?</h5>
+      <pre><code class="language-text">
+❌ No. A Node is NOT a Service.
+❌ No. A Node is NOT a Pod.
+❌ No. A Node is NOT a Container.
+
+✔ A Node is simply a MACHINE (VM or Physical Server)
+      </code></pre>
+
+      <h5 class="text-warning">2️⃣ What Exactly Is a Node?</h5>
+      <pre><code class="language-text">
+A Node = A worker machine in Kubernetes where Pods run.
+
+It can be:
+  • A physical server
+  • A virtual machine (AWS EC2, GCP VM, Azure VM)
+  • A cloud node provisioned by managed K8s (EKS, GKE, AKS)
+
+Every Node has:
+  ✔ Kubelet (agent)
+  ✔ Kube-Proxy (networking)
+  ✔ Container Runtime (Docker / containerd / CRI-O)
+  ✔ CPU + RAM + Storage resources
+      </code></pre>
+
+      <h5 class="text-warning">3️⃣ Node Responsibilities</h5>
+      <pre><code class="language-text">
+✔ Run Pods
+✔ Pull container images
+✔ Manage container lifecycle
+✔ Report health to Control Plane
+✔ Maintain network communication
+✔ Enforce pod resource limits
+      </code></pre>
+
+      <h5 class="text-warning">4️⃣ Node Architecture (Simple Diagram)</h5>
+      <pre><code class="language-text">
+          +----------------------------+
+          |         NODE (VM)           |
+          +----------------------------+
+          | Kubelet                    |
+          | Kube-Proxy                 |
+          | Container Runtime          |
+          +----------------------------+
+          |        Running Pods        |
+          |   [Pod1] [Pod2] [Pod3]     |
+          +----------------------------+
+      </code></pre>
+
+      <h5 class="text-warning">5️⃣ How Control Plane Uses the Node</h5>
+      <pre><code class="language-text">
+1️⃣ Scheduler selects a Node based on resources  
+2️⃣ API Server tells the Node’s Kubelet  
+3️⃣ Kubelet pulls the image  
+4️⃣ Starts the Pod  
+5️⃣ Kube-Proxy sets network routes  
+6️⃣ Node reports status → Ready / NotReady
+      </code></pre>
+
+      <h5 class="text-warning">6️⃣ Easy Real-Life Analogy</h5>
+      <pre><code class="language-text">
+Think of Kubernetes as a big company:
+
+CEO (Control Plane)  
+→ assigns tasks to employees (Nodes)  
+→ employees run the work (Pods)
+
+Nodes = Employees who execute work  
+Pods = Tasks  
+Containers = Apps inside tasks  
+      </code></pre>
+
+      <h5 class="text-warning">7️⃣ Interview Answers</h5>
+      <pre><code class="language-text">
+Q: What is a Node?
+A: A worker machine where Kubernetes runs Pods and containers.
+
+Q: Is Node equal to Service?
+A: No. A Node is physical/virtual machine; Service is networking abstraction.
+
+Q: What runs inside a Node?
+A: Kubelet, Kube-Proxy, Container Runtime, and Pods.
+
+Q: How does K8s choose Nodes?
+A: Scheduler picks a Node based on CPU, RAM, taints/tolerations, affinity.
+      </code></pre>
+
+      <h5 class="text-warning">8️⃣ Final Summary</h5>
+      <pre><code class="language-text">
+Node = Machine  
+Pod = Running unit  
+Service = Networking  
+Control Plane = Brain
+
+Nodes do the actual work; everything runs on Nodes.
+      </code></pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingKubelet">
+    <button class="accordion-button collapsed" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseKubelet"
+      aria-expanded="false" aria-controls="collapseKubelet">
+      🟦 What is Kubelet in Kubernetes?
+    </button>
+  </h2>
+
+  <div id="collapseKubelet" class="accordion-collapse collapse"
+    aria-labelledby="headingKubelet" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <h5 class="text-warning">1️⃣ What is Kubelet?</h5>
+      <pre><code class="language-text">
+Kubelet = Kubernetes Agent running inside every Worker Node.
+
+It ensures:
+✔ Pods are running as expected
+✔ Containers are healthy
+✔ Node reports status back to API Server
+      </code></pre>
+
+      <h5 class="text-warning">2️⃣ Responsibilities</h5>
+      <pre><code class="language-text">
+✔ Reads PodSpecs from API Server  
+✔ Pulls images using container runtime  
+✔ Starts containers  
+✔ Monitors container health  
+✔ Restarts containers if required  
+✔ Reports Node & Pod status  
+✔ Enforces resource limits  
+      </code></pre>
+
+      <h5 class="text-warning">3️⃣ Simple Flow</h5>
+      <pre><code class="language-text">
+Scheduler picks Node → API Server → Kubelet
+Kubelet:
+1. Pull image
+2. Start container
+3. Update Pod status
+      </code></pre>
+
+      <h5 class="text-warning">4️⃣ Interview Answer</h5>
+      <pre><code class="language-text">
+"Kubelet is the worker-node agent that ensures all containers inside
+pods are running and healthy. It communicates continuously with the API Server."
+      </code></pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingScheduler">
+    <button class="accordion-button collapsed" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseScheduler"
+      aria-expanded="false" aria-controls="collapseScheduler">
+      🟩 What is Scheduler in Kubernetes?
+    </button>
+  </h2>
+
+  <div id="collapseScheduler" class="accordion-collapse collapse"
+    aria-labelledby="headingScheduler" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <h5 class="text-warning">1️⃣ What is the Scheduler?</h5>
+      <pre><code class="language-text">
+Scheduler = Control Plane component that decides 
+"Which Pod should run on which Node?"
+      </code></pre>
+
+      <h5 class="text-warning">2️⃣ What Scheduler Checks?</h5>
+      <pre><code class="language-text">
+Scheduler checks:
+✔ Node CPU & RAM  
+✔ Pod resource requests  
+✔ Taints & tolerations  
+✔ Node affinity  
+✔ Pod affinity / anti-affinity  
+✔ Node health & availability  
+✔ Storage & network needs  
+      </code></pre>
+
+      <h5 class="text-warning">3️⃣ Scheduler Flow</h5>
+      <pre><code class="language-text">
+1. Finds Pods without Node assigned  
+2. Filters Nodes (removes unsuitable nodes)  
+3. Scores Nodes (best match gets highest score)  
+4. Assigns Pod to best Node  
+5. Sends Binding request to API Server  
+      </code></pre>
+
+      <h5 class="text-warning">4️⃣ Interview Answer</h5>
+      <pre><code class="language-text">
+"Kubernetes Scheduler picks the most suitable node for each Pod 
+based on resources, constraints, and policies."
+      </code></pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingNodeVsPod">
+    <button class="accordion-button collapsed" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseNodeVsPod"
+      aria-expanded="false" aria-controls="collapseNodeVsPod">
+      🟥 Difference Between Node vs Pod in Kubernetes
+    </button>
+  </h2>
+
+  <div id="collapseNodeVsPod" class="accordion-collapse collapse"
+    aria-labelledby="headingNodeVsPod" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <h5 class="text-warning">1️⃣ What is a Node?</h5>
+      <pre><code class="language-text">
+Node = A machine (VM or physical) where Kubernetes runs workloads.
+Contains:
+✔ Kubelet  
+✔ Kube-Proxy  
+✔ Container Runtime  
+✔ CPU, RAM, Storage  
+      </code></pre>
+
+      <h5 class="text-warning">2️⃣ What is a Pod?</h5>
+      <pre><code class="language-text">
+Pod = Smallest deployable unit in Kubernetes.
+Contains:
+✔ One or more containers  
+✔ Shared network namespace  
+✔ Shared storage volumes  
+      </code></pre>
+
+      <h5 class="text-warning">3️⃣ Node vs Pod Summary</h5>
+      <pre><code class="language-text">
+Node → Worker machine  
+Pod → Application instance running on Node  
+
+Node: Physical resource  
+Pod: Logical execution environment  
+
+Node can run many Pods  
+Pods live inside a Node
+      </code></pre>
+
+      <h5 class="text-warning">4️⃣ Diagram</h5>
+      <pre><code class="language-text">
++-------------+       +-----------------+
+|   NODE      |       |      POD        |
++-------------+       +-----------------+
+| Kubelet     |       | Container(s)    |
+| Kube-Proxy  |       | Shared storage  |
+| Runtime     |       | IP address      |
++-------------+       +-----------------+
+| Pods...     |
++-------------+
+      </code></pre>
+
+      <h5 class="text-warning">5️⃣ Interview Answer</h5>
+      <pre><code class="language-text">
+"A Node is a machine that provides CPU/RAM to run workloads.
+A Pod is the actual application instance running inside the Node."
+      </code></pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingMySQLSpring">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseMySQLSpring"
+      aria-expanded="false" aria-controls="collapseMySQLSpring">
+      🐬 MySQL + 🚀 Spring Boot – K8s Deployment with Secrets & ConfigMap
+    </button>
+  </h2>
+
+  <div id="collapseMySQLSpring" class="accordion-collapse collapse"
+    aria-labelledby="headingMySQLSpring" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- Secrets -->
+      <h5 class="text-warning">1️⃣ Secret – DB Username & Password</h5>
+      <pre><code class="language-yaml">
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-secret
+type: Opaque
+data:
+  username: bXlzcWw=        # mysql
+  password: cGFzc3dvcmQ=    # password
+      </code></pre>
+
+      <!-- ConfigMap -->
+      <h5 class="text-warning">2️⃣ ConfigMap – DB Host, DB Name, Port</h5>
+      <pre><code class="language-yaml">
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-config
+data:
+  database: mydb
+  host: mysql-service
+  port: "3306"
+      </code></pre>
+
+      <!-- MySQL Deployment -->
+      <h5 class="text-warning">3️⃣ MySQL Deployment + PVC</h5>
+      <pre><code class="language-yaml">
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+spec:
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: username
+
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: password
+
+            - name: MYSQL_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: mysql-config
+                  key: database
+
+          volumeMounts:
+            - name: mysql-storage
+              mountPath: /var/lib/mysql
+      volumes:
+        - name: mysql-storage
+          persistentVolumeClaim:
+            claimName: mysql-pvc
+      </code></pre>
+
+      <!-- MySQL Service -->
+      <h5 class="text-warning">4️⃣ MySQL Service</h5>
+      <pre><code class="language-yaml">
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-service
+spec:
+  selector:
+    app: mysql
+  ports:
+    - port: 3306
+      targetPort: 3306
+      </code></pre>
+
+      <!-- Spring Boot App Deployment -->
+      <h5 class="text-warning">5️⃣ Spring Boot App Deployment</h5>
+      <pre><code class="language-yaml">
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spring-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: spring-app
+  template:
+    metadata:
+      labels:
+        app: spring-app
+    spec:
+      containers:
+        - name: springboot
+          image: yourdockerhub/springboot-app:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: username
+
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: password
+
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: mysql-config
+                  key: host
+
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: mysql-config
+                  key: database
+
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: mysql-config
+                  key: port
+      </code></pre>
+
+      <!-- Spring Boot Service -->
+      <h5 class="text-warning">6️⃣ Spring Boot Service</h5>
+      <pre><code class="language-yaml">
+apiVersion: v1
+kind: Service
+metadata:
+  name: springboot-service
+spec:
+  selector:
+    app: spring-app
+  ports:
+    - port: 8080
+      targetPort: 8080
+  type: NodePort
+      </code></pre>
+
+      <!-- Flow -->
+      <h5 class="text-warning">7️⃣ Flow (How Everything Connects)</h5>
+      <pre><code class="language-text">
+Spring Boot App ---> mysql-service ---> MySQL Pod ---> PVC Storage
+
+Credentials (user/pass) = Secret  
+DB Info (host, dbname, port) = ConfigMap  
+      </code></pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingK8sConfigSecret">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseK8sConfigSecret"
+      aria-expanded="false" aria-controls="collapseK8sConfigSecret">
+      🔐 Kubernetes ConfigMap & Secrets → Dynamic Loading into Spring Boot (application.yml)
+    </button>
+  </h2>
+
+  <div id="collapseK8sConfigSecret" class="accordion-collapse collapse"
+    aria-labelledby="headingK8sConfigSecret" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- 1 -->
+      <h5 class="text-warning">1️⃣ ConfigMap – App Common Properties</h5>
+      <pre><code class="language-yaml">
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  APP_ENV: "prod"
+  DB_URL: "jdbc:mysql://mysql-service:3306/mydb"
+  FEATURE_FLAG: "true"
+      </code></pre>
+
+      <!-- 2 -->
+      <h5 class="text-warning">2️⃣ Secret – Sensitive Credentials</h5>
+      <pre><code class="language-yaml">
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-secret
+type: Opaque
+data:
+  DB_USERNAME: bXlzcWw=        # "mysql" (Base64)
+  DB_PASSWORD: cGFzc3dvcmQ=    # "password"
+      </code></pre>
+
+      <!-- 3 -->
+      <h5 class="text-warning">3️⃣ Spring Boot – application.yml reading env variables</h5>
+      <pre><code class="language-yaml">
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+app:
+  env: ${APP_ENV}
+  feature:
+    enabled: ${FEATURE_FLAG:false}
+      </code></pre>
+
+      <!-- 4 -->
+      <h5 class="text-warning">4️⃣ Deployment – Inject ConfigMap + Secret → app.yml</h5>
+      <pre><code class="language-yaml">
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spring-app
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: spring-app
+          image: myapp:latest
+          env:
+            # ConfigMap
+            - name: APP_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: APP_ENV
+
+            - name: DB_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: DB_URL
+
+            - name: FEATURE_FLAG
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: FEATURE_FLAG
+
+            # Secret Values
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret
+                  key: DB_USERNAME
+
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret
+                  key: DB_PASSWORD
+      </code></pre>
+
+      <!-- 5 -->
+      <h5 class="text-warning">5️⃣ Java Code – Reading From application.yml</h5>
+      <pre><code class="language-java">
+// Using @Value
+@Value("${app.env}")
+private String appEnv;
+
+// Using @ConfigurationProperties
+@Component
+@ConfigurationProperties(prefix = "app")
+public class AppConfig {
+  private String env;
+  private Feature feature;
+
+  public static class Feature {
+    private boolean enabled;
+  }
+}
+      </code></pre>
+
+      <!-- 6 -->
+      <h5 class="text-warning">6️⃣ Explanation – How app.yml dynamically loads config</h5>
+      <ul>
+        <li>Kubernetes injects **env variables** from ConfigMap/Secret into the container</li>
+        <li>Spring Boot automatically maps them to <code>${VARIABLE}</code> placeholders in application.yml</li>
+        <li>No rebuild required → just update ConfigMap/Secret</li>
+        <li>Deployment picks new values → rolling update</li>
+      </ul>
+
+      <!-- 7 -->
+      <h5 class="text-warning">7️⃣ Modify Value Without Restarting Application JAR</h5>
+      <pre><code class="language-bash">
+kubectl edit configmap app-config
+kubectl edit secret app-secret
+kubectl rollout restart deployment spring-app
+      </code></pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingMysqlSpring">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseMysqlSpring"
+      aria-expanded="false" aria-controls="collapseMysqlSpring">
+      🐬 MySQL Deployment + ☕ Spring Boot Deployment using ConfigMap & Secret
+    </button>
+  </h2>
+
+  <div id="collapseMysqlSpring" class="accordion-collapse collapse"
+    aria-labelledby="headingMysqlSpring" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- 1 -->
+      <h5 class="text-warning">1️⃣ Secret – DB Username & Password</h5>
+      <pre><code class="language-yaml">
+apiVersion: v1
+kind: Secret
+metadata:
+  name: db-secret
+type: Opaque
+data:
+  DB_USERNAME: bXlzcWw=        # "mysql"
+  DB_PASSWORD: cGFzc3dvcmQ=    # "password"
+      </code></pre>
+
+      <!-- 2 -->
+      <h5 class="text-warning">2️⃣ ConfigMap – Common DB Config</h5>
+      <pre><code class="language-yaml">
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  DB_HOST: "mysql"
+  DB_PORT: "3306"
+  DB_NAME: "mydb"
+      </code></pre>
+
+      <!-- 3 -->
+      <h5 class="text-warning">3️⃣ MySQL Deployment + PVC</h5>
+      <pre><code class="language-yaml">
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+spec:
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: "root123"
+            - name: MYSQL_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: DB_NAME
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: DB_USERNAME
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: DB_PASSWORD
+          ports:
+            - containerPort: 3306
+          volumeMounts:
+            - name: mysql-pv
+              mountPath: /var/lib/mysql
+      volumes:
+        - name: mysql-pv
+          persistentVolumeClaim:
+            claimName: mysql-pvc
+      </code></pre>
+
+      <!-- 4 -->
+      <h5 class="text-warning">4️⃣ MySQL Service</h5>
+      <pre><code class="language-yaml">
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+spec:
+  selector:
+    app: mysql
+  ports:
+    - port: 3306
+      targetPort: 3306
+  clusterIP: None  # Headless service (optional)
+      </code></pre>
+
+      <!-- 5 -->
+      <h5 class="text-warning">5️⃣ Spring Boot Deployment (Reads ConfigMap + Secret)</h5>
+      <pre><code class="language-yaml">
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spring-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spring-app
+  template:
+    metadata:
+      labels:
+        app: spring-app
+    spec:
+      containers:
+        - name: spring-app
+          image: my-spring-app:latest
+          ports:
+            - containerPort: 8080
+          env:
+            # ConfigMap
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: DB_HOST
+
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: DB_PORT
+
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: DB_NAME
+
+            # Secret
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: DB_USERNAME
+
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: DB_PASSWORD
+      </code></pre>
+
+      <!-- 6 -->
+      <h5 class="text-warning">6️⃣ Spring Boot Service (ClusterIP)</h5>
+      <pre><code class="language-yaml">
+apiVersion: v1
+kind: Service
+metadata:
+  name: spring-app
+spec:
+  type: ClusterIP
+  selector:
+    app: spring-app
+  ports:
+    - port: 8080
+      targetPort: 8080
+      </code></pre>
+
+      <!-- 7 -->
+      <h5 class="text-warning">7️⃣ application.yml – Dynamic DB URL</h5>
+      <pre><code class="language-yaml">
+spring:
+  datasource:
+    url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+server:
+  port: 8080
+      </code></pre>
+
+      <!-- 8 -->
+      <h5 class="text-warning">8️⃣ Java Code – Reading Config (Optional)</h5>
+      <pre><code class="language-java">
+@Value("${spring.datasource.url}")
+private String dbUrl;
+
+@Value("${spring.datasource.username}")
+private String user;
+
+@Value("${spring.datasource.password}")
+private String pass;
+      </code></pre>
+
+      <!-- 9 -->
+      <h5 class="text-warning">9️⃣ How Everything Works (Simple Explanation)</h5>
+      <ul>
+        <li>ConfigMap stores → HOST, PORT, DB Name</li>
+        <li>Secret stores → Username, Password</li>
+        <li>MySQL Deployment uses both to create DB user & DB</li>
+        <li>MySQL Service exposes port 3306 internally</li>
+        <li>Spring Boot Deployment loads environment variables from ConfigMap + Secret</li>
+        <li><code>application.yml</code> dynamically builds JDBC URL</li>
+        <li>No code change, no rebuild — update ConfigMap/Secret & restart deployment</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingIngressEgress">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseIngressEgress"
+      aria-expanded="false" aria-controls="collapseIngressEgress">
+      🌐 Kubernetes Ingress & Egress – What They Are & How They Work (With Examples)
+    </button>
+  </h2>
+
+  <div id="collapseIngressEgress" class="accordion-collapse collapse"
+    aria-labelledby="headingIngressEgress" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- 1 -->
+      <h5 class="text-warning">1️⃣ What is Ingress?</h5>
+      <p>
+        <strong>Ingress controls INCOMING traffic</strong> from the Internet or external clients into Kubernetes cluster.<br>
+        It routes requests to different services based on:
+      </p>
+      <ul>
+        <li>🔹 Hostname (e.g., api.myapp.com)</li>
+        <li>🔹 URL path (e.g., /api, /admin)</li>
+        <li>🔹 SSL/TLS termination (HTTPS)</li>
+        <li>🔹 One Load Balancer → Many services</li>
+      </ul>
+
+      <pre><code class="language-yaml">
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: my-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: "myapp.com"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ui-service
+                port:
+                  number: 80
+
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api-service
+                port:
+                  number: 8080
+
+          - path: /admin
+            pathType: Prefix
+            backend:
+              service:
+                name: admin-service
+                port:
+                  number: 8090
+      </code></pre>
+
+      <p><strong>Ingress Traffic Flow:</strong></p>
+      <pre><code>
+Internet → Ingress Controller → UI / API / Admin Services
+      </code></pre>
+
+      <!-- 2 -->
+      <h5 class="text-warning">2️⃣ What is Egress?</h5>
+      <p>
+        <strong>Egress controls OUTGOING traffic</strong> from pods to the Internet or external networks.<br>
+        Used when your pod needs to call:
+      </p>
+      <ul>
+        <li>🔹 Third-party APIs (payment, OTP, SMS, email)</li>
+        <li>🔹 External database</li>
+        <li>🔹 Any external website</li>
+      </ul>
+
+      <p>By default Kubernetes allows all egress. <br> To restrict, we use <strong>Egress NetworkPolicies</strong>.</p>
+
+      <pre><code class="language-yaml">
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-external-api
+spec:
+  podSelector:
+    matchLabels:
+      app: payment-service
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 172.217.0.0/16  # example: google APIs
+      ports:
+        - protocol: TCP
+          port: 443
+      </code></pre>
+
+      <p><strong>Egress Flow:</strong></p>
+      <pre><code>
+Pod → Egress Rule → Internet / External API
+      </code></pre>
+
+      <!-- 3 -->
+      <h5 class="text-warning">3️⃣ Simple Difference</h5>
+      <table class="table table-dark table-bordered">
+        <tr>
+          <th>Ingress</th>
+          <th>Egress</th>
+        </tr>
+        <tr>
+          <td>Incoming traffic to cluster</td>
+          <td>Outgoing traffic from cluster</td>
+        </tr>
+        <tr>
+          <td>Internet → Pod</td>
+          <td>Pod → Internet</td>
+        </tr>
+        <tr>
+          <td>Uses Ingress Controller + Rules</td>
+          <td>Uses NetworkPolicy</td>
+        </tr>
+        <tr>
+          <td>Routes multiple services with 1 IP</td>
+          <td>Restricts/controls pod outbound calls</td>
+        </tr>
+        <tr>
+          <td>Supports Host/Path routing</td>
+          <td>Supports IP/Port outbound filtering</td>
+        </tr>
+      </table>
+
+      <!-- 4 -->
+      <h5 class="text-warning">4️⃣ Real-Time Example</h5>
+      <p><strong>Scenario: Food Delivery App</strong></p>
+      <ul>
+        <li>🍔 Users open <code>app.com</code> → routes to UI</li>
+        <li>📦 <code>/api/orders</code> → Order Service</li>
+        <li>💳 Order service needs to call RazorPay external API → needs Egress</li>
+      </ul>
+
+      <pre><code>
+User Request → INGRESS → Order Service  
+Order Service → EGRESS → RazorPay / Stripe API
+      </code></pre>
+
+      <!-- 5 -->
+      <h5 class="text-warning">5️⃣ Where They Are Used in Real World?</h5>
+      <ul>
+        <li>✔ Microservices routing</li>
+        <li>✔ API Gateway functionality</li>
+        <li>✔ HTTPS termination</li>
+        <li>✔ Allowing only specific services outgoing traffic</li>
+        <li>✔ Blocking pods from accessing internet</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingIngressPaths">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseIngressPaths"
+      aria-expanded="false" aria-controls="collapseIngressPaths">
+      🛣️ Kubernetes Ingress – Path-Based Routing for Microservices (Full Example)
+    </button>
+  </h2>
+
+  <div id="collapseIngressPaths" class="accordion-collapse collapse"
+    aria-labelledby="headingIngressPaths" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- 1 -->
+      <h5 class="text-warning">1️⃣ What is Path-Based Routing?</h5>
+      <p>
+        Path-based routing means:  
+        <strong>Different URL paths → Different microservices inside the cluster</strong>.
+      </p>
+
+      <ul>
+        <li><code>/</code> → UI Service</li>
+        <li><code>/api</code> → API Gateway / Backend APIs</li>
+        <li><code>/order</code> → Order Service</li>
+        <li><code>/payment</code> → Payment Service</li>
+      </ul>
+
+      <pre><code>
+User → Ingress → Correct Service based on URL path
+      </code></pre>
+
+      <!-- 2 -->
+      <h5 class="text-warning">2️⃣ Architecture Diagram (Text)</h5>
+      <pre><code>
+                +----------------------+
+Internet  --->  |   Ingress Controller | 
+                +----------+-----------+
+                           |
+ -----------------------------------------------------
+ |        |              |               |           |
+/        /api         /order        /payment      (other paths)
+UI svc   API svc      Order svc     Payment svc
+      </code></pre>
+
+      <!-- 3 -->
+      <h5 class="text-warning">3️⃣ Microservice Services (ClusterIP)</h5>
+
+      <pre><code class="language-yaml">
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ui-service
+spec:
+  selector:
+    app: ui
+  ports:
+    - port: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-service
+spec:
+  selector:
+    app: api
+  ports:
+    - port: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service
+spec:
+  selector:
+    app: order
+  ports:
+    - port: 8090
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-service
+spec:
+  selector:
+    app: payment
+  ports:
+    - port: 8095
+      </code></pre>
+
+      <!-- 4 -->
+      <h5 class="text-warning">4️⃣ Ingress – Path-Based Routing Example</h5>
+      <pre><code class="language-yaml">
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: myapp-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: myapp.com
+      http:
+        paths:
+          # UI (Home page)
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ui-service
+                port:
+                  number: 80
+
+          # Backend API
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api-service
+                port:
+                  number: 8080
+
+          # Order Service
+          - path: /order
+            pathType: Prefix
+            backend:
+              service:
+                name: order-service
+                port:
+                  number: 8090
+
+          # Payment Service
+          - path: /payment
+            pathType: Prefix
+            backend:
+              service:
+                name: payment-service
+                port:
+                  number: 8095
+      </code></pre>
+
+      <!-- 5 -->
+      <h5 class="text-warning">5️⃣ URL → Service Routing Behaviour</h5>
+      <table class="table table-dark table-bordered">
+        <tr>
+          <th>URL Hit</th>
+          <th>Service Reached</th>
+        </tr>
+        <tr>
+          <td>https://myapp.com/</td>
+          <td>ui-service</td>
+        </tr>
+        <tr>
+          <td>https://myapp.com/api/users</td>
+          <td>api-service</td>
+        </tr>
+        <tr>
+          <td>https://myapp.com/order/create</td>
+          <td>order-service</td>
+        </tr>
+        <tr>
+          <td>https://myapp.com/payment/status</td>
+          <td>payment-service</td>
+        </tr>
+      </table>
+
+      <!-- 6 -->
+      <h5 class="text-warning">6️⃣ Why Path-Based Routing is Useful?</h5>
+      <ul>
+        <li>✔ Single LoadBalancer → Many microservices</li>
+        <li>✔ Clean routing structure for monolith -> microservices transition</li>
+        <li>✔ Simple API gateway alternative</li>
+        <li>✔ Easier SSL/TLS handling (one HTTPS cert)</li>
+        <li>✔ Works perfectly for UI + backend apps</li>
+      </ul>
+
+      <!-- 7 -->
+      <h5 class="text-warning">7️⃣ Real Project Example</h5>
+      <pre><code>
+Amazon.in homepage → /
+Product Search API → /api/search
+Orders → /order
+Payments → /payment
+      </code></pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingIngressTLS">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseIngressTLS"
+      aria-expanded="false" aria-controls="collapseIngressTLS">
+      🔐 Kubernetes Ingress + TLS (HTTPS) using Cert-Manager – Full Example
+    </button>
+  </h2>
+
+  <div id="collapseIngressTLS" class="accordion-collapse collapse"
+    aria-labelledby="headingIngressTLS" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- 1 -->
+      <h5 class="text-warning">1️⃣ What is Cert-Manager?</h5>
+      <p>
+        <strong>Cert-Manager</strong> automatically issues and renews SSL/TLS certificates for Kubernetes Ingress.
+        Works with:
+      </p>
+      <ul>
+        <li>🔹 Let's Encrypt (Free SSL)</li>
+        <li>🔹 Self-signed certificates</li>
+        <li>🔹 Cloud certificates (AWS/GCP/Azure)</li>
+      </ul>
+
+      <!-- 2 -->
+      <h5 class="text-warning">2️⃣ Install Cert-Manager (CRDs + Controller)</h5>
+      <pre><code class="language-bash">
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/latest/download/cert-manager.yaml
+      </code></pre>
+
+      <!-- 3 -->
+      <h5 class="text-warning">3️⃣ ClusterIssuer – Let's Encrypt (Production)</h5>
+      <pre><code class="language-yaml">
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    email: youremail@example.com
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-prod-secret
+    solvers:
+      - http01:
+          ingress:
+            class: nginx
+      </code></pre>
+
+      <!-- 4 -->
+      <h5 class="text-warning">4️⃣ Ingress with TLS enabled</h5>
+      <pre><code class="language-yaml">
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: spring-app-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - app.example.com
+      secretName: app-cert-tls    # cert-manager auto-creates
+  rules:
+    - host: app.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: spring-service
+                port:
+                  number: 8080
+      </code></pre>
+
+      <!-- 5 -->
+      <h5 class="text-warning">5️⃣ How HTTPS Works?</h5>
+      <pre><code>
+📌 cert-manager requests cert from Let's Encrypt  
+📌 Ingress stores cert in Kubernetes TLS Secret  
+📌 NGINX Ingress serves HTTPS  
+📌 Auto-renewal every 60–90 days  
+      </code></pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingIngressNginxArch">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseIngressNginxArch"
+      aria-expanded="false" aria-controls="collapseIngressNginxArch">
+      🚀 Ingress + Spring Boot + NGINX – Full Architecture Flow (Best for Microservices)
+    </button>
+  </h2>
+
+  <div id="collapseIngressNginxArch" class="accordion-collapse collapse"
+    aria-labelledby="headingIngressNginxArch" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- 1 -->
+      <h5 class="text-warning">1️⃣ Architecture Diagram (Text)</h5>
+      <pre><code>
+                       +-------------------------+
+Internet  ---> HTTPS → |  NGINX Ingress Gateway  |
+                       +----+----+----+----------+
+                            |    |    |
+                         /api  /order /payment
+                          |     |       |
+                  +-------+     |       +----------+
+                  |             |                  |
+        Spring Boot API   Order Service      Payment Service
+                  |             |                  |
+                Pods          Pods               Pods
+      </code></pre>
+
+      <!-- 2 -->
+      <h5 class="text-warning">2️⃣ Spring Boot Service Deployment</h5>
+      <pre><code class="language-yaml">
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spring-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: spring-app
+  template:
+    metadata:
+      labels:
+        app: spring-app
+    spec:
+      containers:
+        - name: spring-app
+          image: spring-boot-app:latest
+          ports:
+            - containerPort: 8080
+      </code></pre>
+
+      <!-- 3 -->
+      <h5 class="text-warning">3️⃣ Service for the Spring Boot App</h5>
+      <pre><code class="language-yaml">
+apiVersion: v1
+kind: Service
+metadata:
+  name: spring-service
+spec:
+  selector:
+    app: spring-app
+  ports:
+    - port: 8080
+      targetPort: 8080
+  type: ClusterIP
+      </code></pre>
+
+      <!-- 4 -->
+      <h5 class="text-warning">4️⃣ Ingress – Path Based Routing for Spring Boot</h5>
+      <pre><code class="language-yaml">
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: spring-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: api.myapp.com
+      http:
+        paths:
+          - path: /users
+            pathType: Prefix
+            backend:
+              service:
+                name: spring-service
+                port:
+                  number: 8080
+          - path: /orders
+            pathType: Prefix
+            backend:
+              service:
+                name: order-service
+                port:
+                  number: 8090
+      </code></pre>
+
+      <!-- 5 -->
+      <h5 class="text-warning">5️⃣ How Request Flows?</h5>
+      <pre><code>
+Client → (HTTPS) Ingress  
+Ingress → Path match (/users, /orders)  
+Ingress → Redirect to correct Spring Boot service  
+Spring Boot Pod → Returns response  
+      </code></pre>
+
+      <!-- 6 -->
+      <h5 class="text-warning">6️⃣ Why NGINX + Spring Boot is Powerful?</h5>
+      <ul>
+        <li>✔ Centralized HTTPS termination</li>
+        <li>✔ Load Balancing to Spring Boot pods</li>
+        <li>✔ Rate limiting & throttling</li>
+        <li>✔ Path/Host-based routing</li>
+        <li>✔ Canary & blue-green deployments</li>
+        <li>✔ Works like API Gateway (lightweight)</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingIngressUseCases">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseIngressUseCases"
+      aria-expanded="false" aria-controls="collapseIngressUseCases">
+      🌐 Ingress + TLS + Spring Boot + NGINX — Real-World Architecture & Use Cases (With Examples)
+    </button>
+  </h2>
+
+  <div id="collapseIngressUseCases" class="accordion-collapse collapse"
+    aria-labelledby="headingIngressUseCases" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- 1 -->
+      <h5 class="text-warning">1️⃣ Real-World Need for Ingress + TLS</h5>
+      <p>Every production application requires:</p>
+      <ul>
+        <li>✔ HTTPS security (TLS)</li>
+        <li>✔ Domain routing (api.myapp.com, admin.myapp.com)</li>
+        <li>✔ Path routing (/api, /orders)</li>
+        <li>✔ Load balancing for Spring Boot pods</li>
+      </ul>
+      <p><strong>Ingress + Cert-Manager + NGINX</strong> solves all of these without extra servers.</p>
+
+      <!-- 2 -->
+      <h5 class="text-warning">2️⃣ Real-World Example Architecture (Startup / Enterprise)</h5>
+      <pre><code>
+User → HTTPS → Ingress (NGINX)
+                |
+                +-- / (UI) → React/Angular Service
+                |
+                +-- /api → Spring Boot API Gateway
+                |
+                +-- /orders → Order Microservice (Spring Boot)
+                |
+                +-- /payment → Payment Microservice
+      </code></pre>
+
+      <p><strong>Used by:</strong> Swiggy, Zomato, Uber, Amazon microservices.</p>
+
+      <!-- 3 -->
+      <h5 class="text-warning">3️⃣ Example: Let's Encrypt TLS (Real Domain)</h5>
+      <pre><code class="language-yaml">
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    email: tech@myapp.com
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-key
+    solvers:
+      - http01:
+          ingress:
+            class: nginx
+      </code></pre>
+
+      <p>Cert-Manager will automatically get real certificates for:</p>
+      <pre><code>
+https://api.myapp.com  
+https://order.myapp.com  
+https://payments.myapp.com
+      </code></pre>
+
+      <!-- 4 -->
+      <h5 class="text-warning">4️⃣ Ingress with TLS + Path Routing Example</h5>
+      <pre><code class="language-yaml">
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ecommerce-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+
+  tls:
+    - hosts:
+        - shop.myapp.com
+      secretName: shop-tls-cert
+
+  rules:
+    - host: shop.myapp.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ui-service
+                port: { number: 80 }
+
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api-service
+                port: { number: 8080 }
+
+          - path: /orders
+            pathType: Prefix
+            backend:
+              service:
+                name: order-service
+                port: { number: 8090 }
+
+          - path: /payment
+            pathType: Prefix
+            backend:
+              service:
+                name: payment-service
+                port: { number: 9000 }
+      </code></pre>
+
+      <p><strong>Real-World Outcome:</strong></p>
+      <pre><code>
+https://shop.myapp.com          → React UI  
+https://shop.myapp.com/api      → Spring Boot API  
+https://shop.myapp.com/orders   → Order MS  
+https://shop.myapp.com/payment  → Payment MS  
+      </code></pre>
+
+      <!-- 5 -->
+      <h5 class="text-warning">5️⃣ Real-World Use Case: E-Commerce Website</h5>
+      <p><strong>E-commerce platforms (Amazon, Flipkart, Meesho) use exactly this pattern:</strong></p>
+      <ul>
+        <li>🛒 UI → <code>/</code></li>
+        <li>📦 Products API → <code>/api/products</code></li>
+        <li>📨 Cart Service → <code>/api/cart</code></li>
+        <li>💳 Payment Service → <code>/payment</code></li>
+        <li>🚚 Shipment Service → <code>/shipment</code></li>
+        <li>🔐 All over HTTPS (TLS)</li>
+      </ul>
+
+      <!-- 6 -->
+      <h5 class="text-warning">6️⃣ Real-World Use Case: Banking / Fintech (PhonePe, Paytm)</h5>
+      <ul>
+        <li>🔹 <strong>/auth</strong> → Login Service</li>
+        <li>🔹 <strong>/upi</strong> → UPI microservice</li>
+        <li>🔹 <strong>/txn</strong> → Transaction Service</li>
+        <li>🔹 <strong>/balance</strong> → Balance Check Service</li>
+        <li>🔒 Strict HTTPS with auto-renew certs</li>
+      </ul>
+
+      <!-- 7 -->
+      <h5 class="text-warning">7️⃣ Real-World Use Case: SaaS Multi-Tenant App</h5>
+      <pre><code>
+clientA.myproduct.com  → A's database & services  
+clientB.myproduct.com  → B's environment  
+clientC.myproduct.com  → C's microservices  
+      </code></pre>
+
+      <p><strong>Ingress routes per domain.</strong></p>
+
+      <!-- 8 -->
+      <h5 class="text-warning">8️⃣ Spring Boot + NGINX – Real Architecture Flow</h5>
+      <pre><code>
+Client → HTTPS  
+         ↓  
+NGINX Ingress  
+         ↓ (path routing)  
+-----------------------------------------
+|       |        |          |           |
+UI    /api   /orders     /payment     /auth
+Service Boot  Boot        Boot        Boot  
+      </code></pre>
+
+      <!-- 9 -->
+      <h5 class="text-warning">9️⃣ Why Companies Use This?</h5>
+      <ul>
+        <li>✔ Free automatic SSL certificates</li>
+        <li>✔ One load balancer → 10+ microservices</li>
+        <li>✔ Works as lightweight API Gateway</li>
+        <li>✔ Perfect for Spring Boot microservices</li>
+        <li>✔ Zero-downtime certificate renewal</li>
+        <li>✔ Production-grade and cloud-neutral</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingIngressAdvanced">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseIngressAdvanced"
+      aria-expanded="false" aria-controls="collapseIngressAdvanced">
+      ⚙️ Kubernetes Ingress – Advanced Concepts (Rate Limiting, CORS, Rewrite, Auth) – With Examples
+    </button>
+  </h2>
+
+  <div id="collapseIngressAdvanced" class="accordion-collapse collapse"
+    aria-labelledby="headingIngressAdvanced" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- 1 -->
+      <h5 class="text-warning">1️⃣ Rate Limiting (Protect APIs)</h5>
+      <p>Rate limiting helps prevent:</p>
+      <ul>
+        <li>🔹 DDOS attacks</li>
+        <li>🔹 Bruteforce login attempts</li>
+        <li>🔹 Excessive API usage</li>
+      </ul>
+
+      <pre><code class="language-yaml">
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rate-limit-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/limit-rps: "10"         # requests per second
+    nginx.ingress.kubernetes.io/limit-burst-multiplier: "3"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: api.myapp.com
+      http:
+        paths:
+          - path: /login
+            pathType: Prefix
+            backend:
+              service:
+                name: auth-service
+                port:
+                  number: 8080
+      </code></pre>
+
+      <p><strong>Meaning:</strong><br>
+      Only <strong>10 requests/sec</strong> allowed for /login — stops attackers from brute-forcing password.</p>
+
+      <!-- 2 -->
+      <h5 class="text-warning">2️⃣ CORS – Allow Cross-Origin Requests</h5>
+      <p>Used when frontend and backend run on separate domains:</p>
+      <ul>
+        <li>Frontend → <code>https://frontend.com</code></li>
+        <li>Backend → <code>https://api.backend.com</code></li>
+      </ul>
+
+      <pre><code class="language-yaml">
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://frontend.com"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, PUT, POST, DELETE"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "Authorization, Content-Type"
+      </code></pre>
+
+      <p><strong>Used in:</strong> React/Angular → Spring Boot APIs</p>
+
+      <!-- 3 -->
+      <h5 class="text-warning">3️⃣ Rewrite Target – Change URL Before Hitting Service</h5>
+      <p>Useful when URL from client is different from internal service path.</p>
+
+      <pre><code class="language-yaml">
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+spec:
+  rules:
+    - host: myapp.com
+      http:
+        paths:
+          - path: /api/(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: api-service
+                port:
+                  number: 8080
+      </code></pre>
+
+      <p><strong>Effect:</strong></p>
+      <pre><code>
+Client hits:   /api/users  
+Service sees:  /users  
+      </code></pre>
+
+      <p>Used when migrating monolith → microservices while keeping old URLs.</p>
+
+      <!-- 4 -->
+      <h5 class="text-warning">4️⃣ Basic Authentication</h5>
+      <p>Protects URLs using username/password (NGINX-level security).</p>
+
+      <pre><code class="language-bash">
+# Create password file
+htpasswd -c auth users
+kubectl create secret generic ingress-basic-auth --from-file=auth
+      </code></pre>
+
+      <pre><code class="language-yaml">
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/auth-type: "basic"
+    nginx.ingress.kubernetes.io/auth-secret: "ingress-basic-auth"
+    nginx.ingress.kubernetes.io/auth-realm: "Authentication Required"
+spec:
+  rules:
+    - host: admin.myapp.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: admin-service
+                port:
+                  number: 80
+      </code></pre>
+
+      <p>Used in Admin panels:  
+      <strong>/admin, /monitoring, /grafana, /prometheus</strong></p>
+
+      <!-- 5 -->
+      <h5 class="text-warning">5️⃣ JWT Authentication with Ingress</h5>
+      <p>Validate JWT tokens before allowing traffic to backend.</p>
+
+      <pre><code class="language-yaml">
+annotations:
+  nginx.ingress.kubernetes.io/auth-url: "https://auth-service/validate"
+  nginx.ingress.kubernetes.io/auth-response-headers: "x-user-id, x-role"
+      </code></pre>
+
+      <p><strong>Flow:</strong></p>
+      <pre><code>
+Client → Ingress  
+Ingress → auth-service/validate (JWT check)  
+If OK → Spring Boot API  
+Else → 401 Unauthorized  
+      </code></pre>
+
+      <!-- 6 -->
+      <h5 class="text-warning">6️⃣ Whitelisting / Blacklisting IPs</h5>
+      <p>Block unwanted IPs, allow only India region, restrict admin URLs.</p>
+
+      <pre><code class="language-yaml">
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/whitelist-source-range: "203.122.0.0/16, 10.0.0.0/8"
+      </code></pre>
+
+      <p>Used for:</p>
+      <ul>
+        <li>🔹 Internal tools access</li>
+        <li>🔹 DevOps admin dashboards</li>
+        <li>🔹 Database management UI</li>
+      </ul>
+
+      <!-- 7 -->
+      <h5 class="text-warning">7️⃣ Custom Error Page (404/500)</h5>
+      <p>Show user-friendly UI when backend fails.</p>
+
+      <pre><code class="language-yaml">
+annotations:
+  nginx.ingress.kubernetes.io/custom-http-errors: "404,403,500,503"
+  nginx.ingress.kubernetes.io/proxy-intercept-errors: "true"
+      </code></pre>
+
+      <p>Used by:</p>
+      <ul>
+        <li>E-commerce checkout failures</li>
+        <li>Banking downtime</li>
+        <li>Payment failure UI</li>
+      </ul>
+
+      <!-- 8 -->
+      <h5 class="text-warning">8️⃣ Request Timeout / Connection Timeout</h5>
+      <p>Useful for slow microservices like payment, reporting.</p>
+
+      <pre><code class="language-yaml">
+annotations:
+  nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
+  nginx.ingress.kubernetes.io/proxy-send-timeout: "120"
+      </code></pre>
+
+      <p>Examples:</p>
+      <ul>
+        <li>UPI processing (slow bank response)</li>
+        <li>Analytics report generation</li>
+        <li>Order processing workflows</li>
+      </ul>
+
+      <!-- 9 -->
+      <h5 class="text-warning">9️⃣ Real-World Use Cases of Advanced Ingress Features</h5>
+      <ul>
+        <li>🏦 **Banks (HDFC, ICICI)** → JWT auth, IP whitelist</li>
+        <li>🛒 **E-commerce (Amazon, Flipkart)** → rewrite rules, rate limiting</li>
+        <li>📱 **Fintech (PhonePe, PayTM)** → timeout configs, JWT validation</li>
+        <li>📺 **OTT Apps (Hotstar, Netflix)** → CORS + path routing</li>
+        <li>🩺 **Health apps** → Strict HTTPS + IP whitelist</li>
+      </ul>
+
+      <!-- 10 -->
+      <h5 class="text-warning">🔟 Summary</h5>
+      <pre><code>
+Rate limiting → Protect APIs  
+CORS → Frontend ↔ Backend communication  
+Rewrite → Flexible URLs  
+Auth → Secure admin/critical endpoints  
+Timeouts → Handle slow services  
+Whitelist → Restrict access  
+      </code></pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingK8sProxy">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseK8sProxy"
+      aria-expanded="false" aria-controls="collapseK8sProxy">
+      🛡️ Kubernetes Proxy Server – What It Is & How It Helps (With Examples)
+    </button>
+  </h2>
+
+  <div id="collapseK8sProxy" class="accordion-collapse collapse"
+    aria-labelledby="headingK8sProxy" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- 1 -->
+      <h5 class="text-warning">1️⃣ What is a Proxy Server in Kubernetes?</h5>
+      <p>
+        A <strong>Kubernetes Proxy Server</strong> acts as a middle layer between:
+      </p>
+      <pre><code>
+Client / User ↔ Proxy ↔ Kubernetes API or Services
+      </code></pre>
+      <p>
+        It provides <strong>secure, controlled, and stable networking</strong> inside the cluster.
+      </p>
+
+      <ul>
+        <li>✔ Secure access to internal services</li>
+        <li>✔ Load balancing between pods</li>
+        <li>✔ Smooth service-to-service communication</li>
+        <li>✔ API access without exposing cluster publicly</li>
+      </ul>
+
+      <!-- 2 -->
+      <h5 class="text-warning">2️⃣ Types of Proxy in Kubernetes</h5>
+
+      <h6 class="text-info">🔹 A) kube-proxy (MOST IMPORTANT)</h6>
+      <p>
+        kube-proxy runs on every Kubernetes worker node.
+        It handles:
+      </p>
+      <ul>
+        <li>✔ Pod-to-pod networking</li>
+        <li>✔ Load balancing traffic across pods</li>
+        <li>✔ Maintaining iptables/ipvs rules</li>
+      </ul>
+
+      <pre><code>
+Client → Service → kube-proxy → Available Pod
+      </code></pre>
+
+      <h6 class="text-info">🔹 B) kubectl proxy (Local Proxy)</h6>
+      <p>
+        A lightweight local proxy to access API Server securely.
+      </p>
+
+      <pre><code class="language-bash">
+kubectl proxy
+      </code></pre>
+
+      <p>Then you can access internal APIs:</p>
+      <pre><code>
+http://localhost:8001/api/v1/namespaces/default/pods
+      </code></pre>
+
+      <h6 class="text-info">🔹 C) API Server Proxy</h6>
+      <p>
+        API Server can act as a proxy to access pods/services.
+      </p>
+
+      <pre><code>
+/api/v1/namespaces/default/pods/<pod-name>/proxy/
+      </code></pre>
+
+      <p><strong>No need to expose a Service externally.</strong></p>
+
+      <!-- 3 -->
+      <h5 class="text-warning">3️⃣ kube-proxy Detailed Diagram</h5>
+      <pre><code>
+          +-------------------+
+Request → | Kubernetes Service| 
+          +-------------------+
+                   |
+                   v
+          +-------------------+
+          |   kube-proxy      |
+          +-------------------+
+           |       |       |
+         Pod1    Pod2    Pod3   
+ (Load-balanced round robin)
+      </code></pre>
+
+      <!-- 4 -->
+      <h5 class="text-warning">4️⃣ How kube-proxy Helps?</h5>
+      <ul>
+        <li>✔ Automatically load-balances traffic to pods</li>
+        <li>✔ Handles pod restarts dynamically</li>
+        <li>✔ Keeps service → pod mapping updated</li>
+        <li>✔ Maintains IP rules using ipvs/iptables</li>
+        <li>✔ Ensures stable network communication in cluster</li>
+      </ul>
+
+      <!-- 5 -->
+      <h5 class="text-warning">5️⃣ How kubectl proxy Helps?</h5>
+      <ul>
+        <li>✔ Access Kubernetes API securely</li>
+        <li>✔ Debug internal services without exposing them</li>
+        <li>✔ No need to create LoadBalancer or NodePort</li>
+      </ul>
+
+      <p><strong>Example:</strong></p>
+      <pre><code>
+kubectl proxy
+curl http://localhost:8001/api/v1/namespaces/default/services
+      </code></pre>
+
+      <!-- 6 -->
+      <h5 class="text-warning">6️⃣ Real-World Use Cases</h5>
+
+      <h6 class="text-info">🏦 Bank Application</h6>
+      <ul>
+        <li>Payment API load-balanced across pods via kube-proxy</li>
+        <li>No downtime if pods restart</li>
+      </ul>
+
+      <h6 class="text-info">🛒 E-Commerce App</h6>
+      <ul>
+        <li>User-service → 5 pods</li>
+        <li>Order-service → 10 pods</li>
+        <li>kube-proxy ensures round-robin routing</li>
+      </ul>
+
+      <h6 class="text-info">🧪 Debug Microservices</h6>
+      <p>Use <code>kubectl proxy</code> to hit internal endpoints:</p>
+      <pre><code>
+curl http://localhost:8001/api/v1/namespaces/default/pods/payment-service/proxy/health
+      </code></pre>
+
+      <h6 class="text-info">☁️ Cloud Provider Nodes</h6>
+      <ul>
+        <li>kube-proxy syncs cluster networking</li>
+        <li>Ensures AWS/GKE/OCP nodes talk to pods smoothly</li>
+      </ul>
+
+      <!-- 7 -->
+      <h5 class="text-warning">7️⃣ Summary</h5>
+      <pre><code>
+kube-proxy → Handles service-to-pod routing  
+kubectl proxy → Secure local API access  
+API server proxy → Access pods without exposing them  
+      </code></pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingMasterK8sIngress">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseMasterK8sIngress"
+      aria-expanded="false" aria-controls="collapseMasterK8sIngress">
+      🚀 Mastering Kubernetes Ingress | Hands-on Example with Spring Boot & NGINX
+    </button>
+  </h2>
+
+  <div id="collapseMasterK8sIngress" class="accordion-collapse collapse"
+    aria-labelledby="headingMasterK8sIngress" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- 1 -->
+      <h5 class="text-warning">1️⃣ What is Ingress in Kubernetes?</h5>
+      <p>
+        <strong>Ingress exposes HTTP/HTTPS routes from outside the cluster to services inside the cluster.</strong><br>
+        It replaces multiple LoadBalancers with a single entry point.
+      </p>
+
+      <ul>
+        <li>✔ Route by <strong>path</strong> ( /api , /orders )</li>
+        <li>✔ Route by <strong>domain</strong> ( api.myapp.com )</li>
+        <li>✔ <strong>HTTPS/TLS termination</strong></li>
+        <li>✔ Acts like a lightweight API Gateway</li>
+      </ul>
+
+      <pre><code>
+Internet → Ingress Controller → Kubernetes Services → Spring Boot Pods
+      </code></pre>
+
+      <!-- 2 -->
+      <h5 class="text-warning">2️⃣ Install NGINX Ingress Controller</h5>
+      <pre><code class="language-bash">
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.10.1/deploy/static/provider/cloud/deploy.yaml
+      </code></pre>
+
+      <p>After a minute, verify:</p>
+      <pre><code class="language-bash">
+kubectl get pods -n ingress-nginx
+kubectl get svc -n ingress-nginx
+      </code></pre>
+
+      <!-- 3 -->
+      <h5 class="text-warning">3️⃣ Spring Boot Deployment (Hands-on)</h5>
+      <pre><code class="language-yaml">
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spring-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: spring-app
+  template:
+    metadata:
+      labels:
+        app: spring-app
+    spec:
+      containers:
+        - name: spring-app
+          image: springio/gs-spring-boot-docker:latest
+          ports:
+            - containerPort: 8080
+      </code></pre>
+
+      <!-- 4 -->
+      <h5 class="text-warning">4️⃣ Create ClusterIP Service for Spring Boot</h5>
+      <pre><code class="language-yaml">
+apiVersion: v1
+kind: Service
+metadata:
+  name: spring-service
+spec:
+  selector:
+    app: spring-app
+  ports:
+    - port: 8080
+      targetPort: 8080
+  type: ClusterIP
+      </code></pre>
+
+      <!-- 5 -->
+      <h5 class="text-warning">5️⃣ Ingress for Spring Boot (Path Routing)</h5>
+      <pre><code class="language-yaml">
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: spring-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: app.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: spring-service
+                port:
+                  number: 8080
+      </code></pre>
+
+      <p><strong>Test locally with host entry:</strong></p>
+      <pre><code>
+127.0.0.1   app.local
+      </code></pre>
+
+      <p><strong>Access:</strong></p>
+      <pre><code>
+http://app.local/
+      </code></pre>
+
+      <!-- 6 -->
+      <h5 class="text-warning">6️⃣ Ingress + TLS (HTTPS) – With Cert-Manager</h5>
+
+      <h6 class="text-info mt-2">📌 Step 1: Install Cert-Manager</h6>
+      <pre><code class="language-bash">
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/latest/download/cert-manager.yaml
+      </code></pre>
+
+      <h6 class="text-info mt-2">📌 Step 2: Create ClusterIssuer</h6>
+      <pre><code class="language-yaml">
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    email: admin@myapp.com
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-key
+    solvers:
+      - http01:
+          ingress:
+            class: nginx
+      </code></pre>
+
+      <h6 class="text-info mt-2">📌 Step 3: Create Ingress with TLS</h6>
+      <pre><code class="language-yaml">
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: spring-tls-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+
+  tls:
+    - hosts:
+        - app.mydomain.com
+      secretName: spring-boot-tls
+
+  rules:
+    - host: app.mydomain.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: spring-service
+                port:
+                  number: 8080
+      </code></pre>
+
+      <p>Cert-Manager will automatically:</p>
+      <ul>
+        <li>✔ Request Let's Encrypt certificate</li>
+        <li>✔ Store it as Kubernetes secret</li>
+        <li>✔ Enable HTTPS on NGINX Ingress</li>
+        <li>✔ Auto-renew before expiry</li>
+      </ul>
+
+      <!-- 7 -->
+      <h5 class="text-warning">7️⃣ Complete Architecture Diagram</h5>
+      <pre><code>
+                    +------------------------------+
+Internet (HTTPS) →  |   NGINX Ingress Controller   |
+                    +-----------+------------------+
+                                |
+                -----------------------------------------
+                |               |               |
+             /              /api            /orders
+        Spring Boot UI   API Service     Order Service
+             Pods            Pods            Pods
+      </code></pre>
+
+      <!-- 8 -->
+      <h5 class="text-warning">8️⃣ Real-World Use Case – Production Example</h5>
+      <p><strong>Example: Swiggy / Zomato / Amazon-like app</strong></p>
+
+      <pre><code>
+https://app.mydomain.com           → UI (React/Angular)
+https://app.mydomain.com/api       → Spring Boot API Gateway
+https://app.mydomain.com/orders    → Order Microservice
+https://app.mydomain.com/payment   → Payment Microservice
+      </code></pre>
+
+      <ul>
+        <li>✔ One Load Balancer → Many microservices</li>
+        <li>✔ Full HTTPS termination</li>
+        <li>✔ Different paths → Different backend services</li>
+        <li>✔ Perfect for microservice architecture</li>
+      </ul>
+
+      <!-- 9 -->
+      <h5 class="text-warning">9️⃣ Summary – Why Ingress + Spring Boot is Powerful?</h5>
+      <pre><code>
+🌐 One entry for all services  
+🔀 Internal load balancing  
+🔐 Free HTTPS with Cert-Manager  
+🧭 Path-based routing  
+🐳 Works with all Spring Boot microservices  
+💰 Saves Cloud LB cost  
+      </code></pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingK8sTasks">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseK8sTasks"
+      aria-expanded="false" aria-controls="collapseK8sTasks">
+      🧩 Kubernetes Tasks – Jobs & CronJobs (What They Are & How They Help)
+    </button>
+  </h2>
+
+  <div id="collapseK8sTasks" class="accordion-collapse collapse"
+    aria-labelledby="headingK8sTasks" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- 1 -->
+      <h5 class="text-warning">1️⃣ What Are Kubernetes Tasks?</h5>
+      <p>
+        <strong>Kubernetes Tasks</strong> are operations that run for a short time and exit after completing their work.<br>
+        They are <strong>NOT long-running services</strong> like Deployments.
+      </p>
+
+      <p>Two main task types:</p>
+      <ul>
+        <li>✔ <strong>Job</strong> → Run once until success</li>
+        <li>✔ <strong>CronJob</strong> → Run on a schedule (every day, hour, minute)</li>
+      </ul>
+
+      <pre><code>
+Service (Deployment) → Runs forever  
+Jobs / CronJobs     → Run once or on schedule and exit  
+      </code></pre>
+
+      <!-- 2 -->
+      <h5 class="text-warning">2️⃣ Kubernetes Job – One-Time Task</h5>
+      <p>
+        A <strong>Job</strong> runs a task <strong>one time</strong> and makes sure it completes successfully.
+      </p>
+
+      <ul>
+        <li>✔ Retries automatically if pod fails</li>
+        <li>✔ Useful for batch jobs</li>
+        <li>✔ Runs multiple pods in parallel if needed</li>
+      </ul>
+
+      <h6 class="text-info">📌 Example: Database Migration Job</h6>
+
+      <pre><code class="language-yaml">
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-migration-job
+spec:
+  template:
+    spec:
+      containers:
+        - name: migration
+          image: myapp-migration:latest
+      restartPolicy: Never
+      </code></pre>
+
+      <p><strong>Use cases:</strong></p>
+      <ul>
+        <li>🟢 Send one-time email</li>
+        <li>🟢 Database migration script</li>
+        <li>🟢 Clean logs once</li>
+        <li>🟢 One-time data processing</li>
+      </ul>
+
+      <!-- 3 -->
+      <h5 class="text-warning">3️⃣ Kubernetes CronJob – Scheduled Tasks</h5>
+      <p>
+        A <strong>CronJob</strong> runs tasks at specific times using a cron schedule.
+      </p>
+
+      <ul>
+        <li>✔ Every minute</li>
+        <li>✔ Every hour</li>
+        <li>✔ Every midnight</li>
+        <li>✔ Weekly, Monthly</li>
+      </ul>
+
+      <h6 class="text-info">📌 Example: Daily Backup Job</h6>
+
+      <pre><code class="language-yaml">
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backup-cron
+spec:
+  schedule: "0 0 * * *"   # every midnight
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: backup
+              image: backup-script:latest
+          restartPolicy: OnFailure
+      </code></pre>
+
+      <p><strong>Use cases:</strong></p>
+      <ul>
+        <li>🔵 Daily database backup</li>
+        <li>🔵 Delete expired tokens</li>
+        <li>🔵 Generate monthly reports</li>
+        <li>🔵 Sync data with external APIs</li>
+        <li>🔵 Automatic email reminders</li>
+      </ul>
+
+      <!-- 4 -->
+      <h5 class="text-warning">4️⃣ Jobs vs CronJobs – Simple Summary</h5>
+
+      <table class="table table-dark table-bordered">
+        <tr>
+          <th>Job</th>
+          <th>CronJob</th>
+        </tr>
+        <tr>
+          <td>Runs once until success</td>
+          <td>Runs on a schedule (cron)</td>
+        </tr>
+        <tr>
+          <td>One-time task</td>
+          <td>Repeating task</td>
+        </tr>
+        <tr>
+          <td>No schedule</td>
+          <td>Must specify schedule</td>
+        </tr>
+      </table>
+
+      <!-- 5 -->
+      <h5 class="text-warning">5️⃣ Real-World Production Use Cases</h5>
+
+      <h6 class="text-info">🏦 Banking Apps</h6>
+      <ul>
+        <li>Auto-settlement jobs</li>
+        <li>Daily transaction reconciliation</li>
+      </ul>
+
+      <h6 class="text-info">🛒 E-commerce</h6>
+      <ul>
+        <li>Order cleanup</li>
+        <li>Cart expiration job</li>
+        <li>Nightly inventory sync</li>
+      </ul>
+
+      <h6 class="text-info">📱 FinTech (UPI Apps)</h6>
+      <ul>
+        <li>Retry failed payments</li>
+        <li>Generate settlement files</li>
+      </ul>
+
+      <h6 class="text-info">📧 Email/Notification Systems</h6>
+      <ul>
+        <li>Send weekly reports</li>
+        <li>Monthly invoice generator</li>
+      </ul>
+
+      <!-- 6 -->
+      <h5 class="text-warning">6️⃣ Why Kubernetes Tasks Help?</h5>
+      <ul>
+        <li>✔ Automate background work</li>
+        <li>✔ Guaranteed completion even if pod crashes</li>
+        <li>✔ Easy scheduling (no Cron server needed)</li>
+        <li>✔ Scales as needed (parallel jobs)</li>
+        <li>✔ Fully integrated with Kubernetes ecosystem</li>
+      </ul>
+
+      <!-- 7 -->
+      <h5 class="text-warning">7️⃣ Final Summary</h5>
+      <pre><code>
+Job     → One-time task  
+CronJob → Scheduled task  
+Both help automate background processes in Kubernetes  
+      </code></pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingServiceTypes">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseServiceTypes"
+      aria-expanded="false" aria-controls="collapseServiceTypes">
+      🛰️ Kubernetes Service Types – ClusterIP, NodePort, LoadBalancer (Explained with Examples)
+    </button>
+  </h2>
+
+  <div id="collapseServiceTypes" class="accordion-collapse collapse"
+    aria-labelledby="headingServiceTypes" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- ClusterIP -->
+      <h5 class="text-warning">1️⃣ ClusterIP (Default – Internal Communication)</h5>
+      <p>
+        <strong>Most common service type — accessible only inside the cluster.</strong>
+      </p>
+      <pre><code class="language-yaml">
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app
+spec:
+  type: ClusterIP
+  selector:
+    app: my-app
+  ports:
+    - port: 8080
+      targetPort: 8080
+      </code></pre>
+
+      <pre><code>
+Pod → ClusterIP Service → Target Pod
+      </code></pre>
+
+      <p><strong>Used for:</strong> Microservice-to-microservice communication.</p>
+
+      <!-- NodePort -->
+      <h5 class="text-warning">2️⃣ NodePort (Opens Port on Every Node)</h5>
+      <p>
+        Exposes a service at <strong>NodeIP:NodePort</strong> (30000–32767).
+      </p>
+
+      <pre><code class="language-yaml">
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app-nodeport
+spec:
+  type: NodePort
+  selector:
+    app: my-app
+  ports:
+    - port: 8080
+      nodePort: 30080
+      </code></pre>
+
+      <pre><code>
+User → NodeIP:30080 → Service → Pod
+      </code></pre>
+
+      <p><strong>Used for:</strong> Local testing, Minikube, debugging.</p>
+
+      <!-- LoadBalancer -->
+      <h5 class="text-warning">3️⃣ LoadBalancer (Cloud Load Balancer)</h5>
+      <p>
+        Used in AWS/GCP/Azure. Creates a cloud load balancer externally.
+      </p>
+
+      <pre><code class="language-yaml">
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app-lb
+spec:
+  type: LoadBalancer
+  selector:
+    app: my-app
+  ports:
+    - port: 80
+      targetPort: 8080
+      </code></pre>
+
+      <pre><code>
+Internet → Cloud LB → NodePort → ClusterIP → Pod
+      </code></pre>
+
+      <p><strong>Used for:</strong> Production traffic.</p>
+
+      <!-- Summary -->
+      <h5 class="text-warning">4️⃣ Summary Table</h5>
+      <table class="table table-dark table-bordered">
+        <tr><th>Type</th><th>Accessible From</th><th>Usage</th></tr>
+        <tr><td>ClusterIP</td><td>Inside cluster only</td><td>Microservices</td></tr>
+        <tr><td>NodePort</td><td>NodeIP:Port</td><td>Debug, Minikube</td></tr>
+        <tr><td>LoadBalancer</td><td>Internet</td><td>Production apps</td></tr>
+      </table>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingK8sArchitecture">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseK8sArchitecture"
+      aria-expanded="false" aria-controls="collapseK8sArchitecture">
+      🧠 Kubernetes Architecture – Master & Worker Node Flow (Detailed Explanation)
+    </button>
+  </h2>
+
+  <div id="collapseK8sArchitecture" class="accordion-collapse collapse"
+    aria-labelledby="headingK8sArchitecture" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- Diagram -->
+      <h5 class="text-warning">1️⃣ High-Level Architecture Diagram</h5>
+      <pre><code>
+                 +----------------------------+
+                 |     Control Plane (Master) |
+                 +-------------+--------------+
+                               |
+    -----------------------------------------------------------------
+    |                |                |                |            |
+Worker Node 1   Worker Node 2    Worker Node 3    Worker Node 4   ...
+(Pods + kubelet + kube-proxy)
+      </code></pre>
+
+      <!-- Master Components -->
+      <h5 class="text-warning">2️⃣ Control Plane Components</h5>
+
+      <h6 class="text-info">🔹 API Server</h6>
+      <p>The entry point for all kubectl / client requests.</p>
+
+      <h6 class="text-info">🔹 etcd</h6>
+      <p>Distributed key-value store. Stores the entire cluster state.</p>
+
+      <h6 class="text-info">🔹 Scheduler</h6>
+      <p>Decides on which node a Pod should run.</p>
+
+      <h6 class="text-info">🔹 Controller Manager</h6>
+      <p>Manages replicas, node health, endpoints, jobs.</p>
+
+      <!-- Worker Components -->
+      <h5 class="text-warning">3️⃣ Worker Node Components</h5>
+
+      <h6 class="text-info">🔹 kubelet</h6>
+      <p>Agent on each node. Talks to API server and runs containers.</p>
+
+      <h6 class="text-info">🔹 kube-proxy</h6>
+      <p>Handles networking and service routing.</p>
+
+      <h6 class="text-info">🔹 Container Runtime</h6>
+      <p>(Docker / containerd) Runs actual containers.</p>
+
+      <!-- Request Flow -->
+      <h5 class="text-warning">4️⃣ How a Request Flows (Step-by-Step)</h5>
+      <pre><code>
+1. User applies deployment YAML  
+2. API Server accepts it  
+3. Scheduler picks best worker node  
+4. kubelet on that node creates container  
+5. kube-proxy sets networking rules  
+6. Pod is ready to serve traffic  
+      </code></pre>
+
+      <!-- Real-World -->
+      <h5 class="text-warning">5️⃣ Real-World Example</h5>
+      <p><strong>When you deploy a Spring Boot microservice:</strong></p>
+      <pre><code>
+Deployment → API Server → Scheduler → Worker Node  
+Worker Node → kubelet starts Pod → kube-proxy exposes service  
+      </code></pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingPodLifecycle">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapsePodLifecycle"
+      aria-expanded="false" aria-controls="collapsePodLifecycle">
+      🌀 Pod Lifecycle & Probes (Liveness, Readiness, Startup)
+    </button>
+  </h2>
+
+  <div id="collapsePodLifecycle" class="accordion-collapse collapse"
+    aria-labelledby="headingPodLifecycle" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- Pod Lifecycle -->
+      <h5 class="text-warning">1️⃣ Pod Lifecycle Phases</h5>
+      <pre><code>
+Pending → ContainerCreating → Running  
+→ Succeeded / Failed → CrashLoopBackOff (if failing)
+      </code></pre>
+
+      <p>Controlled by kubelet on each worker node.</p>
+
+      <!-- Probes -->
+      <h5 class="text-warning">2️⃣ Liveness Probe (Is app healthy?)</h5>
+      <p>
+        If liveness probe fails → Kubernetes restarts the container.
+      </p>
+
+      <pre><code class="language-yaml">
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 8080
+  initialDelaySeconds: 10
+  periodSeconds: 5
+      </code></pre>
+
+      <!-- Readiness -->
+      <h5 class="text-warning">3️⃣ Readiness Probe (Is app ready for traffic?)</h5>
+      <p>
+        If readiness probe fails → Pod is removed from Service endpoints.
+      </p>
+
+      <pre><code class="language-yaml">
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: 8080
+  initialDelaySeconds: 5
+  periodSeconds: 3
+      </code></pre>
+
+      <!-- Startup -->
+      <h5 class="text-warning">4️⃣ Startup Probe (Slow apps like Spring Boot)</h5>
+      <p>Used for applications that take long to boot (Spring Boot, Java apps).</p>
+
+      <pre><code class="language-yaml">
+startupProbe:
+  httpGet:
+    path: /startup
+    port: 8080
+  failureThreshold: 30
+  periodSeconds: 5
+      </code></pre>
+
+      <!-- Example -->
+      <h5 class="text-warning">5️⃣ Full Example – All Probes</h5>
+
+      <pre><code class="language-yaml">
+apiVersion: v1
+kind: Pod
+metadata:
+  name: spring-app
+spec:
+  containers:
+    - name: spring
+      image: spring-boot:latest
+
+      livenessProbe:
+        httpGet:
+          path: /actuator/health
+          port: 8080
+
+      readinessProbe:
+        httpGet:
+          path: /actuator/ready
+          port: 8080
+
+      startupProbe:
+        httpGet:
+          path: /actuator/startup
+          port: 8080
+      </code></pre>
+
+      <h5 class="text-warning">6️⃣ Why Probes Are Critical?</h5>
+
+      <ul>
+        <li>✔ Prevents traffic to unready pods</li>
+        <li>✔ Automatically restarts stuck apps</li>
+        <li>✔ Helps slow-starting apps</li>
+        <li>✔ Ensures zero downtime deployments</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingK8sNetworking">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseK8sNetworking"
+      aria-expanded="false" aria-controls="collapseK8sNetworking">
+      🌐 Kubernetes Networking Explained – CNI, Pod CIDRs, kube-proxy, IPTables (With Examples)
+    </button>
+  </h2>
+
+  <div id="collapseK8sNetworking" class="accordion-collapse collapse"
+    aria-labelledby="headingK8sNetworking" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- CNI -->
+      <h5 class="text-warning">1️⃣ What is CNI (Container Network Interface)?</h5>
+      <p>CNI plugins provide networking for Pods: assign IPs, routing, isolation.</p>
+
+      <ul>
+        <li>✔ Calico</li>
+        <li>✔ Flannel</li>
+        <li>✔ Weave</li>
+        <li>✔ Cilium</li>
+      </ul>
+
+      <pre><code>
+Pod1 (10.244.1.2) ← CNI plugin → Pod2 (10.244.2.3)
+      </code></pre>
+
+      <!-- Pod CIDRs -->
+      <h5 class="text-warning">2️⃣ Pod CIDRs (Pod IP address ranges)</h5>
+      <p>Each node receives a <b>Pod CIDR block</b> (ex: 10.244.1.0/24).</p>
+
+      <pre><code>
+Worker Node 1 → Pod CIDR: 10.244.1.0/24  
+Worker Node 2 → Pod CIDR: 10.244.2.0/24
+      </code></pre>
+
+      <p>Pods get unique IPs cluster-wide → No NAT inside cluster.</p>
+
+      <!-- kube-proxy -->
+      <h5 class="text-warning">3️⃣ kube-proxy (Service routing)</h5>
+      <p>Kube-proxy creates routing rules to load-balance Service → Pods.</p>
+
+      <pre><code>
+Service my-app (ClusterIP: 10.96.10.2)
+   ↓
+kube-proxy
+   ↓
+Pods:
+  10.244.1.5  
+  10.244.1.6  
+  10.244.2.3
+      </code></pre>
+
+      <!-- iptables/ipvs -->
+      <h5 class="text-warning">4️⃣ IPTables / IPVS – How load balancing works</h5>
+      <p>Kube-proxy writes iptables (or IPVS) rules:</p>
+
+      <pre><code>
+kubectl get nodes -o wide
+kubectl get pods -o wide
+      </code></pre>
+
+      <p>The rules forward traffic to pods round-robin.</p>
+
+      <!-- Example -->
+      <h5 class="text-warning">5️⃣ Example – Pod-to-Pod Communication</h5>
+      <pre><code class="language-bash">
+kubectl exec -it pod-a -- curl http://10.244.2.3:8080
+      </code></pre>
+
+      <p>No NAT → Pod IP is directly reachable via CNI routing.</p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingDeployRSStateful">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseDeployRSStateful"
+      aria-expanded="false" aria-controls="collapseDeployRSStateful">
+      🏗️ Deployments vs ReplicaSets vs StatefulSets – Explained with Examples
+    </button>
+  </h2>
+
+  <div id="collapseDeployRSStateful" class="accordion-collapse collapse"
+    aria-labelledby="headingDeployRSStateful" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- Deployment -->
+      <h5 class="text-warning">1️⃣ Deployment (Stateless Applications)</h5>
+      <p>Used for stateless apps like Spring Boot, NodeJS.</p>
+
+      <pre><code class="language-yaml">
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spring-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: spring-app
+  template:
+    metadata:
+      labels:
+        app: spring-app
+    spec:
+      containers:
+        - name: app
+          image: spring:latest
+      </code></pre>
+
+      <p>✔ Auto-scaling  
+✔ Rolling updates  
+✔ Self-healing</p>
+
+      <!-- ReplicaSet -->
+      <h5 class="text-warning">2️⃣ ReplicaSet (Just maintains pod count)</h5>
+      <p>Deployment uses ReplicaSet internally.</p>
+
+      <pre><code>
+Deployment → Manages ReplicaSets → Creates Pods
+      </code></pre>
+
+      <h6>Rarely used directly.</h6>
+
+      <!-- StatefulSet -->
+      <h5 class="text-warning">3️⃣ StatefulSet (Stateful Apps)</h5>
+      <p>Used for databases.</p>
+
+      <pre><code class="language-yaml">
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql
+spec:
+  serviceName: mysql
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8
+      </code></pre>
+
+      <ul>
+        <li>✔ Stable pod identity (mysql-0, mysql-1, mysql-2)</li>
+        <li>✔ Dedicated volumes for each pod</li>
+        <li>✔ Ordered rollout</li>
+      </ul>
+
+      <!-- Summary -->
+      <h5 class="text-warning">4️⃣ Comparison Table</h5>
+      <table class="table table-dark table-bordered">
+        <tr><th>Feature</th><th>Deployment</th><th>StatefulSet</th></tr>
+        <tr><td>State maintained?</td><td>No</td><td>Yes</td></tr>
+        <tr><td>Stable hostname?</td><td>No</td><td>Yes</td></tr>
+        <tr><td>Database?</td><td>❌ No</td><td>✔ Yes</td></tr>
+        <tr><td>Pods managed by ReplicaSet?</td><td>Yes</td><td>No</td></tr>
+      </table>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingETCD">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseETCD"
+      aria-expanded="false" aria-controls="collapseETCD">
+      🧬 ETCD & Kubernetes Cluster State – Deep Dive (With Examples)
+    </button>
+  </h2>
+
+  <div id="collapseETCD" class="accordion-collapse collapse"
+    aria-labelledby="headingETCD" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- What is ETCD -->
+      <h5 class="text-warning">1️⃣ What is ETCD?</h5>
+      <p>
+        <strong>ETCD is a distributed key-value store</strong> that stores the entire state of the Kubernetes cluster.
+      </p>
+
+      <pre><code>
+Pods  
+Services  
+ConfigMaps  
+Secrets  
+Nodes  
+Events  
+Deployments  
+      </code></pre>
+
+      <p><strong>If ETCD is lost → Entire cluster state is lost.</strong></p>
+
+      <!-- How It Works -->
+      <h5 class="text-warning">2️⃣ How ETCD Works?</h5>
+      <pre><code>
+kubectl apply -f deployment.yaml 
+        ↓
+API Server writes desired state → ETCD
+        ↓
+Controllers reconcile / Scheduler picks node
+        ↓
+kubelet applies actual state
+      </code></pre>
+
+      <!-- Backup -->
+      <h5 class="text-warning">3️⃣ Backup ETCD (Example)</h5>
+      <pre><code class="language-bash">
+ETCDCTL_API=3 etcdctl snapshot save backup.db \
+  --endpoints=https://127.0.0.1:2379 \
+  --cacert=/etc/kubernetes/pki/ca.crt \
+  --cert=/etc/kubernetes/pki/etcd/server.crt \
+  --key=/etc/kubernetes/pki/etcd/server.key
+      </code></pre>
+
+      <!-- Restore -->
+      <h5 class="text-warning">4️⃣ Restore ETCD</h5>
+      <pre><code class="language-bash">
+etcdctl snapshot restore backup.db
+      </code></pre>
+
+      <!-- Why important -->
+      <h5 class="text-warning">5️⃣ Why ETCD is Critical?</h5>
+      <ul>
+        <li>✔ Stores entire cluster configuration</li>
+        <li>✔ Ensures consistency</li>
+        <li>✔ Works with Raft Consensus Algorithm</li>
+        <li>✔ Must always be backed up</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingSpringBootPipeline">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseSpringBootPipeline"
+      aria-expanded="false" aria-controls="collapseSpringBootPipeline">
+      🚀 Spring Boot on Kubernetes – Full Deployment Pipeline (Step-by-Step)
+    </button>
+  </h2>
+
+  <div id="collapseSpringBootPipeline" class="accordion-collapse collapse"
+    aria-labelledby="headingSpringBootPipeline" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- Step 1 -->
+      <h5 class="text-warning">1️⃣ Step 1 – Build Spring Boot JAR</h5>
+      <pre><code class="language-bash">
+mvn clean package -DskipTests
+      </code></pre>
+
+      <!-- Step 2 -->
+      <h5 class="text-warning">2️⃣ Step 2 – Create Docker Image</h5>
+      <pre><code class="language-dockerfile">
+FROM openjdk:17
+COPY target/app.jar app.jar
+ENTRYPOINT ["java","-jar","/app.jar"]
+      </code></pre>
+
+      <pre><code class="language-bash">
+docker build -t myapp:1.0 .
+      </code></pre>
+
+      <!-- Step 3 -->
+      <h5 class="text-warning">3️⃣ Step 3 – Push Image to Docker Hub/AWS ECR</h5>
+      <pre><code class="language-bash">
+docker push myrepo/myapp:1.0
+      </code></pre>
+
+      <!-- Step 4 -->
+      <h5 class="text-warning">4️⃣ Step 4 – Deployment YAML</h5>
+      <pre><code class="language-yaml">
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spring-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: spring-app
+  template:
+    metadata:
+      labels:
+        app: spring-app
+    spec:
+      containers:
+        - name: spring
+          image: myrepo/myapp:1.0
+          ports:
+            - containerPort: 8080
+      </code></pre>
+
+      <!-- Step 5 -->
+      <h5 class="text-warning">5️⃣ Step 5 – Service</h5>
+      <pre><code class="language-yaml">
+apiVersion: v1
+kind: Service
+metadata:
+  name: spring-service
+spec:
+  type: ClusterIP
+  selector:
+    app: spring-app
+  ports:
+    - port: 8080
+      targetPort: 8080
+      </code></pre>
+
+      <!-- Step 6 -->
+      <h5 class="text-warning">6️⃣ Step 6 – Ingress (Optional)</h5>
+      <pre><code class="language-yaml">
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: spring-ingress
+spec:
+  rules:
+    - host: app.mycompany.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: spring-service
+                port:
+                  number: 8080
+      </code></pre>
+
+      <!-- Step 7 -->
+      <h5 class="text-warning">7️⃣ Step 7 – Apply Everything</h5>
+      <pre><code class="language-bash">
+kubectl apply -f deployment.yaml
+kubectl apply -f service.yaml
+kubectl apply -f ingress.yaml
+      </code></pre>
+
+      <!-- Summary -->
+      <h5 class="text-warning">8️⃣ End-to-End Architecture</h5>
+      <pre><code>
+User → Ingress → Service → Pod → Spring Boot  
+      </code></pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingK8sMonitoring">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseK8sMonitoring"
+      aria-expanded="false" aria-controls="collapseK8sMonitoring">
+      📊 Kubernetes Logs & Monitoring – ELK, Prometheus & Grafana (Complete Guide)
+    </button>
+  </h2>
+
+  <div id="collapseK8sMonitoring" class="accordion-collapse collapse"
+    aria-labelledby="headingK8sMonitoring" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- Logging -->
+      <h5 class="text-warning">1️⃣ Kubernetes Logging – How It Works</h5>
+      <pre><code>
+Containers → stdout / stderr  
+           → kubelet collects logs  
+           → Stored at /var/log/containers  
+           → Log Agents forward to ELK, Loki, etc.
+      </code></pre>
+
+      <p><strong>kubectl log command:</strong></p>
+      <pre><code class="language-bash">
+kubectl logs my-pod -f
+      </code></pre>
+
+      <!-- ELK -->
+      <h5 class="text-warning">2️⃣ ELK Stack (Elasticsearch + Logstash + Kibana)</h5>
+      <p><strong>Used for: Centralized Logging</strong></p>
+
+      <ul>
+        <li>✔ Logstash → Collects logs</li>
+        <li>✔ Elasticsearch → Stores logs</li>
+        <li>✔ Kibana → UI for searching logs</li>
+      </ul>
+
+      <h6 class="text-info">📌 Architecture</h6>
+      <pre><code>
+Pods → Logstash / Filebeat → Elasticsearch → Kibana UI
+      </code></pre>
+
+      <h6 class="text-info">📌 Filebeat DaemonSet Example</h6>
+      <pre><code class="language-yaml">
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: filebeat
+spec:
+  selector:
+    matchLabels:
+      name: filebeat
+  template:
+    metadata:
+      labels:
+        name: filebeat
+    spec:
+      containers:
+        - name: filebeat
+          image: elastic/filebeat:7.10.0
+      </code></pre>
+
+      <!-- Prometheus -->
+      <h5 class="text-warning">3️⃣ Prometheus (Metrics Monitoring)</h5>
+      <p><strong>Prometheus scrapes metrics from apps & kube components.</strong></p>
+
+      <pre><code>
+Pod → /actuator/prometheus (Spring Boot)  
+Prometheus → stores metrics  
+Grafana → displays dashboard
+      </code></pre>
+
+      <h6 class="text-info">📌 Prometheus Config Example</h6>
+      <pre><code class="language-yaml">
+scrape_configs:
+  - job_name: 'spring-app'
+    static_configs:
+    - targets: ['spring-service.default.svc.cluster.local:8080']
+      </code></pre>
+
+      <!-- Grafana -->
+      <h5 class="text-warning">4️⃣ Grafana – Dashboards</h5>
+      <p>Grafana visualizes Prometheus metrics.</p>
+
+      <pre><code>
+CPU usage  
+Memory usage  
+API latency  
+Request count  
+Pod restarts  
+      </code></pre>
+
+      <!-- Real Use Case -->
+      <h5 class="text-warning">5️⃣ Real-World Use Cases</h5>
+      <ul>
+        <li>✔ Track API errors → Kibana</li>
+        <li>✔ Check CPU/Memory spikes → Grafana</li>
+        <li>✔ Detect slow endpoints → Prometheus</li>
+        <li>✔ Debug failed pods → ELK logs</li>
+      </ul>
+
+      <!-- Summary -->
+      <h5 class="text-warning">6️⃣ Summary</h5>
+      <pre><code>
+ELK → Logs  
+Prometheus → Metrics  
+Grafana → Dashboards  
+Together → Complete monitoring
+      </code></pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingHPA">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseHPA"
+      aria-expanded="false" aria-controls="collapseHPA">
+      ⚡ Horizontal Pod Autoscaler (HPA) – Autoscaling Spring Boot in Kubernetes
+    </button>
+  </h2>
+
+  <div id="collapseHPA" class="accordion-collapse collapse"
+    aria-labelledby="headingHPA" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- What is HPA -->
+      <h5 class="text-warning">1️⃣ What is HPA?</h5>
+      <p>
+        <strong>HPA automatically increases/decreases pod count based on CPU/Memory/Custom Metrics.</strong>
+      </p>
+
+      <pre><code>
+More traffic → More pods  
+Less traffic → Fewer pods  
+      </code></pre>
+
+      <p>Most common metrics:</p>
+      <ul>
+        <li>✔ CPU Utilization</li>
+        <li>✔ Memory Usage</li>
+        <li>✔ Prometheus custom metrics (QPS, latency)</li>
+      </ul>
+
+      <!-- Requirements -->
+      <h5 class="text-warning">2️⃣ Requirements</h5>
+      <ul>
+        <li>✔ Metrics Server must be installed</li>
+        <li>✔ Spring Boot exposes metrics via /actuator/prometheus</li>
+      </ul>
+
+      <pre><code class="language-bash">
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+      </code></pre>
+
+      <!-- Example -->
+      <h5 class="text-warning">3️⃣ Spring Boot Deployment (CPU Requests/Limits)</h5>
+      <p>HPA needs CPU limits to trigger autoscaling:</p>
+
+      <pre><code class="language-yaml">
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spring-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: spring-app
+  template:
+    metadata:
+      labels:
+        app: spring-app
+    spec:
+      containers:
+        - name: app
+          image: myrepo/spring:1.0
+          resources:
+            requests:
+              cpu: "200m"
+            limits:
+              cpu: "500m"
+      </code></pre>
+
+      <!-- HPA YAML -->
+      <h5 class="text-warning">4️⃣ HPA YAML Example (CPU Autoscaling)</h5>
+      <pre><code class="language-yaml">
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: spring-app-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: spring-app
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60  # scale when CPU > 60%
+      </code></pre>
+
+      <!-- Custom Metrics -->
+      <h5 class="text-warning">5️⃣ HPA Example – Custom Metrics via Prometheus</h5>
+      <pre><code class="language-yaml">
+metrics:
+  - type: Pods
+    pods:
+      metric:
+        name: http_requests_total
+      target:
+        type: AverageValue
+        averageValue: "30"
+      </code></pre>
+
+      <p><strong>Meaning:</strong> Scale pods if average HTTP requests per pod > 30.</p>
+
+      <!-- Commands -->
+      <h5 class="text-warning">6️⃣ Useful Commands</h5>
+      <pre><code class="language-bash">
+kubectl get hpa
+kubectl describe hpa spring-app-hpa
+kubectl top pods
+kubectl top nodes
+      </code></pre>
+
+      <!-- Real Use Case -->
+      <h5 class="text-warning">7️⃣ Real-World Use Case</h5>
+      <ul>
+        <li>🛒 E-commerce sale: Auto-scale product API</li>
+        <li>🏦 Banking peak hours: Scale UPI microservices</li>
+        <li>🚖 Ride booking apps: Scale when bookings surge</li>
+        <li>🎥 Streaming apps: Scale during live events</li>
+      </ul>
+
+      <!-- Summary -->
+      <h5 class="text-warning">8️⃣ Summary</h5>
+      <pre><code>
+HPA + Metrics Server → Auto scaling  
+Spring Boot + Actuator → Exposes metrics  
+Prometheus → Custom scaling  
+Result → Fast, stable, cost-efficient apps  
+      </code></pre>
+
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingK8sInterview50">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseK8sInterview50"
+      aria-expanded="false" aria-controls="collapseK8sInterview50">
+      🎯 Complete Kubernetes Interview Guide – Top 50 Questions & Answers
+    </button>
+  </h2>
+
+  <div id="collapseK8sInterview50" class="accordion-collapse collapse"
+    aria-labelledby="headingK8sInterview50" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- 1–10 -->
+      <h5 class="text-warning">1️⃣ What is Kubernetes?</h5>
+      <p>Open-source container orchestration system used to deploy, scale & manage containerized applications.</p>
+
+      <h5 class="text-warning">2️⃣ What is a Pod?</h5>
+      <p>Smallest deployable unit in K8s. A pod = 1 or more containers sharing network + storage.</p>
+
+      <h5 class="text-warning">3️⃣ What is a Node?</h5>
+      <p>Worker machine where pods run (VM or physical server).</p>
+
+      <h5 class="text-warning">4️⃣ What is a Deployment?</h5>
+      <p>Object that manages ReplicaSets and provides rolling updates.</p>
+
+      <h5 class="text-warning">5️⃣ What is a ReplicaSet?</h5>
+      <p>Ensures a specified number of pod replicas are running.</p>
+
+      <h5 class="text-warning">6️⃣ Difference: Deployment vs ReplicaSet?</h5>
+      <pre><code>
+Deployment → strategy + rollout  
+ReplicaSet → maintains pod count  
+      </code></pre>
+
+      <h5 class="text-warning">7️⃣ What is a Service?</h5>
+      <p>Stable networking for pods (ClusterIP, NodePort, LoadBalancer).</p>
+
+      <h5 class="text-warning">8️⃣ Why do pods get new IPs?</h5>
+      <p>Pods are ephemeral; restarts = new IP. Services solve this.</p>
+
+      <h5 class="text-warning">9️⃣ What is Ingress?</h5>
+      <p>HTTP/HTTPS routing into cluster. Acts like API gateway.</p>
+
+      <h5 class="text-warning">🔟 What is kube-proxy?</h5>
+      <p>Handles service routing rules using iptables/IPVS.</p>
+
+      <hr>
+
+      <!-- 11–20 -->
+      <h5 class="text-warning">1️⃣1️⃣ What is ETCD?</h5>
+      <p>Key-value store for entire cluster state.</p>
+
+      <h5 class="text-warning">1️⃣2️⃣ What is kubelet?</h5>
+      <p>Agent on each node—creates containers, reports status.</p>
+
+      <h5 class="text-warning">1️⃣3️⃣ What is the Scheduler?</h5>
+      <p>Assigns pods to nodes based on resources and constraints.</p>
+
+      <h5 class="text-warning">1️⃣4️⃣ What is a ConfigMap?</h5>
+      <p>Stores non-sensitive config data.</p>
+
+      <h5 class="text-warning">1️⃣5️⃣ What is a Secret?</h5>
+      <p>Stores sensitive data (base64 encoded).</p>
+
+      <h5 class="text-warning">1️⃣6️⃣ Difference: ConfigMap vs Secret?</h5>
+      <pre><code>
+ConfigMap → configs  
+Secret → passwords, access keys  
+      </code></pre>
+
+      <h5 class="text-warning">1️⃣7️⃣ What is a StatefulSet?</h5>
+      <p>Used for databases. Provides stable hostname + persistent storage.</p>
+
+      <h5 class="text-warning">1️⃣8️⃣ What is a DaemonSet?</h5>
+      <p>Runs one pod per node (e.g., logging agents, monitoring).</p>
+
+      <h5 class="text-warning">1️⃣9️⃣ What is a Job?</h5>
+      <p>Runs a task one time until success.</p>
+
+      <h5 class="text-warning">2️⃣0️⃣ What is a CronJob?</h5>
+      <p>Runs jobs on a schedule (like cron).</p>
+
+      <hr>
+
+      <!-- 21–30 -->
+      <h5 class="text-warning">2️⃣1️⃣ What is Horizontal Pod Autoscaler (HPA)?</h5>
+      <p>Autoscaling based on CPU/Memory/custom metrics.</p>
+
+      <h5 class="text-warning">2️⃣2️⃣ What is Vertical Pod Autoscaler (VPA)?</h5>
+      <p>Autoscaling CPU/memory of a single pod.</p>
+
+      <h5 class="text-warning">2️⃣3️⃣ What is Cluster Autoscaler?</h5>
+      <p>Autoscaling of worker nodes.</p>
+
+      <h5 class="text-warning">2️⃣4️⃣ What is a PersistentVolume (PV)?</h5>
+      <p>Cluster-level storage resource.</p>
+
+      <h5 class="text-warning">2️⃣5️⃣ What is PersistentVolumeClaim (PVC)?</h5>
+      <p>Pod’s request for storage.</p>
+
+      <h5 class="text-warning">2️⃣6️⃣ What is a StorageClass?</h5>
+      <p>Defines how PVs are dynamically created.</p>
+
+      <h5 class="text-warning">2️⃣7️⃣ What is CNI?</h5>
+      <p>Networking plugin for pod IP assignment (Calico, Flannel).</p>
+
+      <h5 class="text-warning">2️⃣8️⃣ What is Pod CIDR?</h5>
+      <p>IP range assigned to pods per node.</p>
+
+      <h5 class="text-warning">2️⃣9️⃣ What is CoreDNS?</h5>
+      <p>Cluster DNS—resolves service and pod names.</p>
+
+      <h5 class="text-warning">3️⃣0️⃣ What is Node Affinity?</h5>
+      <p>Scheduling rule: place pod on specific nodes.</p>
+
+      <hr>
+
+      <!-- 31–40 -->
+      <h5 class="text-warning">3️⃣1️⃣ What is Taint & Toleration?</h5>
+      <p>Used to block/allow specific pods on nodes.</p>
+
+      <h5 class="text-warning">3️⃣2️⃣ What is a Namespace?</h5>
+      <p>Logical grouping/isolation of resources.</p>
+
+      <h5 class="text-warning">3️⃣3️⃣ How to see pod logs?</h5>
+      <pre><code>kubectl logs pod -f</code></pre>
+
+      <h5 class="text-warning">3️⃣4️⃣ How to get inside a pod?</h5>
+      <pre><code>kubectl exec -it pod -- bash</code></pre>
+
+      <h5 class="text-warning">3️⃣5️⃣ What is rolling update?</h5>
+      <p>Update pods gradually with zero downtime.</p>
+
+      <h5 class="text-warning">3️⃣6️⃣ What is rollback?</h5>
+      <p>Return to previous deployment version.</p>
+
+      <h5 class="text-warning">3️⃣7️⃣ What is Blue-Green Deployment?</h5>
+      <p>Two environments → switch traffic instantly.</p>
+
+      <h5 class="text-warning">3️⃣8️⃣ What is Canary Deployment?</h5>
+      <p>Release to a small % of traffic first.</p>
+
+      <h5 class="text-warning">3️⃣9️⃣ What is Liveness Probe?</h5>
+      <p>Checks if app is alive; restarts on failure.</p>
+
+      <h5 class="text-warning">4️⃣0️⃣ What is Readiness Probe?</h5>
+      <p>Checks if pod is ready for traffic.</p>
+
+      <hr>
+
+      <!-- 41–50 -->
+      <h5 class="text-warning">4️⃣1️⃣ What is Startup Probe?</h5>
+      <p>Used for slow-starting apps like Spring Boot.</p>
+
+      <h5 class="text-warning">4️⃣2️⃣ How to expose a service externally?</h5>
+      <pre><code>
+Service Type: LoadBalancer  
+Or Ingress  
+      </code></pre>
+
+      <h5 class="text-warning">4️⃣3️⃣ What is a Multi-container Pod?</h5>
+      <p>Pods with sidecar containers (logging, envoy).</p>
+
+      <h5 class="text-warning">4️⃣4️⃣ What is sidecar pattern?</h5>
+      <p>Helper container alongside main app (Envoy, Fluentd).</p>
+
+      <h5 class="text-warning">4️⃣5️⃣ How does Kubernetes handle secrets?</h5>
+      <p>Base64 encoded → mounted as env/volume.</p>
+
+      <h5 class="text-warning">4️⃣6️⃣ What is Service Mesh?</h5>
+      <p>Advanced traffic control (Istio/Linkerd).</p>
+
+      <h5 class="text-warning">4️⃣7️⃣ What is NodePort range?</h5>
+      <p>30000–32767</p>
+
+      <h5 class="text-warning">4️⃣8️⃣ What is kubectl proxy?</h5>
+      <p>Local secure tunnel to access API server.</p>
+
+      <h5 class="text-warning">4️⃣9️⃣ What is kubectl port-forward?</h5>
+      <pre><code>
+kubectl port-forward pod 8080:8080  
+      </code></pre>
+
+      <h5 class="text-warning">5️⃣0️⃣ What is the difference between POD restart and container restart?</h5>
+      <p>Container restarts inside same pod; pod restart means new IP + new lifecycle.</p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingServiceSpecTypes">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseServiceSpecTypes"
+      aria-expanded="false" aria-controls="collapseServiceSpecTypes">
+      🛰️ Kubernetes Service Types – ClusterIP, NodePort, LoadBalancer, ExternalName, Headless (When to Use Which?)
+    </button>
+  </h2>
+
+  <div id="collapseServiceSpecTypes" class="accordion-collapse collapse"
+    aria-labelledby="headingServiceSpecTypes" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- 1 -->
+      <h5 class="text-warning">1️⃣ ClusterIP (Default – Internal Only)</h5>
+      <p>
+        Most common service type. Accessible <strong>only inside the cluster</strong>.
+      </p>
+
+      <pre><code class="language-yaml">
+spec:
+  type: ClusterIP
+  selector:
+    app: order
+  ports:
+    - port: 8080
+      </code></pre>
+
+      <pre><code>
+Service → Pod routing
+Internal-only communication
+      </code></pre>
+
+      <p><strong>Use When:</strong></p>
+      <ul>
+        <li>✔ Microservice-to-microservice communication</li>
+        <li>✔ Spring Boot internal APIs</li>
+        <li>✔ Backend services, Redis, DB adapters</li>
+      </ul>
+
+      <hr>
+
+      <!-- 2 -->
+      <h5 class="text-warning">2️⃣ NodePort (Exposes on Node's IP)</h5>
+      <p>
+        Opens port on <strong>every node</strong> at range 30000–32767.
+      </p>
+
+      <pre><code class="language-yaml">
+spec:
+  type: NodePort
+  ports:
+    - port: 8080
+      nodePort: 30080
+      </code></pre>
+
+      <pre><code>
+Access: http://NodeIP:30080
+      </code></pre>
+
+      <p><strong>Use When:</strong></p>
+      <ul>
+        <li>✔ Minikube / Kind / Local Kubernetes</li>
+        <li>✔ Debugging services without Ingress</li>
+        <li>✔ Quick POC testing</li>
+      </ul>
+
+      <p><strong>Not recommended for production.</strong></p>
+
+      <hr>
+
+      <!-- 3 -->
+      <h5 class="text-warning">3️⃣ LoadBalancer (Cloud Load Balancer)</h5>
+      <p>
+        Creates a <strong>public cloud Load Balancer</strong> (AWS ELB, GCP LB, Azure LB).
+      </p>
+
+      <pre><code class="language-yaml">
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 8080
+      </code></pre>
+
+      <pre><code>
+Internet → Cloud LB → NodePort → ClusterIP → Pod
+      </code></pre>
+
+      <p><strong>Use When:</strong></p>
+      <ul>
+        <li>✔ Production applications</li>
+        <li>✔ Exposing APIs to public</li>
+        <li>✔ Without using Ingress (simple setup)</li>
+      </ul>
+
+      <hr>
+
+      <!-- 4 -->
+      <h5 class="text-warning">4️⃣ ExternalName Service (DNS Alias)</h5>
+      <p>
+        Maps a Kubernetes service to an <strong>external DNS name</strong>.
+      </p>
+
+      <pre><code class="language-yaml">
+spec:
+  type: ExternalName
+  externalName: api.external.com
+      </code></pre>
+
+      <pre><code>
+Inside cluster: my-external-service → api.external.com
+      </code></pre>
+
+      <p><strong>Use When:</strong></p>
+      <ul>
+        <li>✔ Call external APIs using internal DNS</li>
+        <li>✔ Database hosted outside Kubernetes</li>
+        <li>✔ Migrate legacy systems gradually</li>
+      </ul>
+
+      <hr>
+
+      <!-- 5 -->
+      <h5 class="text-warning">5️⃣ Headless Service (No ClusterIP)</h5>
+      <p>
+        <strong>No load balancer</strong>, no ClusterIP.  
+        Returns **pod IPs directly** → used for databases.
+      </p>
+
+      <pre><code class="language-yaml">
+spec:
+  clusterIP: None
+  selector:
+    app: mysql
+      </code></pre>
+
+      <pre><code>
+DNS → returns pod IP list (mysql-0, mysql-1, mysql-2)
+      </code></pre>
+
+      <p><strong>Use When:</strong></p>
+      <ul>
+        <li>✔ StatefulSets</li>
+        <li>✔ Databases: MySQL, Cassandra, Kafka</li>
+        <li>✔ Apps needing direct pod discovery</li>
+      </ul>
+
+      <hr>
+
+      <!-- Summary -->
+      <h5 class="text-warning">6️⃣ Summary – When to Use Which?</h5>
+
+      <table class="table table-dark table-bordered">
+        <tr>
+          <th>Service Type</th>
+          <th>When to Use?</th>
+        </tr>
+
+        <tr>
+          <td><strong>ClusterIP</strong></td>
+          <td>Internal microservice communication</td>
+        </tr>
+
+        <tr>
+          <td><strong>NodePort</strong></td>
+          <td>Debugging, local clusters</td>
+        </tr>
+
+        <tr>
+          <td><strong>LoadBalancer</strong></td>
+          <td>Production public traffic</td>
+        </tr>
+
+        <tr>
+          <td><strong>ExternalName</strong></td>
+          <td>External system DNS aliasing</td>
+        </tr>
+
+        <tr>
+          <td><strong>Headless</strong></td>
+          <td>Databases, StatefulSets, direct pod IPs</td>
+        </tr>
+      </table>
+
+      <pre><code>
+Most common in real world:
+ClusterIP for internal  
+LoadBalancer for external  
+Ingress for complex routing  
+Headless for databases  
+      </code></pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingK8sSteps">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseK8sSteps"
+      aria-expanded="false" aria-controls="collapseK8sSteps">
+      🪜 Kubernetes Steps – How Kubernetes Works & Why It Is Useful (With Example)
+    </button>
+  </h2>
+
+  <div id="collapseK8sSteps" class="accordion-collapse collapse"
+    aria-labelledby="headingK8sSteps" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- 1 -->
+      <h5 class="text-warning">1️⃣ What Do We Mean by "Kubernetes Steps"?</h5>
+      <p>
+        “Kubernetes Steps” means the <strong>end-to-end workflow</strong> of how Kubernetes deploys,
+        manages, scales, and heals your applications.
+      </p>
+
+      <pre><code>
+You give YAML → Kubernetes takes care of everything
+      </code></pre>
+
+      <p>This includes:</p>
+      <ul>
+        <li>✔ Scheduling pods</li>
+        <li>✔ Creating containers</li>
+        <li>✔ Networking setup</li>
+        <li>✔ Autoscaling</li>
+        <li>✔ Load balancing</li>
+        <li>✔ Self-healing failures</li>
+      </ul>
+
+      <hr>
+
+      <!-- 2 -->
+      <h5 class="text-warning">2️⃣ Kubernetes Full Lifecycle (Step-by-Step)</h5>
+
+      <h6 class="text-info">📌 Step 1: Write YAML (Desired State)</h6>
+      <pre><code class="language-yaml">
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spring-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: spring-app
+  template:
+    metadata:
+      labels:
+        app: spring-app
+    spec:
+      containers:
+        - name: app
+          image: springio/spring-app
+      </code></pre>
+
+      <p>You define:</p>
+      <ul>
+        <li>✔ How many replicas</li>
+        <li>✔ What image</li>
+        <li>✔ What ports</li>
+      </ul>
+
+      <hr>
+
+      <h6 class="text-info">📌 Step 2: Apply YAML</h6>
+      <pre><code class="language-bash">
+kubectl apply -f deployment.yaml
+      </code></pre>
+
+      <p>Kubectl sends it to the Kubernetes API Server.</p>
+
+      <hr>
+
+      <h6 class="text-info">📌 Step 3: API Server Reads & Stores in ETCD</h6>
+      <pre><code>
+API Server → Stores desired state → ETCD
+      </code></pre>
+
+      <p>ETCD = database of your entire cluster.</p>
+
+      <hr>
+
+      <h6 class="text-info">📌 Step 4: Scheduler Chooses the Best Node</h6>
+      <pre><code>
+Scheduler checks:
+✔ CPU available?
+✔ Memory available?
+✔ Node affinity?
+✔ Taints/Tolerations?
+      </code></pre>
+
+      <p>Then places pods on selected worker nodes.</p>
+
+      <hr>
+
+      <h6 class="text-info">📌 Step 5: Kubelet Creates the Containers</h6>
+      <pre><code>
+kubelet → pulls image → starts container → checks health
+      </code></pre>
+
+      <p>Container runtime (Docker/containerd) actually runs the container.</p>
+
+      <hr>
+
+      <h6 class="text-info">📌 Step 6: kube-proxy Creates Networking Rules</h6>
+      <pre><code>
+Service → kube-proxy → Routes traffic to pods
+      </code></pre>
+
+      <p>Load balances across replica pods.</p>
+
+      <hr>
+
+      <h6 class="text-info">📌 Step 7: Probes Check Health (Liveness/Readiness)</h6>
+      <pre><code>
+If pod unhealthy → restart  
+If pod not ready → remove from Service endpoint
+      </code></pre>
+
+      <hr>
+
+      <h6 class="text-info">📌 Step 8: HPA Autoscaling (If Enabled)</h6>
+      <pre><code>
+CPU > threshold → Add more pods  
+CPU < threshold → Reduce pods
+      </code></pre>
+
+      <hr>
+
+      <h6 class="text-info">📌 Step 9: Self-Healing</h6>
+      <pre><code>
+Pod crashes → new pod created automatically  
+Node goes down → pods recreated on new nodes
+      </code></pre>
+
+      <hr>
+
+      <!-- 3 -->
+      <h5 class="text-warning">3️⃣ Why Kubernetes Steps Are Useful?</h5>
+
+      <ul>
+        <li>✔ <strong>Zero-downtime deployments</strong></li>
+        <li>✔ <strong>No manual server management</strong></li>
+        <li>✔ <strong>Auto-healing apps</strong></li>
+        <li>✔ <strong>Easy scaling (up/down) based on load</strong></li>
+        <li>✔ <strong>Stable networking & load balancing</strong></li>
+        <li>✔ <strong>Secure secrets & config handling</strong></li>
+        <li>✔ <strong>Rollbacks with one command</strong></li>
+      </ul>
+
+      <pre><code>
+Fewer failures → More stability → Lower maintenance cost
+      </code></pre>
+
+      <hr>
+
+      <!-- 4 -->
+      <h5 class="text-warning">4️⃣ Real-World Example: Spring Boot App Deployment</h5>
+
+      <pre><code>
+1. Developer commits code to GitHub
+2. CI/CD pipeline builds Docker image
+3. Kubernetes Deployment YAML updates
+4. kubectl apply triggers:
+   - API Server stores desired state
+   - Scheduler assigns pods
+   - Kubelet starts containers
+   - kube-proxy routes traffic
+5. HPA scales when users increase
+6. Ingress exposes app to internet
+7. ELK/Prometheus monitor logs + metrics
+      </code></pre>
+
+      <p>This gives:</p>
+      <ul>
+        <li>✔ Zero downtime</li>
+        <li>✔ Autoscaling during traffic spikes</li>
+        <li>✔ Rollback if bad version deployed</li>
+        <li>✔ On-the-fly config updates</li>
+      </ul>
+
+      <hr>
+
+      <!-- 5 -->
+      <h5 class="text-warning">5️⃣ TL;DR – Kubernetes Steps Summary</h5>
+      <pre><code>
+1. Write YAML  
+2. kubectl apply  
+3. API Server stores in ETCD  
+4. Scheduler picks node  
+5. Kubelet creates pod  
+6. kube-proxy networking  
+7. Probes ensure health  
+8. HPA autoscaling  
+9. Self-healing  
+      </code></pre>
+
+      <p><strong>This automation is why Kubernetes is powerful.</strong></p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingK8sCommands">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseK8sCommands"
+      aria-expanded="false" aria-controls="collapseK8sCommands">
+      🧰 Complete Kubernetes Commands List – Every kubectl Command (With Explanation + Examples)
+    </button>
+  </h2>
+
+  <div id="collapseK8sCommands" class="accordion-collapse collapse"
+    aria-labelledby="headingK8sCommands" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- 1 -->
+      <h5 class="text-warning">1️⃣ Basic Cluster Commands</h5>
+      <pre><code class="language-bash">
+kubectl version                 # Client & Server versions
+kubectl cluster-info            # Cluster info
+kubectl get nodes               # List all nodes
+kubectl describe node node1     # Node details
+kubectl top nodes               # Node CPU/Memory usage
+      </code></pre>
+
+      <!-- 2 -->
+      <h5 class="text-warning">2️⃣ Pod Commands</h5>
+      <pre><code class="language-bash">
+kubectl get pods                      # List pods
+kubectl get pods -o wide              # With node info + IP
+kubectl describe pod mypod            # Pod details
+kubectl delete pod mypod              # Delete pod
+kubectl logs mypod                    # Show logs
+kubectl logs mypod -f                 # Live logs
+kubectl exec -it mypod -- bash        # Enter pod shell
+kubectl port-forward pod/mypod 8080:8080   # Local port → Pod port
+      </code></pre>
+
+      <!-- 3 -->
+      <h5 class="text-warning">3️⃣ Deployment Commands</h5>
+      <pre><code class="language-bash">
+kubectl create deployment myapp --image=nginx
+kubectl get deployments
+kubectl describe deployment myapp
+kubectl delete deployment myapp
+kubectl scale deployment myapp --replicas=5
+kubectl rollout status deployment/myapp
+kubectl rollout undo deployment/myapp
+kubectl set image deployment/myapp nginx=nginx:1.25
+      </code></pre>
+
+      <!-- 4 -->
+      <h5 class="text-warning">4️⃣ Service Commands</h5>
+      <pre><code class="language-bash">
+kubectl get svc
+kubectl expose deployment myapp --type=ClusterIP --port=80
+kubectl expose deployment myapp --type=NodePort --port=80
+kubectl expose deployment myapp --type=LoadBalancer --port=80
+kubectl describe svc myapp
+kubectl delete svc myapp
+      </code></pre>
+
+      <!-- 5 -->
+      <h5 class="text-warning">5️⃣ ConfigMap Commands</h5>
+      <pre><code class="language-bash">
+kubectl create configmap app-config --from-literal=KEY=VALUE
+kubectl create configmap app-config --from-file=config.properties
+kubectl get configmaps
+kubectl describe configmap app-config
+kubectl delete configmap app-config
+      </code></pre>
+
+      <!-- 6 -->
+      <h5 class="text-warning">6️⃣ Secret Commands</h5>
+      <pre><code class="language-bash">
+kubectl create secret generic db-secret --from-literal=password=MyPass
+kubectl create secret generic tls-secret --from-file=cert.crt --from-file=key.key
+kubectl get secrets
+kubectl describe secret db-secret
+kubectl delete secret db-secret
+kubectl get secret db-secret -o yaml
+      </code></pre>
+
+      <!-- 7 -->
+      <h5 class="text-warning">7️⃣ Ingress Commands</h5>
+      <pre><code class="language-bash">
+kubectl get ingress
+kubectl describe ingress my-ingress
+kubectl delete ingress my-ingress
+      </code></pre>
+
+      <!-- 8 -->
+      <h5 class="text-warning">8️⃣ Namespace Commands</h5>
+      <pre><code class="language-bash">
+kubectl get ns
+kubectl create ns dev
+kubectl delete ns dev
+kubectl config set-context --current --namespace=dev
+      </code></pre>
+
+      <!-- 9 -->
+      <h5 class="text-warning">9️⃣ Events + Troubleshooting</h5>
+      <pre><code class="language-bash">
+kubectl get events --sort-by=.metadata.creationTimestamp
+kubectl describe pod mypod
+kubectl logs mypod --previous     # Last crash logs
+kubectl exec -it mypod -- sh
+kubectl get pods -o wide
+kubectl top pods
+      </code></pre>
+
+      <!-- 10 -->
+      <h5 class="text-warning">🔟 CRD + API Resources</h5>
+      <pre><code class="language-bash">
+kubectl api-resources          # All resources
+kubectl api-versions           # Versions supported
+kubectl get crd                # List Custom Resource Definitions
+      </code></pre>
+
+      <!-- 11 -->
+      <h5 class="text-warning">1️⃣1️⃣ Apply / Create / Delete</h5>
+      <pre><code class="language-bash">
+kubectl apply -f app.yaml
+kubectl create -f app.yaml
+kubectl delete -f app.yaml
+kubectl replace -f app.yaml
+kubectl explain deployment.spec
+      </code></pre>
+
+      <!-- 12 -->
+      <h5 class="text-warning">1️⃣2️⃣ Logs Aggregation + Debugging</h5>
+      <pre><code class="language-bash">
+kubectl logs mypod -c container1
+kubectl logs daemonset/fluentd -n logging
+kubectl exec -it mypod -c sidecar -- bash
+kubectl run debug --image=busybox -it -- sh
+      </code></pre>
+
+      <!-- 13 -->
+      <h5 class="text-warning">1️⃣3️⃣ Rollout Commands (Updates & Rollbacks)</h5>
+      <pre><code class="language-bash">
+kubectl rollout restart deployment/myapp
+kubectl rollout status deployment/myapp
+kubectl rollout undo deployment/myapp
+kubectl rollout history deployment/myapp
+      </code></pre>
+
+      <!-- 14 -->
+      <h5 class="text-warning">1️⃣4️⃣ Autoscaling Commands</h5>
+      <pre><code class="language-bash">
+kubectl autoscale deployment myapp --min=2 --max=10 --cpu-percent=60
+kubectl get hpa
+kubectl describe hpa myapp
+      </code></pre>
+
+      <!-- 15 -->
+      <h5 class="text-warning">1️⃣5️⃣ Storage: PV/PVC</h5>
+      <pre><code class="language-bash">
+kubectl get pv
+kubectl get pvc
+kubectl describe pvc myclaim
+kubectl delete pvc myclaim
+kubectl apply -f storage.yaml
+      </code></pre>
+
+      <!-- 16 -->
+      <h5 class="text-warning">1️⃣6️⃣ Node Management</h5>
+      <pre><code class="language-bash">
+kubectl cordon node1         # Mark unschedulable
+kubectl uncordon node1       # Make available
+kubectl drain node1 --ignore-daemonsets --force
+kubectl top nodes
+kubectl describe node node1
+      </code></pre>
+
+      <!-- 17 -->
+      <h5 class="text-warning">1️⃣7️⃣ Port Forwarding</h5>
+      <pre><code class="language-bash">
+kubectl port-forward pod/mypod 8080:8080
+kubectl port-forward svc/myservice 9090:80
+      </code></pre>
+
+      <!-- 18 -->
+      <h5 class="text-warning">1️⃣8️⃣ Logs & Exec in Multi-Container Pods</h5>
+      <pre><code class="language-bash">
+kubectl logs mypod -c app
+kubectl exec -it mypod -c sidecar -- sh
+      </code></pre>
+
+      <!-- 19 -->
+      <h5 class="text-warning">1️⃣9️⃣ Explain Resources</h5>
+      <pre><code class="language-bash">
+kubectl explain pod
+kubectl explain deployment.spec.template.spec.containers
+      </code></pre>
+
+      <!-- 20 -->
+      <h5 class="text-warning">2️⃣0️⃣ Context & Authentication</h5>
+      <pre><code class="language-bash">
+kubectl config get-contexts
+kubectl config use-context minikube
+kubectl config current-context
+kubectl config view
+      </code></pre>
+
+      <!-- 21 -->
+      <h5 class="text-warning">2️⃣1️⃣ Debug Commands (LATEST)</h5>
+      <pre><code class="language-bash">
+kubectl debug node/my-node --image=busybox
+kubectl debug mypod -it --image=busybox
+kubectl debug deployment/myapp --copy-to=myapp-debug
+      </code></pre>
+
+      <!-- 22 -->
+      <h5 class="text-warning">2️⃣2️⃣ Proxy Commands</h5>
+      <pre><code class="language-bash">
+kubectl proxy
+# Access API server on:
+# http://localhost:8001
+      </code></pre>
+
+      <!-- 23 -->
+      <h5 class="text-warning">2️⃣3️⃣ Label & Annotate</h5>
+      <pre><code class="language-bash">
+kubectl label pod mypod env=prod
+kubectl annotate pod mypod owner=hari
+kubectl get pods --show-labels
+      </code></pre>
+
+      <!-- 24 -->
+      <h5 class="text-warning">2️⃣4️⃣ Taints & Tolerations</h5>
+      <pre><code class="language-bash">
+kubectl taint nodes node1 key=value:NoSchedule
+kubectl taint nodes node1 key-
+      </code></pre>
+
+      <!-- 25 -->
+      <h5 class="text-warning">2️⃣5️⃣ Copy Files To/From Containers</h5>
+      <pre><code class="language-bash">
+kubectl cp mypod:/app/logs /local/logs
+kubectl cp ./config mypod:/app/config
+      </code></pre>
+
+      <!-- 26 -->
+      <h5 class="text-warning">2️⃣6️⃣ Apply Server Side (K8s Recommended)</h5>
+      <pre><code class="language-bash">
+kubectl apply --server-side -f deployment.yaml
+      </code></pre>
+
+      <!-- 27 -->
+      <h5 class="text-warning">2️⃣7️⃣ Dry Run Commands</h5>
+      <pre><code class="language-bash">
+kubectl apply -f app.yaml --dry-run=client
+kubectl create deployment myapp --image=nginx --dry-run=client -o yaml
+      </code></pre>
+
+      <!-- 28 -->
+      <h5 class="text-warning">2️⃣8️⃣ YAML from Imperative Commands</h5>
+      <pre><code class="language-bash">
+kubectl create deployment myapp --image=nginx -o yaml > app.yaml
+kubectl expose deployment myapp --port=80 -o yaml
+      </code></pre>
+
+      <!-- 29 -->
+      <h5 class="text-warning">2️⃣9️⃣ Watches</h5>
+      <pre><code class="language-bash">
+kubectl get pods -w
+kubectl get events -w
+      </code></pre>
+
+      <!-- 30 -->
+      <h5 class="text-warning">3️⃣0️⃣ Delete Tricks</h5>
+      <pre><code class="language-bash">
+kubectl delete pod --force --grace-period=0
+kubectl delete all --all -n dev
+kubectl delete pvc --all
+kubectl delete pods -l app=myapp
+      </code></pre>
+
+      <!-- FINAL -->
+      <h5 class="text-warning">🎯 Final Summary – You Now Know Every kubectl Command</h5>
+      <pre><code>
+Pods  
+Deployments  
+Services  
+ConfigMaps  
+Secrets  
+Ingress  
+Storage  
+Nodes  
+Autoscaling  
+Events  
+Debugging  
+Contexts  
+Rollouts  
+CRDs  
+EVERYTHING covered ✔  
+      </code></pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingK8sTroubleshooting">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseK8sTroubleshooting"
+      aria-expanded="false" aria-controls="collapseK8sTroubleshooting">
+      🛠️ Kubernetes Advanced Troubleshooting – 30 Real Interview Scenarios (Root Cause + Fix)
+    </button>
+  </h2>
+
+  <div id="collapseK8sTroubleshooting" class="accordion-collapse collapse"
+    aria-labelledby="headingK8sTroubleshooting" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- 1 -->
+      <h5 class="text-warning">1️⃣ Pod Stuck in Pending</h5>
+      <pre><code>
+Cause:
+✔ No node has enough CPU/Memory
+✔ NodeSelector/affinity mismatch
+
+Fix:
+kubectl describe pod pod1
+kubectl describe node node1
+      </code></pre>
+
+      <!-- 2 -->
+      <h5 class="text-warning">2️⃣ Pod CrashLoopBackOff</h5>
+      <pre><code>
+Cause:
+✔ App crashes repeatedly
+✔ Wrong env vars
+✔ DB connection failure
+
+Fix:
+kubectl logs pod1 --previous
+kubectl describe pod pod1
+      </code></pre>
+
+      <!-- 3 -->
+      <h5 class="text-warning">3️⃣ ImagePullBackOff</h5>
+      <pre><code>
+Cause:
+✔ Wrong image name
+✔ Private registry access denied
+
+Fix:
+kubectl describe pod pod1
+Check imagePullSecrets
+      </code></pre>
+
+      <!-- 4 -->
+      <h5 class="text-warning">4️⃣ ContainerCreating Too Long</h5>
+      <pre><code>
+Cause:
+✔ Slow image pull
+✔ PVC not attaching
+
+Fix:
+kubectl describe pod
+kubectl get pvc
+      </code></pre>
+
+      <!-- 5 -->
+      <h5 class="text-warning">5️⃣ OOMKilled (Out Of Memory)</h5>
+      <pre><code>
+Cause:
+✔ Container exceeds memory limit
+
+Fix:
+Increase resources.limits.memory
+      </code></pre>
+
+      <!-- 6 -->
+      <h5 class="text-warning">6️⃣ Liveness Probe Failing</h5>
+      <pre><code>
+Cause:
+✔ /health endpoint slow
+✔ App startup time high
+
+Fix:
+Use startupProbe
+      </code></pre>
+
+      <!-- 7 -->
+      <h5 class="text-warning">7️⃣ Readiness Probe Failing</h5>
+      <pre><code>
+Cause:
+✔ DB not ready
+✔ Cache not connected
+
+Fix:
+Increase initialDelaySeconds
+      </code></pre>
+
+      <!-- 8 -->
+      <h5 class="text-warning">8️⃣ Node NotReady</h5>
+      <pre><code>
+Cause:
+✔ Kubelet down
+✔ Disk pressure
+
+Fix:
+kubectl describe node
+systemctl status kubelet
+      </code></pre>
+
+      <!-- 9 -->
+      <h5 class="text-warning">9️⃣ High Node CPU/Memory</h5>
+      <pre><code>
+Cause:
+✔ Too many pods scheduled
+✔ Resource limits missing
+
+Fix:
+kubectl top nodes
+Limit pods CPU/memory
+      </code></pre>
+
+      <!-- 10 -->
+      <h5 class="text-warning">🔟 Pod Evicted</h5>
+      <pre><code>
+Cause:
+✔ Out of disk
+✔ Memory pressure
+
+Fix:
+kubectl get events
+Clear /var/lib/docker
+      </code></pre>
+
+      <!-- 11 -->
+      <h5 class="text-warning">1️⃣1️⃣ Service Not Routing to Pod</h5>
+      <pre><code>
+Cause:
+✔ Labels mismatch
+
+Fix:
+kubectl get ep myservice
+kubectl describe svc myservice
+      </code></pre>
+
+      <!-- 12 -->
+      <h5 class="text-warning">1️⃣2️⃣ DNS Not Resolving</h5>
+      <pre><code>
+Cause:
+✔ CoreDNS crash
+
+Fix:
+kubectl logs -n kube-system coredns-xxx
+      </code></pre>
+
+      <!-- 13 -->
+      <h5 class="text-warning">1️⃣3️⃣ Ingress 404 Errors</h5>
+      <pre><code>
+Cause:
+✔ Wrong path
+✔ Wrong servicePort
+
+Fix:
+kubectl describe ingress
+      </code></pre>
+
+      <!-- 14 -->
+      <h5 class="text-warning">1️⃣4️⃣ Ingress SSL Not Working</h5>
+      <pre><code>
+Cause:
+✔ Secret name mismatch
+
+Fix:
+kubectl get secret tls-secret
+      </code></pre>
+
+      <!-- 15 -->
+      <h5 class="text-warning">1️⃣5️⃣ HPA Not Scaling</h5>
+      <pre><code>
+Cause:
+✔ Metrics server not installed
+
+Fix:
+kubectl get apiservice | grep metrics
+      </code></pre>
+
+      <!-- 16 -->
+      <h5 class="text-warning">1️⃣6️⃣ Pods Not Terminating</h5>
+      <pre><code>
+Cause:
+✔ PreStop hooks blocking
+
+Fix:
+kubectl delete pod --force --grace-period=0
+      </code></pre>
+
+      <!-- 17 -->
+      <h5 class="text-warning">1️⃣7️⃣ Service LoadBalancer External IP Pending</h5>
+      <pre><code>
+Cause:
+✔ Not running in cloud
+✔ MetalLB missing
+
+Fix:
+Use Metallb for bare-metal clusters
+      </code></pre>
+
+      <!-- 18 -->
+      <h5 class="text-warning">1️⃣8️⃣ Can't Exec Into Pod</h5>
+      <pre><code>
+Cause:
+✔ container has no shell
+
+Fix:
+kubectl exec -it pod -- sh
+      </code></pre>
+
+      <!-- 19 -->
+      <h5 class="text-warning">1️⃣9️⃣ PVC Stuck in Pending</h5>
+      <pre><code>
+Cause:
+✔ StorageClass unavailable
+
+Fix:
+kubectl get sc
+kubectl describe pvc
+      </code></pre>
+
+      <!-- 20 -->
+      <h5 class="text-warning">2️⃣0️⃣ PV Bound To Wrong PVC</h5>
+      <pre><code>
+Cause:
+✔ AccessMode mismatch
+
+Fix:
+Check ReadWriteOnce vs ReadWriteMany
+      </code></pre>
+
+      <!-- 21 -->
+      <h5 class="text-warning">2️⃣1️⃣ ConfigMap Not Updating</h5>
+      <pre><code>
+Cause:
+✔ Deployment not restarted
+
+Fix:
+kubectl rollout restart deployment
+      </code></pre>
+
+      <!-- 22 -->
+      <h5 class="text-warning">2️⃣2️⃣ Secrets Wrongly Base64 Encoded</h5>
+      <pre><code>
+Fix:
+echo -n "password" | base64
+echo -n "cGFzc3dvcmQ=" | base64 --decode
+      </code></pre>
+
+      <!-- 23 -->
+      <h5 class="text-warning">2️⃣3️⃣ Multi-container Pod Timeout</h5>
+      <pre><code>
+Cause:
+✔ Sidecar not starting
+✔ Init container fail
+
+Fix:
+kubectl describe pod | grep Init
+      </code></pre>
+
+      <!-- 24 -->
+      <h5 class="text-warning">2️⃣4️⃣ Can't Access Pod from Another Namespace</h5>
+      <pre><code>
+Fix:
+svc-name.namespace.svc.cluster.local
+      </code></pre>
+
+      <!-- 25 -->
+      <h5 class="text-warning">2️⃣5️⃣ Jobs Never Complete</h5>
+      <pre><code>
+Cause:
+✔ parallelism/backoff settings wrong
+
+Fix:
+kubectl describe job
+      </code></pre>
+
+      <!-- 26 -->
+      <h5 class="text-warning">2️⃣6️⃣ CronJob Missing Schedule Runs</h5>
+      <pre><code>
+Cause:
+✔ timezone mismatch
+
+Fix:
+Check schedule & lastScheduleTime
+      </code></pre>
+
+      <!-- 27 -->
+      <h5 class="text-warning">2️⃣7️⃣ Node DiskPressure</h5>
+      <pre><code>
+Fix:
+Clean /var/log
+Clean container runtime
+      </code></pre>
+
+      <!-- 28 -->
+      <h5 class="text-warning">2️⃣8️⃣ Pod IP Conflicts</h5>
+      <pre><code>
+Cause:
+✔ CNI misconfigured
+
+Fix:
+restart CNI plugin (Calico/Flannel)
+      </code></pre>
+
+      <!-- 29 -->
+      <h5 class="text-warning">2️⃣9️⃣ NetworkPolicy Blocking Traffic</h5>
+      <pre><code>
+Fix:
+kubectl describe netpol
+Allow ingress & egress rules
+      </code></pre>
+
+      <!-- 30 -->
+      <h5 class="text-warning">3️⃣0️⃣ ETCD High Latency</h5>
+      <pre><code>
+Cause:
+✔ ETCD running out of IOPS
+
+Fix:
+Move ETCD to SSD storage
+      </code></pre>
+
+      <hr>
+
+      <h4 class="text-info">🎯 Final Summary</h4>
+      <pre><code>
+Pod Issues → logs, describe  
+Network Issues → svc, endpoints, netpol  
+Storage Issues → pvc, pv, sc  
+Node Issues → describe node, systemctl  
+Ingress Issues → describe ingress, TLS  
+Autoscaling Issues → metrics-server  
+ETCD Issues → performance/latency  
+      </code></pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingSpringK8sCron">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseSpringK8sCron"
+      aria-expanded="false" aria-controls="collapseSpringK8sCron">
+      ⏱️ Automate Task Scheduling | Spring Boot Scheduled Tasks on Kubernetes with CronJobs (With Examples)
+    </button>
+  </h2>
+
+  <div id="collapseSpringK8sCron" class="accordion-collapse collapse"
+    aria-labelledby="headingSpringK8sCron" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- INTRO -->
+      <h5 class="text-warning">1️⃣ Why Schedule Tasks in Kubernetes?</h5>
+      <p>
+        Spring Boot has <code>@Scheduled</code>, but it runs <strong>inside your microservice pod</strong>.  
+        In Kubernetes, using <strong>CronJobs</strong> is better because:
+      </p>
+
+      <ul>
+        <li>✔ Tasks run independently from your main Spring Boot API</li>
+        <li>✔ Automatic retries</li>
+        <li>✔ Logs stored separately</li>
+        <li>✔ Controlled concurrency (Forbid / Replace)</li>
+        <li>✔ If a node crashes → Kubernetes re-runs the task</li>
+      </ul>
+
+      <pre><code>
+Spring Boot API (stateless)  
+⟶ CronJob handles scheduled tasks  
+⟶ Better scalability / separation of concerns  
+      </code></pre>
+
+      <hr>
+
+      <!-- Spring Boot -->
+      <h5 class="text-warning">2️⃣ Spring Boot Scheduled Task Example (@Scheduled)</h5>
+      <pre><code class="language-java">
+@Component
+@EnableScheduling
+public class ReportScheduler {
+
+    @Scheduled(cron = "0 0 2 * * *") // every day at 2 AM
+    public void generateReport() {
+        System.out.println("📁 Generating daily report...");
+    }
+}
+      </code></pre>
+
+      <p><strong>Problem:</strong>  
+      If this instance scales to 5 pods → the job runs 5 times ❌  
+      That’s why Kubernetes CronJob is preferred.</p>
+
+      <hr>
+
+      <!-- K8s CronJob -->
+      <h5 class="text-warning">3️⃣ Kubernetes CronJob – Best Way to Run Scheduled Tasks</h5>
+
+      <p>Here we create a **Docker image** that runs only the Spring Boot task, not the API.</p>
+
+      <h6 class="text-info">📌 Step 1 – Create Separate Spring Boot Job Class</h6>
+
+      <pre><code class="language-java">
+@SpringBootApplication
+public class CronApp {
+
+    public static void main(String[] args) {
+        SpringApplication.run(CronApp.class, args);
+    }
+}
+
+@Component
+public class DailyReportJob {
+
+    @PostConstruct
+    public void runJob() {
+        System.out.println("Starting daily report job...");
+        // business logic here
+        System.out.println("Done!");
+        System.exit(0);
+    }
+}
+      </code></pre>
+
+      <p>This will:</p>
+      <ul>
+        <li>✔ Start job</li>
+        <li>✔ Run business logic</li>
+        <li>✔ Exit immediately</li>
+      </ul>
+
+      <hr>
+
+      <h6 class="text-info">📌 Step 2 – Build Docker Image</h6>
+      <pre><code class="language-dockerfile">
+FROM eclipse-temurin:17-jdk
+COPY target/cron-job.jar app.jar
+ENTRYPOINT ["java","-jar","/app.jar"]
+      </code></pre>
+
+      <hr>
+
+      <h6 class="text-info">📌 Step 3 – Kubernetes CronJob YAML</h6>
+
+      <pre><code class="language-yaml">
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: daily-report-cron
+spec:
+  schedule: "0 2 * * *"   # Run at 2 AM daily
+  jobTemplate:
+    spec:
+      backoffLimit: 3
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: report-job
+              image: myrepo/report-job:1.0
+              env:
+                - name: DB_HOST
+                  valueFrom:
+                    configMapKeyRef:
+                      name: app-config
+                      key: db-host
+                - name: DB_PASS
+                  valueFrom:
+                    secretKeyRef:
+                      name: db-secret
+                      key: db-password
+      </code></pre>
+
+      <p><strong>Kubernetes ensures:</strong></p>
+      <ul>
+        <li>✔ Job runs exactly once</li>
+        <li>✔ Automatically retries on failure</li>
+        <li>✔ No duplicate execution</li>
+        <li>✔ Logs can be checked via <code>kubectl logs</code></li>
+      </ul>
+
+      <hr>
+
+      <!-- Logging -->
+      <h5 class="text-warning">4️⃣ View Cron Job Logs</h5>
+      <pre><code class="language-bash">
+kubectl get cronjob
+kubectl get jobs
+kubectl get pods
+kubectl logs <job-pod-name>
+      </code></pre>
+
+      <hr>
+
+      <!-- Concurrency -->
+      <h5 class="text-warning">5️⃣ Avoid Duplicate Job Runs (IMPORTANT)</h5>
+
+      <pre><code class="language-yaml">
+spec:
+  concurrencyPolicy: Forbid
+      </code></pre>
+
+      <p><strong>Options:</strong></p>
+      <ul>
+        <li>✔ <b>Forbid</b> → skip new run if previous not finished</li>
+        <li>✔ <b>Replace</b> → kill old one, run new one</li>
+        <li>✔ <b>Allow</b> → allow parallel jobs</li>
+      </ul>
+
+      <hr>
+
+      <!-- Real Use Cases -->
+      <h5 class="text-warning">6️⃣ Real-World Use Cases of Spring Boot + K8s CronJobs</h5>
+
+      <ul>
+        <li>📌 Monthly billing generation</li>
+        <li>📌 Daily report generation</li>
+        <li>📌 Database archival scripts</li>
+        <li>📌 Auto-delete expired tokens</li>
+        <li>📌 Auto-sync with third-party APIs daily</li>
+        <li>📌 Backup S3 / DB at midnight</li>
+        <li>📌 Daily email campaigns</li>
+      </ul>
+
+      <pre><code>
+App APIs → Deployment  
+Cron Jobs → Batch workloads  
+Fully separated → No duplication → No scaling issues  
+      </code></pre>
+
+      <hr>
+
+      <!-- Combined -->
+      <h5 class="text-warning">7️⃣ Combined Architecture – Spring Boot + Kubernetes CronJobs</h5>
+
+      <pre><code>
++------------------------+         +-------------------------+
+| Spring Boot API Pods   | <-----> | ConfigMap / Secrets     |
+| Deployment (ReplicaSet)|         +-------------------------+
++------------------------+                       |
+                       CI/CD Pipeline            |
+                           |                     |
+                           v                     v
++---------------------------+       +--------------------------+
+| CronJob: Daily Reports    |       | CronJob: Cleanup Jobs    |
+| Runs once per schedule    |       | Runs nightly              |
++---------------------------+       +--------------------------+
+      </code></pre>
+
+      <p><strong>Benefits:</strong></p>
+      <ul>
+        <li>✔ API remains stateless & scalable</li>
+        <li>✔ Tasks run independently</li>
+        <li>✔ No duplication even with 10 replicas</li>
+        <li>✔ Logs + retry logic built-in</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-warning">8️⃣ TL;DR Summary</h5>
+
+      <pre><code>
+Spring @Scheduled → simple but duplicated in multi-pod systems ❌  
+K8s CronJob → reliable, scalable, isolated task scheduling ✔  
+      </code></pre>
+
+      <p><strong>Use CronJobs for all production scheduled tasks.</strong></p>
+
+    </div>
+  </div>
+</div>
+
+
+
+  </div>
+
+
+
+  <!-- Bootstrap & Search Script -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      let questionCount = document.querySelectorAll(".accordion-item").length;
+      document.getElementById("questionCount").innerHTML = `<strong>Total Questions: ${questionCount}</strong>`;
+    });
+    document.addEventListener("DOMContentLoaded", function () {
+      let items = document.querySelectorAll(".accordion-item");
+
+      items.forEach((item, index) => {
+        let button = item.querySelector(".accordion-button");
+        if (button) {
+          button.innerHTML = `<span class="fw-bold me-2">${index + 1}.</span> ` + button.innerHTML;
+        }
+      });
+    });
+
+    // Loop through all accordion bodies and add a Play button
+    document.addEventListener("DOMContentLoaded", function () {
+      // Loop through all accordion bodies
+      document.querySelectorAll(".accordion-body").forEach((body) => {
+        // Create Play button
+        const playBtn = document.createElement("button");
+        playBtn.class = "btn btn-sm btn-outline-primary me-2 mb-2";
+        playBtn.innerText = "🔊 Play Voice Over";
+        playBtn.onclick = function () {
+          speakAccordionText(this);
+        };
+
+        // Create Stop button
+        const stopBtn = document.createElement("button");
+        stopBtn.class = "btn btn-sm btn-outline-danger mb-2";
+        stopBtn.innerText = "⏹ Stop";
+        stopBtn.onclick = function () {
+          window.speechSynthesis.cancel();
+        };
+
+        // Insert buttons
+        const spacer = document.createElement("div");
+        spacer.class = "mb-2";
+        body.prepend(spacer);
+        body.prepend(stopBtn);
+        body.prepend(playBtn);
+      });
+    });
+
+    let currentUtterance = null;
+
+    function speakAccordionText(button) {
+      // Cancel any current speech
+      speechSynthesis.cancel();
+
+      const body = button.closest(".accordion-body");
+
+      // Get clean text from relevant tags
+      let rawText = Array.from(body.querySelectorAll("p, li, h5, text-warning, text-info, text-primary, text-success, text-danger, text-secondary, text-muted,text-dark, text-light, text-warning"))
+        .map(el => el.textContent.trim())
+        .filter(Boolean)
+        .join(". ");
+
+      // Remove unwanted characters
+      rawText = rawText.replace(/[`"*]+/g, "");
+
+      const chunks = splitTextIntoChunks(rawText, 200);
+
+      function getPreferredVoice() {
+        const voices = speechSynthesis.getVoices();
+        return voices.find(v =>
+          v.lang === "en-IN" && v.name.toLowerCase().includes("female")
+        ) || voices.find(v =>
+          v.lang === "en-IN"
+        ) || voices.find(v =>
+          v.name.toLowerCase().includes("female") && v.lang.startsWith("en")
+        );
+      }
+
+      function speakChunks(index = 0) {
+        if (index >= chunks.length) return;
+
+        const utterance = new SpeechSynthesisUtterance(chunks[index]);
+        utterance.voice = getPreferredVoice();
+        utterance.rate = 0.95;
+        utterance.pitch = 1.3;
+        utterance.volume = 1;
+
+        currentUtterance = utterance;
+
+        utterance.onend = () => speakChunks(index + 1);
+        utterance.onerror = (e) => console.error("Speech error:", e);
+
+        speechSynthesis.speak(utterance);
+      }
+
+      // Wait for voices to load before speaking
+      if (speechSynthesis.getVoices().length === 0) {
+        speechSynthesis.onvoiceschanged = () => speakChunks();
+      } else {
+        speakChunks();
+      }
+    }
+
+    function splitTextIntoChunks(text, maxLength) {
+      const sentences = text.match(/[^\.!\?]+[\.!\?]+/g) || [text];
+      const chunks = [];
+
+      let currentChunk = "";
+      for (let sentence of sentences) {
+        if ((currentChunk + sentence).length > maxLength) {
+          if (currentChunk) chunks.push(currentChunk);
+          currentChunk = sentence;
+        } else {
+          currentChunk += sentence;
+        }
+      }
+      if (currentChunk) chunks.push(currentChunk);
+      return chunks;
+    }
+
+    // Optional: Stop button functionality
+    function stopSpeech() {
+      if (currentUtterance) {
+        speechSynthesis.cancel();
+        currentUtterance = null;
+      }
+    }
+
+
+
+    function searchQuestions() {
+      const input = document.getElementById("searchBox").value.toLowerCase();
+      const items = document.querySelectorAll(".accordion-item");
+
+      items.forEach((item) => {
+        const buttonText = item.querySelector(".accordion-button")?.textContent.toLowerCase() || "";
+        const bodyText = item.querySelector(".accordion-body")?.textContent.toLowerCase() || "";
+
+        const combinedText = buttonText + " " + bodyText;
+
+        if (combinedText.includes(input)) {
+          item.style.display = "";
+        } else {
+          item.style.display = "none";
+        }
+      });
+    }
+
+    function copyToClipboard(text) {
+      navigator.clipboard
+        .writeText(text)
+        .then(() => {
+          alert("Copied: " + text);
+        })
+        .catch((err) => {
+          console.error("Failed to copy:", err);
+        });
+    }
+  </script>
+</body>
+
+</html>

@@ -20,7 +20,7 @@ public class StreamsApiTest {
         System.out.println(collect);
         System.out.println("Query 2 : Print the name of all departments in the organization?");
         employees.stream().map(Employee::getDepartment).forEach(System.out::println);
-        System.out.println("Query 3 : What is the average age f male and female employees?");
+        System.out.println("Query 3 : What is the average age male and female employees?");
         Map<String, Double> collect1 = employees.stream().collect(Collectors.groupingBy(Employee::getGender, Collectors.averagingDouble(Employee::getAge)));
         System.out.println(collect1);
         System.out.println("Query 4 : Get the details of highest paid employee in the organization?");
@@ -33,7 +33,7 @@ public class StreamsApiTest {
         Map<String, Long> collect2 = employees.stream().collect(Collectors.groupingBy(Employee::getDepartment, Collectors.counting()));
         System.out.println(collect2);
         System.out.println("Query 7 : What is the average salary of each department?");
-        Map<String, Double> collect3 = employees.stream().collect(Collectors.groupingBy(Employee::getDepartment, Collectors.averagingDouble(Employee::getSalary)));
+        Map<String, Double> collect3 = employees .stream().collect(Collectors.groupingBy(Employee::getDepartment, Collectors.averagingDouble(Employee::getSalary)));
         System.out.println(collect3);
 
                 System.out.println("Query 8 : Count the number of male and female employees in each department?");
