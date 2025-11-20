@@ -94,6 +94,293 @@
     <div class="accordion" id="googleAccordion">
 
       <div class="accordion-item">
+  <h2 class="accordion-header" id="headingArgsVM">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseArgsVM" aria-expanded="false"
+      aria-controls="collapseArgsVM">
+      ⚙️ Program Arguments vs VM Arguments – Usage & Access in Java (Eclipse)
+    </button>
+  </h2>
+
+  <div id="collapseArgsVM" class="accordion-collapse collapse" aria-labelledby="headingArgsVM"
+    data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- Explanation -->
+      <h5 class="text-warning">1️⃣ What are Program Arguments?</h5>
+      <p>
+        ✔ Values passed to your Java <code>main()</code> method at runtime. <br>
+        ✔ Useful for inputs like filenames, modes, environment names, etc. <br>
+        ✔ Accessed inside Java using <code>String[] args</code>.
+      </p>
+
+      <pre><code class="language-java">
+// Example: Reading Program Arguments
+
+public class Demo {
+    public static void main(String[] args) {
+
+        System.out.println("Program Arguments:");
+        for (String a : args) {
+            System.out.println(a);
+        }
+
+        // Example usage:
+        if (args.length > 0) {
+            String mode = args[0];      // ex: "dev"
+            System.out.println("Mode = " + mode);
+        }
+    }
+}
+      </code></pre>
+
+      <h6 class="text-info">✔ How to Set Program Arguments in Eclipse?</h6>
+      <pre><code>
+Right click Project → Run As → Run Configurations → Arguments Tab → "Program Arguments" box
+      </code></pre>
+
+
+      <!-- VM Arguments -->
+      <h5 class="text-warning">2️⃣ What are VM Arguments?</h5>
+      <p>
+        ✔ Settings passed to the Java Virtual Machine (JVM). <br>
+        ✔ Control memory, system properties, garbage collector, etc. <br>
+        ✔ Examples: <code>-Xms512m</code>, <code>-Xmx2g</code>, <code>-Dspring.profiles.active=prod</code>
+      </p>
+
+      <pre><code class="language-java">
+// Accessing VM Arguments (System Properties)
+
+public class VMArgsDemo {
+    public static void main(String[] args) {
+
+        String profile = System.getProperty("spring.profiles.active");
+        System.out.println("Active Profile = " + profile);
+
+        String region = System.getProperty("app.region");
+        System.out.println("Region = " + region);
+    }
+}
+      </code></pre>
+
+      <h6 class="text-info">✔ How to Set VM Arguments in Eclipse?</h6>
+      <pre><code>
+Right click Project → Run As → Run Configurations → Arguments Tab → "VM Arguments" box
+
+Example values:
+    -Xms512m
+    -Xmx1024m
+    -Dspring.profiles.active=dev
+    -Dapp.region=APAC
+      </code></pre>
+
+      <!-- Difference -->
+      <h5 class="text-warning">3️⃣ Program Args vs VM Args Summary</h5>
+      <table class="table table-bordered table-striped text-light">
+        <tr><th>Feature</th><th>Program Argument</th><th>VM Argument</th></tr>
+        <tr><td>Purpose</td><td>Input to your app</td><td>Config JVM behavior</td></tr>
+        <tr><td>Used by</td><td>Business logic</td><td>JVM/System</td></tr>
+        <tr><td>Example</td><td>dev payments.csv</td><td>-Xmx1g -Denv=prod</td></tr>
+        <tr><td>Access</td><td>main(String[] args)</td><td>System.getProperty()</td></tr>
+        <tr><td>Where to set</td><td>Run → Program Args</td><td>Run → VM Args</td></tr>
+      </table>
+
+      <!-- Real example -->
+      <h5 class="text-warning">4️⃣ Real-World Example (Eclipse)</h5>
+
+      <pre><code class="language-java">
+public class RealExample {
+    public static void main(String[] args) {
+
+        // Program Args
+        String username = args.length > 0 ? args[0] : "guest";
+
+        // VM Args
+        String environment = System.getProperty("env", "dev"); // default = dev
+        String maxThreads = System.getProperty("threads", "10");
+
+        System.out.println("User = " + username);
+        System.out.println("Env = " + environment);
+        System.out.println("Max Threads = " + maxThreads);
+    }
+}
+      </code></pre>
+
+      <h6 class="text-info">✔ Example Inputs</h6>
+      <pre><code>
+Program Arguments:
+    hari 1234
+
+VM Arguments:
+    -Denv=prod -Dthreads=50
+      </code></pre>
+
+      <h6 class="text-success">Output</h6>
+      <pre><code>
+User = hari
+Env = prod
+Max Threads = 50
+      </code></pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingNewItem">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseNewItem"
+      aria-expanded="false" aria-controls="collapseNewItem">
+      🌟 New Accordion Item (Spring Boot Args & VM Args)
+    </button>
+  </h2>
+
+  <div id="collapseNewItem" class="accordion-collapse collapse"
+    aria-labelledby="headingNewItem" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- 👇 Your content will go here -->
+      <h5 class="text-warning">Topic Title Here</h5>
+
+      <pre><code class="language-java">
+// Java example here
+      </code></pre>
+
+      <pre><code class="language-bash">
+# CLI commands here
+      </code></pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingArgsInYaml">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseArgsInYaml"
+      aria-expanded="false" aria-controls="collapseArgsInYaml">
+      📘 Reading Program & VM Arguments inside application.yml / properties
+    </button>
+  </h2>
+
+  <div id="collapseArgsInYaml" class="accordion-collapse collapse"
+    aria-labelledby="headingArgsInYaml" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <h5 class="text-warning">1️⃣ What can YAML read?</h5>
+      <ul>
+        <li>✔ VM Arguments: <code>-Dapp.region=IN</code></li>
+        <li>✔ Program Arguments: <code>--app.mode=dev</code></li>
+        <li>❌ Cannot read normal positional args like: <code>hari 1234 xyz</code></li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-warning">2️⃣ Example – Define placeholders in application.yml</h5>
+
+      <pre><code class="language-yaml">
+app:
+  region: ${app.region:DEFAULT_REGION}
+  mode: ${app.mode:DEFAULT_MODE}
+  version: ${app.version:1.0}
+      </code></pre>
+
+      <p class="text-info">
+        ✔ <code>DEFAULT_REGION</code> is fallback when no argument is passed  
+        ✔ You can override them using VM or Program args
+      </p>
+
+      <hr>
+
+      <h5 class="text-warning">3️⃣ Passing VM Arguments (JVM)</h5>
+
+      <pre><code class="language-bash">
+# VM Arguments
+-Dapp.region=APAC -Dapp.version=9.0
+      </code></pre>
+
+      <h6 class="text-success">✔ YAML Resolution</h6>
+      <pre><code>
+app.region = APAC
+app.version = 9.0
+app.mode = DEFAULT_MODE   (not provided)
+      </code></pre>
+
+      <hr>
+
+      <h5 class="text-warning">4️⃣ Passing Program Arguments</h5>
+
+      <pre><code class="language-bash">
+# Program Arguments
+--app.mode=prod --app.region=EU
+      </code></pre>
+
+      <h6 class="text-success">✔ YAML Resolution</h6>
+      <pre><code>
+app.mode = prod
+app.region = EU
+app.version = 1.0 (default)
+      </code></pre>
+
+      <hr>
+
+      <h5 class="text-warning">5️⃣ Running a Spring Boot Jar with both</h5>
+
+      <pre><code class="language-bash">
+java -Xms512m -Xmx1g \
+    -Dapp.region=IN \
+    -Dapp.version=2.5 \
+    -jar myapp.jar \
+    --app.mode=dev
+      </code></pre>
+
+      <h6 class="text-success">✔ Final values resolved inside YAML</h6>
+      <pre><code>
+app.region = IN        (from VM arg)
+app.version = 2.5      (from VM arg)
+app.mode = dev         (from program arg)
+      </code></pre>
+
+      <hr>
+
+      <h5 class="text-warning">6️⃣ Reading the values in Java</h5>
+
+      <pre><code class="language-java">
+@Value("${app.region}")
+private String region;
+
+@Value("${app.mode}")
+private String mode;
+
+@Value("${app.version}")
+private String version;
+
+@PostConstruct
+public void init() {
+    System.out.println("Region = " + region);
+    System.out.println("Mode = " + mode);
+    System.out.println("Version = " + version);
+}
+      </code></pre>
+
+      <hr>
+
+      <h5 class="text-warning">7️⃣ Priority Order (Most Powerful → Least)</h5>
+
+      <ol>
+        <li>1️⃣ Program Args → <code>--key=value</code></li>
+        <li>2️⃣ VM Args → <code>-Dkey=value</code></li>
+        <li>3️⃣ application.properties / application.yml</li>
+      </ol>
+
+      <p class="text-info">
+        ✔ Program args override everything  
+        ✔ VM args override YML  
+      </p>
+
+    </div>
+  </div>
+</div>
+
+      <div class="accordion-item">
         <h2 class="accordion-header" id="headingAllStreamsSQL">
           <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
             data-bs-target="#collapseAllStreamsSQL" aria-expanded="false" aria-controls="collapseAllStreamsSQL">
