@@ -92,6 +92,1601 @@
     </div>
 
     <div class="accordion" id="googleAccordion">
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingVersioningMS">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseVersioningMS"
+      aria-expanded="false" aria-controls="collapseVersioningMS">
+      🔁 Microservices Versioning – Types, Examples & Best Practices
+    </button>
+  </h2>
+
+  <div id="collapseVersioningMS" class="accordion-collapse collapse"
+    aria-labelledby="headingVersioningMS" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- Explanation -->
+      <h5 class="text-warning">1️⃣ Why Versioning is Needed?</h5>
+      <p>
+        ✔ Your consumers (UI, mobile, other services) should not break when you release new changes.<br>
+        ✔ Allows backward compatibility.<br>
+        ✔ Helps in gradual migration & safe deployments (Blue-Green / Canary).<br>
+        ✔ Supports multiple clients using different versions.
+      </p>
+
+      <hr>
+
+      <h5 class="text-warning">2️⃣ Types of Microservices Versioning</h5>
+
+      <!-- URL Versioning -->
+      <h6 class="text-info">✔ A) URL / Path Versioning (Most Common)</h6>
+      <pre><code class="language-java">
+GET /api/v1/customers
+GET /api/v2/customers
+      </code></pre>
+      <p>
+        ✔ Easy and visible<br>
+        ✔ Clear separation of versions<br>
+        ❌ Can clutter URLs if too many versions
+      </p>
+
+      <!-- Header Versioning -->
+      <h6 class="text-info mt-3">✔ B) Header-Based Versioning</h6>
+      <pre><code>
+GET /customers
+Header: API-Version: 1
+      </code></pre>
+      <p>
+        ✔ Clean URLs<br>
+        ✔ Good for enterprise APIs<br>
+        ❌ Harder to test manually, requires proper documentation
+      </p>
+
+      <!-- Accept Header Versioning -->
+      <h6 class="text-info mt-3">✔ C) Content Negotiation (Accept Header)</h6>
+      <pre><code>
+GET /customers
+Accept: application/vnd.company.customer.v1+json
+      </code></pre>
+      <p>
+        ✔ Standard REST way<br>
+        ✔ Used by GitHub, Stripe APIs<br>
+        ❌ Too complex for smaller teams
+      </p>
+
+      <!-- Query Param Versioning -->
+      <h6 class="text-info mt-3">✔ D) Query Parameter Versioning</h6>
+      <pre><code>
+GET /customers?version=1
+      </code></pre>
+      <p>
+        ✔ Easy to implement<br>
+        ❌ Not recommended for secure or enterprise-grade systems
+      </p>
+
+      <!-- Deployment Versioning -->
+      <h6 class="text-info mt-3">✔ E) Deployment / Service Versioning</h6>
+      <pre><code>
+customer-service:v1
+customer-service:v2
+      </code></pre>
+      <p>
+        ✔ Used in Kubernetes (multiple Deployments per version)<br>
+        ✔ Used with Canary, Blue-Green<br>
+        ❌ Requires strong DevOps maturity
+      </p>
+
+      <hr>
+
+      <h5 class="text-warning">3️⃣ Best Approach (Industry Recommendation)</h5>
+      <p>
+        ⭐ <b>URL Versioning + Deployment Versioning</b> is the best combination.<br><br>
+        ✔ Clear<br>
+        ✔ Backward compatible<br>
+        ✔ Simple for clients<br>
+        ✔ Supports gradual migration<br>
+        ✔ Works well with API Gateway (Zuul, Spring Cloud Gateway, Kong)
+      </p>
+
+      <pre><code>
+// Example: Spring Boot
+@RestController
+@RequestMapping("/api/v1/customers")
+public class CustomerV1Controller { }
+
+@RestController
+@RequestMapping("/api/v2/customers")
+public class CustomerV2Controller { }
+      </code></pre>
+
+      <hr>
+
+      <h5 class="text-warning">4️⃣ Practical Real-World Versioning Strategy</h5>
+      <ul>
+        <li>🔹 <b>Major changes → new version</b> (v1 → v2)</li>
+        <li>🔹 <b>Minor changes → backward compatible</b></li>
+        <li>🔹 <b>Deprecate old API gradually</b> and notify clients</li>
+        <li>🔹 Use API Gateway to route:
+          <pre><code>
+/api/v1/** → customer-service-v1
+/api/v2/** → customer-service-v2
+          </code></pre>
+        </li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-success">5️⃣ Summary Table</h5>
+
+      <table class="table table-bordered table-striped text-light">
+        <tr><th>Version Type</th><th>Example</th><th>Pros</th><th>Cons</th></tr>
+
+        <tr>
+          <td>URL Versioning</td>
+          <td>/api/v1/users</td>
+          <td>Simple, Visible</td>
+          <td>URL grows</td>
+        </tr>
+
+        <tr>
+          <td>Header Versioning</td>
+          <td>API-Version: 1</td>
+          <td>Clean URL</td>
+          <td>Hard to test</td>
+        </tr>
+
+        <tr>
+          <td>Accept Header</td>
+          <td>application/vnd.app.v1+json</td>
+          <td>Standard REST</td>
+          <td>Complex</td>
+        </tr>
+
+        <tr>
+          <td>Query Param</td>
+          <td>?version=1</td>
+          <td>Very easy</td>
+          <td>Not secure</td>
+        </tr>
+
+        <tr>
+          <td>Service Versioning</td>
+          <td>service:v1</td>
+          <td>Supports Canary</td>
+          <td>Requires DevOps</td>
+        </tr>
+      </table>
+
+      <hr>
+
+      <h5 class="text-info">🔥 Final Recommendation</h5>
+      <p>For 99% Java/Spring Boot microservices:</p>
+
+      <p class="text-success">
+        ✔ <b>URL Versioning</b> (v1, v2…)  
+        ✔ <b>Service Deployment Versioning</b> (customer-service:v1)  
+        ✔ Expose both via <b>API Gateway</b>
+      </p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingIdempotencyAPI">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseIdempotencyAPI"
+      aria-expanded="false" aria-controls="collapseIdempotencyAPI">
+      🔁 Idempotency in Microservices – Meaning, Problems & How to Solve (With Example)
+    </button>
+  </h2>
+
+  <div id="collapseIdempotencyAPI" class="accordion-collapse collapse"
+    aria-labelledby="headingIdempotencyAPI" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- What is Idempotency -->
+      <h5 class="text-warning">1️⃣ What is Idempotency in Microservices?</h5>
+      <p>
+        ✔ Idempotency means “<b>same request executed multiple times gives the same result</b>”.<br>
+        ✔ No duplicates, no double charging, no repeated operations.<br>
+        ✔ Critical for systems like payments, orders, transfers, booking, etc.
+      </p>
+
+      <pre><code>
+// If the client sends SAME request 3 times:
+POST /payment
+POST /payment
+POST /payment
+
+Idempotent API ensures: Only ONE payment happens.
+      </code></pre>
+
+      <hr>
+
+      <!-- Why Needed -->
+      <h5 class="text-warning">2️⃣ Why Idempotency is Needed?</h5>
+      <ul>
+        <li>🔹 Network retry by client/mobile</li>
+        <li>🔹 API Gateway retries</li>
+        <li>🔹 Kafka/SQS redeliveries</li>
+        <li>🔹 User double-taps the “Pay” button</li>
+        <li>🔹 Microservice timeout → user retries → duplicate execution</li>
+      </ul>
+
+      <p class="text-danger">
+        Without idempotency → duplicate payments, duplicate orders, inconsistent data.
+      </p>
+
+      <hr>
+
+      <!-- How Idempotency Works -->
+      <h5 class="text-warning">3️⃣ How Idempotency is Achieved?</h5>
+      <p>Client sends a unique ID per request:</p>
+
+      <pre><code>
+POST /payment
+Headers:
+   Idempotency-Key: 9c23-ab89-xk12
+      </code></pre>
+
+      <p>
+        ✔ Server stores this <b>Idempotency-Key</b> with the result.<br>
+        ✔ If the same key comes again → server returns previously saved response.<br>
+        ✔ No duplicate logic is executed.
+      </p>
+
+      <hr>
+
+      <!-- Spring Boot Example -->
+      <h5 class="text-warning">4️⃣ Spring Boot – Full Idempotency Example</h5>
+
+      <pre><code class="language-java">
+// Step 1: Idempotency Store (DB or Redis)
+@Entity
+public class IdempotencyRecord {
+    @Id
+    private String key;
+    private String response;
+    private LocalDateTime createdAt;
+}
+      </code></pre>
+
+      <pre><code class="language-java">
+// Step 2: Service logic
+@Service
+public class PaymentService {
+
+    @Autowired
+    private IdempotencyRepo repo;
+
+    public String makePayment(String idempotencyKey) {
+
+        // 1. Check if same request already processed
+        Optional<IdempotencyRecord> old = repo.findById(idempotencyKey);
+        if (old.isPresent()) {
+            return old.get().getResponse(); // return old response
+        }
+
+        // 2. Actual business logic
+        String result = "Payment Success - TxnId=" + UUID.randomUUID();
+
+        // 3. Save result
+        IdempotencyRecord record = new IdempotencyRecord();
+        record.setKey(idempotencyKey);
+        record.setResponse(result);
+        record.setCreatedAt(LocalDateTime.now());
+        repo.save(record);
+
+        return result;
+    }
+}
+      </code></pre>
+
+      <pre><code class="language-java">
+// Step 3: Controller
+@RestController
+public class PaymentController {
+
+    @Autowired
+    private PaymentService svc;
+
+    @PostMapping("/pay")
+    public String pay(@RequestHeader("Idempotency-Key") String key) {
+        return svc.makePayment(key);
+    }
+}
+      </code></pre>
+
+      <p class="text-success">
+        ✔ Even if client sends <b>same Idempotency-Key</b> 10 times → Only one payment happens.
+      </p>
+
+      <hr>
+
+      <!-- Best Storage -->
+      <h5 class="text-warning">5️⃣ Best Storage for Idempotency Keys</h5>
+      <ul>
+        <li>🔥 Redis (BEST – expiry, fast, atomic)</li>
+        <li>PostgreSQL / MySQL with UNIQUE KEY</li>
+        <li>DynamoDB (for AWS microservices)</li>
+        <li>MongoDB with unique _id</li>
+      </ul>
+
+      <pre><code>
+// Redis Pseudocode
+SETNX idempotency:9c23-ab89-xk12 "result"
+      </code></pre>
+
+      <p>✔ SETNX = Set If Not Exists → ensures atomicity.</p>
+
+      <hr>
+
+      <!-- Common Problems -->
+      <h5 class="text-warning">6️⃣ Common Mistakes (Don't Do)</h5>
+      <ul>
+        <li>❌ Generate idempotency key on server → WRONG  
+            (client must generate to avoid Duplicates)</li>
+        <li>❌ Not setting expiry → database grows</li>
+        <li>❌ Using timestamp as key → still duplicates</li>
+        <li>❌ Not caching the response → still executes logic</li>
+      </ul>
+
+      <hr>
+
+      <!-- Real World Examples -->
+      <h5 class="text-warning">7️⃣ Real-World Usage</h5>
+      <ul>
+        <li>✔ Paytm / PhonePe / Google Pay – payment retries</li>
+        <li>✔ Uber – ride booking retry</li>
+        <li>✔ Amazon – order placement retry</li>
+        <li>✔ Netflix – subscription renewal</li>
+      </ul>
+
+      <pre><code>
+Idempotency-Key: ORDER-172839123
+Result Returned → Same for every retry
+      </code></pre>
+
+      <hr>
+
+      <!-- Summary -->
+      <h5 class="text-success">8️⃣ Summary Table</h5>
+
+      <table class="table table-bordered table-striped text-light">
+        <tr><th>Feature</th><th>Meaning</th></tr>
+        <tr><td>Idempotency</td><td>Same request produces same result</td></tr>
+        <tr><td>Why?</td><td>To prevent duplicate transactions</td></tr>
+        <tr><td>How?</td><td>Client sends Idempotency-Key; server stores it</td></tr>
+        <tr><td>Best Storage</td><td>Redis (SETNX), DB unique keys</td></tr>
+        <tr><td>Result</td><td>No duplicate payments/orders</td></tr>
+      </table>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingIdemKafka">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseIdemKafka"
+      aria-expanded="false" aria-controls="collapseIdemKafka">
+      🧩 Idempotency with Kafka – Avoid Duplicate Message Processing
+    </button>
+  </h2>
+
+  <div id="collapseIdemKafka" class="accordion-collapse collapse"
+    aria-labelledby="headingIdemKafka" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <h5 class="text-warning">🎯 Problem</h5>
+      <p>
+        Kafka sometimes delivers messages again due to:
+        <br>✔ Consumer retry  
+        ✔ Broker rebalancing  
+        ✔ Network delay  
+      </p>
+
+      <p class="text-danger">⚠ Without idempotency → same order/payment processed multiple times.</p>
+
+      <hr>
+
+      <h5 class="text-warning">🎯 Solution</h5>
+      <p>
+        Store <b>messageId</b> or <b>eventId</b> in Redis/DB<br>
+        → If already processed → ignore.
+      </p>
+
+<pre><code class="language-java">
+// Kafka Listener
+@KafkaListener(topics = "orders")
+public void onMessage(OrderEvent event) {
+
+   if (redis.exists(event.getEventId())) {
+       return; // Already processed
+   }
+
+   // process order
+   service.process(event);
+
+   redis.set(event.getEventId(), "DONE", 1, HOURS);
+}
+</code></pre>
+
+      <p class="text-success">✔ Ensures exactly-once effect even if Kafka sends duplicates.</p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingIdemSQS">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseIdemSQS"
+      aria-expanded="false" aria-controls="collapseIdemSQS">
+      ☁️ Idempotency with AWS SQS / SNS – Avoid Duplicate Queue Processing
+    </button>
+  </h2>
+
+  <div id="collapseIdemSQS" class="accordion-collapse collapse"
+    aria-labelledby="headingIdemSQS" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <h5 class="text-warning">🎯 Why SQS Creates Duplicates?</h5>
+      <p>✔ SQS guarantees *at-least-once* delivery → duplicates can come.</p>
+
+      <hr>
+
+      <h5 class="text-warning">🎯 Solution</h5>
+
+<pre><code>
+{
+  "orderId": "123",
+  "dedupKey": "abcd-ef12-xy99"
+}
+</code></pre>
+
+<pre><code class="language-java">
+// Idempotency Key Check
+if (redis.exists(message.getDedupKey())) {
+    return; // duplicate
+}
+
+processOrder(message);
+redis.set(message.getDedupKey(), "DONE", 30, TimeUnit.MINUTES);
+</code></pre>
+
+      <p class="text-success">
+        ✔ Prevents duplicate order processing  
+        ✔ Works with FIFO queues also  
+      </p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingIdemRedisson">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseIdemRedisson"
+      aria-expanded="false" aria-controls="collapseIdemRedisson">
+      🔐 Idempotency Using Distributed Lock (Redisson) – Prevent Double Execution
+    </button>
+  </h2>
+
+  <div id="collapseIdemRedisson" class="accordion-collapse collapse"
+    aria-labelledby="headingIdemRedisson" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <h5 class="text-warning">🎯 When to Use?</h5>
+      <p>
+        ✔ Multiple instances of the same microservice running<br>
+        ✔ Two Pods receiving same request at same time<br>
+        ✔ Concurrency race conditions  
+      </p>
+
+      <hr>
+
+      <h5 class="text-warning">🎯 Redisson Lock Example</h5>
+
+<pre><code class="language-java">
+RLock lock = redissonClient.getLock("pay-" + idempotencyKey);
+
+if (lock.tryLock(5, 10, TimeUnit.SECONDS)) {
+    try {
+        processPayment();
+    } finally {
+        lock.unlock();
+    }
+}
+</code></pre>
+
+      <p class="text-success">✔ Prevents same payment/order being processed by multiple pods.</p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingIdemGateway">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseIdemGateway"
+      aria-expanded="false" aria-controls="collapseIdemGateway">
+      🚪 Idempotency at API Gateway (Kong / Spring Cloud Gateway)
+    </button>
+  </h2>
+
+  <div id="collapseIdemGateway" class="accordion-collapse collapse"
+    aria-labelledby="headingIdemGateway" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <h5 class="text-warning">🎯 Purpose</h5>
+      <p>
+        API Gateway ensures consistent behavior even if client retries multiple times.<br>
+        The microservice receives only **one valid request**.
+      </p>
+
+      <hr>
+
+      <h5 class="text-info">✔ Example (Kong Plugin)</h5>
+
+<pre><code>
+curl -X POST http://gateway/pay \
+  -H "Idempotency-Key: txn-99881"
+</code></pre>
+
+      <p>Kong plugin stores result in Redis:</p>
+
+<pre><code>
+idempotency_key = "txn-99881"
+status = 200
+response = { "status": "SUCCESS" }
+</code></pre>
+
+      <p class="text-success">✔ Even if client hits 20 times → Kong returns same response.</p>
+
+      <hr>
+
+      <h5 class="text-info">✔ Spring Cloud Gateway Custom Filter</h5>
+
+<pre><code class="language-java">
+public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+
+    String key = exchange.getRequest().getHeaders().getFirst("Idempotency-Key");
+
+    if (redis.exists(key)) {
+        return sendOldResponse(exchange, redis.get(key));
+    }
+
+    return chain.filter(exchange)
+            .doOnSuccess(resp -> redis.set(key, "cached-response"));
+}
+</code></pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingIdemPayments">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseIdemPayments"
+      aria-expanded="false" aria-controls="collapseIdemPayments">
+      💳 Idempotency in Payment Gateways (Razorpay / Stripe / Uber Model)
+    </button>
+  </h2>
+
+  <div id="collapseIdemPayments" class="accordion-collapse collapse"
+    aria-labelledby="headingIdemPayments" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- Why -->
+      <h5 class="text-warning">1️⃣ Why Payment Gateways Need Idempotency?</h5>
+      <p>
+        ✔ User taps “Pay” twice <br>
+        ✔ Network drops after payment → user retries <br>
+        ✔ Gateway responds slow → app resends request <br>
+        ✔ Webhooks might be delivered multiple times <br><br>
+        <b>Idempotency ensures: ONE payment, ONE order, ONE transaction.</b>
+      </p>
+
+      <hr>
+
+      <!-- Razorpay -->
+      <h5 class="text-warning">2️⃣ Razorpay Idempotency – How It Works?</h5>
+
+      <p>Razorpay uses **X-Razorpay-Idempotency-Key** header.</p>
+
+<pre><code>
+POST /v1/payments/authorize
+Header:
+  X-Razorpay-Idempotency-Key: ORD-9988-ABCD
+</code></pre>
+
+      <p>Server Logic:</p>
+
+<pre><code class="language-java">
+// Razorpay-like logic
+if (db.exists(idempotencyKey)) {
+    return db.getResponse(idempotencyKey);  // Same payment result
+}
+
+// First-time payment
+PaymentResponse response = doPayment();
+db.save(idempotencyKey, response);
+
+return response;
+</code></pre>
+
+      <p class="text-success">✔ Even if user retries → Razorpay returns SAME result.</p>
+
+      <hr>
+
+      <!-- Stripe -->
+      <h5 class="text-warning">3️⃣ Stripe Idempotency – Industry Gold Standard</h5>
+
+      <p>Stripe uses:</p>
+
+<pre><code>
+Idempotency-Key: payment_2025_abc_001
+</code></pre>
+
+<p>
+✔ Stripe stores:  
+<b>idempotencyKey → requestHash → responseHash</b>  
+✔ If same key with same request = return cached response  
+✔ If same key with different request = ❌ reject (409 Conflict)
+</p>
+
+<pre><code>
+409 Conflict:
+"Idempotency-Key reused with different request params"
+</code></pre>
+
+<p class="text-warning">This prevents accidental fraud or double charges.</p>
+
+<hr>
+
+<!-- Uber -->
+<h5 class="text-warning">4️⃣ Uber Model – How Ride Payments Become Idempotent?</h5>
+
+<p>
+Uber uses an internal field: <b>trip_payment_token</b>
+</p>
+
+<pre><code>
+{
+  "tripId": "TRIP-8821",
+  "paymentToken": "PAY-8821-ONCE"
+}
+</code></pre>
+
+<b>Meaning:</b>  
+➡ This trip can only be charged ONCE  
+➡ Every retry must use same token  
+➡ If a duplicate comes → return same payment result
+
+<hr>
+
+<!-- Problems Solved -->
+<h5 class="text-warning">5️⃣ What Problems Idempotency Solves in Payments?</h5>
+
+<ul>
+  <li>🔹 Double charging customer</li>
+  <li>🔹 Multiple orders created for same payment</li>
+  <li>🔹 Multiple seat/reservation locks</li>
+  <li>🔹 Duplicate wallet debits</li>
+  <li>🔹 Duplicate webhook events</li>
+</ul>
+
+<hr>
+
+<!-- Webhooks -->
+<h5 class="text-warning">6️⃣ Webhooks Also Need Idempotency</h5>
+
+<p>Payment gateways send same webhook 2–5 times.</p>
+
+<pre><code>
+// Razorpay webhook event
+{
+  "event": "payment.captured",
+  "event_id": "evt_abc88991"
+}
+</code></pre>
+
+<b>Solution:</b> store event_id:
+
+<pre><code class="language-java">
+if (redis.exists(event.getEventId())) {
+    return; // ignore duplicate webhook
+}
+redis.set(event.getEventId(), "processed");
+</code></pre>
+
+<p class="text-success">✔ Ensures backend doesn't capture payment twice.</p>
+
+<hr>
+
+<!-- Flow -->
+<h5 class="text-warning">7️⃣ Full Idempotent Payment Flow (Industry Standard)</h5>
+
+<pre><code>
+Client generates Idempotency-Key
+      ↓
+API Gateway forwards it
+      ↓
+Payment microservice checks:
+   - Is this key already used?
+      YES → return old result
+      NO  → process & store response
+      ↓
+Gateway returns SAME result for all retries
+</code></pre>
+
+<hr>
+
+<!-- Storage -->
+<h5 class="text-warning">8️⃣ Storage Options</h5>
+
+<table class="table table-bordered table-striped text-light">
+  <tr><th>Storage</th><th>Usage</th><th>Pros</th></tr>
+  <tr><td>Redis</td><td>Idempotency keys</td><td>Fast, Expiry, Atomic</td></tr>
+  <tr><td>DB UNIQUE KEY</td><td>Payment record</td><td>Strong consistency</td></tr>
+  <tr><td>DynamoDB</td><td>Serverless apps</td><td>Auto scaling</td></tr>
+</table>
+
+<hr>
+
+<!-- Best Practices -->
+<h5 class="text-success">9️⃣ Best Practices Used by Razorpay / Stripe / Uber</h5>
+
+<ul>
+  <li>✔ Client must generate Idempotency-Key</li>
+  <li>✔ Store key + response</li>
+  <li>✔ Add expiry (15–30 mins)</li>
+  <li>✔ For webhooks store eventId</li>
+  <li>✔ Reject same key + different parameters (Stripe rule)</li>
+  <li>✔ Log mismatch attempts (fraud detection)</li>
+</ul>
+
+<hr>
+
+<!-- Summary -->
+<h5 class="text-info">🔟 Summary (One Look)</h5>
+
+<table class="table table-bordered table-striped text-light">
+  <tr><th>Gateway</th><th>Idempotency Mechanism</th></tr>
+  <tr><td>Razorpay</td><td>X-Razorpay-Idempotency-Key</td></tr>
+  <tr><td>Stripe</td><td>Idempotency-Key + request hashing</td></tr>
+  <tr><td>Uber</td><td>trip_payment_token</td></tr>
+  <tr><td>PhonePe</td><td>transactionId used as idempotency key</td></tr>
+</table>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingZeroDowntimeDB">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseZeroDowntimeDB"
+      aria-expanded="false" aria-controls="collapseZeroDowntimeDB">
+      🏗️ Zero-Downtime Database Schema Changes – Blue-Green + Expand–Contract Pattern
+    </button>
+  </h2>
+
+  <div id="collapseZeroDowntimeDB" class="accordion-collapse collapse"
+    aria-labelledby="headingZeroDowntimeDB" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- Why -->
+      <h5 class="text-warning">1️⃣ Why Zero-Downtime DB Changes Are Difficult?</h5>
+      <p>
+        ✔ DB schema changes break running apps <br>
+        ✔ New code expects new columns, old code still runs on old schema <br>
+        ✔ Microservices = many instances → some old, some new <br>
+        ✔ DB migrations must not block reads/writes <br><br>
+
+        <b>The solution = Expand–Migrate–Contract Pattern</b>
+      </p>
+
+      <hr>
+
+      <!-- Pattern -->
+      <h5 class="text-warning">2️⃣ ⭐ Expand → Migrate → Contract Pattern (Industry Standard)</h5>
+
+      <h6 class="text-info">✔ Step 1: EXPAND (Safe Changes)</h6>
+      <p>Add new table/column/index WITHOUT removing anything.</p>
+
+<pre><code>
+// Old table
+users(id, name, email)
+
+// Requirement: Rename column "name" → "full_name"
+-- Step 1: Add new column
+ALTER TABLE users ADD COLUMN full_name VARCHAR(255);
+</code></pre>
+
+      <p class="text-success">✔ App continues to work (old column still exists).</p>
+
+      <br>
+
+      <h6 class="text-info">✔ Step 2: MIGRATE (Backfill + Dual Write)</h6>
+      <p>Write to BOTH old + new columns.</p>
+
+<pre><code class="language-java">
+// During migration phase
+user.setName("Hari");
+user.setFullName("Hari");  // dual write
+</code></pre>
+
+<p>Create a migration script to backfill old → new:</p>
+
+<pre><code>
+UPDATE users SET full_name = name WHERE full_name IS NULL;
+</code></pre>
+
+      <p class="text-success">✔ Ensures new column is fully populated.</p>
+
+      <br>
+
+      <h6 class="text-info">✔ Step 3: SWITCH READ (App reads from new column)</h6>
+
+<pre><code class="language-java">
+// New version code
+String name = user.getFullName();
+</code></pre>
+
+      <p>No downtime because old column still exists.</p>
+
+      <br>
+
+      <h6 class="text-danger">✔ Step 4: CONTRACT (Remove old column)</h6>
+
+<pre><code>
+ALTER TABLE users DROP COLUMN name;
+</code></pre>
+
+      <p class="text-success">✔ Only after ALL instances use the new column.</p>
+
+      <hr>
+
+      <!-- Real Example -->
+      <h5 class="text-warning">3️⃣ Real-World Example – Add NOT NULL Column with Default</h5>
+
+<p><b>Bad approach ➜ Breaks running apps:</b></p>
+
+<pre><code>
+ALTER TABLE orders ADD COLUMN status VARCHAR(20) NOT NULL;
+</code></pre>
+
+<p class="text-danger">❌ Existing rows don’t have value → application crashes.</p>
+
+<br>
+
+<p><b>Zero-Downtime Approach:</b></p>
+
+<h6 class="text-info">✔ Step 1: Add column nullable</h6>
+<pre><code>
+ALTER TABLE orders ADD COLUMN status VARCHAR(20) NULL;
+</code></pre>
+
+<h6 class="text-info">✔ Step 2: Backfill data</h6>
+<pre><code>
+UPDATE orders SET status = 'CREATED' WHERE status IS NULL;
+</code></pre>
+
+<h6 class="text-info">✔ Step 3: Deploy new code writing status</h6>
+
+<h6 class="text-info">✔ Step 4: Make column NOT NULL safely</h6>
+<pre><code>
+ALTER TABLE orders MODIFY status VARCHAR(20) NOT NULL;
+</code></pre>
+
+<hr>
+
+<!-- Migrations -->
+<h5 class="text-warning">4️⃣ Tools Used for Zero-Downtime Migrations</h5>
+
+<table class="table table-bordered table-striped text-light">
+  <tr><th>Tool</th><th>Use Case</th></tr>
+  <tr><td>Flyway</td><td>Versioned SQL migrations</td></tr>
+  <tr><td>Liquibase</td><td>XML/JSON/YAML schema tracking</td></tr>
+  <tr><td>Gh-ost / pt-online-schema-change</td><td>Online ALTER TABLE for MySQL</td></tr>
+  <tr><td>Atlas</td><td>Declarative migration for cloud</td></tr>
+</table>
+
+<br>
+
+<p class="text-info">Example Flyway Migration:</p>
+
+<pre><code>
+V3__add_fullname_column.sql
+-----------------------------------
+ALTER TABLE users ADD COLUMN full_name VARCHAR(255);
+</code></pre>
+
+<hr>
+
+<!-- Deployment -->
+<h5 class="text-warning">5️⃣ Zero-Downtime Deployment Flow (Blue-Green or Rolling)</h5>
+
+<pre><code>
+1. Deploy Version-1 (reads old column, writes old)
+2. Run DB "Expand" migration
+3. Deploy Version-2 (dual-write → old + new)
+4. Run backfill script
+5. Deploy Version-3 (read new column)
+6. Run DB "Contract" migration (drop old)
+</code></pre>
+
+<p class="text-success">
+✔ At no point do you break running instances  
+✔ Zero downtime  
+✔ Backward compatible  
+✔ No read/write failures  
+</p>
+
+<hr>
+
+<!-- Safe vs Unsafe -->
+<h5 class="text-warning">6️⃣ Safe vs Unsafe Schema Changes</h5>
+
+<table class="table table-bordered table-striped text-light">
+  <tr><th>Safe (Zero Downtime)</th><th>Unsafe (Causes Downtime)</th></tr>
+
+  <tr><td>Add column (nullable)</td><td>Add NOT NULL col w/o default</td></tr>
+  <tr><td>Add index</td><td>DROP column being used</td></tr>
+  <tr><td>Add table</td><td>Rename table or column abruptly</td></tr>
+  <tr><td>Add column with default</td><td>Changing column datatype instantly</td></tr>
+</table>
+
+<hr>
+
+<!-- Key Idea -->
+<h5 class="text-success">7️⃣ Core Idea</h5>
+
+<p class="text-success">
+🚀 <b>DB changes must always be backward compatible.</b><br>
+🚀 <b>App and DB migrate in multiple small safe steps.</b><br>
+🚀 <b>Never do breaking DB changes directly.</b>
+</p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingZeroDowntimeEventSourcing">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseZeroDowntimeEventSourcing"
+      aria-expanded="false" aria-controls="collapseZeroDowntimeEventSourcing">
+      🌀 Zero-Downtime in Microservices using Event Sourcing + CQRS
+    </button>
+  </h2>
+
+  <div id="collapseZeroDowntimeEventSourcing" class="accordion-collapse collapse"
+    aria-labelledby="headingZeroDowntimeEventSourcing" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- What is event sourcing -->
+      <h5 class="text-warning">1️⃣ What is Event Sourcing?</h5>
+      <p>
+        ✔ Instead of storing only the current state in the DB,<br>
+        ✔ We store **every change as an event**:<br><br>
+        <b>UserCreated, UserNameUpdated, UserAddressChanged</b><br><br>
+        ✔ The final state is rebuilt by replaying events.
+      </p>
+
+      <pre><code>
+Event Store:
+---------------------
+1. USER_CREATED (id=101, name="Hari")
+2. USER_EMAIL_UPDATED (id=101, old="x", new="y")
+3. USER_KYC_VERIFIED (id=101)
+      </code></pre>
+
+      <p class="text-success">✔ State is derived from events, not from DB tables.</p>
+
+      <hr>
+
+      <!-- Why Zero Downtime -->
+      <h5 class="text-warning">2️⃣ How Event Sourcing Enables Zero-Downtime?</h5>
+
+      <ul>
+        <li>🔹 Schema changes → no table alteration needed</li>
+        <li>🔹 Instead of modifying DB columns → emit new events</li>
+        <li>🔹 Old and new versions of services can run together</li>
+        <li>🔹 Consumers replay events to update their materialized views</li>
+        <li>🔹 NO downtime during upgrades</li>
+      </ul>
+
+      <p class="text-success">
+        Event store is immutable — upgrades only create new events, never modify old data.
+      </p>
+
+      <hr>
+
+      <!-- Expand Contract -->
+      <h5 class="text-warning">3️⃣ Expand–Migrate–Contract → How it works in Event Sourcing?</h5>
+
+      <h6 class="text-info">✔ Step 1: EXPAND (Add new events)</h6>
+      <p>Instead of changing table schema, add new event types.</p>
+
+<pre><code>
+// Old event
+USER_ADDRESS_UPDATED
+
+// New requirements: Add postalCode → Instead of changing DB...
+// Add new event:
+USER_ADDRESS_UPDATED_V2
+</code></pre>
+
+      <h6 class="text-info mt-3">✔ Step 2: MIGRATE (Project new events into new read models)</h6>
+
+<pre><code class="language-java">
+// New read model builder
+@EventHandler
+public void on(UserAddressUpdatedV2 evt) {
+    readModelRepository.updateAddress(evt.getUserId(), evt.getFullAddress(), evt.getPostalCode());
+}
+</code></pre>
+
+      <p>✔ No downtime. Old system still uses old read model.</p>
+
+      <h6 class="text-info mt-3">✔ Step 3: CONTRACT (Switch consumers to the new projection)</h6>
+
+<pre><code>
+// New API reads from new read-model (no DB schema change)
+GET /v2/users/101/address  → uses new projection
+</code></pre>
+
+      <hr>
+
+      <!-- Example -->
+      <h5 class="text-warning">4️⃣ Real-World Example – Add New Field Without Downtime</h5>
+
+      <p>Requirement: Add <b>GST Number</b> to User profile.</p>
+
+      <p><b>Traditional DB Approach:</b></p>
+      <ul>
+        <li>ALTER TABLE users ADD gst_number</li>
+        <li>Backfill existing rows</li>
+        <li>Risky: Requires downtime or long migration</li>
+      </ul>
+
+      <br>
+
+      <p><b>Event Sourcing Approach:</b></p>
+
+<pre><code>
+// New event
+USER_GST_ADDED {
+    userId: 101,
+    gst: "GSTIN2025"
+}
+</code></pre>
+
+      <p>Then update projection (read-model):</p>
+
+<pre><code class="language-java">
+@EventHandler
+public void on(UserGstAdded evt) {
+    userReadModel.updateGst(evt.getUserId(), evt.getGst());
+}
+</code></pre>
+
+      <p class="text-success">
+        ✔ NO schema change<br>
+        ✔ NO downtime<br>
+        ✔ NO migration issues<br>
+        ✔ Old code still works  
+      </p>
+
+      <hr>
+
+      <!-- CQRS -->
+      <h5 class="text-warning">5️⃣ CQRS Helps Zero Downtime Too</h5>
+
+      <ul>
+        <li>🔹 Command Model writes events (append-only)</li>
+        <li>🔹 Query Model builds read data (can evolve independently)</li>
+        <li>🔹 New read models can be created without touching DB</li>
+      </ul>
+
+      <p class="text-info">Example: Create a new Read Model without downtime:</p>
+
+<pre><code>
+READ_MODEL_1 (UserBasicInfo)
+READ_MODEL_2 (UserOrders)
+READ_MODEL_3 (UserTaxDetails)  ← new addition, no schema change
+</code></pre>
+
+      <p class="text-success">
+        ✔ Adds new projections without touching old ones  
+        ✔ Perfect for evolving microservices  
+      </p>
+
+      <hr>
+
+      <!-- Advantages -->
+      <h5 class="text-warning">6️⃣ Advantages of Event Sourcing for Zero Downtime</h5>
+
+      <ul>
+        <li>✨ No schema migration issues</li>
+        <li>✨ No downtime during upgrades</li>
+        <li>✨ New fields = new events, not table changes</li>
+        <li>✨ Replay events into new read models</li>
+        <li>✨ Smooth rolling deployments</li>
+        <li>✨ Easy audit & debugging (all changes logged)</li>
+      </ul>
+
+      <hr>
+
+      <!-- Timeline -->
+      <h5 class="text-warning">7️⃣ Upgrade Timeline Example</h5>
+
+<pre><code>
+v1 → working with USER_CREATED, USER_UPDATED
+      ↓
+Deploy v2 (with new event USER_UPDATED_V2)
+      ↓
+Replay events to new projections
+      ↓
+Switch API to new read model
+      ↓
+Decommission old projection
+</code></pre>
+
+      <p class="text-success">🚀 100% zero downtime</p>
+
+      <hr>
+
+      <!-- Summary -->
+      <h5 class="text-info">8️⃣ Summary Table</h5>
+
+      <table class="table table-bordered table-striped text-light">
+        <tr><th>Feature</th><th>Event Sourcing Benefit</th></tr>
+        <tr><td>Schema Change</td><td>Avoided — new events only</td></tr>
+        <tr><td>Data Migration</td><td>Replay events into new read model</td></tr>
+        <tr><td>Backward Compatibility</td><td>Old events still work</td></tr>
+        <tr><td>Downtime</td><td>ZERO — rolling safe upgrades</td></tr>
+        <tr><td>Audit Trail</td><td>Full history stored permanently</td></tr>
+      </table>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingMicroservicesFail">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseMicroservicesFail"
+      aria-expanded="false" aria-controls="collapseMicroservicesFail">
+      💥 Why Microservices FAIL in Real Companies – Root Causes & Real Scenarios
+    </button>
+  </h2>
+
+  <div id="collapseMicroservicesFail" class="accordion-collapse collapse"
+    aria-labelledby="headingMicroservicesFail" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- Reason 1 -->
+      <h5 class="text-warning">1️⃣ No Strong DevOps / Platform Engineering</h5>
+      <p>
+        Microservices REQUIRE:
+        <br>✔ CI/CD pipelines
+        <br>✔ Docker + K8s
+        <br>✔ Tracing, Logging, Metrics
+        <br>✔ Blue-Green / Rolling Deployments  
+      </p>
+      <p class="text-danger">Without these → Microservices collapse.</p>
+
+      <hr>
+
+      <!-- Reason 2 -->
+      <h5 class="text-warning">2️⃣ Wrong Service Boundaries (Distributed Monolith)</h5>
+      <p>
+        Teams split services by *technical layers*:
+        <br>❌ user-service, address-service, otp-service  
+        ✔ Instead of Domain Driven boundaries:
+        <br>✔ CustomerContext, OrderContext, PaymentContext
+      </p>
+
+      <p class="text-danger">Results in: too many calls → latency → failures.</p>
+
+      <hr>
+
+      <!-- Reason 3 -->
+      <h5 class="text-warning">3️⃣ Interdependent Services (Circular Calls)</h5>
+
+      <pre><code>
+Order → User → Payment → Notification → Order
+      </code></pre>
+
+      <p>
+        🔥 Causes cascading failures  
+        🔥 Timeout storms  
+        🔥 Full system outages  
+      </p>
+
+      <hr>
+
+      <!-- Reason 4 -->
+      <h5 class="text-warning">4️⃣ No Centralized Logging & Distributed Tracing</h5>
+      <p>
+        Without:
+        <br>✔ ELK / EFK  
+        ✔ Jaeger / Zipkin  
+        ✔ Correlation IDs  
+      </p>
+
+      <p class="text-danger">
+        → Impossible to debug issues  
+        → Every outage becomes a nightmare  
+      </p>
+
+      <hr>
+
+      <!-- Reason 5 -->
+      <h5 class="text-warning">5️⃣ Too Many Services = Cognitive + Performance Overhead</h5>
+      <p>
+        Developers spend time on:
+        <br>✔ CI/CD  
+        ✔ Docker  
+        ✔ Swagger  
+        ✔ API contracts  
+        ✔ Networking  
+        ✔ Security  
+      </p>
+
+      <p class="text-danger">
+        Not on business logic → productivity drops.
+      </p>
+
+      <hr>
+
+      <!-- Reason 6 -->
+      <h5 class="text-warning">6️⃣ No API Gateway</h5>
+      <p>
+        Without API Gateway:
+        <br>❌ No rate-limiting<br>
+        ❌ No auth centralization<br>
+        ❌ No retries or circuit breakers<br>
+        ❌ No request logging<br>
+      </p>
+
+      <p class="text-danger">Each service re-invents same logic → chaos.</p>
+
+      <hr>
+
+      <!-- Reason 7 -->
+      <h5 class="text-warning">7️⃣ Database per Service → Inconsistent Data</h5>
+      <p>
+        Microservices require:
+        <br>✔ SAGA  
+        ✔ Outbox Pattern  
+        ✔ Eventual Consistency  
+        ✔ Event-driven design  
+      </p>
+
+      <p class="text-danger">
+        Companies without this expertise → data becomes inconsistent.
+      </p>
+
+      <hr>
+
+      <!-- Reason 8 -->
+      <h5 class="text-warning">8️⃣ Latency Explosion (Network Hops)</h5>
+
+<pre><code>
+UI → Gateway → Service A → Service B → Service C → DB
+</code></pre>
+
+      <p>
+        🔥 Multiple network calls  
+        🔥 Timeout hell  
+        🔥 Retry storms → DB crashes  
+      </p>
+
+      <hr>
+
+      <!-- Reason 9 -->
+      <h5 class="text-warning">9️⃣ Microservices Cost 3x More</h5>
+      <p>
+        More services = more cost:
+        <br>✔ More pods  
+        ✔ More DBs  
+        ✔ More logs  
+        ✔ More monitoring  
+        ✔ Higher cloud bill  
+      </p>
+
+      <p class="text-danger">CFO hates it → rollback to monolith.</p>
+
+      <hr>
+
+      <!-- Reason 10 -->
+      <h5 class="text-warning">🔟 Bad Code Doesn't Get Better with Microservices</h5>
+      <p>
+        Companies think microservices fix:
+        <br>❌ Bad practices  
+        ❌ Poor testing  
+        ❌ Bad developers  
+        ❌ No design principles  
+      </p>
+      <p class="text-danger">
+        Microservices actually expose these problems WORSE.
+      </p>
+
+      <hr>
+
+      <!-- Reason 11 -->
+      <h5 class="text-warning">1️⃣1️⃣ Skill Gap – Distributed Systems Are Hard</h5>
+      <p>
+        Requires knowledge of:
+        <br>✔ SAGA  
+        ✔ CQRS  
+        ✔ Event-driven systems  
+        ✔ Distributed locks  
+        ✔ CAP theorem  
+        ✔ Consistency patterns  
+      </p>
+
+      <p class="text-danger">Most teams aren't ready → microservices fail.</p>
+
+      <hr>
+
+      <!-- Reason 12 -->
+      <h5 class="text-warning">1️⃣2️⃣ Monolith Works Better for Small Teams</h5>
+      <p>
+        ✔ Faster development  
+        ✔ Easier testing  
+        ✔ Easier deployment  
+        ✔ Less infrastructure  
+      </p>
+
+      <p class="text-success">
+        Many companies eventually return to monolith because it simply works.
+      </p>
+
+      <hr>
+
+      <!-- Final summary -->
+      <h5 class="text-info">🏁 Final Summary</h5>
+
+      <p>
+        Microservices fail NOT because microservices are bad.
+        <br><b>They fail because companies are not ready for them.</b>
+      </p>
+
+      <ul>
+        <li>❗ Lack of DevOps maturity</li>
+        <li>❗ Wrong service boundaries</li>
+        <li>❗ No observability</li>
+        <li>❗ Poor data consistency handling</li>
+        <li>❗ Too many services → too much complexity</li>
+        <li>❗ Missing platform engineering</li>
+      </ul>
+
+      <p class="text-success fw-bold">✔ Microservices succeed only with mature engineering culture.</p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingMonoVsMicro">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseMonoVsMicro"
+      aria-expanded="false" aria-controls="collapseMonoVsMicro">
+      🏛️ Monolith vs Microservices – When to Choose What?
+    </button>
+  </h2>
+
+  <div id="collapseMonoVsMicro" class="accordion-collapse collapse"
+    aria-labelledby="headingMonoVsMicro" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <h5 class="text-warning">1️⃣ When to Choose a Monolith?</h5>
+      <ul>
+        <li>✔ Small team (1–10 developers)</li>
+        <li>✔ Fast product development is needed</li>
+        <li>✔ Requirements not stable</li>
+        <li>✔ MVP / Startup phase</li>
+        <li>✔ System is not complex</li>
+        <li>✔ You don’t have DevOps maturity</li>
+      </ul>
+
+      <p class="text-success">
+        👉 Monolith = FAST, SIMPLE, CHEAP, EASY to deploy.
+      </p>
+
+      <hr>
+
+      <h5 class="text-warning">2️⃣ When to Choose Microservices?</h5>
+
+      <ul>
+        <li>✔ Very large system with many modules</li>
+        <li>✔ Different teams working independently</li>
+        <li>✔ High scalability required</li>
+        <li>✔ You already have strong DevOps + CI/CD</li>
+        <li>✔ Need independent deployments</li>
+        <li>✔ You can handle eventual consistency & SAGA</li>
+      </ul>
+
+      <p class="text-success">
+        👉 Microservices = SCALABLE, FLEXIBLE, ISOLATED deployments.
+      </p>
+
+      <hr>
+
+      <h5 class="text-warning">3️⃣ Simple Decision Chart</h5>
+
+      <table class="table table-bordered text-light">
+        <tr><th>Scenario</th><th>Best Choice</th></tr>
+        <tr><td>Early-stage product</td><td>Monolith</td></tr>
+        <tr><td>Large enterprise</td><td>Microservices</td></tr>
+        <tr><td>No DevOps skills</td><td>Monolith</td></tr>
+        <tr><td>Need independent scaling</td><td>Microservices</td></tr>
+      </table>
+
+      <p class="text-info fw-bold">Monolith FIRST → Microservices LATER is the best path.</p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingFixMicroservices">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseFixMicroservices"
+      aria-expanded="false" aria-controls="collapseFixMicroservices">
+      🛠️ How to Fix Failing Microservices – Step-by-Step Recovery Plan
+    </button>
+  </h2>
+
+  <div id="collapseFixMicroservices" class="accordion-collapse collapse"
+    aria-labelledby="headingFixMicroservices" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <h5 class="text-warning">1️⃣ Step 1 – Add Observability (Logs, Metrics, Tracing)</h5>
+      <ul>
+        <li>✔ Introduce OpenTelemetry</li>
+        <li>✔ Add centralized ELK / EFK</li>
+        <li>✔ Add Jaeger/Zipkin tracing</li>
+      </ul>
+      <p class="text-success">Without visibility → Microservices = Blind System.</p>
+
+      <hr>
+
+      <h5 class="text-warning">2️⃣ Step 2 – Introduce API Gateway</h5>
+      <ul>
+        <li>✔ Rate limiting</li>
+        <li>✔ Retry policies</li>
+        <li>✔ Circuit breaking</li>
+        <li>✔ Authentication/Authorization</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-warning">3️⃣ Step 3 – Remove Circular Dependencies</h5>
+      <p>Convert REST calls to events using Kafka/SQS.</p>
+
+      <pre><code>
+❌ Order → Payment → Notification → Order  
+✔ Order → Kafka → Payment  
+✔ Payment → Kafka → Notification
+      </code></pre>
+
+      <hr>
+
+      <h5 class="text-warning">4️⃣ Step 4 – Fix Databases Using SAGA + Outbox Pattern</h5>
+      <ul>
+        <li>✔ No distributed transactions</li>
+        <li>✔ Use Outbox table for reliable events</li>
+        <li>✔ Use SAGA for rollback steps</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-warning">5️⃣ Step 5 – Reduce Services (Consolidation)</h5>
+      <p>Many companies migrate back from 70 services → 20 stable domains.</p>
+
+      <hr>
+
+      <h5 class="text-warning">6️⃣ Step 6 – Implement Proper Versioning</h5>
+      <ul>
+        <li>✔ URL versioning (v1, v2)</li>
+        <li>✔ Backward compatible APIs</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-warning">7️⃣ Step 7 – Add Resilience (Retries, Timeouts, CB)</h5>
+      <ul>
+        <li>✔ Resilience4j</li>
+        <li>✔ Retry + Circuit Breaker</li>
+        <li>✔ Bulkhead pattern</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-warning">8️⃣ Step 8 – Improve Deployments</h5>
+      <ul>
+        <li>✔ Blue-Green deployment</li>
+        <li>✔ Canary releases</li>
+        <li>✔ Rolling updates</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-info fw-bold">✔ Final Result</h5>
+      <p class="text-success">
+        Stable microservices  
+        → Clean boundaries  
+        → Observable  
+        → Fault tolerant  
+        → Easy to deploy  
+      </p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingMicroservicesMaturity">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseMicroservicesMaturity"
+      aria-expanded="false" aria-controls="collapseMicroservicesMaturity">
+      📈 Microservices Maturity Model – Level 1 to Level 5
+    </button>
+  </h2>
+
+  <div id="collapseMicroservicesMaturity" class="accordion-collapse collapse"
+    aria-labelledby="headingMicroservicesMaturity" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <h5 class="text-warning">🟢 Level 1 – Basic (Not Ready)</h5>
+      <ul>
+        <li>❌ No CI/CD</li>
+        <li>❌ Manual deployments</li>
+        <li>❌ Single DB for all</li>
+        <li>❌ No monitoring</li>
+      </ul>
+
+      <h5 class="text-warning">🟡 Level 2 – Intermediate (Early Microservices)</h5>
+      <ul>
+        <li>✔ Few independent services</li>
+        <li>✔ Some pipelines exist</li>
+        <li>✔ Basic logging</li>
+        <li>❌ Still tightly coupled</li>
+      </ul>
+
+      <h5 class="text-warning">🟠 Level 3 – Mature (Production-grade)</h5>
+      <ul>
+        <li>✔ API Gateway</li>
+        <li>✔ Containerization (Docker + Kubernetes)</li>
+        <li>✔ Distributed tracing</li>
+        <li>✔ Service discovery</li>
+      </ul>
+
+      <h5 class="text-warning">🔵 Level 4 – Advanced (Cloud Native)</h5>
+      <ul>
+        <li>✔ SAGA orchestration</li>
+        <li>✔ Outbox pattern for events</li>
+        <li>✔ Event-driven systems</li>
+        <li>✔ Scaling per service</li>
+      </ul>
+
+      <h5 class="text-warning">🟣 Level 5 – Enterprise (Netflix Level)</h5>
+      <ul>
+        <li>✔ Chaos engineering</li>
+        <li>✔ Zero-downtime deployments</li>
+        <li>✔ Canary + Blue-Green</li>
+        <li>✔ Fully automated platform engineering</li>
+        <li>✔ Polyglot microservices</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-success fw-bold">🎯 Goal</h5>
+      <p>
+        Reach **Level 3** before even thinking about complex microservices.
+        <br>Level 4 & 5 are enterprise-grade only.
+      </p>
+
+    </div>
+  </div>
+</div>
 
       <div class="accordion-item">
   <h2 class="accordion-header" id="headingArgsVM">
@@ -375,6 +1970,1072 @@ public void init() {
         ✔ Program args override everything  
         ✔ VM args override YML  
       </p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingSonarJenkins">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseSonarJenkins"
+      aria-expanded="false" aria-controls="collapseSonarJenkins">
+      🧹 Code Quality, Code Smells & SonarQube CI/CD – Complete Jenkins Pipeline Setup
+    </button>
+  </h2>
+
+  <div id="collapseSonarJenkins" class="accordion-collapse collapse"
+    aria-labelledby="headingSonarJenkins" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- SECTION 1 -->
+      <h5 class="text-warning">1️⃣ What is Code Quality?</h5>
+      <p>
+        Code Quality refers to how readable, maintainable, efficient, secure and error-free your code is.
+        High-quality code is:
+      </p>
+      <ul>
+        <li>✔ Easy to read & understand</li>
+        <li>✔ Easy to modify & extend</li>
+        <li>✔ Follows naming & design standards</li>
+        <li>✔ Contains fewer bugs</li>
+        <li>✔ Secure & performant</li>
+      </ul>
+
+      <!-- SECTION 2 -->
+      <h5 class="text-warning">2️⃣ What are Code Smells?</h5>
+      <p>Code smells are NOT bugs — but signs of deeper problems. Examples:</p>
+      <ul>
+        <li>⚠ Too many nested if-else</li>
+        <li>⚠ Long methods (>80 lines)</li>
+        <li>⚠ Duplicate code blocks</li>
+        <li>⚠ Large classes (>500 lines)</li>
+        <li>⚠ Unused variables</li>
+        <li>⚠ Hard-coded values</li>
+        <li>⚠ God classes doing everything</li>
+      </ul>
+
+      <p class="text-info">SonarQube automatically identifies these & shows suggestions.</p>
+
+      <hr>
+
+      <!-- SECTION 3 -->
+      <h5 class="text-warning">3️⃣ What is SonarQube & Why Use It?</h5>
+      <ul>
+        <li>✔ Static code analysis tool</li>
+        <li>✔ Detects code smells, bugs, vulnerabilities</li>
+        <li>✔ Generates maintainability, reliability & security reports</li>
+        <li>✔ Supports Java, Spring Boot, JS, Python, etc.</li>
+        <li>✔ Integrates with Jenkins, GitHub, Azure DevOps, GitLab</li>
+      </ul>
+
+      <hr>
+
+      <!-- SECTION 4 -->
+      <h5 class="text-warning">4️⃣ SonarQube Setup – Project Configuration</h5>
+
+      <h6 class="text-info">➡ 4.1 sonar-project.properties file</h6>
+      <pre><code class="language-properties">
+sonar.projectKey=myapp
+sonar.projectName=My Spring Boot App
+sonar.projectVersion=1.0
+sonar.sources=src/main/java
+sonar.tests=src/test/java
+sonar.java.binaries=target/classes
+sonar.sourceEncoding=UTF-8
+sonar.host.url=http://localhost:9000
+sonar.login=YOUR_TOKEN_HERE
+      </code></pre>
+
+      <h6 class="text-info">➡ 4.2 Generate Sonar Token</h6>
+      <pre><code>
+SonarQube → Login → My Account → Security → Generate Token
+      </code></pre>
+
+      <hr>
+
+      <!-- SECTION 5 -->
+      <h5 class="text-warning">5️⃣ Jenkins Integration with SonarQube</h5>
+
+      <h6 class="text-info">➡ 5.1 Install Plugins in Jenkins</h6>
+      <ul>
+        <li>✔ SonarQube Scanner</li>
+        <li>✔ Pipeline plugin</li>
+        <li>✔ Credentials Binding</li>
+      </ul>
+
+      <h6 class="text-info">➡ 5.2 Configure Sonar Server (Jenkins)</h6>
+      <pre><code>
+Manage Jenkins → Configure System → SonarQube Servers → Add
+
+Name: sonar-server
+Server URL: http://localhost:9000
+Auth Token: SONAR_TOKEN (credentials)
+      </code></pre>
+
+      <h6 class="text-info">➡ 5.3 Add Scanner</h6>
+      <pre><code>
+Manage Jenkins → Global Tool Configuration → SonarQube Scanner → Add
+
+Name: sonar-scanner
+Install automatically ✔
+      </code></pre>
+
+      <hr>
+
+      <!-- SECTION 6 -->
+      <h5 class="text-warning">6️⃣ Jenkinsfile – Full CI/CD Pipeline with Sonar</h5>
+
+      <pre><code class="language-groovy">
+pipeline {
+    agent any
+
+    tools {
+        jdk 'jdk17'
+        maven 'maven3'
+    }
+
+    environment {
+        SONAR_SERVER = 'sonar-server'
+    }
+
+    stages {
+
+        stage('Checkout Code') {
+            steps {
+                git 'https://github.com/myrepo/myapp.git'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                sh "mvn clean install -DskipTests"
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv(SONAR_SERVER) {
+                    sh """
+                    mvn sonar:sonar \
+                    -Dsonar.projectKey=myapp \
+                    -Dsonar.host.url=http://localhost:9000 \
+                    -Dsonar.login=${SONAR_AUTH_TOKEN}
+                    """
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                timeout(time: 2, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+    }
+}
+      </code></pre>
+
+      <p class="text-success">
+        ✔ If Quality Gate fails → Jenkins pipeline fails  
+        ✔ If pass → continues deployment  
+      </p>
+
+      <hr>
+
+      <!-- SECTION 7 -->
+      <h5 class="text-warning">7️⃣ How SonarQube Detects Code Smells</h5>
+
+      <h6 class="text-info">Example Java Class with Bad Code</h6>
+
+      <pre><code class="language-java">
+public class PaymentService {
+
+    public void process() {
+
+        // Code smell: hard-coded values
+        int interest = 15;
+
+        // Code smell: duplicated block
+        System.out.println("Processing...");
+        System.out.println("Processing...");
+
+        // Code smell: too many nested conditions
+        if(a > 10) {
+            if(b > 20) {
+                if(c > 30) {
+                    System.out.println("Deep nesting");
+                }
+            }
+        }
+    }
+}
+      </code></pre>
+
+      <p class="text-info">
+        ✔ Sonar will detect: Hard-coded values, duplicates, deep nesting, bad design  
+      </p>
+
+      <hr>
+
+      <!-- SECTION 8 -->
+      <h5 class="text-warning">8️⃣ Benefits of SonarQube in CI/CD</h5>
+      <ul>
+        <li>✔ Ensures code quality before deployment</li>
+        <li>✔ Prevents bugs from reaching production</li>
+        <li>✔ Improves maintainability</li>
+        <li>✔ Enforces coding standard rules</li>
+        <li>✔ Automatically fails pipeline on bad code</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingJenkinsTests">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseJenkinsTests"
+      aria-expanded="false" aria-controls="collapseJenkinsTests">
+      🧪 How Tests Run in Jenkins – Commands, Maven/Gradle & Full Pipeline Examples
+    </button>
+  </h2>
+
+  <div id="collapseJenkinsTests" class="accordion-collapse collapse"
+    aria-labelledby="headingJenkinsTests" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- SECTION 1 -->
+      <h5 class="text-warning">1️⃣ How exactly Jenkins runs tests?</h5>
+      <p>
+        Jenkins DOES NOT execute tests by itself.  
+        It only runs the test commands provided by your build tool:
+      </p>
+      <ul>
+        <li>✔ Maven → <code>mvn test</code></li>
+        <li>✔ Maven Integration Tests → <code>mvn verify</code></li>
+        <li>✔ Gradle → <code>./gradlew test</code></li>
+        <li>✔ Node.js → <code>npm test</code></li>
+        <li>✔ Python → <code>pytest</code></li>
+      </ul>
+
+      <hr>
+
+      <!-- SECTION 2 -->
+      <h5 class="text-warning">2️⃣ Running Tests using Maven (Most common in Spring Boot)</h5>
+
+      <h6 class="text-info">✔ Command Jenkins executes</h6>
+      <pre><code class="language-bash">
+mvn clean test
+      </code></pre>
+
+      <h6 class="text-info">✔ Jenkinsfile Example</h6>
+      <pre><code class="language-groovy">
+pipeline {
+    agent any
+
+    tools {
+        jdk 'jdk17'
+        maven 'maven3'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git 'https://github.com/myrepo/myapp.git'
+            }
+        }
+
+        stage('Run Unit Tests') {
+            steps {
+                sh 'mvn clean test'
+            }
+        }
+
+        stage('Build Artifact') {
+            steps {
+                sh 'mvn package -DskipTests'
+            }
+        }
+    }
+}
+      </code></pre>
+
+      <p class="text-info">
+        ✔ Runs tests inside <code>src/test/java</code>  
+        ✔ Generates surefire-reports  
+        ✔ Pipeline FAILS if any test fails
+      </p>
+
+      <hr>
+
+      <!-- SECTION 3 -->
+      <h5 class="text-warning">3️⃣ Running Integration Tests</h5>
+      <p>For tests ending with:</p>
+      <ul>
+        <li>✔ <code>*IT.java</code></li>
+        <li>✔ <code>*IntegrationTest.java</code></li>
+      </ul>
+
+      <h6 class="text-info">✔ Command</h6>
+      <pre><code class="language-bash">
+mvn verify
+      </code></pre>
+
+      <h6 class="text-info">✔ Jenkinsfile</h6>
+      <pre><code class="language-groovy">
+stage('Integration Tests') {
+    steps {
+        sh 'mvn clean verify'
+    }
+}
+      </code></pre>
+
+      <hr>
+
+      <!-- SECTION 4 -->
+      <h5 class="text-warning">4️⃣ Running Tests with Gradle</h5>
+
+      <h6 class="text-info">✔ Command</h6>
+      <pre><code class="language-bash">
+./gradlew clean test
+      </code></pre>
+
+      <h6 class="text-info">✔ Jenkinsfile</h6>
+      <pre><code class="language-groovy">
+stage('Run Tests') {
+    steps {
+        sh './gradlew test'
+    }
+}
+      </code></pre>
+
+      <hr>
+
+      <!-- SECTION 5 -->
+      <h5 class="text-warning">5️⃣ Running Tests before SonarQube Scan</h5>
+      <p>Typical order:</p>
+      <pre><code class="language-bash">
+mvn clean test
+mvn sonar:sonar
+      </code></pre>
+
+      <h6 class="text-info">✔ Jenkinsfile snippet</h6>
+      <pre><code class="language-groovy">
+stage('Run Tests') {
+    steps {
+        sh "mvn -B clean test"
+    }
+}
+
+stage('Sonar Analysis') {
+    steps {
+        withSonarQubeEnv('sonar-server') {
+            sh "mvn sonar:sonar"
+        }
+    }
+}
+      </code></pre>
+
+      <hr>
+
+      <!-- SECTION 6 -->
+      <h5 class="text-warning">6️⃣ Running Tests in Parallel</h5>
+
+      <pre><code class="language-groovy">
+stage('Parallel Tests') {
+    parallel {
+        stage('Unit Tests') {
+            steps { sh "mvn -Dtest=*Test test" }
+        }
+        stage('Integration Tests') {
+            steps { sh "mvn -Dtest=*IT verify" }
+        }
+    }
+}
+      </code></pre>
+
+      <p class="text-success">
+        ✔ Saves time for large applications  
+        ✔ Jenkins runs two test groups simultaneously  
+      </p>
+
+      <hr>
+
+      <!-- SECTION 7 -->
+      <h5 class="text-warning">7️⃣ Final Summary</h5>
+
+      <table class="table table-bordered text-light">
+        <tr>
+          <th>Build Tool</th>
+          <th>Jenkins Test Command</th>
+        </tr>
+        <tr>
+          <td>Maven (Unit Tests)</td>
+          <td><code>mvn test</code></td>
+        </tr>
+        <tr>
+          <td>Maven (Integration Tests)</td>
+          <td><code>mvn verify</code></td>
+        </tr>
+        <tr>
+          <td>Gradle</td>
+          <td><code>./gradlew test</code></td>
+        </tr>
+        <tr>
+          <td>Node.js</td>
+          <td><code>npm test</code></td>
+        </tr>
+        <tr>
+          <td>Python</td>
+          <td><code>pytest</code></td>
+        </tr>
+      </table>
+
+      <p class="text-info">
+        🧠 Jenkins just executes the test commands you specify.  
+        The build tool actually runs the tests.
+      </p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingFullCICD">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseFullCICD"
+      aria-expanded="false" aria-controls="collapseFullCICD">
+      🚀 Jenkins → SonarQube → Nexus → Deploy (Linux Server) – Full CI/CD Pipeline
+    </button>
+  </h2>
+
+  <div id="collapseFullCICD" class="accordion-collapse collapse"
+    aria-labelledby="headingFullCICD" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- SECTION 1 -->
+      <h5 class="text-warning">1️⃣ High-Level Flow (End-to-End)</h5>
+      <ol>
+        <li>👨‍💻 Developer pushes code to <code>Git</code> (GitHub / GitLab / Bitbucket)</li>
+        <li>🤖 Jenkins pipeline triggers (webhook / poll SCM)</li>
+        <li>🧪 Jenkins runs <code>mvn clean test</code> (unit tests)</li>
+        <li>🧹 Jenkins runs <code>mvn sonar:sonar</code> → SonarQube analysis</li>
+        <li>✅ Quality Gate passes → continue</li>
+        <li>📦 Jenkins builds JAR and publishes to <code>Nexus</code> (artifact repo)</li>
+        <li>📥 Target Linux server pulls artifact from Nexus (or Jenkins copies via SSH)</li>
+        <li>🚀 App service is restarted on Linux server</li>
+      </ol>
+
+      <hr>
+
+      <!-- SECTION 2 -->
+      <h5 class="text-warning">2️⃣ Maven Configuration – Nexus + Sonar</h5>
+
+      <h6 class="text-info">✔ pom.xml – Nexus distributionManagement</h6>
+      <pre><code class="language-xml">
+<project>
+  <!-- ... -->
+
+  <distributionManagement>
+    <repository>
+      <id>nexus-releases</id>
+      <name>Nexus Releases</name>
+      <url>http://nexus-server:8081/repository/maven-releases/</url>
+    </repository>
+    <snapshotRepository>
+      <id>nexus-snapshots</id>
+      <name>Nexus Snapshots</name>
+      <url>http://nexus-server:8081/repository/maven-snapshots/</url>
+    </snapshotRepository>
+  </distributionManagement>
+
+  <build>
+    <plugins>
+      <!-- Sonar plugin (optional if using mvn sonar:sonar) -->
+      <plugin>
+        <groupId>org.sonarsource.scanner.maven</groupId>
+        <artifactId>sonar-maven-plugin</artifactId>
+        <version>3.10.0.2594</version>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+      </code></pre>
+
+      <h6 class="text-info">✔ sonar-project.properties (alternative)</h6>
+      <pre><code class="language-properties">
+sonar.projectKey=myapp
+sonar.projectName=My Spring Boot App
+sonar.sources=src/main/java
+sonar.tests=src/test/java
+sonar.java.binaries=target/classes
+sonar.sourceEncoding=UTF-8
+      </code></pre>
+
+      <hr>
+
+      <!-- SECTION 3 -->
+      <h5 class="text-warning">3️⃣ Jenkins Configuration – Sonar & Nexus</h5>
+
+      <h6 class="text-info">✔ Configure SonarQube Server in Jenkins</h6>
+      <pre><code>
+Manage Jenkins → Configure System → SonarQube Servers
+
+Name: sonar-server
+Server URL: http://sonar-host:9000
+Authentication Token: SONAR_TOKEN (credentials)
+      </code></pre>
+
+      <h6 class="text-info">✔ Configure Maven & JDK</h6>
+      <pre><code>
+Manage Jenkins → Global Tool Configuration
+
+JDK:
+  Name: jdk17
+Maven:
+  Name: maven3
+      </code></pre>
+
+      <h6 class="text-info">✔ Jenkins Credentials (Nexus & SSH)</h6>
+      <ul>
+        <li>🔑 <b>nexus-credentials</b> → username/password for Nexus</li>
+        <li>🔑 <b>deploy-ssh-key</b> → SSH private key for Linux server</li>
+      </ul>
+
+      <hr>
+
+      <!-- SECTION 4 -->
+      <h5 class="text-warning">4️⃣ Jenkinsfile – Full CI/CD Pipeline</h5>
+
+      <pre><code class="language-groovy">
+pipeline {
+    agent any
+
+    tools {
+        jdk 'jdk17'
+        maven 'maven3'
+    }
+
+    environment {
+        SONARQUBE_SERVER = 'sonar-server'
+        NEXUS_RELEASE_REPO = 'nexus-releases'
+        APP_NAME = 'my-spring-app'
+        APP_JAR = 'my-spring-app-1.0.0.jar'
+        DEPLOY_USER = 'ubuntu'
+        DEPLOY_HOST = '10.0.0.5'
+        DEPLOY_PATH = '/opt/apps/my-spring-app'
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                git 'https://github.com/my-org/my-spring-app.git'
+            }
+        }
+
+        stage('Build & Unit Tests') {
+            steps {
+                sh 'mvn clean test'
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv(SONARQUBE_SERVER) {
+                    sh """
+                      mvn sonar:sonar \
+                        -Dsonar.projectKey=myapp \
+                        -Dsonar.projectName=my-spring-app
+                    """
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                timeout(time: 3, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+
+        stage('Build Jar & Publish to Nexus') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'nexus-credentials',
+                                                 usernameVariable: 'NEXUS_USER',
+                                                 passwordVariable: 'NEXUS_PASS')]) {
+
+                    sh """
+                      mvn clean deploy \
+                        -Dnexus.user=$NEXUS_USER \
+                        -Dnexus.pass=$NEXUS_PASS
+                    """
+                }
+            }
+        }
+
+        stage('Deploy to Linux Server') {
+            steps {
+                sshagent (credentials: ['deploy-ssh-key']) {
+                    // Copy jar from Jenkins workspace to server
+                    sh """
+                      scp target/${APP_JAR} ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/${APP_JAR}
+                    """
+
+                    // Restart service on remote server
+                    sh """
+                      ssh ${DEPLOY_USER}@${DEPLOY_HOST} \\
+                        'cd ${DEPLOY_PATH} && ./restart.sh'
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ Deployment successful!'
+        }
+        failure {
+            echo '❌ Pipeline failed. Check logs.'
+        }
+    }
+}
+      </code></pre>
+
+      <p class="text-info">
+        ✔ If Sonar Quality Gate fails → pipeline stops before Nexus & Deploy  
+        ✔ If tests fail → pipeline fails at <b>Build & Unit Tests</b> stage  
+        ✔ Only clean builds with good quality get deployed
+      </p>
+
+      <hr>
+
+      <!-- SECTION 5 -->
+      <h5 class="text-warning">5️⃣ Remote Linux Server – Deploy Script</h5>
+
+      <p>Create a script <code>restart.sh</code> in <code>/opt/apps/my-spring-app</code> on the Linux server:</p>
+
+      <pre><code class="language-bash">
+#!/bin/bash
+APP_NAME="my-spring-app"
+JAR_NAME="my-spring-app-1.0.0.jar"
+LOG_FILE="app.log"
+
+echo "Stopping old process..."
+PID=$(pgrep -f "$JAR_NAME")
+if [ -n "$PID" ]; then
+  kill -9 $PID
+  echo "Killed PID $PID"
+fi
+
+echo "Starting new process..."
+nohup java -jar "$JAR_NAME" > "$LOG_FILE" 2>&1 &
+
+echo "App restarted successfully."
+      </code></pre>
+
+      <p class="text-success">
+        ✔ Jenkins copies new JAR → runs <code>restart.sh</code> → app restarts with latest version  
+      </p>
+
+      <hr>
+
+      <!-- SECTION 6 -->
+      <h5 class="text-warning">6️⃣ Typical Commands Used in Each Stage</h5>
+
+      <table class="table table-bordered text-light">
+        <tr>
+          <th>Stage</th>
+          <th>Command</th>
+        </tr>
+        <tr>
+          <td>Build & Test</td>
+          <td><code>mvn clean test</code></td>
+        </tr>
+        <tr>
+          <td>Sonar Analysis</td>
+          <td><code>mvn sonar:sonar</code></td>
+        </tr>
+        <tr>
+          <td>Deploy to Nexus</td>
+          <td><code>mvn deploy</code></td>
+        </tr>
+        <tr>
+          <td>Copy to Server</td>
+          <td><code>scp target/app.jar user@host:/path</code></td>
+        </tr>
+        <tr>
+          <td>Restart App</td>
+          <td><code>ssh user@host "./restart.sh"</code></td>
+        </tr>
+      </table>
+
+      <hr>
+
+      <!-- SECTION 7 -->
+      <h5 class="text-warning">7️⃣ Quick Summary for Interviews</h5>
+      <ul>
+        <li>✔ Jenkins triggers on Git changes</li>
+        <li>✔ Maven builds & runs tests</li>
+        <li>✔ SonarQube checks quality & security</li>
+        <li>✔ Nexus stores versioned artifacts</li>
+        <li>✔ Jenkins deploys to Linux via SSH and restarts the app</li>
+        <li>✔ Quality Gate + Tests act as <b>release safety net</b></li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingSonarDecision">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseSonarDecision"
+      aria-expanded="false" aria-controls="collapseSonarDecision">
+      ✅ How to Decide SonarQube Results are Correct & Safe to Deploy
+    </button>
+  </h2>
+
+  <div id="collapseSonarDecision" class="accordion-collapse collapse"
+    aria-labelledby="headingSonarDecision" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- SECTION 1 -->
+      <h5 class="text-warning">1️⃣ Quality Gate – The Main Decision Maker</h5>
+      <p>
+        SonarQube's <b>Quality Gate</b> decides whether your code is safe to release.
+        If the quality gate fails, deployment must stop.
+      </p>
+
+      <pre><code>
+Quality Gate = PASSED  → Deployment allowed
+Quality Gate = FAILED  → Deployment BLOCKED
+      </code></pre>
+
+      <ul>
+        <li>✔ No new critical/major bugs</li>
+        <li>✔ No security vulnerabilities</li>
+        <li>✔ Code coverage of new code above threshold</li>
+        <li>✔ Duplications under % limit</li>
+        <li>✔ Maintainability issues under limit</li>
+      </ul>
+
+      <p class="text-success">If everything is GREEN → You can proceed.</p>
+
+      <hr>
+
+      <!-- SECTION 2 -->
+      <h5 class="text-warning">2️⃣ 7 Key Metrics Sonar Checks</h5>
+
+      <ol>
+        <li><b>Bugs</b> – logic errors, null pointers</li>
+        <li><b>Vulnerabilities</b> – security threats like SQL injection</li>
+        <li><b>Code Smells</b> – maintainability problems</li>
+        <li><b>Coverage</b> – unit test % on new code</li>
+        <li><b>Duplications</b> – repeated code blocks</li>
+        <li><b>Security Hotspots</b> – human review required</li>
+        <li><b>Technical Debt</b> – time required to fix issues</li>
+      </ol>
+
+      <p class="text-info">
+        ✔ If any metric is critically violated → Sonar marks Quality Gate as FAIL.  
+        ✔ Jenkins blocks deployment automatically (if configured).
+      </p>
+
+      <hr>
+
+      <!-- SECTION 3 -->
+      <h5 class="text-warning">3️⃣ Coverage Check on NEW Code (Most Important)</h5>
+      <p>
+        Sonar focuses more on <b>New Code</b> (not old legacy code).
+      </p>
+
+      <pre><code>
+New Code Coverage ≥ 70%   → GOOD  
+New Code Coverage ≤ 50%   → RED FLAG  
+      </code></pre>
+
+      <p class="text-success">
+        ✔ If the change you committed is properly tested → Sonar will pass it.
+      </p>
+
+      <hr>
+
+      <!-- SECTION 4 -->
+      <h5 class="text-warning">4️⃣ Vulnerability Analysis</h5>
+      <p>
+        These are high priority. Even ONE critical vulnerability → <b>STOP deployment</b>.
+      </p>
+
+      <ul>
+        <li>❌ SQL Injection</li>
+        <li>❌ Hardcoded passwords</li>
+        <li>❌ Insecure deserialization</li>
+        <li>❌ Broken authentication</li>
+      </ul>
+
+      <p class="text-danger">If found → must be fixed before releasing.</p>
+
+      <hr>
+
+      <!-- SECTION 5 -->
+      <h5 class="text-warning">5️⃣ Compare Trends Before Approving Release</h5>
+      <p>
+        SonarQube also shows historical data.  
+        Check if current build is better or worse.
+      </p>
+
+      <ul>
+        <li>📉 Bugs decreasing → Good</li>
+        <li>📈 Coverage increasing → Good</li>
+        <li>⚠ Duplications increasing → Not good</li>
+        <li>⚠ High number of new code smells → Red flag</li>
+      </ul>
+
+      <hr>
+
+      <!-- SECTION 6 -->
+      <h5 class="text-warning">6️⃣ SonarQube + Jenkins Decision Flow</h5>
+
+      <pre><code>
+1. Jenkins runs code scan
+2. SonarQube analyzes code
+3. Jenkins waits for Quality Gate
+4. Sonar responds:
+    ✔ PASS → Continue build & deploy
+    ❌ FAIL → Abort pipeline
+      </code></pre>
+
+      <hr>
+
+      <!-- SECTION 7 -->
+      <h5 class="text-warning">7️⃣ What Developers Should Check Manually</h5>
+      <ul>
+        <li>✔ Does the issue identified by Sonar make sense?</li>
+        <li>✔ Is it a false positive?</li>
+        <li>✔ Do we need to mark it as “Won’t Fix” or “Reviewed”?</li>
+        <li>✔ If Sonar found vulnerabilities, was the fix correct?</li>
+      </ul>
+
+      <p class="text-warning">Sonar is a tool, you decide the final correctness.</p>
+
+      <hr>
+
+      <!-- SECTION 8 -->
+      <h5 class="text-warning">8️⃣ Final Criteria: When You Can “Go Ahead”</h5>
+
+      <ul>
+        <li>✔ Quality Gate = PASS</li>
+        <li>✔ No Critical / Major Bugs</li>
+        <li>✔ No Vulnerabilities</li>
+        <li>✔ > 70% coverage on new code</li>
+        <li>✔ Duplications acceptable</li>
+        <li>✔ Technical debt within limits</li>
+        <li>✔ No unaddressed security hotspots</li>
+      </ul>
+
+      <p class="text-success">If all these are met → Code is safe for deployment.</p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingSonarFullGuide">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseSonarFullGuide"
+      aria-expanded="false" aria-controls="collapseSonarFullGuide">
+      🧭 SonarLint vs SonarQube • Rules Explained • How to Write Clean Code for Sonar
+    </button>
+  </h2>
+
+  <div id="collapseSonarFullGuide" class="accordion-collapse collapse"
+    aria-labelledby="headingSonarFullGuide" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- SECTION 1 -->
+      <h5 class="text-warning">1️⃣ SonarLint vs SonarQube – What’s the Difference?</h5>
+
+      <table class="table table-bordered text-light">
+        <tr>
+          <th>Feature</th>
+          <th>SonarLint</th>
+          <th>SonarQube</th>
+        </tr>
+        <tr>
+          <td>Where it runs?</td>
+          <td>In IDE (Eclipse, IntelliJ, VSCode)</td>
+          <td>On server (Jenkins, CI/CD)</td>
+        </tr>
+        <tr>
+          <td>Purpose</td>
+          <td>Instant feedback while coding</td>
+          <td>Deep project-wide analysis</td>
+        </tr>
+        <tr>
+          <td>Works Offline?</td>
+          <td>Yes</td>
+          <td>No (needs server)</td>
+        </tr>
+        <tr>
+          <td>Detects project-wide issues?</td>
+          <td>No</td>
+          <td>Yes (full repository scan)</td>
+        </tr>
+        <tr>
+          <td>Security analysis</td>
+          <td>Basic</td>
+          <td>Advanced (OWASP rules)</td>
+        </tr>
+        <tr>
+          <td>Quality Gate</td>
+          <td>❌ Not supported</td>
+          <td>✔ Quality Gate decides deployment</td>
+        </tr>
+        <tr>
+          <td>Integration</td>
+          <td>IDE only</td>
+          <td>CI/CD pipelines (Jenkins, GitHub Actions)</td>
+        </tr>
+      </table>
+
+      <p class="text-info">
+        ✔ SonarLint is for developers  
+        ✔ SonarQube is for organizations & CI/CD
+      </p>
+
+      <hr>
+
+      <!-- SECTION 2 -->
+      <h5 class="text-warning">2️⃣ SonarQube Rules – Explained Clearly</h5>
+      <p>SonarQube categorizes issues into 3 main groups:</p>
+
+      <h6 class="text-info">🔵 1. Bugs (Reliability Issues)</h6>
+      <p>These cause incorrect behavior or crashes.</p>
+      <ul>
+        <li>❌ Null pointer risks</li>
+        <li>❌ Array index errors</li>
+        <li>❌ Infinite loops</li>
+        <li>❌ Incorrect condition logic</li>
+      </ul>
+
+      <pre><code class="language-java">
+// Bug example: possible null pointer
+String data = map.get("value");
+System.out.println(data.toLowerCase());
+      </code></pre>
+
+      <h6 class="text-info">🔴 2. Vulnerabilities (Security Issues)</h6>
+      <p>These expose the application to attacks.</p>
+      <ul>
+        <li>🔥 SQL Injection</li>
+        <li>🔥 Hardcoded passwords/keys</li>
+        <li>🔥 XSS (cross-site scripting)</li>
+        <li>🔥 Insecure encryption</li>
+      </ul>
+
+      <pre><code class="language-java">
+// Vulnerability: SQL Injection
+String query = "SELECT * FROM users WHERE id=" + userInput;
+      </code></pre>
+
+      <h6 class="text-info">🟡 3. Code Smells (Maintainability Issues)</h6>
+      <p>Not bugs, not security problems – but poor coding quality.</p>
+      <ul>
+        <li>⚠ Duplicate code</li>
+        <li>⚠ Long methods (100+ lines)</li>
+        <li>⚠ God classes (too many responsibilities)</li>
+        <li>⚠ Hardcoded values</li>
+        <li>⚠ Dead/unused code</li>
+      </ul>
+
+      <pre><code class="language-java">
+// Code smell: long method with duplication
+public void process() {
+    System.out.println("Running...");
+    System.out.println("Running...");
+}
+      </code></pre>
+
+      <hr>
+
+      <!-- SECTION 3 -->
+      <h5 class="text-warning">3️⃣ How to Write Clean Code That Passes SonarQube</h5>
+
+      <h6 class="text-info">✔ Follow SOLID Principles</h6>
+      <ul>
+        <li>S → Single Responsibility</li>
+        <li>O → Open/Closed</li>
+        <li>L → Liskov Substitution</li>
+        <li>I → Interface Segregation</li>
+        <li>D → Dependency Injection</li>
+      </ul>
+
+      <h6 class="text-info">✔ Remove Duplicate Code</h6>
+      <pre><code class="language-java">
+// BAD
+if(type.equals("A")) calculate();
+if(type.equals("A")) calculate(); 
+
+// GOOD
+if(type.equals("A")) {
+    calculate();
+}
+      </code></pre>
+
+      <h6 class="text-info">✔ Always Use Optional for Null Checks</h6>
+      <pre><code class="language-java">
+Optional.ofNullable(data).ifPresent(System.out::println);
+      </code></pre>
+
+      <h6 class="text-info">✔ Use Constants Instead of Hardcoded Values</h6>
+      <pre><code class="language-java">
+// BAD
+int TIMEOUT = 5000;
+
+// GOOD
+private static final int TIMEOUT = 5000;
+      </code></pre>
+
+      <h6 class="text-info">✔ Keep Methods Small (20–40 lines)</h6>
+      <pre><code class="language-java">
+// BAD – 200 line method → Code smell
+public void processAll() { ... }
+
+// GOOD – break into small functions
+public void validateInput() {}
+public void saveUser() {}
+public void sendNotification() {}
+      </code></pre>
+
+      <h6 class="text-info">✔ Use Parameterized Queries (avoid SQL injection)</h6>
+      <pre><code class="language-java">
+PreparedStatement ps = conn.prepareStatement(
+    "SELECT * FROM users WHERE id = ?"
+);
+ps.setInt(1, userId);
+      </code></pre>
+
+      <h6 class="text-info">✔ Add Unit Tests for New Code</h6>
+      <p>Sonar requires coverage on <b>New Code</b>, not all old code.</p>
+
+      <pre><code class="language-bash">
+mvn clean test
+      </code></pre>
+
+      <p class="text-success">✔ With these rules → Sonar Quality Gate will PASS.</p>
+
+      <hr>
+
+      <!-- SECTION 4 -->
+      <h5 class="text-warning">4️⃣ Quick Interview Summary</h5>
+
+      <ul>
+        <li>✔ SonarLint = IDE level, instant feedback</li>
+        <li>✔ SonarQube = CI/CD level, project-wide analysis</li>
+        <li>✔ Sonar rules cover Bugs, Vulnerabilities, Code Smells</li>
+        <li>✔ Clean code requires small functions, no duplication, safe queries</li>
+        <li>✔ Sonar Quality Gate decides whether deployment can proceed</li>
+      </ul>
 
     </div>
   </div>
