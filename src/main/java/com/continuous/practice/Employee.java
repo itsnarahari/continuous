@@ -33,12 +33,12 @@ public class Employee{
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         Employee employee = (Employee) o;
-        return getId() == employee.getId() && getAge() == employee.getAge() && getYearOfJoining() == employee.getYearOfJoining() && Double.compare(getSalary(), employee.getSalary()) == 0 && Objects.equals(getName(), employee.getName()) && Objects.equals(getGender(), employee.getGender()) && Objects.equals(getDepartment(), employee.getDepartment()) && Objects.equals(getMobile(), employee.getMobile()) && Objects.equals(getEmail(), employee.getEmail()) && Objects.equals(getModeOfContact(), employee.getModeOfContact()) && Objects.equals(getHobbies(), employee.getHobbies());
+        return  id==employee.getId();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getId(), getName(), getAge(), getGender(), getDepartment(), getYearOfJoining(), getSalary(), getMobile(), getEmail(), getModeOfContact(), getHobbies());
+        return 0;
     }
 }
 

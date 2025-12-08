@@ -93,6 +93,445 @@
 
     <div class="accordion" id="googleAccordion">
 
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingMajorChallenge">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseMajorChallenge"
+      aria-expanded="false" aria-controls="collapseMajorChallenge">
+      🚧 Major Challenge Faced Recently – Interview Ready Answer (Multiple Scenarios)
+    </button>
+  </h2>
+
+  <div id="collapseMajorChallenge" class="accordion-collapse collapse"
+    aria-labelledby="headingMajorChallenge" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- Scenario 1 -->
+      <h4 class="text-warning">1️⃣ Idempotency Issue – Duplicate Transactions (FinTech Example)</h4>
+      <p>
+        One major challenge I faced recently was <b>duplicate transactions being created</b> due to retries from
+        clients and load balancers.  
+        This caused <b>inconsistent data and financial mismatches</b>.
+      </p>
+
+      <pre class="text-info">
+Challenge:
+  • Same request hitting the service multiple times
+  • No idempotency token mechanism
+  • Duplicate records causing reconciliation issues
+
+Solution:
+  ✔ Implemented Idempotency Key stored in Redis
+  ✔ Ensured the same request is processed only once
+  ✔ Added request hashing + TTL-based lock in Redis
+
+Result:
+  • 95% reduction in duplicate transactions
+  • Stable and predictable financial workflow
+      </pre>
+
+      <hr>
+
+      <!-- Scenario 2 -->
+      <h4 class="text-warning">2️⃣ JVM Memory Spike – Large File / Multipart Upload Issue</h4>
+      <p>
+        Another recent challenge was that large file uploads (10–20MB) caused <b>JVM memory spikes</b> since
+        `MultipartFile` loads data fully into memory.
+      </p>
+
+      <pre class="text-info">
+Challenge:
+  • High heap usage
+  • Risk of OutOfMemoryError
+  • Slow response time under load
+
+Solution:
+  ✔ Implemented streaming-based upload instead of MultipartFile
+  ✔ Introduced chunk upload + backpressure control
+  ✔ Moved heavy processing to async background workers
+
+Result:
+  • Memory usage decreased significantly
+  • Upload endpoint became highly stable under load
+      </pre>
+
+      <hr>
+
+      <!-- Scenario 3 -->
+      <h4 class="text-warning">3️⃣ Microservice Failing Under Load – Thread Pool Exhaustion</h4>
+      <p>
+        During a traffic spike, one of our microservices started timing out because threads were getting blocked
+        due to deep synchronous call chains.
+      </p>
+
+      <pre class="text-info">
+Challenge:
+  • Thread pool exhaustion
+  • No circuit breaker or timeout
+  • Cascading failures across dependent services
+
+Solution:
+  ✔ Added Circuit Breaker + Timeouts (Resilience4j)
+  ✔ Implemented Bulkhead pattern with separate thread pools
+  ✔ Converted heavy synchronous calls → Async (CompletableFuture)
+  ✔ Cached repetitive read operations
+
+Result:
+  • 40% improvement in P95 latency
+  • No downtime during next production load test
+      </pre>
+
+      <hr>
+
+      <!-- Scenario 4 -->
+      <h4 class="text-warning">4️⃣ Zero-Downtime Database Schema Migration</h4>
+      <p>
+        Multiple microservices depended on the same database, so schema changes required <b>zero downtime</b>.
+      </p>
+
+      <pre class="text-info">
+Challenge:
+  • Old version & new version needed to run simultaneously
+  • Any direct DB change could break existing microservices
+
+Solution (Expand & Contract Strategy):
+  1. Add new column (non-breaking)
+  2. Write to both old + new columns
+  3. Migrate old data → new schema
+  4. Update services to read new columns
+  5. Remove old column in final deployment
+
+Result:
+  • Zero downtime migration
+  • Safe deployment across multiple services
+      </pre>
+
+      <hr>
+
+      <h4 class="text-warning">📌 Interview-Friendly Summary</h4>
+      <pre class="text-info">
+"My major recent challenge involved ensuring system stability under high load.
+I solved it through idempotency, streaming, async processing, and resilience patterns
+such as circuit breaker and bulkhead, which improved performance and avoided outages."
+      </pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingJava17Records">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseJava17Records"
+      aria-expanded="false" aria-controls="collapseJava17Records">
+      🧾 Java 17 Records – Purpose, Usage & Examples (Interview Ready)
+    </button>
+  </h2>
+
+  <div id="collapseJava17Records" class="accordion-collapse collapse"
+    aria-labelledby="headingJava17Records" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <h4 class="text-warning">📌 What Are Records?</h4>
+      <p>
+        <b>Records</b> in Java 17 are special classes designed to hold data without writing boilerplate code.  
+        They automatically generate:
+      </p>
+
+      <ul>
+        <li>private final fields</li>
+        <li>constructor</li>
+        <li>getters (as field-name methods)</li>
+        <li>equals() & hashCode()</li>
+        <li>toString()</li>
+      </ul>
+
+      <pre class="text-info">
+public record Person(String name, int age) {}
+      </pre>
+
+      <p>
+        This single line replaces an entire POJO with constructor, getters, equals, hashCode, and toString.
+      </p>
+
+      <hr>
+
+      <h4 class="text-warning">🎯 Why Do We Use Records?</h4>
+      <p><b>1️⃣ Avoid Boilerplate Code</b></p>
+      <pre class="text-info">
+Old Java Class:
+  • fields
+  • constructor
+  • getters
+  • equals & hashCode
+  • toString
+
+Record:
+  public record Person(String name, int age) {}
+      </pre>
+
+      <p><b>2️⃣ Immutable Data Carrier</b></p>
+      <p>Records are perfect for:</p>
+      <ul>
+        <li>DTOs</li>
+        <li>API Request/Response models</li>
+        <li>Kafka message objects</li>
+        <li>Configuration objects</li>
+        <li>Domain Value Objects</li>
+      </ul>
+
+      <p><b>3️⃣ Thread-Safe By Default</b></p>
+      <p>Because all fields are final and immutable.</p>
+
+      <p><b>4️⃣ Structural Equality</b></p>
+      <pre class="text-info">
+Person p1 = new Person("Hari", 25);
+Person p2 = new Person("Hari", 25);
+
+p1.equals(p2) → true
+      </pre>
+
+      <hr>
+
+      <h4 class="text-warning">📌 Pattern Matching Support</h4>
+      <pre class="text-info">
+if (obj instanceof Person(String name, int age)) {
+    System.out.println(name + " is " + age);
+}
+      </pre>
+
+      <hr>
+
+      <h4 class="text-warning">📌 When Should You Use Records?</h4>
+      <ul>
+        <li>When the class is meant only to carry data</li>
+        <li>When immutability is required</li>
+        <li>When you want clean DTOs without boilerplate</li>
+        <li>When replacing Lombok @Data for simple objects</li>
+      </ul>
+
+      <hr>
+
+      <h4 class="text-warning">📌 When NOT to Use Records?</h4>
+      <ul>
+        <li>When object needs to be mutable</li>
+        <li>When you need inheritance (records cannot extend classes)</li>
+        <li>When class contains business logic + state changes</li>
+      </ul>
+
+      <hr>
+
+      <h4 class="text-warning">📌 Quick Interview Answer</h4>
+      <pre class="text-info">
+"Records in Java 17 are immutable data-carrier classes that eliminate boilerplate by 
+auto-generating constructor, getters, equals, hashCode, and toString. 
+They are ideal for DTOs, response objects, and value objects."
+      </pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingRecordsVsClasses">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseRecordsVsClasses"
+      aria-expanded="false" aria-controls="collapseRecordsVsClasses">
+      🆚 Java 17 – Records vs Classes (Full Comparison)
+    </button>
+  </h2>
+
+  <div id="collapseRecordsVsClasses" class="accordion-collapse collapse"
+    aria-labelledby="headingRecordsVsClasses" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <h4 class="text-warning">📌 Purpose Difference</h4>
+      <pre class="text-info">
+Class → For behavior + data + mutable state
+Record → For immutable data-only carrier
+      </pre>
+
+      <h4 class="text-warning">📌 Boilerplate Difference</h4>
+      <pre class="text-info">
+Class needs:
+  • fields
+  • constructor
+  • getters/setters
+  • equals/hashCode
+  • toString
+
+Record:
+  record Person(String name, int age) {}
+      </pre>
+
+      <h4 class="text-warning">📌 Immutability</h4>
+      <ul>
+        <li>Records → implicitly final & immutable</li>
+        <li>Classes → fully mutable unless restricted manually</li>
+      </ul>
+
+      <h4 class="text-warning">📌 Inheritance</h4>
+      <pre class="text-info">
+Records cannot extend other classes.
+They implicitly extend java.lang.Record.
+      </pre>
+
+      <h4 class="text-warning">📌 When to Use What?</h4>
+      <pre class="text-info">
+Use Record → DTOs, responses, Kafka messages, value objects  
+Use Class → business logic, services, entities, mutable state
+      </pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingRecordsVsLombok">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseRecordsVsLombok"
+      aria-expanded="false" aria-controls="collapseRecordsVsLombok">
+      🍃 Java 17 Records vs Lombok – Which Is Better?
+    </button>
+  </h2>
+
+  <div id="collapseRecordsVsLombok" class="accordion-collapse collapse"
+    aria-labelledby="headingRecordsVsLombok" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <h4 class="text-warning">📌 Common Purpose</h4>
+      <p>Both reduce boilerplate (DTOs, POJOs).</p>
+
+      <h4 class="text-warning">📌 Key Differences</h4>
+      <pre class="text-info">
+Record:
+  • Immutable by default
+  • Built into Java language
+  • Auto-generates constructor, equals, hashCode, toString
+
+Lombok @Data:
+  • Mutable by default (fields are not final)
+  • Requires annotation processor
+  • Adds getters, setters, equals, hashCode
+      </pre>
+
+      <h4 class="text-warning">📌 When to Prefer Records?</h4>
+      <ul>
+        <li>No need for setters</li>
+        <li>Prefer immutability</li>
+        <li>No dependency on Lombok</li>
+        <li>Simple DTO / Response Objects</li>
+      </ul>
+
+      <h4 class="text-warning">📌 When to Prefer Lombok?</h4>
+      <ul>
+        <li>You need mutable objects</li>
+        <li>You need builders, @Builder</li>
+        <li>You want @Value or @Getter/@Setter customization</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingRecordsEntityUse">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseRecordsEntityUse"
+      aria-expanded="false" aria-controls="collapseRecordsEntityUse">
+      🏛️ Can We Use Java Records as JPA Entities? (NO — Full Explanation)
+    </button>
+  </h2>
+
+  <div id="collapseRecordsEntityUse" class="accordion-collapse collapse"
+    aria-labelledby="headingRecordsEntityUse" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <h4 class="text-warning">❌ Short Answer</h4>
+      <p><b>No.</b> Java <b>records cannot be used as JPA entities</b> because they are immutable and JPA requires mutable objects.</p>
+
+      <hr>
+
+      <h4 class="text-warning">📌 1️⃣ Records Are Immutable</h4>
+      <p>Records generate:</p>
+      <ul>
+        <li>Final fields</li>
+        <li>No setters</li>
+        <li>Canonical constructor only</li>
+      </ul>
+
+      <p>But JPA needs to modify values internally → <b>incompatible</b>.</p>
+
+      <hr>
+
+      <h4 class="text-warning">📌 2️⃣ JPA Requires a No-Arg Constructor</h4>
+      <pre class="text-info">
+@Entity classes must have:
+  ✔ public/protected no-arg constructor
+
+Record:
+  ❌ Cannot have no-arg constructor
+  ❌ All fields must be initialized
+      </pre>
+
+      <p>Therefore, JPA cannot instantiate record objects.</p>
+
+      <hr>
+
+      <h4 class="text-warning">📌 3️⃣ JPA Uses Proxies (Lazy Loading)</h4>
+      <p>
+        Hibernate often creates proxy subclasses to support lazy loading & dirty checking.  
+        Records cannot be subclassed → <b>proxying fails</b>.
+      </p>
+
+      <hr>
+
+      <h4 class="text-warning">📌 4️⃣ Entities Require Mutability</h4>
+      <pre class="text-info">
+JPA lifecycle:
+  • Construct entity
+  • Populate fields via reflection
+  • Modify fields
+  • Track changes
+
+Record lifecycle:
+  • Immutable
+  • No field modification allowed
+      </pre>
+
+      <p>→ JPA cannot manage them.</p>
+
+      <hr>
+
+      <h4 class="text-warning">📌 Conclusion</h4>
+      <pre class="text-info">
+❌ Records → NOT suitable for JPA @Entity
+✔ Records → Perfect for DTOs, Responses, Kafka Events, Projections
+      </pre>
+
+      <hr>
+
+      <h4 class="text-warning">📌 Good Usage Example (DTO)</h4>
+      <pre class="text-info">
+public record UserResponse(String name, int age) {}
+      </pre>
+
+      <h4 class="text-warning">📌 Not Allowed (Entity Attempt)</h4>
+      <pre class="text-info">
+@Entity
+public record UserEntity(Long id, String name) {}
+// ❌ Illegal: JPA cannot handle this
+      </pre>
+
+      <hr>
+
+      <h4 class="text-warning">📌 Interview-Ready Summary</h4>
+      <pre class="text-info">
+"Records cannot be used as JPA entities because JPA needs mutable, proxyable 
+objects with a no-arg constructor. Records are immutable and final, so they are 
+better suited for DTOs and value objects."
+      </pre>
+
+    </div>
+  </div>
+</div>
+
       <div class="accordion-item">
   <h2 class="accordion-header" id="headingMultipartUpload">
     <button class="accordion-button collapsed search-item text-info" type="button"
@@ -246,6 +685,1378 @@ public Document saveFile(MultipartFile file) throws Exception {
     </div>
   </div>
 </div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingParentChildConstructor">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseParentChildConstructor"
+      aria-expanded="false" aria-controls="collapseParentChildConstructor">
+      🧬 Why Parent Constructor Executes Before Child Constructor in Java?
+    </button>
+  </h2>
+
+  <div id="collapseParentChildConstructor" class="accordion-collapse collapse"
+    aria-labelledby="headingParentChildConstructor" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <h5>💡 Summary</h5>
+      In Java, when you create a <code>ChildClass</code> object, the <code>ParentClass</code> constructor
+      is always executed first. This is because Java implicitly inserts <code>super()</code> at the
+      beginning of every child constructor to ensure the parent part of the object is properly initialized.
+
+      <hr>
+
+      <h5>🔥 Example Code</h5>
+
+      <pre><code class="language-java">
+class ParentClass {
+    public ParentClass() {
+        System.out.println("parent");
+    }
+}
+
+class ChildClass extends ParentClass {
+    public ChildClass() {
+        System.out.println("Child");
+    }
+}
+
+class Check {
+    public static void main(String[] args) {
+        ParentClass obj = new ChildClass();
+    }
+}
+      </code></pre>
+
+      <h5>📌 Output</h5>
+      <pre><code class="language-java">
+parent
+Child
+      </code></pre>
+
+      <hr>
+
+      <h5>🎯 Why Does This Happen?</h5>
+      <ul>
+        <li>Every constructor in Java **must call the parent constructor first**.</li>
+        <li>If you don't specify anything, Java automatically inserts <code>super()</code>.</li>
+        <li>The parent class fields & state must be initialized before the child can add its own fields and logic.</li>
+      </ul>
+
+      <hr>
+
+      <h5>🔍 Internal Execution Flow</h5>
+      <pre><code class="language-java">
+new ChildClass()
+     ↓
+ChildClass() constructor starts
+     ↓
+Implicit super()
+     ↓
+ParentClass() constructor → prints "parent"
+     ↓
+Back to ChildClass() → prints "Child"
+      </code></pre>
+
+      <hr>
+
+      <h5>🎤 Interview-Ready One Liner</h5>
+      <p>
+        "Parent constructor always runs first because Java inserts an implicit <code>super()</code> call,
+        ensuring the parent part of the object is fully constructed before the child adds its own behavior."
+      </p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingSuperVsThis">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseSuperVsThis"
+      aria-expanded="false" aria-controls="collapseSuperVsThis">
+      🔁 super() vs this() in Java Constructors – Full Explanation + Examples
+    </button>
+  </h2>
+
+  <div id="collapseSuperVsThis" class="accordion-collapse collapse"
+    aria-labelledby="headingSuperVsThis" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <h5>💡 Summary</h5>
+      <p>
+        <code>super()</code> calls the parent constructor, whereas <code>this()</code> calls another
+        constructor in the same class. Both must be the <b>first statement</b> inside a constructor.
+      </p>
+
+      <hr>
+
+      <h5>📌 super() Example</h5>
+      <pre><code class="language-java">
+class Parent {
+    Parent() { System.out.println("Parent"); }
+}
+
+class Child extends Parent {
+    Child() { 
+        super();  // calls Parent()
+        System.out.println("Child"); 
+    }
+}
+      </code></pre>
+
+      <hr>
+
+      <h5>📌 this() Example (Constructor Overloading)</h5>
+      <pre><code class="language-java">
+class Demo {
+    Demo() {
+        this("hariPrep");
+        System.out.println("Default Constructor");
+    }
+
+    Demo(String name) {
+        System.out.println("Parameterized: " + name);
+    }
+}
+      </code></pre>
+
+      <hr>
+
+      <h5>⚠ Rules</h5>
+      <ul>
+        <li><code>super()</code> and <code>this()</code> cannot be used together.</li>
+        <li>Both must appear as the <b>first statement</b> inside a constructor.</li>
+        <li><code>this()</code> = same class chaining</li>
+        <li><code>super()</code> = parent class constructor call</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingParentParameterized">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseParentParameterized"
+      aria-expanded="false" aria-controls="collapseParentParameterized">
+      🧩 Parent Has Only Parameterized Constructor – What Happens?
+    </button>
+  </h2>
+
+  <div id="collapseParentParameterized" class="accordion-collapse collapse"
+    aria-labelledby="headingParentParameterized" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <h5>📌 Scenario</h5>
+      <pre><code class="language-java">
+class Parent {
+    Parent(String msg) { System.out.println(msg); }
+}
+
+class Child extends Parent {
+    Child() {
+        System.out.println("Child");
+    }
+}
+      </code></pre>
+
+      <p>❌ Compilation Error: Parent has no default constructor</p>
+
+      <hr>
+
+      <h5>✔ Correct Way</h5>
+      <pre><code class="language-java">
+class Child extends Parent {
+    Child() {
+        super("Parent Called From Child");
+        System.out.println("Child");
+    }
+}
+      </code></pre>
+
+      <p>
+        💡 If parent has only parameterized constructors, then <code>super(...)</code>
+        must be explicitly written.
+      </p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingStopParentConstructor">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseStopParentConstructor"
+      aria-expanded="false" aria-controls="collapseStopParentConstructor">
+      🛑 Can We Stop Parent Constructor From Executing in Java?
+    </button>
+  </h2>
+
+  <div id="collapseStopParentConstructor" class="accordion-collapse collapse"
+    aria-labelledby="headingStopParentConstructor" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <h5>💡 Short Answer: NO, Impossible in Java</h5>
+      <p>
+        Java mandates that the parent constructor must execute before the child constructor.
+        This rule cannot be bypassed because:
+      </p>
+
+      <ul>
+        <li>The object memory layout depends on parent initialization.</li>
+        <li>Java enforces <code>super()</code> (implicit or explicit).</li>
+        <li>JVM specification requires parent part to be constructed first.</li>
+      </ul>
+
+      <hr>
+
+      <h5>📌 Only Possible Workaround</h5>
+      <p>
+        You cannot stop it, but you can <b>control what logic runs</b> inside the parent constructor.
+      </p>
+
+      <pre><code class="language-java">
+class Parent {
+    Parent(boolean skip) {
+        if(!skip)
+            System.out.println("Parent Logic");
+    }
+}
+
+class Child extends Parent {
+    Child() {
+        super(true); // bypasses parent logic
+        System.out.println("Child");
+    }
+}
+      </code></pre>
+
+      <p>🚀 Parent constructor still runs (cannot skip), but logic can be conditionally avoided.</p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingConstructorChainingFlow">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseConstructorChainingFlow"
+      aria-expanded="false" aria-controls="collapseConstructorChainingFlow">
+      🔗 Constructor Chaining in Java – Flow Diagram + Rules + Examples
+    </button>
+  </h2>
+
+  <div id="collapseConstructorChainingFlow" class="accordion-collapse collapse"
+    aria-labelledby="headingConstructorChainingFlow" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <h5>📌 Flow Diagram (Parent → Child)</h5>
+
+      <pre><code class="language-java">
+new Child();
+      ↓
+Child() constructor starts
+      ↓
+If first line = this() → call same class constructor
+Else → implicit/explicit super()
+      ↓
+Parent() constructor runs completely
+      ↓
+Control returns to Child() constructor
+      ↓
+Child constructor finishes
+      </code></pre>
+
+      <hr>
+
+      <h5>⚙ Rules of Constructor Chaining</h5>
+      <ul>
+        <li><code>super()</code> or <code>this()</code> must be the <b>first line</b>.</li>
+        <li>Parent constructor always executes before child.</li>
+        <li>You cannot call both super() and this() together.</li>
+        <li>Chains can go multiple levels: GrandParent → Parent → Child.</li>
+      </ul>
+
+      <hr>
+
+      <h5>📌 Multi-Level Example</h5>
+      <pre><code class="language-java">
+class A {
+    A() { System.out.println("A"); }
+}
+
+class B extends A {
+    B() { System.out.println("B"); }
+}
+
+class C extends B {
+    C() { System.out.println("C"); }
+}
+
+public class Test {
+    public static void main(String[] args) {
+        new C();
+    }
+}
+      </code></pre>
+
+      <h5>📌 Output</h5>
+      <pre><code class="language-java">
+A
+B
+C
+      </code></pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingPrivateConstructor">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapsePrivateConstructor"
+      aria-expanded="false" aria-controls="collapsePrivateConstructor">
+      🔒 Why We Make Constructors PRIVATE in Java? (Real-Time Scenarios + private + final)
+    </button>
+  </h2>
+
+  <div id="collapsePrivateConstructor" class="accordion-collapse collapse"
+    aria-labelledby="headingPrivateConstructor" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <h4>💡 Summary</h4>
+      <p>
+        A <code>private constructor</code> is used when we want to <b>stop other classes from creating objects</b>.
+        This gives us controlled object creation and is used heavily in Utility classes, Singleton,
+        Factories, and Immutable patterns.
+      </p>
+
+      <hr>
+
+      <!-- 1️⃣ Singleton Use Case -->
+      <h4>1️⃣ Singleton Pattern – Only One Object Allowed</h4>
+      <p><b>Real-Time:</b> DB Connection Pool, Logger, Cache Manager, AWS Clients</p>
+
+      <pre><code class="language-java">
+public final class DbConnection {
+
+    private static final DbConnection INSTANCE = new DbConnection();
+
+    private DbConnection() {
+        System.out.println("DB Connection created only once");
+    }
+
+    public static DbConnection getInstance() {
+        return INSTANCE;
+    }
+}
+      </code></pre>
+
+      <p>✔ Private constructor prevents: <code>new DbConnection()</code><br>
+         ✔ Ensures only one global object exists.</p>
+
+      <hr>
+
+      <!-- 2️⃣ Utility Class -->
+      <h4>2️⃣ Utility / Helper Classes – No Object Should Be Created</h4>
+      <p><b>Real-Time:</b> <code>Math</code>, <code>Collections</code>, <code>Apache StringUtils</code></p>
+
+      <pre><code class="language-java">
+public final class MathUtils {
+
+    private MathUtils() { 
+        throw new UnsupportedOperationException("Cannot create object");
+    }
+
+    public static int add(int a, int b) { return a + b; }
+}
+      </code></pre>
+
+      <p>✔ Prevents meaningless object creation<br>
+         ✔ Class used only via static methods</p>
+
+      <hr>
+
+      <!-- 3️⃣ Factory Pattern -->
+      <h4>3️⃣ Factory Pattern – Control Object Creation</h4>
+      <p><b>Real-Time:</b> Spring creates beans internally, but developers cannot new them.</p>
+
+      <pre><code class="language-java">
+public class Employee {
+
+    private Employee() {} // restrict direct object creation
+
+    public static Employee createPermanent() {
+        return new Employee();
+    }
+
+    public static Employee createContract() {
+        return new Employee();
+    }
+}
+      </code></pre>
+
+      <p>✔ Controls how and when objects are created<br>
+         ✔ Prevents invalid object creation</p>
+
+      <hr>
+
+      <!-- 4️⃣ Immutable Class -->
+      <h4>4️⃣ Immutable Classes – Secure, Unmodifiable Objects</h4>
+      <p><b>Real-Time:</b> <code>String</code>, <code>LocalDate</code>, DTOs in Microservices</p>
+
+      <pre><code class="language-java">
+public final class User {
+
+    private final String name;
+    private final int age;
+
+    private User(String name, int age) { // private constructor
+        this.name = name;
+        this.age = age;
+    }
+
+    public static User of(String name, int age) {
+        return new User(name, age);
+    }
+
+    public String name() { return name; }
+    public int age() { return age; }
+}
+      </code></pre>
+
+      <p>✔ Forces object creation through a static method<br>
+         ✔ Safe, immutable, thread-safe objects</p>
+
+      <hr>
+
+      <!-- 5️⃣ Prevent Inheritance -->
+      <h4>5️⃣ Private Constructor + Final Class → Prevent Inheritance</h4>
+      <p><b>Real-Time:</b> Constants classes, Security-sensitive classes.</p>
+
+      <pre><code class="language-java">
+public final class Constants {
+
+    public static final String VERSION = "1.0";
+
+    private Constants() {} // No inheritance, no objects
+}
+      </code></pre>
+
+      <p>✔ Stops inheritance<br>
+         ✔ Stops object creation</p>
+
+      <hr>
+
+      <!-- 6️⃣ Enum Singleton -->
+      <h4>6️⃣ Enum Uses Private Constructor (Most Secure Singleton)</h4>
+
+      <pre><code class="language-java">
+public enum AppManager {
+    INSTANCE;
+
+    AppManager() {
+        System.out.println("Enum private constructor");
+    }
+}
+      </code></pre>
+
+      <p>✔ JVM guarantees single object<br>
+         ✔ Reflection can't break it</p>
+
+      <hr>
+
+      <!-- 7️⃣ Prevent Framework Instantiation -->
+      <h4>7️⃣ Framework Pattern – Stop Developers from Creating Objects</h4>
+
+      <pre><code class="language-java">
+public abstract class AbstractService {
+
+    private AbstractService() {}  // Framework use only
+
+    public abstract void process();
+}
+      </code></pre>
+
+      <p>✔ Developers cannot create objects manually<br>
+         ✔ Framework creates subclasses internally</p>
+
+      <hr>
+
+      <!-- 8️⃣ Private Constructor + Static Block -->
+      <h4>8️⃣ Private Constructor with Static Initialization Logic</h4>
+      <pre><code class="language-java">
+public class Config {
+
+    private static final Config INSTANCE;
+
+    static {
+        // heavy loading logic
+        INSTANCE = new Config();
+    }
+
+    private Config() {}
+}
+      </code></pre>
+
+      <p>✔ Used for heavy initializations<br>✔ Guarantees one-time loading</p>
+
+      <hr>
+
+      <!-- Final Summary -->
+      <h4>🎤 Interview Summary (One-Liner)</h4>
+      <p>
+        “We use private constructors to restrict object creation and enforce controlled initialization. 
+        It is used in Singleton, Utility classes, Factories, Immutable models, Constants, and framework-level 
+        class restrictions.”
+      </p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingReflectionPrivateConstructor">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseReflectionPrivateConstructor"
+      aria-expanded="false" aria-controls="collapseReflectionPrivateConstructor">
+      🔍 Does Reflection Work on Private Constructors in Java? (How It Breaks + How to Prevent)
+    </button>
+  </h2>
+
+  <div id="collapseReflectionPrivateConstructor" class="accordion-collapse collapse"
+    aria-labelledby="headingReflectionPrivateConstructor" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <h4>💡 Short Answer</h4>
+      <p>
+        YES — Reflection <b>can access private constructors</b> using 
+        <code>setAccessible(true)</code>, which can break Singleton, Immutable classes,
+        and restricted classes.
+      </p>
+
+      <hr>
+
+      <h4>1️⃣ How Reflection Breaks a Private Constructor</h4>
+
+      <pre><code class="language-java">
+class Singleton {
+    private Singleton() {
+        System.out.println("Private constructor invoked!");
+    }
+
+    public static final Singleton INSTANCE = new Singleton();
+}
+
+Constructor&lt;Singleton&gt; cons = Singleton.class.getDeclaredConstructor();
+cons.setAccessible(true);        // bypass private access
+Singleton obj = cons.newInstance();
+      </code></pre>
+
+      <p>✔ Reflection creates a new object even if constructor is private.<br>
+         ❌ Breaks Singleton and immutability guarantees.</p>
+
+      <hr>
+
+      <h4>2️⃣ How to Prevent Reflection from Breaking Private Constructors</h4>
+
+      <p><b>Approach: Throw an exception if constructor is called more than once.</b></p>
+
+      <pre><code class="language-java">
+public class SafeSingleton {
+
+    private static boolean created = false;
+
+    private SafeSingleton() {
+        if (created) {
+            throw new RuntimeException("Reflection is not allowed!");
+        }
+        created = true;
+    }
+
+    public static final SafeSingleton INSTANCE = new SafeSingleton();
+}
+      </code></pre>
+
+      <p>✔ Blocks reflection from creating new instances.<br>
+         ✔ Ensures object safety.</p>
+
+      <hr>
+
+      <h4>3️⃣ 100% Reflection-Proof: Enum Singleton</h4>
+
+      <pre><code class="language-java">
+public enum AppManager {
+    INSTANCE;
+}
+      </code></pre>
+
+      <p>
+        Even this fails:
+      </p>
+
+      <pre><code class="language-java">
+Constructor<?> cons = AppManager.class.getDeclaredConstructor();
+cons.setAccessible(true);
+cons.newInstance();  // ❌ Throws exception
+      </code></pre>
+
+      <p>✔ JVM does NOT allow reflective creation of enum instances.<br>
+         ✔ <b>Safest Singleton implementation.</b></p>
+
+      <hr>
+
+      <h4>4️⃣ Why Enum is Reflection-Safe?</h4>
+      <ul>
+        <li>JVM manages enum instances internally.</li>
+        <li>No one (not even reflection) can create new enum objects.</li>
+        <li>Constructor is implicitly private + restricted at JVM level.</li>
+      </ul>
+
+      <hr>
+
+      <h4>🎤 Interview Summary</h4>
+      <p>
+        “Reflection can invoke private constructors using <code>setAccessible(true)</code>, 
+        which breaks Singleton and restricted classes. To prevent this, we guard the
+        private constructor or use Enum Singleton, which is completely reflection-proof.”
+      </p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingReflectionFinalBreak">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseReflectionFinalBreak"
+      aria-expanded="false" aria-controls="collapseReflectionFinalBreak">
+      🛡️ Can Reflection Break final Classes / final Methods / final Fields in Java?
+    </button>
+  </h2>
+
+  <div id="collapseReflectionFinalBreak" class="accordion-collapse collapse"
+    aria-labelledby="headingReflectionFinalBreak" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <h4>💡 Short Answer</h4>
+      <p>
+        ✔ Reflection <b>CANNOT break</b> <code>final classes</code> and <code>final methods</code>.  
+        ⚠ But reflection <b>CAN modify</b> <code>final fields</code> (with limitations).  
+        This is one of the few places where <code>final</code> is not absolute.
+      </p>
+
+      <hr>
+
+      <h4>1️⃣ Can Reflection Break a final CLASS?</h4>
+
+      <pre><code class="language-java">
+public final class PaymentService { }
+      </code></pre>
+
+      <p>✔ A <b>final</b> class cannot be subclassed.  
+         ✔ Reflection also **cannot** bypass this rule.</p>
+
+      <pre><code class="language-java">
+Class<?> cls = PaymentService.class;
+cls.newInstance();   // creates object ONLY if constructor is public
+                     // but CANNOT create a subclass
+      </code></pre>
+
+      <p>❌ You cannot generate a subclass using reflection.  
+         ❌ You cannot override methods of a final class.</p>
+
+      <p><b>Reason:</b> The JVM enforces final-class inheritance rules at bytecode verification level.</p>
+
+      <hr>
+
+      <h4>2️⃣ Can Reflection Break a final METHOD?</h4>
+
+      <pre><code class="language-java">
+class Service {
+    public final void process() {
+        System.out.println("Final method");
+    }
+}
+      </code></pre>
+
+      <p>✔ Reflection <b>can INVOKE</b> a final method.</p>
+      <p>❌ Reflection <b>cannot OVERRIDE or MODIFY</b> a final method.</p>
+
+      <pre><code class="language-java">
+Method m = Service.class.getDeclaredMethod("process");
+m.invoke(new Service());
+      </code></pre>
+
+      <p><b>But:</b> You cannot replace, alter, or override the final method at runtime.  
+         JVM prevents modifying final method behavior.</p>
+
+      <hr>
+
+      <h4>3️⃣ Can Reflection Modify final FIELDS? → YES (Partially)</h4>
+
+      <p>
+        Reflection can change the value of a <code>final</code> field even though Java code cannot.
+      </p>
+
+      <pre><code class="language-java">
+class Config {
+    public static final String VERSION = "1.0";
+}
+
+Field field = Config.class.getDeclaredField("VERSION");
+field.setAccessible(true);
+field.set(null, "2.0");    // modifies final field value!
+      </code></pre>
+
+      <p>⚠ JVM may still use cached constant values (constant inlining).</p>
+
+      <p><b>Meaning:</b> If another class did:</p>
+
+      <pre><code class="language-java">
+System.out.println(Config.VERSION);  
+      </code></pre>
+
+      <p>
+        It might still print <code>"1.0"</code> because compilers inline constants at compile time.  
+        So final field modification works only in a limited, unpredictable way.
+      </p>
+
+      <hr>
+
+      <h4>4️⃣ JVM Rules Summary</h4>
+      <ul>
+        <li>✔ final class → reflection cannot override or subclass</li>
+        <li>✔ final method → reflection cannot override or modify bytecode</li>
+        <li>⚠ final field → reflection can change value, but JVM may use cached value</li>
+        <li>❌ You cannot break JVM class inheritance rules via reflection</li>
+      </ul>
+
+      <hr>
+
+      <h4>5️⃣ Real-Time Scenarios</h4>
+      <ul>
+        <li><b>Framework libraries</b> (Spring, Hibernate) read final fields via reflection</li>
+        <li><b>Testing tools</b> modify final fields for mocks</li>
+        <li><b>Singleton patterns</b> can be broken by reflection if constructor is not guarded</li>
+        <li><b>JSON serialization</b> frameworks read even private final fields</li>
+      </ul>
+
+      <hr>
+
+      <h4>🎤 Interview Summary</h4>
+      <p>
+        “Reflection cannot break final classes or final methods because JVM enforces inheritance and 
+        overriding restrictions. However, reflection can modify final fields by bypassing access control, 
+        though compiled code may still use inlined constants. Final is strongest for class/method safety, 
+        but weakest for field-level immutability under reflection.”
+      </p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingReflectionBreakSingletonImmutable">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseReflectionBreakSingletonImmutable"
+      aria-expanded="false" aria-controls="collapseReflectionBreakSingletonImmutable">
+      🧨 Can Reflection Break Singleton / Immutable Classes in Java? (YES — Here’s How + Prevention)
+    </button>
+  </h2>
+
+  <div id="collapseReflectionBreakSingletonImmutable" class="accordion-collapse collapse"
+    aria-labelledby="headingReflectionBreakSingletonImmutable" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <h4>💡 Short Answer</h4>
+      <p>
+        ✔ YES — Reflection can break <b>Singleton</b> by calling its private constructor.<br>
+        ✔ YES — Reflection can break <b>Immutable classes</b> by modifying private final fields.<br>
+        ❗ BUT both can be protected using proper defensive techniques.
+      </p>
+
+      <hr>
+
+      <!-- 1️⃣ Breaking Singleton -->
+      <h4>1️⃣ How Reflection Breaks Singleton (Real-Time Example)</h4>
+
+      <pre><code class="language-java">
+public class Singleton {
+    private Singleton() { }   // private constructor
+
+    public static final Singleton INSTANCE = new Singleton();
+}
+      </code></pre>
+
+      <p>Reflection can still create a NEW instance:</p>
+
+      <pre><code class="language-java">
+Constructor&lt;Singleton&gt; cons = Singleton.class.getDeclaredConstructor();
+cons.setAccessible(true);
+Singleton obj2 = cons.newInstance();  // ❌ breaks Singleton
+      </code></pre>
+
+      <p>✔ Now Singleton has 2 objects — completely broken.</p>
+
+      <hr>
+
+      <!-- 2️⃣ Protecting Singleton -->
+      <h4>2️⃣ How to Protect Singleton from Reflection</h4>
+      <p>Use a guard inside the private constructor:</p>
+
+      <pre><code class="language-java">
+public class SafeSingleton {
+
+    private static boolean created = false;
+
+    private SafeSingleton() {
+        if (created)
+            throw new RuntimeException("Reflection Not Allowed!");
+        created = true;
+    }
+
+    public static final SafeSingleton INSTANCE = new SafeSingleton();
+}
+      </code></pre>
+
+      <p>✔ Even reflection fails because constructor throws exception.</p>
+
+      <hr>
+
+      <!-- 3️⃣ Enum Singleton -->
+      <h4>3️⃣ Enum Singleton: 100% Reflection-Proof</h4>
+
+      <pre><code class="language-java">
+public enum AppManager {
+    INSTANCE;
+}
+      </code></pre>
+
+      <p>Even this code fails:</p>
+
+      <pre><code class="language-java">
+Constructor<?> cons = AppManager.class.getDeclaredConstructor();
+cons.setAccessible(true);
+cons.newInstance();   // ❌ JVM blocks it
+      </code></pre>
+
+      <p>✔ Enum Singleton is the ONLY 100% reflection-safe Singleton.</p>
+
+      <hr>
+
+      <!-- 4️⃣ Breaking Immutable -->
+      <h4>4️⃣ Can Reflection Break Immutable Classes? → YES</h4>
+
+      <p>
+        Immutable classes rely on private final fields + no setters.<br>
+        Reflection can still modify those fields by bypassing access control.
+      </p>
+
+      <pre><code class="language-java">
+public final class User {
+    private final String name;
+    private final int age;
+
+    public User(String name, int age) {
+        this.name = name;
+        this.age = age;
+    }
+}
+      </code></pre>
+
+      <p>Reflection modifying final field:</p>
+
+      <pre><code class="language-java">
+User u = new User("Hari", 25);
+
+Field f = User.class.getDeclaredField("name");
+f.setAccessible(true);
+f.set(u, "Narahari");  // ❌ breaks immutability
+      </code></pre>
+
+      <p>✔ Reflection bypasses private + final field restrictions.</p>
+
+      <hr>
+
+      <!-- 5️⃣ Limitations (JVM Constant Inlining) -->
+      <h4>5️⃣ JVM Limitation: Constant Inlining</h4>
+      <p>
+        Reflection can modify final fields, but values might not change everywhere due to compiler optimizations.
+      </p>
+
+      <ul>
+        <li>JVM may inline final fields at compile time.</li>
+        <li>Some references will still see the old value.</li>
+        <li>Reflection does not update inlined constants.</li>
+      </ul>
+
+      <hr>
+
+      <!-- 6️⃣ Protecting Immutability -->
+      <h4>6️⃣ How to Protect Immutable Classes from Reflection</h4>
+
+      <ul>
+        <li>Use <b>records</b> in Java 17 (reflection works but immutable semantics stronger).</li>
+        <li>Use defensive copying for collections.</li>
+        <li>Avoid exposing mutable references.</li>
+        <li>Add constructor guards (advanced).</li>
+        <li>Use sealed classes to restrict hierarchy.</li>
+      </ul>
+
+      <hr>
+
+      <!-- 7️⃣ Why Java Allows Reflection Weakening? -->
+      <h4>7️⃣ Why Does Java Even Allow Reflection to Break Rules?</h4>
+      <p>Because frameworks like:</p>
+      <ul>
+        <li>Spring</li>
+        <li>Hibernate</li>
+        <li>Jackson</li>
+        <li>Mockito</li>
+      </ul>
+      <p>depend on reflection to inject values, read private fields, create objects, etc.</p>
+
+      <hr>
+
+      <!-- 8️⃣ Interview Summary -->
+      <h4>🎤 Interview Summary</h4>
+      <p>
+        “Reflection can break both Singleton and Immutable classes by accessing their private constructors 
+        and modifying final fields. Singleton can be protected using constructor guards or Enum Singleton 
+        which is fully reflection-proof. Immutable classes cannot be made 100% reflection-safe, but proper 
+        design reduces risks.”
+      </p>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingMSDesignPatterns">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseMSDesignPatterns"
+      aria-expanded="false" aria-controls="collapseMSDesignPatterns">
+      🧩 Microservices Design Patterns – With Real-World Examples
+    </button>
+  </h2>
+
+  <div id="collapseMSDesignPatterns" class="accordion-collapse collapse"
+    aria-labelledby="headingMSDesignPatterns" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- 1️⃣ Decomposition Patterns -->
+      <h4 class="text-warning">1️⃣ Decomposition Patterns</h4>
+      <hr>
+
+      <p><b>✔ Decompose by Business Capability</b></p>
+      <pre class="text-info">
+E-Commerce:
+  • Order Service – manages orders
+  • Payment Service – processes payments
+  • Inventory Service – updates stock
+      </pre>
+      <p>This gives clear business boundaries and ownership.</p>
+
+      <p><b>✔ Decompose by Subdomain (DDD)</b></p>
+      <pre class="text-info">
+Domains:
+  • Customer Domain → CustomerService
+  • Billing Domain → BillingService
+  • Shipping Domain → ShippingService
+      </pre>
+      <p>This reduces coupling and aligns teams around domains.</p>
+
+      <!-- 2️⃣ Integration Patterns -->
+      <h4 class="text-warning mt-4">2️⃣ Integration Patterns</h4>
+      <hr>
+
+      <p><b>✔ API Gateway Pattern</b></p>
+      <pre class="text-info">
+Client → API Gateway → Order | Auth | Payment | Inventory
+      </pre>
+      <p>The gateway performs authentication, rate limiting, routing & caching.</p>
+
+      <p><b>✔ Aggregator Pattern</b></p>
+      <pre class="text-info">
+GET /product/123
+Calls:
+  • ProductService
+  • InventoryService
+  • RatingService
+Returns: Combined JSON response
+      </pre>
+
+      <p><b>✔ Proxy Pattern</b> (Reverse Proxy)</p>
+      <pre class="text-info">
+/orders/**     → OrderService
+/payments/**   → PaymentService
+      </pre>
+
+      <!-- 3️⃣ Database Patterns -->
+      <h4 class="text-warning mt-4">3️⃣ Database & Transaction Patterns</h4>
+      <hr>
+
+      <p><b>✔ Database Per Service (Recommended)</b></p>
+      <pre class="text-info">
+OrderService → MySQL
+PaymentService → PostgreSQL
+InventoryService → MongoDB
+      </pre>
+
+      <p><b>✔ Shared Database (Not preferred)</b></p>
+      <p>Used only in legacy migration. Creates tight coupling.</p>
+
+      <p><b>✔ Saga Pattern (Distributed Transactions)</b></p>
+      <pre class="text-info">
+Order Saga:
+  1. Create Order
+  2. Reserve Inventory
+  3. Process Payment
+If any step fails → Compensation Actions:
+  • Cancel Payment
+  • Release Inventory
+  • Mark Order as FAILED
+      </pre>
+
+      <p><b>Two Saga Styles:</b></p>
+      <ul>
+        <li><span class="text-info">Choreography</span> – events trigger next steps (Kafka)</li>
+        <li><span class="text-info">Orchestration</span> – central controller (Orchestrator Service)</li>
+      </ul>
+
+      <!-- 4️⃣ Reliability Patterns -->
+      <h4 class="text-warning mt-4">4️⃣ Reliability & Stability Patterns</h4>
+      <hr>
+
+      <p><b>✔ Circuit Breaker Pattern</b></p>
+      <pre class="text-info">
+If PaymentService is down:
+  • Open Circuit → Stop calling
+  • Return fallback response
+  • Try again after timeout
+      </pre>
+
+      <p><b>✔ Retry Pattern</b></p>
+      <pre class="text-info">
+Retry 3 times with exponential backoff:
+1s → 2s → 4s
+      </pre>
+
+      <p><b>✔ Timeout Pattern</b></p>
+      <p>Never wait indefinitely. Set strict timeouts for external calls.</p>
+
+      <p><b>✔ Bulkhead Pattern</b></p>
+      <pre class="text-info">
+PaymentService ThreadPool = 20 threads
+OrderService ThreadPool = 30 threads
+Failure in one does NOT affect the other.
+      </pre>
+
+      <!-- 5️⃣ Data Consistency Patterns -->
+      <h4 class="text-warning mt-4">5️⃣ Data Consistency Patterns</h4>
+      <hr>
+
+      <p><b>✔ Event Sourcing Pattern</b></p>
+      <pre class="text-info">
+Instead of saving state:
+Save events:
+  • OrderCreated
+  • PaymentCompleted
+  • InventoryReserved
+      </pre>
+
+      <p><b>✔ CQRS (Command Query Responsibility Segregation)</b></p>
+      <pre class="text-info">
+Write DB → Optimized for updates
+Read DB  → Optimized for queries
+      </pre>
+
+      <!-- 6️⃣ Deployment & Observability Patterns -->
+      <h4 class="text-warning mt-4">6️⃣ Deployment, Scaling & Observability Patterns</h4>
+      <hr>
+
+      <p><b>✔ Sidecar Pattern</b></p>
+      <pre class="text-info">
+App Container + Sidecar Container:
+  • Logging agent
+  • Metrics collector
+  • Envoy proxy
+      </pre>
+
+      <p><b>✔ Strangler Fig Pattern</b></p>
+      <pre class="text-info">
+Legacy App → Slowly replace endpoints with new microservices
+      </pre>
+
+      <p><b>✔ Blue-Green Deployment</b></p>
+      <pre class="text-info">
+Blue = Running version
+Green = New version
+Switch traffic gradually without downtime
+      </pre>
+
+      <p><b>✔ Canary Deployment</b></p>
+      <pre class="text-info">
+Deploy new version to 5% users → 20% → 100%
+      </pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingStranglerPattern">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseStranglerPattern"
+      aria-expanded="false" aria-controls="collapseStranglerPattern">
+      🌳 Strangler Fig Pattern – Safely Replacing Legacy Systems (Zero-Downtime Migration)
+    </button>
+  </h2>
+
+  <div id="collapseStranglerPattern" class="accordion-collapse collapse"
+    aria-labelledby="headingStranglerPattern" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <p class="text-warning"><b>📌 What is Strangler Pattern?</b></p>
+      <p>
+        The Strangler Fig Pattern is used to <b>incrementally replace a legacy monolith system</b> 
+        by slowly creating new microservices around it.  
+        Over time, the old system is “strangled” and fully replaced without downtime.
+      </p>
+
+      <hr>
+
+      <p class="text-warning"><b>📌 Why is it called Strangler Fig?</b></p>
+      <p>
+        Inspired by the <b>strangler fig tree</b> that grows around a host tree and gradually replaces it —  
+        the new microservices grow around the monolith until the monolith is no longer needed.
+      </p>
+
+      <hr>
+
+      <p class="text-warning"><b>📌 When to Use This Pattern?</b></p>
+      <ul>
+        <li>Legacy monolithic application cannot be migrated at once</li>
+        <li>You need <b>zero downtime migration</b></li>
+        <li>Different teams work on replacing modules gradually</li>
+        <li>You want to modernize with microservices</li>
+      </ul>
+
+      <hr>
+
+      <p class="text-warning"><b>📌 How It Works (Flow)</b></p>
+      <pre class="text-info">
+1. Identify a small feature in the monolith
+2. Build a new microservice for that feature
+3. API Gateway routes ONLY that feature to new service
+4. Slowly migrate more features
+5. Monolith becomes smaller → eventually removed
+      </pre>
+
+      <hr>
+
+      <p class="text-warning"><b>📌 Architecture Diagram (Text Version)</b></p>
+      <pre class="text-info">
+Client → API Gateway → (Decides routing)
+
+Old Endpoints
+  /orders → Monolith
+  /customers → Monolith
+
+New Microservices
+  /payments → PaymentService
+  /inventory → InventoryService
+
+Gradually:
+  /orders → OrderService (migrated)
+      </pre>
+
+      <hr>
+
+      <p class="text-warning"><b>📌 Real-World Example – E-Commerce Migration</b></p>
+      <pre class="text-info">
+Legacy Monolith:
+  - Order processing
+  - Invoice generation
+  - Inventory update
+  - User management
+
+Step 1 → Create UserService (new)
+Step 2 → Move Inventory updates → InventoryService
+Step 3 → Move Payments → PaymentService
+Step 4 → Replace Order processing → OrderService
+
+Finally → Monolith has 0 features → retired
+      </pre>
+
+      <hr>
+
+      <p class="text-warning"><b>📌 Tools That Support Strangler Pattern</b></p>
+      <ul>
+        <li>API Gateway (Spring Cloud Gateway, Kong, AWS APIGW)</li>
+        <li>Service Mesh (Istio, Linkerd) – traffic routing</li>
+        <li>Blue-Green + Canary Deployments</li>
+        <li>Event-driven systems (Kafka) for parallel migration</li>
+      </ul>
+
+      <hr>
+
+      <p class="text-warning"><b>📌 Benefits</b></p>
+      <ul>
+        <li>No downtime migrations</li>
+        <li>Better control over risk</li>
+        <li>Easy rollback</li>
+        <li>Gradual modernization</li>
+        <li>Teams can migrate independently</li>
+      </ul>
+
+      <hr>
+
+      <p class="text-warning"><b>📌 Challenges</b></p>
+      <ul>
+        <li>Hard to maintain hybrid (old + new system) for long time</li>
+        <li>Routing complexity at API Gateway</li>
+        <li>Duplicate logic during migration</li>
+      </ul>
+
+      <hr>
+
+      <p class="text-warning"><b>📌 Interview-Level Summary</b></p>
+      <pre class="text-info">
+Strangler Pattern = Replace Monolith → Piece by Piece  
+Using API Gateway Routing → No downtime → Easy rollback.
+Used for large legacy modernization.
+      </pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingSidecarPattern">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseSidecarPattern"
+      aria-expanded="false" aria-controls="collapseSidecarPattern">
+      🚗 Sidecar Pattern – Microservices Helper Container (Logging, Proxy, Monitoring)
+    </button>
+  </h2>
+
+  <div id="collapseSidecarPattern" class="accordion-collapse collapse"
+    aria-labelledby="headingSidecarPattern" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <p class="text-warning"><b>📌 What is Sidecar Pattern?</b></p>
+      <p>
+        Sidecar Pattern means running a helper container <b>next to your microservice</b> 
+        inside the same pod (Kubernetes).  
+        This helper container provides <b>logging, monitoring, proxying, config sync</b> 
+        without modifying your main application code.
+      </p>
+
+      <hr>
+
+      <p class="text-warning"><b>📌 Why is it Called “Sidecar”?</b></p>
+      <p>
+        Just like a motorcycle sidecar rides alongside the main bike,  
+        a sidecar container rides alongside the main service, supporting it.
+      </p>
+
+      <hr>
+
+      <p class="text-warning"><b>📌 When to Use This Pattern?</b></p>
+      <ul>
+        <li>When you want to add features without modifying microservice code</li>
+        <li>When every microservice needs common capabilities</li>
+        <li>When you want uniform logging/metrics across all services</li>
+        <li>When using service mesh (Istio or Linkerd)</li>
+      </ul>
+
+      <hr>
+
+      <p class="text-warning"><b>📌 What Does a Sidecar Typically Do?</b></p>
+      <ul>
+        <li>🔹 Logging agent (Fluentd, Filebeat)</li>
+        <li>🔹 Metrics exporter (Prometheus)</li>
+        <li>🔹 Proxy (Envoy Proxy for service mesh)</li>
+        <li>🔹 Sync configuration files</li>
+        <li>🔹 Security token refresh</li>
+      </ul>
+
+      <hr>
+
+      <p class="text-warning"><b>📌 Sidecar Architecture (Text Diagram)</b></p>
+      <pre class="text-info">
++------------------------+
+|     Pod (Kubernetes)   |
+|                        |
+|  +------------------+  |
+|  | Main App Service |  |
+|  |   (Java/Spring)  |  |
+|  +------------------+  |
+|                        |
+|  +------------------+  |
+|  | Sidecar Container | |
+|  |  (Envoy/Fluentd)  | |
+|  +------------------+  |
++------------------------+
+
+Both containers share:
+  • network namespace
+  • volumes
+  • logs
+      </pre>
+
+      <hr>
+
+      <p class="text-warning"><b>📌 Real-World Example – Istio Service Mesh</b></p>
+      <pre class="text-info">
+Main Container:
+  OrderService (Spring Boot)
+
+Sidecar Container:
+  Envoy Proxy injected by Istio
+
+Envoy handles:
+  • mTLS authentication
+  • Traffic routing
+  • Retries & timeouts
+  • Telemetry logs
+      </pre>
+
+      <hr>
+
+      <p class="text-warning"><b>📌 Example – Logging Sidecar</b></p>
+      <pre class="text-info">
+Main service writes logs → /var/log/app.log
+Sidecar (Fluentd) reads the file
+Sidecar pushes logs → Elasticsearch
+      </pre>
+
+      <p>This avoids adding Elasticsearch SDK inside your Java code.</p>
+
+      <hr>
+
+      <p class="text-warning"><b>📌 Benefits</b></p>
+      <ul>
+        <li>✔ No changes required in main application</li>
+        <li>✔ Reusable for all microservices</li>
+        <li>✔ Better separation of responsibilities</li>
+        <li>✔ Works perfectly in Kubernetes pods</li>
+        <li>✔ Enables service mesh features</li>
+      </ul>
+
+      <hr>
+
+      <p class="text-warning"><b>📌 Challenges</b></p>
+      <ul>
+        <li>❌ More containers → more resource usage</li>
+        <li>❌ Harder debugging (extra proxy layer)</li>
+        <li>❌ Complex mesh configuration</li>
+      </ul>
+
+      <hr>
+
+      <p class="text-warning"><b>📌 Interview-Ready Summary</b></p>
+      <pre class="text-info">
+Sidecar Pattern = Helper container running beside the main service
+Provides: logging, monitoring, proxying, configuration sync
+Used heavily in Kubernetes + Service Mesh (Istio, Linkerd)
+      </pre>
+
+    </div>
+  </div>
+</div>
+
 <div class="accordion-item">
   <h2 class="accordion-header" id="headingMultipartChunks">
     <button class="accordion-button collapsed search-item text-info" type="button"

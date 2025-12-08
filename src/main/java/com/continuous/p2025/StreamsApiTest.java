@@ -14,6 +14,7 @@ public class StreamsApiTest {
     public static void main(String[] args) {
 
         List<Employee> employees = EmployeeDatasource.getEmployees();
+        employees.stream().distinct().map(employee -> employee.getName()).forEach(System.out::println);
 
 //        // Query 1 : How many male and female employees are there in the organization?
         Map<String, Long> collect = employees.stream().collect(Collectors.groupingBy(Employee::getGender, Collectors.counting()));
@@ -35,8 +36,7 @@ public class StreamsApiTest {
         System.out.println("Query 7 : What is the average salary of each department?");
         Map<String, Double> collect3 = employees .stream().collect(Collectors.groupingBy(Employee::getDepartment, Collectors.averagingDouble(Employee::getSalary)));
         System.out.println(collect3);
-
-                System.out.println("Query 8 : Count the number of male and female employees in each department?");
+        System.out.println("Query 8 : Count the number of male and female employees in each department?");
         Map<String, Map<String, Long>> collect4 = employees.stream()
                 .collect(Collectors.groupingBy(Employee::getDepartment, Collectors.groupingBy(Employee::getGender, Collectors.counting())));
         System.out.println(collect4);
@@ -141,8 +141,8 @@ public class StreamsApiTest {
         // First terminal operation (Allowed)
         nameStream.forEach(System.out::println);
 
-        // Second terminal operation (Fails ❌)
-        nameStream.forEach(System.out::println); // Exception here
+//        // Second terminal operation (Fails ❌)
+//        nameStream.forEach(System.out::println); // Exception here
 
         List<String> list=List.of();
         list.stream().collect(Collectors.toList());
@@ -209,10 +209,12 @@ public class StreamsApiTest {
         // Group employees by hobby
         // Grouping employees by each hobby
         // private List<String> hobbies;
+        System.out.println("groupedByHobby");
         Map<String, List<String>> groupedByHobby = employees.stream()
                 .flatMap(emp -> emp.getHobbies().stream().map(hobby -> Map.entry(hobby, emp.getName())))
                 .collect(Collectors.groupingBy(Map.Entry::getKey,
                         Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
+
         System.out.println(groupedByHobby);
 
         Map<String, List<String>> collect8 = employees.stream()
@@ -406,5 +408,21 @@ class Phonepe implements Payment{
     @Override
     public int add(int a, int b) {
         return 0;
+    }
+}
+class ParentClass{
+    public ParentClass(){
+        System.out.println("parent");
+    }
+}
+
+class ChildClass extends ParentClass{
+    public ChildClass(){
+        System.out.println("Child");
+    }
+}
+class Check{
+    public static void main(String[] args) {
+        ParentClass obj = new ChildClass();
     }
 }

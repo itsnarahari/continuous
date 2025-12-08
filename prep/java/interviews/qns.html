@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Walmart Q&A</title>
+  <title>Backend Q&A</title>
 
   <!-- Bootstrap & Prism.js for Syntax Highlighting -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
@@ -11,795 +12,2093 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
-<link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-
-<!-- Add the languages you use -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
-
   <style>
-    body { background-color: #121212; color: white; }
-    .container { max-width: 900px; margin-top: 20px; }
-    .accordion-button { background-color: #343a40; color: white; }
-    .accordion-button:focus { box-shadow: none; }
-    .accordion-button:not(.collapsed) { background-color: #007bff; color: white; }
-    .accordion-body { background-color: #1e1e1e; color: white; }
-    .highlight-yellow { color: #ffcc00; font-weight: bold; }
-    .highlight-blue { color: #4db8ff; font-weight: bold; }
-    pre[class*="language-"] { background: #1e1e1e !important; border-radius: 8px; padding: 12px; }
+    /* body {
+      background-color: #121212;
+      color: white;
+    } */
+
+    .accordion-button {
+      background-color: #343a40;
+      color: white;
+    }
+
+    .accordion-button:focus {
+      box-shadow: none;
+    }
+
+    .accordion-button:not(.collapsed) {
+      background-color: #007bff;
+      color: white;
+    }
+
+    .accordion-body {
+      background-color: #1e1e1e;
+      color: white;
+    }
+
+    .highlight-yellow {
+      color: #ffcc00;
+      /* Yellow */
+      font-weight: bold;
+    }
+
+    .highlight-blue {
+      color: #4db8ff;
+      /* Light blue */
+      font-weight: bold;
+    }
+
+    pre[class*="language-"] {
+      background: #1e1e1e !important;
+      border-radius: 8px;
+      padding: 12px;
+    }
 
     /* Search Box Styling */
-    .search-container { margin-bottom: 15px; text-align: center; }
-    .search-input {
-      width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #666;
-      background: #222; color: white; outline: none; font-size: 16px;
+    .search-container {
+      margin-bottom: 15px;
+      text-align: center;
     }
-    .search-input::placeholder { color: #aaa; }
+
+    .search-input {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #666;
+      background: #222;
+      color: white;
+      outline: none;
+      font-size: 16px;
+    }
+
+    .search-input::placeholder {
+      color: #aaa;
+    }
+
+    /* Prevent underline and fix code block styling */
+    code,
+    pre,
+    code[class*="language-"] {
+      text-decoration: none !important;
+      color: #f8f8f2 !important;
+      /* Prism Tomorrow default text */
+      font-family: "Fira Code", "Courier New", monospace;
+      font-size: 14px;
+    }
   </style>
 </head>
 
-<body class="bg-dark text-light">
-<div class="container mt-4">
-  <h3 class="text-center text-warning mb-3">hariPrep – Java/Spring Stack Q&A by Difficulty</h3>
+<body class="bg-dark text-light mb-4">
+  <div class="container">
+    <div class="header fw-bold text-center mb-4">Interview questions</div>
+    <p id="questionCount" class="text-center">0 Questions</p>
 
-  <div class="accordion" id="techAccordion"></div>
-</div>
+    <!-- Search Box in a Bootstrap Container -->
+    <div class="search-container">
+      <input type="text" class="search-input form-control" id="searchBox" placeholder="Search questions..."
+        onkeyup="searchQuestions()" />
+    </div>
+    <div class="accordion" id="accordionSeniorJava">
 
-<script>
-/* ===== Helpers ===== */
-const badge = (t) => {
-  const map = {
-    "Java": "bg-info",
-    "Spring Boot": "bg-success",
-    "Hibernate/JPA": "bg-primary",
-    "Microservices": "bg-warning text-dark",
-    "Spring Cloud": "bg-secondary",
-    "Design Patterns": "bg-danger"
-  };
-  return `<span class="badge ${map[t]||'bg-light text-dark'} ms-2">${t}</span>`;
-};
-const catColor = { Easy:"text-success", Medium:"text-info", Hard:"text-warning", Tricky:"text-danger" };
-
-function qa(topic, diff, q, a, code) {
-  return { topic, diff, q, a, code };
-}
-
-/* ===== Data (3 easy + 3 medium + 3 hard + 1 tricky per tech) ===== */
-const data = {
-  "Java": [
-    // Easy (3)
-    qa("Java","Easy",
-      "Why is String concatenation in a loop slow, and what should you use instead?",
-      [
-        "Using '+' in a loop creates many intermediate String objects (Strings are immutable).",
-        "→ O(n²) behavior as content grows.",
-        "Use StringBuilder (single buffer, append in O(1) amortized).",
-        "If parallel, use StringBuffer or thread-local StringBuilder."
-      ],
-`// Faster
-StringBuilder sb = new StringBuilder();
-for (String s: list) sb.append(s);
-return sb.toString();`
-    ),
-    qa("Java","Easy",
-      "How do you design an immutable value object (e.g., Money)?",
-      [
-        "Make fields private + final; no setters; defensive copies for mutable fields.",
-        "Validate in constructor; provide withX(...) or builder to create new instances.",
-        "Override equals/hashCode based on value; toString safe.",
-        "Immutability → thread-safe & cache-friendly."
-      ],
-`public final class Money {
-  private final BigDecimal amount;
-  private final Currency currency;
-  private Money(BigDecimal a, Currency c){ this.amount=a; this.currency=c; }
-  public Money plus(Money other){ check(currency.equals(other.currency));
-    return new Money(amount.add(other.amount), currency); }
-  // equals/hashCode by amount & currency
-}`
-    ),
-    qa("Java","Easy",
-      "HashMap vs ConcurrentHashMap—when can CHM still bottleneck?",
-      [
-        "HashMap: not thread-safe; CHM: lock-striping + CAS for concurrency.",
-        "CHM reduces contention but heavy writers on same bin still contend.",
-        "Hot keys, computeIfAbsent ‘thundering herd’ can serialize.",
-        "Use sharding or read-through caches to spread load; avoid giant values."
-      ]
-    ),
-    // Medium (3)
-    qa("Java","Medium",
-      "volatile vs synchronized: what does happens-before guarantee?",
-      [
-        "volatile: visibility + ordering (writes happen-before subsequent reads). No atomicity for compound ops.",
-        "synchronized: mutual exclusion + visibility on lock release/acquire.",
-        "Use AtomicX/StampedLock for specialized cases (e.g., optimistic reads).",
-        "Rule: prefer simple locking; use volatile for publication flags/once-write semantics."
-      ]
-    ),
-    qa("Java","Medium",
-      "CompletableFuture vs Reactor (Mono/Flux): when choose which?",
-      [
-        "CompletableFuture: simple 1-shot async, no backpressure, JDK-only.",
-        "Reactor: streams, backpressure, operators, context propagation.",
-        "HTTP pipeline with many stages → Reactor. Single I/O call → CF is fine.",
-        "Integrate with WebClient (Reactor) or wrap CF in Mono.fromFuture(...) as needed."
-      ]
-    ),
-    qa("Java","Medium",
-      "Class loading vs initialization—what runs when?",
-      [
-        "Loading: bring bytecode; linking: verify/prepare; initialization: run static initializers.",
-        "static { } runs once per class initialization.",
-        "Lazy loading via Class.forName(name, false, loader).",
-        "Be wary of heavy static initializers blocking startup."
-      ]
-    ),
-    // Hard (3)
-    qa("Java","Hard",
-      "Implement a bounded blocking queue—what edge cases matter?",
-      [
-        "Use two Conditions (notEmpty, notFull) with a single ReentrantLock.",
-        "Guard with a while loop (spurious wakeups).",
-        "Signal on put→notEmpty, on take→notFull.",
-        "Consider interrupt handling and fairness; avoid lost signals."
-      ],
-`class BoundedQueue<T>{
-  final ReentrantLock lock=new ReentrantLock();
-  final Condition notFull=lock.newCondition(), notEmpty=lock.newCondition();
-  final Object[] buf; int head=0, tail=0, size=0;
-  BoundedQueue(int n){ buf=new Object[n]; }
-  void put(T x) throws InterruptedException{
-    lock.lock();
-    try{
-      while(size==buf.length) notFull.await();
-      buf[tail]=(Object)x; tail=(tail+1)%buf.length; size++;
-      notEmpty.signal();
-    } finally { lock.unlock(); }
-  }
-  T take() throws InterruptedException{
-    lock.lock();
-    try{
-      while(size==0) notEmpty.await();
-      @SuppressWarnings("unchecked") T x=(T)buf[head];
-      head=(head+1)%buf.length; size--; notFull.signal(); return x;
-    } finally { lock.unlock(); }
-  }
-}`
-    ),
-    qa("Java","Hard",
-      "What is false sharing and how do you mitigate it?",
-      [
-        "Multiple cores write to variables that reside in same cache line → ping-pong invalidations.",
-        "Mitigate via padding (@Contended), separating hot fields, or struct-of-arrays.",
-        "Use LongAdder/Striped counters; avoid sharing hot mutable state.",
-        "Measure with JMH; don't guess."
-      ]
-    ),
-    qa("Java","Hard",
-      "G1 vs ZGC/Shenandoah: how do you pick for low tail latency?",
-      [
-        "G1: regioned, predictable STW goals; good default.",
-        "ZGC/Shenandoah: concurrent moving collectors; very low pauses; higher CPU/memory overhead.",
-        "Choose by p99/p99.9, allocation rate, object size profile, and GC logs.",
-        "Tune heap, region size, pause target; measure before/after."
-      ]
-    ),
-    // Tricky (1)
-    qa("Java","Tricky",
-      "Why can BigDecimal behave ‘unequally’ for equal numbers?",
-      [
-        "BigDecimal.equals() considers scale; 1.0 ≠ 1.00.",
-        "compareTo() ignores scale; 1.0.compareTo(1.00)==0.",
-        "Don’t use BigDecimal as HashMap key if values can differ in scale, or normalize.",
-        "Use compareTo==0 for numeric equality checks."
-      ]
-    )
-  ],
-
-  "Spring Boot": [
-    // Easy
-    qa("Spring Boot","Easy",
-      "@ConfigurationProperties vs @Value—why prefer the former?",
-      [
-        "@ConfigurationProperties binds groups, supports metadata and validation.",
-        "@Value is for single property injection; weaker type-safety.",
-        "Prefer CP for structured config; add @Validated and JSR-380 constraints.",
-        "Enables IDE hints via spring-configuration-metadata."
-      ],
-`@ConfigurationProperties(prefix="payments")
-@Validated
-record PayProps(@NotBlank String mode, @Min(1) int timeoutSec){}`
-    ),
-    qa("Spring Boot","Easy",
-      "Why does @Transactional on a private method often not work?",
-      [
-        "Spring creates proxies around beans; internal self-calls bypass proxy.",
-        "Private methods can’t be proxied via JDK proxies.",
-        "Call through a bean reference (proxy) or use AspectJ LTW.",
-        "Keep transactional boundaries at service layer public methods."
-      ]
-    ),
-    qa("Spring Boot","Easy",
-      "What triggers auto-configuration and how do you override safely?",
-      [
-        "@SpringBootApplication loads META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports.",
-        "@ConditionalOnClass/Bean/MissingBean decide applicability.",
-        "Override by defining your own bean or excluding autoconfig class.",
-        "Use properties to tweak defaults first; custom beans second."
-      ]
-    ),
-    // Medium
-    qa("Spring Boot","Medium",
-      "How to build a custom Spring Boot starter?",
-      [
-        "Create autoconfig module with @AutoConfiguration classes.",
-        "Publish configuration metadata for IDE hints.",
-        "Guard with @Conditional… to avoid surprising users.",
-        "Provide sane defaults; expose properties with prefix."
-      ]
-    ),
-    qa("Spring Boot","Medium",
-      "Liveness vs Readiness with Actuator and K8s—why both?",
-      [
-        "Liveness: is process healthy (no deadlock)? Restart if failing.",
-        "Readiness: can serve traffic (deps up, warmed)? Remove from LB if failing.",
-        "Wire to /actuator/health/liveness|readiness; don’t include expensive checks in liveness.",
-        "Prevent thundering herds by delaying readiness during warmup."
-      ]
-    ),
-    qa("Spring Boot","Medium",
-      "Observability with Micrometer → Prometheus → Grafana: what KPIs?",
-      [
-        "HTTP: RPS, p95/p99 latency, error rate (4xx/5xx).",
-        "JVM: GC pause, allocation rate, heap usage, threads.",
-        "DB: connection pool, query latency, timeouts.",
-        "SLOs + alerts on error budget burn and p99 latency."
-      ]
-    ),
-    // Hard
-    qa("Spring Boot","Hard",
-      "Multitenancy (schema vs DB): how route and migrate?",
-      [
-        "Use AbstractRoutingDataSource to pick DataSource per tenant.",
-        "Flyway/Liquibase per-tenant migrations; isolate failures.",
-        "Pool sizing per tenant; protect noisy neighbors.",
-        "Cache separation and security context propagation."
-      ]
-    ),
-    qa("Spring Boot","Hard",
-      "Graceful shutdown for workers and HTTP servers?",
-      [
-        "Disable new traffic (readiness false), drain queues.",
-        "Stop accepting connections, let inflight complete up to timeout.",
-        "Close pools, flush metrics/logs, halt schedulers.",
-        "Use Spring’s graceful shutdown + custom lifecycle hooks."
-      ]
-    ),
-    qa("Spring Boot","Hard",
-      "Self-invocation and proxies—robust patterns?",
-      [
-        "Move cross-cutting to separate bean; inject and call.",
-        "Or obtain current proxy via AopContext/current bean from context.",
-        "AspectJ LTW for method-level weaving if required.",
-        "Prefer service public methods as boundaries."
-      ]
-    ),
-    // Tricky
-    qa("Spring Boot","Tricky",
-      "Circular dependencies: why constructor injection helps?",
-      [
-        "Constructor injection fails fast → reveals design smell early.",
-        "Field/setter injection hides cycles until runtime.",
-        "Break cycles via @Lazy, eventing, or refactor responsibilities.",
-        "Common fix: split config/bean, introduce ports (interfaces)."
-      ]
-    )
-  ],
-
-  "Hibernate/JPA": [
-    // Easy
-    qa("Hibernate/JPA","Easy",
-      "What is the N+1 select problem and 3 ways to fix it?",
-      [
-        "Accessing child collections lazily per parent causes 1 (parents) + N (children) queries.",
-        "Fix: join fetch in JPQL for needed graph.",
-        "Entity Graphs (NamedEntityGraph) to declare fetch plan.",
-        "@BatchSize for batching lazy loads where join isn’t ideal."
-      ],
-`// Join fetch example
-SELECT o FROM Order o JOIN FETCH o.items WHERE o.id = :id`
-    ),
-    qa("Hibernate/JPA","Easy",
-      "Dirty checking & flush modes: when is SQL generated?",
-      [
-        "On transaction commit or flush, Hibernate compares snapshots.",
-        "FlushMode.AUTO (default) flushes before query/commit; COMMIT flushes only at commit.",
-        "Long sessions can trigger unexpected flushes before queries.",
-        "Use clear/detach for large processing to reduce memory."
-      ]
-    ),
-    qa("Hibernate/JPA","Easy",
-      "equals/hashCode for entities with DB-generated IDs?",
-      [
-        "IDs are null before persist; equals by ID alone breaks for new entities.",
-        "Use business key if stable; or assign UUID at creation.",
-        "If using DB ID, treat transient as unequal and avoid sets until persisted.",
-        "Keep equals consistent across lifecycle."
-      ]
-    ),
-    // Medium
-    qa("Hibernate/JPA","Medium",
-      "Second-level cache: when does it help and harm?",
-      [
-        "Helps for read-mostly, small, stable reference data.",
-        "Harmful with high write rates, soft deletes, or large collections.",
-        "Choose concurrency strategy (read-only, nonstrict, read-write).",
-        "Measure hit ratio; prefer query cache carefully."
-      ]
-    ),
-    qa("Hibernate/JPA","Medium",
-      "Optimistic vs pessimistic locking with examples?",
-      [
-        "Optimistic: @Version column; detect conflicts on commit; retry strategy.",
-        "Pessimistic: SELECT ... FOR UPDATE; blocks others to prevent conflicts.",
-        "Use optimistic for rare contention; pessimistic for hot rows.",
-        "Handle StaleObjectStateException gracefully."
-      ]
-    ),
-    qa("Hibernate/JPA","Medium",
-      "Batch writes at scale without breaking invariants?",
-      [
-        "Enable JDBC batching (hibernate.jdbc.batch_size).",
-        "order_inserts/updates to improve batching efficiency.",
-        "Flush & clear periodically to free memory.",
-        "Maintain business ordering if required (group by aggregate)."
-      ]
-    ),
-    // Hard
-    qa("Hibernate/JPA","Hard",
-      "Mapping composite keys safely?",
-      [
-        "Use @Embeddable + @EmbeddedId for composite key.",
-        "Implement equals/hashCode on key class correctly.",
-        "Beware joins and foreign keys referencing embedded IDs.",
-        "Prefer surrogate keys if feasible; composite keys complicate refactoring."
-      ]
-    ),
-    qa("Hibernate/JPA","Hard",
-      "Soft deletes: pros/cons and implementation choices?",
-      [
-        "Pros: history, recovery; Cons: queries more complex, index bloat.",
-        "Implement via @Where(clause) and/or filters; ensure all reads honor it.",
-        "Cascade rules + orphanRemoval need re-check.",
-        "Consider archive tables and TTL policies."
-      ]
-    ),
-    qa("Hibernate/JPA","Hard",
-      "ETL of huge tables efficiently?",
-      [
-        "Use StatelessSession for bulk operations; avoids first-level cache.",
-        "Fetch in pages (scrollable results), batch size tuned.",
-        "Turn off second-level cache and flush/clear loops.",
-        "Prefer DB-native bulk operations where safe."
-      ]
-    ),
-    // Tricky
-    qa("Hibernate/JPA","Tricky",
-      "orphanRemoval + CascadeType.REMOVE pitfalls?",
-      [
-        "Removing a child from collection with orphanRemoval deletes row.",
-        "If soft deletes are used, this may hard-delete unexpectedly.",
-        "Define clear ownership and lifecycle; test cascades thoroughly.",
-        "Be explicit: remove vs detach semantics."
-      ]
-    )
-  ],
-
-  "Microservices": [
-    // Easy
-    qa("Microservices","Easy",
-      "How to design idempotent POST for payments?",
-      [
-        "Require Idempotency-Key header; store request hash + result.",
-        "On duplicate key, return original response.",
-        "Dedup store TTL matches business window.",
-        "Keyed by (user, operation) to avoid collisions."
-      ]
-    ),
-    qa("Microservices","Easy",
-      "API versioning: URI vs header vs media-type—pick and justify.",
-      [
-        "URI (/v2) is explicit, cache-friendly, easy routing.",
-        "Header/media-type offer cleaner URLs but tooling is harder.",
-        "Prefer URI for public APIs; header/media for internal evolution.",
-        "Deprecation plan & sunset headers are key."
-      ]
-    ),
-    qa("Microservices","Easy",
-      "Rate limiting vs throttling vs backpressure?",
-      [
-        "Rate limit: bound number of requests (token bucket).",
-        "Throttling: slow down responses under load.",
-        "Backpressure: signal producer to reduce emission.",
-        "Apply at client, gateway, and service edges appropriately."
-      ]
-    ),
-    // Medium
-    qa("Microservices","Medium",
-      "Outbox pattern for exactly-once-ish delivery?",
-      [
-        "Write domain data + outbox row in same DB tx.",
-        "Background publisher reads outbox and sends to broker.",
-        "Mark sent with status/sequence; be idempotent on consumer.",
-        "Debezium captures changes if you prefer CDC."
-      ],
-`CREATE TABLE outbox(id BIGSERIAL, agg_id UUID, type TEXT, payload JSONB, status TEXT, created_at TIMESTAMPTZ);`
-    ),
-    qa("Microservices","Medium",
-      "Choreography vs orchestration for order→payment→inventory?",
-      [
-        "Choreography: services react to events; less coupling; harder to reason.",
-        "Orchestration: central saga; clearer control; single coordinator risk.",
-        "Choose by team maturity and failure handling needs.",
-        "Always model compensations and timeouts."
-      ]
-    ),
-    qa("Microservices","Medium",
-      "Consistent pagination across shards during writes?",
-      [
-        "Use stable sort keys (created_at, id) + ‘search-after’ or cursor tokens.",
-        "Don’t use offset for live data; may skip/duplicate.",
-        "Include resume key to continue after inserts.",
-        "Consider snapshot semantics for strong consistency."
-      ]
-    ),
-    // Hard
-    qa("Microservices","Hard",
-      "Tenant isolation across services?",
-      [
-        "Auth includes tenant; propagate via JWT claims.",
-        "Resource quotas, rate-limits per tenant.",
-        "Data partitioning: schema/DB per tenant or partition keys.",
-        "Noise isolation with bulkheads at threadpool/queue levels."
-      ]
-    ),
-    qa("Microservices","Hard",
-      "Safe Blue/Green with DB schema changes?",
-      [
-        "Expand/contract: deploy backward-compatible schema first.",
-        "Write to both old+new columns; read from old.",
-        "Migrate data; flip reads; remove old.",
-        "Automate rollback; feature-flag usage of new fields."
-      ]
-    ),
-    qa("Microservices","Hard",
-      "Exactly-once processing—is it real?",
-      [
-        "In practice, implement at-least-once + idempotency.",
-        "Use dedup keys, conditional writes (upsert), and monotonic sequence checks.",
-        "Design consumers to ignore duplicates.",
-        "Observability to detect replays is essential."
-      ]
-    ),
-    // Tricky
-    qa("Microservices","Tricky",
-      "Partial failure handling without double charges?",
-      [
-        "Generate client-visible idempotency key before starting.",
-        "Persist state transitions; side effects after durable write.",
-        "If uncertain, return 202 + status endpoint; avoid blind retries.",
-        "Timeouts + saga compensations for external calls."
-      ]
-    )
-  ],
-
-  "Spring Cloud": [
-    // Easy
-    qa("Spring Cloud","Easy",
-      "Client-side discovery vs server-side—what changes for you?",
-      [
-        "Client-side (Eureka): client picks instance; needs registry and load-balancer.",
-        "Server-side (K8s): LB/proxy routes; app depends on cluster DNS/endpoints.",
-        "Code: RestTemplate/WebClient with LB vs plain base URL.",
-        "Operational: registry HA vs cluster health."
-      ]
-    ),
-    qa("Spring Cloud","Easy",
-      "Resilience4j basics: what to configure first?",
-      [
-        "Timeouts (don’t rely on defaults), retry count/backoff.",
-        "Circuit breaker thresholds, sliding window.",
-        "Bulkheads (semaphore/threadpool) for isolation.",
-        "Separate configs per dependency criticality."
-      ]
-    ),
-    qa("Spring Cloud","Easy",
-      "How to propagate trace context across async boundaries?",
-      [
-        "Use Sleuth/OpenTelemetry instrumentation.",
-        "Wrap executors to copy context.",
-        "Reactor: use Context and operators that preserve it.",
-        "Add B3/W3C headers to outbound HTTP and messaging."
-      ]
-    ),
-    // Medium
-    qa("Spring Cloud","Medium",
-      "Config hot-reload patterns and safety?",
-      [
-        "Spring Cloud Bus: broadcast refresh events; controlled waves.",
-        "K8s ConfigMap + reload libs; beware inconsistent mixed versions.",
-        "Gate risky refresh behind feature flags.",
-        "Validate new config before switching (canaries)."
-      ]
-    ),
-    qa("Spring Cloud","Medium",
-      "Gateway retries + rate limit example?",
-      [
-        "Retries only on safe idempotent requests or idempotency-keyed operations.",
-        "Rate limiter at route level to protect downstream.",
-        "Add circuit breaker to shed load fast.",
-        "Emit metrics per route for tuning."
-      ],
-`spring:
-  cloud:
-    gateway:
-      routes:
-      - id: api
-        uri: http://downstream
-        predicates: [ Path=/api/** ]
-        filters:
-        - name: Retry
-          args: { retries: 3, statuses: [500, 502, 503], backoff: { firstBackoff: 50ms, maxBackoff: 500ms } }
-        - name: RequestRateLimiter
-          args: { redis-rate-limiter.replenishRate: 50, burstCapacity: 100 }`
-    ),
-    qa("Spring Cloud","Medium",
-      "Logs/metrics/traces correlation with OpenTelemetry?",
-      [
-        "Inject trace/span ids into logs.",
-        "Export metrics with exemplars linked to trace ids.",
-        "Use consistent resource attributes (service.name, version).",
-        "Redact PII in spans; sampling strategy defined centrally."
-      ]
-    ),
-    // Hard
-    qa("Spring Cloud","Hard",
-      "Service-to-service JWT auth with key rotation?",
-      [
-        "Use JWKS endpoint; cache keys with expiry.",
-        "Short-lived tokens; handle clock skew.",
-        "Pin audience/issuer; verify kid → fetch new key on miss.",
-        "Automate rotation and fallback; monitor signature errors."
-      ]
-    ),
-    qa("Spring Cloud","Hard",
-      "Service mesh vs app-level features—how decide?",
-      [
-        "Mesh handles mTLS, retries, telemetry uniformly.",
-        "App-level (Resilience4j) knows business semantics.",
-        "Small team/heterogeneous stack → mesh helps; simple env → app-level ok.",
-        "Avoid duplicating concerns in both layers."
-      ]
-    ),
-    qa("Spring Cloud","Hard",
-      "Tail-based sampling—why and cautions?",
-      [
-        "Keeps only slow/error traces (after seeing full span).",
-        "Great for debugging rare latency spikes.",
-        "Needs collector buffering; more resources.",
-        "Ensure privacy filters before sampling decision."
-      ]
-    ),
-    // Tricky
-    qa("Spring Cloud","Tricky",
-      "Semaphore vs thread-pool bulkhead in reactive apps?",
-      [
-        "Reactor pipelines prefer semaphore (non-blocking).",
-        "Thread-pool bulkhead can break context and add latency.",
-        "Use thread-pool when blocking I/O is unavoidable (isolate it).",
-        "Measure saturation + fallbacks; backpressure first."
-      ]
-    )
-  ],
-
-  "Design Patterns": [
-    // Easy
-    qa("Design Patterns","Easy",
-      "Strategy vs State—what’s the key difference?",
-      [
-        "Strategy: choose algorithm at runtime (behavioral swap).",
-        "State: object changes behavior as its internal state changes.",
-        "Strategy doesn’t own transitions; State does.",
-        "In Java: Strategy via interfaces; State via context + states."
-      ]
-    ),
-    qa("Design Patterns","Easy",
-      "Decorator vs Proxy in Spring terms?",
-      [
-        "Decorator adds behavior transparently (wrapping).",
-        "Proxy controls access/cross-cutting (security, caching).",
-        "Spring AOP creates proxies; decorators are explicit beans.",
-        "Choose decorator for functional augmentation; proxy for cross-cutting."
-      ]
-    ),
-    qa("Design Patterns","Easy",
-      "Factory Method vs Abstract Factory vs Builder?",
-      [
-        "Factory Method: subclass decides which object to create.",
-        "Abstract Factory: create families of related objects.",
-        "Builder: stepwise construction of complex object.",
-        "Use builder for many optional params."
-      ]
-    ),
-    // Medium
-    qa("Design Patterns","Medium",
-      "Hexagonal Architecture in Spring—mapping?",
-      [
-        "Controllers = driving adapters; Repos/Clients = driven adapters.",
-        "Domain services hold business logic; ports are interfaces.",
-        "Dependency rule: adapters depend on domain, not vice-versa.",
-        "Great for testability and swap adapters without touching core."
-      ]
-    ),
-    qa("Design Patterns","Medium",
-      "CQRS with Spring Data—how to handle eventual consistency?",
-      [
-        "Write model updates events; read model projects denormalized views.",
-        "UI uses versioning/progress indicators.",
-        "Rebuild projections on startup from event log.",
-        "Avoid mixing transactional reads with eventually consistent views."
-      ]
-    ),
-    qa("Design Patterns","Medium",
-      "Template Method vs Strategy—testability implications?",
-      [
-        "Template: fixed algorithm steps with hooks; inheritance based.",
-        "Strategy: composition; easier to swap in tests.",
-        "Prefer Strategy to avoid subclass explosion.",
-        "Template fits when steps order is invariant."
-      ]
-    ),
-    // Hard
-    qa("Design Patterns","Hard",
-      "DDD: drawing aggregate boundaries & invariants?",
-      [
-        "Keep transactions within aggregate; enforce invariants inside.",
-        "High cohesion: changes together belong together.",
-        "Avoid cross-aggregate refs in invariants; use domain events.",
-        "Split large aggregates by consistency needs."
-      ]
-    ),
-    qa("Design Patterns","Hard",
-      "Event sourcing + snapshots—operational concerns?",
-      [
-        "Snapshot after N events or time; reduce replay time.",
-        "Immutable event log; migrations via upcasters.",
-        "Projections are rebuildable; store projection version.",
-        "Backfill tools and idempotent handlers are essential."
-      ]
-    ),
-    qa("Design Patterns","Hard",
-      "Anti-corruption layer (ACL) to strangle a monolith?",
-      [
-        "ACL translates models/protocols; isolates domain from legacy quirks.",
-        "Start with reads, then writes; route gradually.",
-        "Contract tests between ACL and legacy.",
-        "Measure dependency reduction over time."
-      ]
-    ),
-    // Tricky
-    qa("Design Patterns","Tricky",
-      "Double-checked locking singleton—what’s the safe way?",
-      [
-        "Use volatile instance to prevent reordering.",
-        "Or use Initialization-on-Demand Holder idiom (best).",
-        "Avoid lazy init if not needed; keep simple.",
-        "Prefer enum singleton for simplicity."
-      ],
-`public class S {
-  private static volatile S i;
-  public static S get(){
-    if(i==null){ synchronized(S.class){ if(i==null) i=new S(); } }
-    return i;
-  }
-}`
-    )
-  ]
-};
-
-/* ===== Render ===== */
-const techOrder = ["Java","Spring Boot","Hibernate/JPA","Microservices","Spring Cloud","Design Patterns"];
-const techAccordion = document.getElementById("techAccordion");
-
-let gid = 0;
-for (const topic of techOrder) {
-  const groupId = `g${gid++}`;
-  techAccordion.innerHTML += `
-    <div class="accordion-item bg-dark text-light">
-      <h2 class="accordion-header" id="${groupId}-h">
-        <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#${groupId}">
-          ${topic} ${badge(topic)}
-        </button>
-      </h2>
-      <div id="${groupId}" class="accordion-collapse collapse">
-        <div class="accordion-body">
-          <div id="${groupId}-content"></div>
+      <!-- Q1 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q1">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c1">1️⃣
+            Explain Java HashMap Internal Working?</button>
+        </h2>
+        <div id="c1" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            HashMap stores entries in buckets using hash(key) % capacity.
+            Java 8 improved worst case by converting buckets from LinkedList → Red-Black Tree when size > 8.
+            This improves worst-case lookup from O(n) → O(log n).
+          </div>
         </div>
       </div>
-    </div>`;
-  const body = document.getElementById(`${groupId}-content`);
 
-  const items = data[topic];
-  const cats = ["Easy","Medium","Hard","Tricky"];
-  for (const cat of cats) {
-    const subset = items.filter(x => x.diff===cat);
-    if (!subset.length) continue;
-    const subId = `${groupId}-${cat}`;
-    body.innerHTML += `
-      <div class="mb-3">
-        <h5 class="${catColor[cat]}">${cat} <span class="badge bg-dark border">${subset.length}</span></h5>
-        <div class="accordion" id="${subId}"></div>
-      </div>`;
-    const subAcc = document.getElementById(subId);
-    subset.forEach((item, idx) => {
-      const qid = `${subId}-q${idx}`;
-      subAcc.innerHTML += `
-        <div class="accordion-item bg-dark border rounded">
-          <h2 class="accordion-header" id="${qid}-h">
-            <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse" data-bs-target="#${qid}">
-              ${idx+1}) ${item.q} ${badge(item.topic)}
-            </button>
+      <!-- Q2 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q2">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c2">2️⃣ What
+            is the difference between Stack Memory & Heap Memory?</button>
+        </h2>
+        <div id="c2" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            ✔ Stack → Stores method frames, local variables, references.
+            ✔ Heap → Stores objects, arrays.
+            ✔ Stack is faster & thread-private.
+            ✔ Heap is shared across threads, managed by Garbage Collector.
+          </div>
+        </div>
+      </div>
+
+      <!-- Q3 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q3">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c3">3️⃣
+            Explain ThreadPoolExecutor internal flow?</button>
+        </h2>
+        <div id="c3" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            ThreadPoolExecutor lifecycle:
+            1. task submitted
+            2. if worker < corePoolSize → create new thread 3. else task goes to queue 4. if queue full → new thread
+              until maxPoolSize 5. else → RejectionHandler </div>
+          </div>
+        </div>
+
+        <!-- Q4 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q4">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c4">4️⃣ What
+              is CompletableFuture? When to use supplyAsync vs thenCompose?</button>
           </h2>
-          <div id="${qid}" class="accordion-collapse collapse">
-            <div class="accordion-body">
-              <ul class="mb-2">${item.a.map(s=>`<li>${s}</li>`).join("")}</ul>
-              ${item.code ? `<pre class="mb-0"><code class="language-java">${item.code.replaceAll("<","&lt;").replaceAll(">","&gt;")}</code></pre>` : ""}
+          <div id="c4" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              ✔ supplyAsync → Run async task
+              ✔ thenApply → Transform result
+              ✔ thenCompose → Chain async calls
+              ✔ thenCombine → Combine two Futures
+              Used for building async pipelines & microservice orchestration.
             </div>
           </div>
-        </div>`;
-    });
-  }
+        </div>
+
+        <!-- Q5 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q5">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c5">5️⃣ What
+              is Idempotency in Microservices?</button>
+          </h2>
+          <div id="c5" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              Idempotent API returns same output no matter how many times you hit it.
+              Payments use Idempotency-Key header to avoid duplicate transactions.
+            </div>
+          </div>
+        </div>
+
+        <!-- Q6 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q6">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c6">6️⃣
+              Explain Circuit Breaker Pattern?</button>
+          </h2>
+          <div id="c6" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              Protects service from cascading failures.
+              States → CLOSED → OPEN → HALF-OPEN.
+              Used in Netflix Hystrix, Resilience4j.
+            </div>
+          </div>
+        </div>
+
+        <!-- Q7 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q7">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c7">7️⃣ What
+              is Bean Lifecycle in Spring?</button>
+          </h2>
+          <div id="c7" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              Spring Bean Lifecycle:
+              Instantiation → DI → postProcessBeforeInit → init() → postProcessAfterInit → Ready → destroy().
+            </div>
+          </div>
+        </div>
+
+        <!-- Q8 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q8">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c8">8️⃣ What
+              is Caching? How to implement with @Cacheable?</button>
+          </h2>
+          <div id="c8" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              Use @Cacheable, @CachePut, @CacheEvict.
+              Real-time: Product Catalogue, Currency Rates, User Profile caching.
+            </div>
+          </div>
+        </div>
+
+        <!-- Q9 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q9">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c9">9️⃣ What
+              is Deadlock? How to avoid it?</button>
+          </h2>
+          <div id="c9" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              Deadlock happens when two threads wait on each other forever.
+              Avoid: Lock ordering, tryLock(), timeout, immutable objects.
+            </div>
+          </div>
+        </div>
+
+        <!-- Q10 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q10">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c10">🔟
+              Explain Distributed Transactions (2PC vs Saga Pattern)</button>
+          </h2>
+          <div id="c10" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              2PC → strong consistency; slow, blocking.
+              Saga → sequence of local transactions + compensating transactions.
+              Used in payments, booking systems.
+            </div>
+          </div>
+        </div>
+
+        <!-- Q11 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q11">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c11">1️⃣1️⃣
+              What is Escape Analysis in JVM?</button>
+          </h2>
+          <div id="c11" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              JVM decides whether an object stays on stack or heap.
+              If object does not escape method → stack allocation = faster.
+            </div>
+          </div>
+        </div>
+
+        <!-- Q12 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q12">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c12">1️⃣2️⃣
+              What is the difference between REST and gRPC?</button>
+          </h2>
+          <div id="c12" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              REST → JSON, slower, human-readable.
+              gRPC → Protocol Buffers, binary, streaming support, fast → great for inter-service communication.
+            </div>
+          </div>
+        </div>
+
+        <!-- Q13 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q13">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c13">1️⃣3️⃣
+              Explain SOLID Principles?</button>
+          </h2>
+          <div id="c13" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              S → Single Responsibility
+              O → Open/Closed
+              L → Liskov
+              I → Interface Segregation
+              D → Dependency Inversion
+            </div>
+          </div>
+        </div>
+
+        <!-- Q14 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q14">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c14">1️⃣4️⃣
+              What is the difference between @Component, @Service, @Repository?</button>
+          </h2>
+          <div id="c14" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              @Component → generic bean
+              @Service → business logic
+              @Repository → persistence + exception translation
+            </div>
+          </div>
+        </div>
+
+        <!-- Q15 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q15">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c15">1️⃣5️⃣
+              What is Optimistic Locking vs Pessimistic Locking?</button>
+          </h2>
+          <div id="c15" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              Optimistic → Versioning, retries, high performance
+              Pessimistic → DB locks row physically
+              Used in banking, inventory systems.
+            </div>
+          </div>
+        </div>
+
+        <!-- Q16 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q16">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c16">1️⃣6️⃣
+              Explain Kafka exactly-once semantics?</button>
+          </h2>
+          <div id="c16" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              Achieved by:
+              ✔ Idempotent producers
+              ✔ Transactions API
+              ✔ Consumer offset management
+            </div>
+          </div>
+        </div>
+
+        <!-- Q17 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q17">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c17">1️⃣7️⃣
+              What is Backpressure? Where is it used?</button>
+          </h2>
+          <div id="c17" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              Backpressure prevents producer from overwhelming consumer.
+              Used in WebFlux, Reactive Streams, Kafka, messaging systems.
+            </div>
+          </div>
+        </div>
+
+        <!-- Q18 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q18">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c18">1️⃣8️⃣
+              Difference between Monolith, Microservices & Modular Monolith?</button>
+          </h2>
+          <div id="c18" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              Monolith → single deployable
+              Microservices → distributed system
+              Modular Monolith → one deployable but well-modularized (best of both worlds)
+            </div>
+          </div>
+        </div>
+
+        <!-- Q19 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q19">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c19">1️⃣9️⃣
+              Explain CAP Theorem?</button>
+          </h2>
+          <div id="c19" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              CAP: Consistency, Availability, Partition Tolerance
+              In distributed systems, you can pick only 2.
+              Example: Cassandra → AP, Mongo → CP.
+            </div>
+          </div>
+        </div>
+
+        <!-- Q20 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q20">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c20">2️⃣0️⃣
+              How does Garbage Collection work internally?</button>
+          </h2>
+          <div id="c20" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              GC uses:
+              ✔ Mark & Sweep
+              ✔ Young/Old generations
+              ✔ Minor/Major GC
+              ✔ G1, ZGC for low-latency environments.
+            </div>
+          </div>
+        </div>
+
+        <!-- Q21 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q21">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c21">2️⃣1️⃣
+              What is @Transactional propagation?</button>
+          </h2>
+          <div id="c21" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              REQUIRED → join existing or create new
+              REQUIRES_NEW → always new
+              MANDATORY → must have existing
+              NEVER → fail if transaction exists
+            </div>
+          </div>
+        </div>
+
+        <!-- Q22 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q22">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c22">2️⃣2️⃣
+              Explain Distributed Caching (Redis/Hazelcast).</button>
+          </h2>
+          <div id="c22" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              Distributed cache stores data across nodes.
+              Offers replication, eviction policies, TTL, high availability.
+            </div>
+          </div>
+        </div>
+
+        <!-- Q23 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q23">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c23">2️⃣3️⃣
+              Explain Rate Limiting Algorithms.</button>
+          </h2>
+          <div id="c23" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              Token Bucket, Leaky Bucket, Sliding Window.
+              Used in API gateways like Kong, NGINX, AWS.
+            </div>
+          </div>
+        </div>
+
+        <!-- Q24 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q24">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c24">2️⃣4️⃣
+              What is @Async in Spring? How does it work internally?</button>
+          </h2>
+          <div id="c24" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              @Async uses AOP proxies + TaskExecutor thread pool
+              Runs method asynchronously in background.
+            </div>
+          </div>
+        </div>
+
+        <!-- Q25 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q25">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c25">2️⃣5️⃣
+              Explain Lazy Loading vs Eager Loading in Hibernate</button>
+          </h2>
+          <div id="c25" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              LAZY → load on demand
+              EAGER → load immediately
+              Lazy preferred for performance; Eager causes N+1 problems.
+            </div>
+          </div>
+        </div>
+
+        <!-- Q26 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q26">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c26">2️⃣6️⃣
+              What is API Gateway? Why do we use it?</button>
+          </h2>
+          <div id="c26" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              API Gateway handles routing, authentication, rate limiting, versioning.
+              Example: Kong, Zuul, Spring Cloud Gateway.
+            </div>
+          </div>
+        </div>
+
+        <!-- Q27 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q27">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c27">2️⃣7️⃣
+              Explain Horizontal Scaling vs Vertical Scaling</button>
+          </h2>
+          <div id="c27" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              Horizontal → more machines
+              Vertical → increase machine power
+              Cloud-native prefers horizontal scaling.
+            </div>
+          </div>
+        </div>
+
+        <!-- Q28 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q28">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c28">2️⃣8️⃣
+              What is a Message Queue? Why do we use RabbitMQ/Kafka?</button>
+          </h2>
+          <div id="c28" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              MQ decouples systems, improves reliability and async communication.
+              Kafka → high throughput
+              RabbitMQ → routing-based messaging
+            </div>
+          </div>
+        </div>
+
+        <!-- Q29 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q29">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c29">2️⃣9️⃣
+              How do you handle Large File Uploads in Spring Boot?</button>
+          </h2>
+          <div id="c29" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              Use streaming upload (Multipart streaming), chunk upload, backpressure, temp storage.
+              Avoid loading entire file into memory → prevents OOM.
+            </div>
+          </div>
+        </div>
+
+        <!-- Q30 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q30">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c30">3️⃣0️⃣
+              Explain Zero Downtime Deployment</button>
+          </h2>
+          <div id="c30" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              Achieved using:
+              ✔ Blue/Green deployment
+              ✔ Rolling updates (K8s)
+              ✔ Backward-compatible DB schema
+              ✔ Graceful shutdown hooks
+            </div>
+          </div>
+        </div>
+
+        <!-- Q31 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q31">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c31">3️⃣1️⃣
+              What is the difference between Callable and Runnable?</button>
+          </h2>
+          <div id="c31" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              Runnable → No return value, no checked exception.
+              Callable → Returns value (Future), can throw checked exception.
+              Used in async computations and thread pools.
+            </div>
+          </div>
+        </div>
+
+        <!-- Q32 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q32">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c32">3️⃣2️⃣
+              What are WeakHashMap and its real-time use?</button>
+          </h2>
+          <div id="c32" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              WeakHashMap keys are weak-referenced → GC removes entries when keys have no strong reference.
+              Used in caching, classloaders, JVM internals.
+            </div>
+          </div>
+        </div>
+
+        <!-- Q33 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q33">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c33">3️⃣3️⃣
+              Explain Java Memory Model (JMM)?</button>
+          </h2>
+          <div id="c33" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              JMM defines how threads interact with memory:
+              ✔ Happens-before relationships
+              ✔ Visibility rules
+              ✔ volatile guarantees
+              ✔ atomicity vs non-atomic operations
+            </div>
+          </div>
+        </div>
+
+        <!-- Q34 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q34">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c34">3️⃣4️⃣
+              What is volatile? Does it make operations atomic?</button>
+          </h2>
+          <div id="c34" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              volatile → guarantees visibility & ordering, NOT atomicity.
+              i++ is not atomic even if variable is volatile.
+              Use AtomicInteger for atomic operations.
+            </div>
+          </div>
+        </div>
+
+        <!-- Q35 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q35">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c35">3️⃣5️⃣
+              Difference between Serializable and Externalizable?</button>
+          </h2>
+          <div id="c35" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              Serializable → JVM handles serialization automatically.
+              Externalizable → You control readExternal/writeExternal manually.
+              Useful for large objects, performance, compressions.
+            </div>
+          </div>
+        </div>
+
+        <!-- Q36 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q36">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c36">3️⃣6️⃣
+              What is Feign Client? How does it work internally?</button>
+          </h2>
+          <div id="c36" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              Feign is a declarative REST client.
+              Uses dynamic proxies + Ribbon (EOL) / LoadBalancer + Jackson.
+              Converts interface calls → HTTP calls.
+            </div>
+          </div>
+        </div>
+
+        <!-- Q37 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q37">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c37">3️⃣7️⃣
+              What is Kubernetes HPA? How does it autoscale?</button>
+          </h2>
+          <div id="c37" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              HPA = Horizontal Pod Autoscaler.
+              Uses CPU/Memory or custom metrics.
+              Increases/decreases pod count automatically → highly scalable microservices.
+            </div>
+          </div>
+        </div>
+
+        <!-- Q38 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q38">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c38">3️⃣8️⃣
+              What is API Versioning? Different strategies?</button>
+          </h2>
+          <div id="c38" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              ✔ URI Versioning → /v1/users
+              ✔ Header Versioning
+              ✔ Query Param versioning
+              ✔ Media Type versioning
+              Ensures backward compatibility.
+            </div>
+          </div>
+        </div>
+
+        <!-- Q39 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q39">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c39">3️⃣9️⃣
+              Explain JWT Structure and Validation Flow</button>
+          </h2>
+          <div id="c39" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              JWT = Header.Payload.Signature
+              Signature = HMAC-SHA256(secret) or RSA
+              Server validates signature → ensures token integrity.
+            </div>
+          </div>
+        </div>
+
+        <!-- Q40 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q40">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c40">4️⃣0️⃣
+              What is Object Pooling? Where is it used?</button>
+          </h2>
+          <div id="c40" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              Object pooling reuses expensive objects.
+              Used in JDBC connection pools, thread pools, Redis client pools.
+            </div>
+          </div>
+        </div>
+
+        <!-- Q41 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q41">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c41">4️⃣1️⃣
+              What is Outbox Pattern? Why is it used?</button>
+          </h2>
+          <div id="c41" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              Ensures reliable event publishing by storing events in DB Outbox table.
+              CDC (Debezium) syncs DB changes → Kafka.
+              Solves dual-write problem.
+            </div>
+          </div>
+        </div>
+
+        <!-- Q42 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q42">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c42">4️⃣2️⃣
+              What is Bulkhead Pattern?</button>
+          </h2>
+          <div id="c42" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              Isolates failures by separating resources.
+              Example: Separate thread pools for payment, email, analytics.
+              Prevents entire service crash.
+            </div>
+          </div>
+        </div>
+
+        <!-- Q43 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q43">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c43">4️⃣3️⃣
+              What is N+1 Query Problem in Hibernate?</button>
+          </h2>
+          <div id="c43" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              Happens when Hibernate loads collection lazily → fires 1 parent query + N child queries.
+              Fix: JOIN FETCH or EntityGraph or batch-size.
+            </div>
+          </div>
+        </div>
+
+        <!-- Q44 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q44">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c44">4️⃣4️⃣
+              Event Sourcing vs CQRS?</button>
+          </h2>
+          <div id="c44" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              Event Sourcing stores events not state.
+              CQRS separates read & write models.
+              Often used together in high-scale systems.
+            </div>
+          </div>
+        </div>
+
+        <!-- Q45 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q45">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c45">4️⃣5️⃣
+              What is Idempotent Consumer in Kafka?</button>
+          </h2>
+          <div id="c45" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              Ensures consumer processes the same message once.
+              Store processed message ids or offsets in DB/Redis.
+            </div>
+          </div>
+        </div>
+
+        <!-- Q46 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q46">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c46">4️⃣6️⃣
+              What is @LoadBalanced RestTemplate?</button>
+          </h2>
+          <div id="c46" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              Adds client-side load balancing.
+              Converts service-name → instance IP via Service Discovery.
+            </div>
+          </div>
+        </div>
+
+        <!-- Q47 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q47">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c47">4️⃣7️⃣
+              What is Sealed Class in Java 17?</button>
+          </h2>
+          <div id="c47" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              Sealed classes restrict which classes may extend them.
+              Example: permits A, B, C.
+              Improves security + domain modeling.
+            </div>
+          </div>
+        </div>
+
+        <!-- Q48 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q48">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c48">4️⃣8️⃣
+              What is Data Locality? Why is it important?</button>
+          </h2>
+          <div id="c48" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              CPU caches lines (L1/L2/L3).
+              Tight loops + contiguous memory improve CPU cache hits → high performance.
+              Important in collections, streaming, parallelism.
+            </div>
+          </div>
+        </div>
+
+        <!-- Q49 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q49">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c49">4️⃣9️⃣
+              How do you design a scalable file storage system?</button>
+          </h2>
+          <div id="c49" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              Use:
+              ✔ S3 or GCS for object storage
+              ✔ CDN for delivery
+              ✔ Presigned URLs
+              ✔ Chunked uploads
+              ✔ Versioning & replication
+            </div>
+          </div>
+        </div>
+
+        <!-- Q50 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q50">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c50">5️⃣0️⃣
+              Explain How You Debug a Production Outage?</button>
+          </h2>
+          <div id="c50" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              ✔ Check logs (ELK)
+              ✔ Check thread dumps
+              ✔ Check heap dump
+              ✔ Analyze latency (APM)
+              ✔ Check DB slow queries
+              ✔ Kubernetes pod restarts
+              ✔ Rollback with canary
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+
+    </div>
+    <div class="accordion" id="accordionCodingRound">
+
+      <!-- P1 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="p1">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#pc1">
+            💻 1️⃣ Remove Duplicates From List Without Using Set
+          </button>
+        </h2>
+        <div id="pc1" class="accordion-collapse collapse" data-bs-parent="#accordionCodingRound">
+          <div class="accordion-body bg-dark text-light">
+
+            <h5>📌 Problem</h5>
+            Given a <code>List&lt;Integer&gt;</code>, remove duplicates while preserving original order.
+            <b>No Set allowed</b> in your logic.
+
+            <h5>🧠 Interviewer Checks</h5>
+            <ul>
+              <li>Knowledge of streams / LinkedHashMap</li>
+              <li>Time–space trade-offs</li>
+            </ul>
+
+            <h5>💡 Approach</h5>
+            <ul>
+              <li>Use <code>LinkedHashMap</code> / <code>LinkedHashSet</code>-like behavior using map + order.</li>
+              <li>Or simply <code>stream().distinct()</code> for Java 8+</li>
+            </ul>
+
+            <h5>⏱ Complexity</h5>
+            <p>Time: O(n), Space: O(n)</p>
+
+            <pre><code class="language-java">
+public static List&lt;Integer&gt; removeDuplicates(List&lt;Integer&gt; list) {
+    List&lt;Integer&gt; result = new ArrayList&lt;&gt;();
+    Set&lt;Integer&gt; seen = new HashSet&lt;&gt;(); // allowed as helper, not final result
+
+    for (Integer num : list) {
+        if (seen.add(num)) { // add returns false if already present
+            result.add(num);
+        }
+    }
+    return result;
 }
-</script>
+</code></pre>
 
-  <!-- Bootstrap & Scripts -->
+          </div>
+        </div>
+      </div>
+
+      <!-- P2 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="p2">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#pc2">
+            💻 2️⃣ First Non-Repeating Character in a String
+          </button>
+        </h2>
+        <div id="pc2" class="accordion-collapse collapse" data-bs-parent="#accordionCodingRound">
+          <div class="accordion-body bg-dark text-light">
+
+            <h5>📌 Problem</h5>
+            Given a string, return the first character that appears exactly once.
+            If none, return <code>'\0'</code> or <code>Optional.empty()</code>.
+
+            <h5>🧠 Interviewer Checks</h5>
+            <ul>
+              <li>Use of <code>LinkedHashMap</code> to preserve insertion order</li>
+              <li>Understanding of frequency counting</li>
+            </ul>
+
+            <h5>⏱ Complexity</h5>
+            <p>Time: O(n), Space: O(1) (bounded by charset)</p>
+
+            <pre><code class="language-java">
+public static Optional&lt;Character&gt; firstNonRepeatingChar(String s) {
+    Map&lt;Character, Integer&gt; freq = new LinkedHashMap&lt;&gt;();
+    for (char c : s.toCharArray()) {
+        freq.put(c, freq.getOrDefault(c, 0) + 1);
+    }
+    return freq.entrySet().stream()
+            .filter(e -> e.getValue() == 1)
+            .map(Map.Entry::getKey)
+            .findFirst();
+}
+</code></pre>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- P3 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="p3">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#pc3">
+            💻 3️⃣ Implement LRU Cache (get/put in O(1))
+          </button>
+        </h2>
+        <div id="pc3" class="accordion-collapse collapse" data-bs-parent="#accordionCodingRound">
+          <div class="accordion-body bg-dark text-light">
+
+            <h5>📌 Problem</h5>
+            Design an LRU cache supporting <code>get(key)</code> and <code>put(key, value)</code> in O(1).
+
+            <h5>🧠 Interviewer Checks</h5>
+            <ul>
+              <li>Knowledge of <code>LinkedHashMap</code> access-order</li>
+              <li>Understanding of eviction policies</li>
+            </ul>
+
+            <h5>⏱ Complexity</h5>
+            <p>Time: O(1) average for get/put, Space: O(capacity)</p>
+
+            <pre><code class="language-java">
+public class LRUCache extends LinkedHashMap&lt;Integer, Integer&gt; {
+
+    private final int capacity;
+
+    public LRUCache(int capacity) {
+        super(capacity, 0.75f, true); // accessOrder = true
+        this.capacity = capacity;
+    }
+
+    public int get(int key) {
+        return super.getOrDefault(key, -1);
+    }
+
+    public void put(int key, int value) {
+        super.put(key, value);
+    }
+
+    @Override
+    protected boolean removeEldestEntry(Map.Entry&lt;Integer, Integer&gt; eldest) {
+        return size() &gt; capacity;
+    }
+}
+</code></pre>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- P4 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="p4">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#pc4">
+            💻 4️⃣ Merge Overlapping Intervals
+          </button>
+        </h2>
+        <div id="pc4" class="accordion-collapse collapse" data-bs-parent="#accordionCodingRound">
+          <div class="accordion-body bg-dark text-light">
+
+            <h5>📌 Problem</h5>
+            Given <code>int[][] intervals</code>, merge all overlapping intervals and return result.
+
+            <h5>💡 Approach</h5>
+            <ul>
+              <li>Sort by start time</li>
+              <li>Iterate and merge when current.start ≤ lastMerged.end</li>
+            </ul>
+
+            <h5>⏱ Complexity</h5>
+            <p>Time: O(n log n), Space: O(n)</p>
+
+            <pre><code class="language-java">
+public static int[][] merge(int[][] intervals) {
+    if (intervals == null || intervals.length == 0) return new int[0][0];
+
+    Arrays.sort(intervals, Comparator.comparingInt(a -> a[0]));
+    List&lt;int[]&gt; result = new ArrayList&lt;&gt;();
+    int[] current = intervals[0];
+
+    for (int i = 1; i &lt; intervals.length; i++) {
+        if (intervals[i][0] &lt;= current[1]) {
+            current[1] = Math.max(current[1], intervals[i][1]);
+        } else {
+            result.add(current);
+            current = intervals[i];
+        }
+    }
+    result.add(current);
+    return result.toArray(new int[result.size()][]);
+}
+</code></pre>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- P5 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="p5">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#pc5">
+            💻 5️⃣ Top K Most Frequent Elements
+          </button>
+        </h2>
+        <div id="pc5" class="accordion-collapse collapse" data-bs-parent="#accordionCodingRound">
+          <div class="accordion-body bg-dark text-light">
+
+            <h5>📌 Problem</h5>
+            Given an int array and <code>k</code>, return k most frequent elements.
+
+            <h5>💡 Approach</h5>
+            <ul>
+              <li>Use <code>Map&lt;value, frequency&gt;</code></li>
+              <li>Use max-heap or sort by frequency</li>
+            </ul>
+
+            <h5>⏱ Complexity</h5>
+            <p>Time: O(n log n) (with sort), Space: O(n)</p>
+
+            <pre><code class="language-java">
+public static List&lt;Integer&gt; topKFrequent(int[] nums, int k) {
+    Map&lt;Integer, Integer&gt; freq = new HashMap&lt;&gt;();
+    for (int n : nums) {
+        freq.put(n, freq.getOrDefault(n, 0) + 1);
+    }
+
+    return freq.entrySet().stream()
+            .sorted((a, b) -&gt; b.getValue() - a.getValue())
+            .limit(k)
+            .map(Map.Entry::getKey)
+            .collect(Collectors.toList());
+}
+</code></pre>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- P6 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="p6">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#pc6">
+            💻 6️⃣ Check If Two Strings Are Anagrams
+          </button>
+        </h2>
+        <div id="pc6" class="accordion-collapse collapse" data-bs-parent="#accordionCodingRound">
+          <div class="accordion-body bg-dark text-light">
+
+            <h5>📌 Problem</h5>
+            Return true if two strings are anagrams (same chars, same counts).
+
+            <h5>💡 Approach</h5>
+            <ul>
+              <li>Count chars in array of size 26 (if lowercase) / 256</li>
+            </ul>
+
+            <h5>⏱ Complexity</h5>
+            <p>Time: O(n), Space: O(1)</p>
+
+            <pre><code class="language-java">
+public static boolean isAnagram(String a, String b) {
+    if (a.length() != b.length()) return false;
+    int[] count = new int[256];
+    for (int i = 0; i &lt; a.length(); i++) {
+        count[a.charAt(i)]++;
+        count[b.charAt(i)]--;
+    }
+    for (int c : count) {
+        if (c != 0) return false;
+    }
+    return true;
+}
+</code></pre>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- P7 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="p7">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#pc7">
+            💻 7️⃣ Two Sum (Return Indices)
+          </button>
+        </h2>
+        <div id="pc7" class="accordion-collapse collapse" data-bs-parent="#accordionCodingRound">
+          <div class="accordion-body bg-dark text-light">
+
+            <h5>📌 Problem</h5>
+            Given array and target, return indices of two numbers summing to target.
+
+            <h5>💡 Approach</h5>
+            <ul>
+              <li>Use hash map of value → index</li>
+            </ul>
+
+            <h5>⏱ Complexity</h5>
+            <p>Time: O(n), Space: O(n)</p>
+
+            <pre><code class="language-java">
+public static int[] twoSum(int[] nums, int target) {
+    Map&lt;Integer, Integer&gt; map = new HashMap&lt;&gt;(); // value -&gt; index
+    for (int i = 0; i &lt; nums.length; i++) {
+        int diff = target - nums[i];
+        if (map.containsKey(diff)) {
+            return new int[]{map.get(diff), i};
+        }
+        map.put(nums[i], i);
+    }
+    return new int[]{-1, -1};
+}
+</code></pre>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- P8 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="p8">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#pc8">
+            💻 8️⃣ Rotate Array by K Steps (In-place)
+          </button>
+        </h2>
+        <div id="pc8" class="accordion-collapse collapse" data-bs-parent="#accordionCodingRound">
+          <div class="accordion-body bg-dark text-light">
+
+            <h5>📌 Problem</h5>
+            Rotate array to the right by k steps in-place.
+
+            <h5>💡 Approach</h5>
+            <ul>
+              <li>Reverse complete array</li>
+              <li>Reverse first k elements</li>
+              <li>Reverse remaining n-k elements</li>
+            </ul>
+
+            <h5>⏱ Complexity</h5>
+            <p>Time: O(n), Space: O(1)</p>
+
+            <pre><code class="language-java">
+public static void rotate(int[] nums, int k) {
+    int n = nums.length;
+    k = k % n;
+    reverse(nums, 0, n - 1);
+    reverse(nums, 0, k - 1);
+    reverse(nums, k, n - 1);
+}
+
+private static void reverse(int[] nums, int l, int r) {
+    while (l &lt; r) {
+        int temp = nums[l];
+        nums[l] = nums[r];
+        nums[r] = temp;
+        l++; r--;
+    }
+}
+</code></pre>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- P9 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="p9">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#pc9">
+            💻 9️⃣ Print Matrix in Spiral Order
+          </button>
+        </h2>
+        <div id="pc9" class="accordion-collapse collapse" data-bs-parent="#accordionCodingRound">
+          <div class="accordion-body bg-dark text-light">
+
+            <h5>📌 Problem</h5>
+            Given 2D matrix, return elements in spiral order.
+
+            <h5>⏱ Complexity</h5>
+            <p>Time: O(m×n), Space: O(1) extra (output excluded)</p>
+
+            <pre><code class="language-java">
+public static List&lt;Integer&gt; spiralOrder(int[][] matrix) {
+    List&lt;Integer&gt; res = new ArrayList&lt;&gt;();
+    if (matrix.length == 0) return res;
+    int top = 0, bottom = matrix.length - 1;
+    int left = 0, right = matrix[0].length - 1;
+
+    while (top &lt;= bottom && left &lt;= right) {
+        for (int i = left; i &lt;= right; i++) res.add(matrix[top][i]);
+        top++;
+        for (int i = top; i &lt;= bottom; i++) res.add(matrix[i][right]);
+        right--;
+        if (top &lt;= bottom) {
+            for (int i = right; i &gt;= left; i--) res.add(matrix[bottom][i]);
+            bottom--;
+        }
+        if (left &lt;= right) {
+            for (int i = bottom; i &gt;= top; i--) res.add(matrix[i][left]);
+            left++;
+        }
+    }
+    return res;
+}
+</code></pre>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- P10 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="p10">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#pc10">
+            💻 🔟 Longest Substring Without Repeating Characters
+          </button>
+        </h2>
+        <div id="pc10" class="accordion-collapse collapse" data-bs-parent="#accordionCodingRound">
+          <div class="accordion-body bg-dark text-light">
+
+            <h5>📌 Problem</h5>
+            Given a string, find length of longest substring without repeating characters.
+
+            <h5>💡 Approach</h5>
+            <ul>
+              <li>Sliding window with map storing last index of each char</li>
+            </ul>
+
+            <h5>⏱ Complexity</h5>
+            <p>Time: O(n), Space: O(1)</p>
+
+            <pre><code class="language-java">
+public static int lengthOfLongestSubstring(String s) {
+    Map&lt;Character, Integer&gt; map = new HashMap&lt;&gt;();
+    int left = 0, max = 0;
+
+    for (int right = 0; right &lt; s.length(); right++) {
+        char c = s.charAt(right);
+        if (map.containsKey(c)) {
+            left = Math.max(left, map.get(c) + 1);
+        }
+        map.put(c, right);
+        max = Math.max(max, right - left + 1);
+    }
+    return max;
+}
+</code></pre>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- P11 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="p11">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#pc11">
+            💻 1️⃣1️⃣ Validate Balanced Parentheses
+          </button>
+        </h2>
+        <div id="pc11" class="accordion-collapse collapse" data-bs-parent="#accordionCodingRound">
+          <div class="accordion-body bg-dark text-light">
+
+            <h5>📌 Problem</h5>
+            Given a string with <code>()[]{}</code>, check if it is valid (balanced).
+
+            <h5>💡 Approach</h5>
+            <ul>
+              <li>Use stack, push opening, pop on matching closing</li>
+            </ul>
+
+            <h5>⏱ Complexity</h5>
+            <p>Time: O(n), Space: O(n)</p>
+
+            <pre><code class="language-java">
+public static boolean isValid(String s) {
+    Deque&lt;Character&gt; stack = new ArrayDeque&lt;&gt;();
+    Map&lt;Character, Character&gt; map = Map.of(
+            ')', '(',
+            ']', '[',
+            '}', '{'
+    );
+    for (char c : s.toCharArray()) {
+        if (map.containsValue(c)) {
+            stack.push(c);
+        } else if (map.containsKey(c)) {
+            if (stack.isEmpty() || stack.pop() != map.get(c)) return false;
+        }
+    }
+    return stack.isEmpty();
+}
+</code></pre>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- P12 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="p12">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#pc12">
+            💻 1️⃣2️⃣ Detect Cycle in Linked List
+          </button>
+        </h2>
+        <div id="pc12" class="accordion-collapse collapse" data-bs-parent="#accordionCodingRound">
+          <div class="accordion-body bg-dark text-light">
+
+            <h5>📌 Problem</h5>
+            Given head of singly linked list, detect if cycle exists.
+
+            <h5>💡 Approach</h5>
+            <ul>
+              <li>Floyd’s slow-fast pointer algorithm</li>
+            </ul>
+
+            <h5>⏱ Complexity</h5>
+            <p>Time: O(n), Space: O(1)</p>
+
+            <pre><code class="language-java">
+static class ListNode {
+    int val;
+    ListNode next;
+    ListNode(int v) { val = v; }
+}
+
+public static boolean hasCycle(ListNode head) {
+    if (head == null) return false;
+    ListNode slow = head, fast = head;
+    while (fast != null && fast.next != null) {
+        slow = slow.next;
+        fast = fast.next.next;
+        if (slow == fast) return true;
+    }
+    return false;
+}
+</code></pre>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- P13 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="p13">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#pc13">
+            💻 1️⃣3️⃣ Level Order Traversal of Binary Tree
+          </button>
+        </h2>
+        <div id="pc13" class="accordion-collapse collapse" data-bs-parent="#accordionCodingRound">
+          <div class="accordion-body bg-dark text-light">
+
+            <h5>📌 Problem</h5>
+            Print nodes level by level (BFS).
+
+            <h5>💡 Approach</h5>
+            <ul>
+              <li>Use queue, process nodes level by level</li>
+            </ul>
+
+            <pre><code class="language-java">
+static class TreeNode {
+    int val;
+    TreeNode left, right;
+    TreeNode(int v) { val = v; }
+}
+
+public static List&lt;List&lt;Integer&gt;&gt; levelOrder(TreeNode root) {
+    List&lt;List&lt;Integer&gt;&gt; res = new ArrayList&lt;&gt;();
+    if (root == null) return res;
+    Queue&lt;TreeNode&gt; q = new LinkedList&lt;&gt;();
+    q.offer(root);
+
+    while (!q.isEmpty()) {
+        int size = q.size();
+        List&lt;Integer&gt; level = new ArrayList&lt;&gt;();
+        for (int i = 0; i &lt; size; i++) {
+            TreeNode node = q.poll();
+            level.add(node.val);
+            if (node.left != null) q.offer(node.left);
+            if (node.right != null) q.offer(node.right);
+        }
+        res.add(level);
+    }
+    return res;
+}
+</code></pre>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- P14 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="p14">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#pc14">
+            💻 1️⃣4️⃣ Minimum Meeting Rooms Required
+          </button>
+        </h2>
+        <div id="pc14" class="accordion-collapse collapse" data-bs-parent="#accordionCodingRound">
+          <div class="accordion-body bg-dark text-light">
+
+            <h5>📌 Problem</h5>
+            Given intervals of meetings, find min rooms required so no overlap in same room.
+
+            <h5>💡 Approach</h5>
+            <ul>
+              <li>Sort start & end times separately</li>
+              <li>Two pointers to count current concurrent meetings</li>
+            </ul>
+
+            <pre><code class="language-java">
+public static int minMeetingRooms(int[][] intervals) {
+    int n = intervals.length;
+    int[] starts = new int[n];
+    int[] ends = new int[n];
+    for (int i = 0; i &lt; n; i++) {
+        starts[i] = intervals[i][0];
+        ends[i] = intervals[i][1];
+    }
+    Arrays.sort(starts);
+    Arrays.sort(ends);
+
+    int rooms = 0, endPtr = 0;
+    for (int i = 0; i &lt; n; i++) {
+        if (starts[i] &lt; ends[endPtr]) {
+            rooms++;
+        } else {
+            endPtr++;
+        }
+    }
+    return rooms;
+}
+</code></pre>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- P15 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="p15">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#pc15">
+            💻 1️⃣5️⃣ Implement Simple Token Bucket Rate Limiter
+          </button>
+        </h2>
+        <div id="pc15" class="accordion-collapse collapse" data-bs-parent="#accordionCodingRound">
+          <div class="accordion-body bg-dark text-light">
+
+            <h5>📌 Problem</h5>
+            Implement a simple in-memory rate limiter for N requests per second.
+
+            <h5>💡 Approach</h5>
+            <ul>
+              <li>Token bucket: refill tokens at fixed rate, consume per request</li>
+            </ul>
+
+            <pre><code class="language-java">
+public class TokenBucket {
+
+    private final int capacity;
+    private final int refillPerSecond;
+    private double tokens;
+    private long lastRefillTimestamp;
+
+    public TokenBucket(int capacity, int refillPerSecond) {
+        this.capacity = capacity;
+        this.refillPerSecond = refillPerSecond;
+        this.tokens = capacity;
+        this.lastRefillTimestamp = System.nanoTime();
+    }
+
+    public synchronized boolean allowRequest() {
+        refill();
+        if (tokens &gt;= 1) {
+            tokens -= 1;
+            return true;
+        }
+        return false;
+    }
+
+    private void refill() {
+        long now = System.nanoTime();
+        double seconds = (now - lastRefillTimestamp) / 1_000_000_000.0;
+        double add = seconds * refillPerSecond;
+        if (add &gt; 0) {
+            tokens = Math.min(capacity, tokens + add);
+            lastRefillTimestamp = now;
+        }
+    }
+}
+</code></pre>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- P16 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="p16">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#pc16">
+            💻 1️⃣6️⃣ Producer–Consumer Using BlockingQueue
+          </button>
+        </h2>
+        <div id="pc16" class="accordion-collapse collapse" data-bs-parent="#accordionCodingRound">
+          <div class="accordion-body bg-dark text-light">
+
+            <h5>📌 Problem</h5>
+            Implement producer-consumer using <code>BlockingQueue</code>.
+
+            <pre><code class="language-java">
+public class ProducerConsumerDemo {
+
+    private final BlockingQueue&lt;Integer&gt; queue = new ArrayBlockingQueue&lt;&gt;(10);
+
+    class Producer implements Runnable {
+        public void run() {
+            int i = 0;
+            try {
+                while (true) {
+                    queue.put(i);
+                    System.out.println("Produced " + i);
+                    i++;
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
+    class Consumer implements Runnable {
+        public void run() {
+            try {
+                while (true) {
+                    Integer val = queue.take();
+                    System.out.println("Consumed " + val);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+}
+</code></pre>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- P17 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="p17">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#pc17">
+            💻 1️⃣7️⃣ Stream: Group Employees by Department and Count
+          </button>
+        </h2>
+        <div id="pc17" class="accordion-collapse collapse" data-bs-parent="#accordionCodingRound">
+          <div class="accordion-body bg-dark text-light">
+
+            <h5>📌 Problem</h5>
+            Given a list of Employee objects (id, name, dept), return count per dept.
+
+            <pre><code class="language-java">
+class Employee {
+    int id;
+    String name;
+    String dept;
+    // constructor + getters
+}
+
+public static Map&lt;String, Long&gt; countByDept(List&lt;Employee&gt; employees) {
+    return employees.stream()
+            .collect(Collectors.groupingBy(Employee::getDept, Collectors.counting()));
+}
+</code></pre>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- P18 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="p18">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#pc18">
+            💻 1️⃣8️⃣ Flatten a Nested List (List&lt;List&lt;Integer&gt;&gt; → List&lt;Integer&gt;)
+          </button>
+        </h2>
+        <div id="pc18" class="accordion-collapse collapse" data-bs-parent="#accordionCodingRound">
+          <div class="accordion-body bg-dark text-light">
+
+            <pre><code class="language-java">
+public static List&lt;Integer&gt; flatten(List&lt;List&lt;Integer&gt;&gt; nested) {
+    return nested.stream()
+            .flatMap(List::stream)
+            .collect(Collectors.toList());
+}
+</code></pre>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- P19 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="p19">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#pc19">
+            💻 1️⃣9️⃣ Find Missing Number in Range 1..n
+          </button>
+        </h2>
+        <div id="pc19" class="accordion-collapse collapse" data-bs-parent="#accordionCodingRound">
+          <div class="accordion-body bg-dark text-light">
+
+            <pre><code class="language-java">
+public static int missingNumber(int[] arr) {
+    int n = arr.length + 1;
+    int expectedSum = n * (n + 1) / 2;
+    int actualSum = Arrays.stream(arr).sum();
+    return expectedSum - actualSum;
+}
+</code></pre>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="accordion" id="accordionEmployeePrograms">
+
+      <!-- EMP1 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="emp1">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#ce1">
+            💼 1️⃣ Highest Salary Employee in Each Department (Hard)
+          </button>
+        </h2>
+        <div id="ce1" class="accordion-collapse collapse" data-bs-parent="#accordionEmployeePrograms">
+          <div class="accordion-body bg-dark text-light">
+
+            <h5>📌 Problem</h5>
+            Find the employee with the *highest salary per department*.
+
+            <h5>💡 Java 8 Solution</h5>
+            <pre><code class="language-java">
+Map<String, Employee> highestPaid =
+    employees.stream()
+        .collect(Collectors.groupingBy(
+            Employee::getDepartment,
+            Collectors.collectingAndThen(
+                Collectors.maxBy(Comparator.comparing(Employee::getSalary)),
+                Optional::get
+            )
+        ));
+</code></pre>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- EMP2 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="emp2">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#ce2">
+            💼 2️⃣ Second Highest Salary in Company (Medium)
+          </button>
+        </h2>
+        <div id="ce2" class="accordion-collapse collapse" data-bs-parent="#accordionEmployeePrograms">
+          <div class="accordion-body bg-dark text-light">
+
+            <h5>📌 Problem</h5>
+            Fetch the second highest salary employee.
+
+            <h5>💡 Java 8 Solution</h5>
+            <pre><code class="language-java">
+Employee secondHighest =
+    employees.stream()
+        .sorted(Comparator.comparing(Employee::getSalary).reversed())
+        .skip(1)
+        .findFirst()
+        .orElse(null);
+</code></pre>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- EMP3 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="emp3">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#ce3">
+            💼 3️⃣ Average Salary of Each Department (Medium)
+          </button>
+        </h2>
+        <div id="ce3" class="accordion-collapse collapse" data-bs-parent="#accordionEmployeePrograms">
+          <div class="accordion-body bg-dark text-light">
+
+            <h5>💡 Java 8 Solution</h5>
+            <pre><code class="language-java">
+Map<String, Double> avgSalary =
+    employees.stream()
+        .collect(Collectors.groupingBy(
+            Employee::getDepartment,
+            Collectors.averagingDouble(Employee::getSalary)
+        ));
+</code></pre>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- EMP4 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="emp4">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#ce4">
+            💼 4️⃣ Highest Salary Employee in Each Department (Without Optional) (Hard)
+          </button>
+        </h2>
+        <div id="ce4" class="accordion-collapse collapse" data-bs-parent="#accordionEmployeePrograms">
+          <div class="accordion-body bg-dark text-light">
+
+            <pre><code class="language-java">
+Map<String, Employee> map =
+    employees.stream()
+        .collect(Collectors.toMap(
+            Employee::getDepartment,
+            e -> e,
+            (e1, e2) -> e1.getSalary() > e2.getSalary() ? e1 : e2
+        ));
+</code></pre>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- EMP5 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="emp5">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#ce5">
+            💼 5️⃣ Sort Employees by Salary → then Age → then Name (Medium)
+          </button>
+        </h2>
+        <div id="ce5" class="accordion-collapse collapse" data-bs-parent="#accordionEmployeePrograms">
+          <div class="accordion-body bg-dark text-light">
+
+            <pre><code class="language-java">
+List<Employee> sorted =
+    employees.stream()
+        .sorted(
+            Comparator.comparing(Employee::getSalary).reversed()
+                      .thenComparing(Employee::getAge)
+                      .thenComparing(Employee::getName)
+        )
+        .collect(Collectors.toList());
+</code></pre>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- EMP6 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="emp6">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#ce6">
+            💼 6️⃣ Get Department With Maximum Number of Employees (Hard)
+          </button>
+        </h2>
+        <div id="ce6" class="accordion-collapse collapse" data-bs-parent="#accordionEmployeePrograms">
+          <div class="accordion-body bg-dark text-light">
+
+            <pre><code class="language-java">
+String dept =
+    employees.stream()
+        .collect(Collectors.groupingBy(Employee::getDepartment, Collectors.counting()))
+        .entrySet()
+        .stream()
+        .max(Map.Entry.comparingByValue())
+        .get()
+        .getKey();
+</code></pre>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- EMP7 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="emp7">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#ce7">
+            💼 7️⃣ Partition Employees Into Male & Female (Medium)
+          </button>
+        </h2>
+        <div id="ce7" class="accordion-collapse collapse" data-bs-parent="#accordionEmployeePrograms">
+          <div class="accordion-body bg-dark text-light">
+
+            <pre><code class="language-java">
+Map<Boolean, List<Employee>> partition =
+    employees.stream()
+        .collect(Collectors.partitioningBy(e -> e.getGender().equalsIgnoreCase("Male")));
+</code></pre>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- EMP8 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="emp8">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#ce8">
+            💼 8️⃣ Find Oldest Employee in the Organization (Medium)
+          </button>
+        </h2>
+        <div id="ce8" class="accordion-collapse collapse" data-bs-parent="#accordionEmployeePrograms">
+          <div class="accordion-body bg-dark text-light">
+
+            <pre><code class="language-java">
+Employee oldest =
+    employees.stream()
+        .max(Comparator.comparing(Employee::getAge))
+        .orElse(null);
+</code></pre>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- EMP9 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="emp9">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#ce9">
+            💼 9️⃣ Get Salary Distribution Summary Statistics (Hard)
+          </button>
+        </h2>
+        <div id="ce9" class="accordion-collapse collapse" data-bs-parent="#accordionEmployeePrograms">
+          <div class="accordion-body bg-dark text-light">
+
+            <pre><code class="language-java">
+DoubleSummaryStatistics stats =
+    employees.stream()
+        .collect(Collectors.summarizingDouble(Employee::getSalary));
+
+System.out.println(stats.getMin());
+System.out.println(stats.getMax());
+System.out.println(stats.getAverage());
+System.out.println(stats.getSum());
+System.out.println(stats.getCount());
+</code></pre>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- EMP10 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="emp10">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#ce10">
+            💼 🔟 Get Youngest Employee in Each Department (Hard)
+          </button>
+        </h2>
+        <div id="ce10" class="accordion-collapse collapse" data-bs-parent="#accordionEmployeePrograms">
+          <div class="accordion-body bg-dark text-light">
+
+            <pre><code class="language-java">
+Map<String, Employee> youngest =
+    employees.stream()
+        .collect(Collectors.groupingBy(
+            Employee::getDepartment,
+            Collectors.collectingAndThen(
+                Collectors.minBy(Comparator.comparing(Employee::getAge)),
+                Optional::get
+            )
+        ));
+</code></pre>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+  <!-- Bootstrap & Search Script -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
   <script>
-    // Simple search: show/hide each accordion item based on its text
+    document.addEventListener("DOMContentLoaded", function () {
+      let questionCount = document.querySelectorAll(".accordion-item").length;
+      document.getElementById(
+        "questionCount"
+      ).innerHTML = `<strong>Total Questions: ${questionCount}</strong>`;
+    });
+    document.addEventListener("DOMContentLoaded", function () {
+      let items = document.querySelectorAll(".accordion-item");
+
+      items.forEach((item, index) => {
+        let button = item.querySelector(".accordion-button");
+        if (button) {
+          button.innerHTML =
+            `<span class="fw-bold me-2">${index + 1}.</span> ` +
+            button.innerHTML;
+        }
+      });
+    });
+
+    // Loop through all accordion bodies and add a Play button
+    document.addEventListener("DOMContentLoaded", function () {
+      // Loop through all accordion bodies
+      document.querySelectorAll(".accordion-body").forEach((body) => {
+        // Create Play button
+        const playBtn = document.createElement("button");
+        playBtn.className = "btn btn-sm btn-outline-primary me-2 mb-2";
+        playBtn.innerText = "🔊 Play Voice Over";
+        playBtn.onclick = function () {
+          speakAccordionText(this);
+        };
+
+        // Create Stop button
+        const stopBtn = document.createElement("button");
+        stopBtn.className = "btn btn-sm btn-outline-danger mb-2";
+        stopBtn.innerText = "⏹ Stop";
+        stopBtn.onclick = function () {
+          window.speechSynthesis.cancel();
+        };
+
+        // Insert buttons
+        const spacer = document.createElement("div");
+        spacer.className = "mb-2";
+        body.prepend(spacer);
+        body.prepend(stopBtn);
+        body.prepend(playBtn);
+      });
+    });
+
+    let currentUtterance = null;
+
+    function speakAccordionText(button) {
+      // Cancel any current speech
+      speechSynthesis.cancel();
+
+      const body = button.closest(".accordion-body");
+
+      // Get clean text from relevant tags
+      let rawText = Array.from(
+        body.querySelectorAll(
+          "p, li, h5, text-warning, text-info, text-primary, text-success, text-danger, text-secondary, text-muted,text-dark, text-light, text-warning"
+        )
+      )
+        .map((el) => el.textContent.trim())
+        .filter(Boolean)
+        .join(". ");
+
+      // Remove unwanted characters
+      rawText = rawText.replace(/[`"*]+/g, "");
+
+      const chunks = splitTextIntoChunks(rawText, 200);
+
+      function getPreferredVoice() {
+        const voices = speechSynthesis.getVoices();
+        return (
+          voices.find(
+            (v) =>
+              v.lang === "en-IN" && v.name.toLowerCase().includes("female")
+          ) ||
+          voices.find((v) => v.lang === "en-IN") ||
+          voices.find(
+            (v) =>
+              v.name.toLowerCase().includes("female") &&
+              v.lang.startsWith("en")
+          )
+        );
+      }
+
+      function speakChunks(index = 0) {
+        if (index >= chunks.length) return;
+
+        const utterance = new SpeechSynthesisUtterance(chunks[index]);
+        utterance.voice = getPreferredVoice();
+        utterance.rate = 0.95;
+        utterance.pitch = 1.3;
+        utterance.volume = 1;
+
+        currentUtterance = utterance;
+
+        utterance.onend = () => speakChunks(index + 1);
+        utterance.onerror = (e) => console.error("Speech error:", e);
+
+        speechSynthesis.speak(utterance);
+      }
+
+      // Wait for voices to load before speaking
+      if (speechSynthesis.getVoices().length === 0) {
+        speechSynthesis.onvoiceschanged = () => speakChunks();
+      } else {
+        speakChunks();
+      }
+    }
+
+    function splitTextIntoChunks(text, maxLength) {
+      const sentences = text.match(/[^\.!\?]+[\.!\?]+/g) || [text];
+      const chunks = [];
+
+      let currentChunk = "";
+      for (let sentence of sentences) {
+        if ((currentChunk + sentence).length > maxLength) {
+          if (currentChunk) chunks.push(currentChunk);
+          currentChunk = sentence;
+        } else {
+          currentChunk += sentence;
+        }
+      }
+      if (currentChunk) chunks.push(currentChunk);
+      return chunks;
+    }
+
+    // Optional: Stop button functionality
+    function stopSpeech() {
+      if (currentUtterance) {
+        speechSynthesis.cancel();
+        currentUtterance = null;
+      }
+    }
+
     function searchQuestions() {
-      const q = document.getElementById("searchBox").value.toLowerCase().trim();
-      const items = document.querySelectorAll("#walmartAccordion .accordion-item");
+      const input = document.getElementById("searchBox").value.toLowerCase();
+      const items = document.querySelectorAll(".accordion-item");
+
       items.forEach((item) => {
-        const text = item.innerText.toLowerCase();
-        item.style.display = text.includes(q) ? "" : "none";
+        const buttonText =
+          item
+            .querySelector(".accordion-button")
+            ?.textContent.toLowerCase() || "";
+        const bodyText =
+          item.querySelector(".accordion-body")?.textContent.toLowerCase() ||
+          "";
+
+        const combinedText = buttonText + " " + bodyText;
+
+        if (combinedText.includes(input)) {
+          item.style.display = "";
+        } else {
+          item.style.display = "none";
+        }
       });
     }
 
     function copyToClipboard(text) {
-      navigator.clipboard.writeText(text).then(() => {
-        alert("Copied: " + text);
-      }).catch(err => {
-        console.error("Failed to copy:", err);
-      });
+      navigator.clipboard
+        .writeText(text)
+        .then(() => {
+          alert("Copied: " + text);
+        })
+        .catch((err) => {
+          console.error("Failed to copy:", err);
+        });
     }
-
-    // Add numbering to accordion buttons
-    document.addEventListener("DOMContentLoaded", function () {
-      const items = document.querySelectorAll("#walmartAccordion .accordion-item");
-      items.forEach((item, index) => {
-        const button = item.querySelector(".accordion-button");
-        if (button && !button.dataset.numbered) {
-          button.dataset.numbered = "true";
-          button.innerHTML = `<span class="fw-bold me-2">${index + 1}.</span> ` + button.innerHTML;
-        }
-      });
-    });
   </script>
 </body>
+
 </html>
