@@ -92,6 +92,676 @@
     </div>
 
     <div class="accordion" id="googleAccordion">
+
+      <div class="accordion-item">
+  <h2 class="accordion-header" id="headingMultipartUpload">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseMultipartUpload"
+      aria-expanded="false" aria-controls="collapseMultipartUpload">
+      📁 Multipart File Upload in Spring Boot – Complete Guide
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+
+  <div id="collapseMultipartUpload" class="accordion-collapse collapse"
+    aria-labelledby="headingMultipartUpload" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <h5 class="text-warning">📌 1. Basic File Upload API</h5>
+      <pre><code class="language-java">
+@RestController
+@RequestMapping("/api/files")
+public class FileUploadController {
+
+    @PostMapping("/upload")
+    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file) throws IOException {
+
+        String filename = file.getOriginalFilename();
+
+        // Save file to folder
+        Path path = Paths.get("uploads/" + filename);
+        Files.write(path, file.getBytes());
+
+        return ResponseEntity.ok("Uploaded: " + filename);
+    }
+}
+      </code></pre>
+
+      <hr>
+
+      <h5 class="text-warning">📌 2. Upload Multiple Files</h5>
+      <pre><code class="language-java">
+@PostMapping("/upload/multiple")
+public ResponseEntity<?> uploadMultiple(@RequestParam("files") List&lt;MultipartFile&gt; files) throws IOException {
+
+    for (MultipartFile file : files) {
+        Files.write(Paths.get("uploads/" + file.getOriginalFilename()), file.getBytes());
+    }
+
+    return ResponseEntity.ok("Total uploaded: " + files.size());
+}
+      </code></pre>
+
+      <hr>
+
+      <h5 class="text-warning">📌 3. Upload File + JSON Together (Most Asked)</h5>
+
+      <b>DTO:</b>
+      <pre><code class="language-java">
+public class UserRequest {
+    private String name;
+    private String email;
+}
+      </code></pre>
+
+      <b>Controller:</b>
+      <pre><code class="language-java">
+@PostMapping(value = "/upload-with-json", 
+             consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+public ResponseEntity<?> uploadWithJson(
+        @RequestPart("file") MultipartFile file,
+        @RequestPart("data") UserRequest data) throws IOException {
+
+    System.out.println("Uploaded by: " + data.getName());
+    return ResponseEntity.ok("Received JSON + File");
+}
+      </code></pre>
+
+      <p class="text-info">
+      🔍 Use <code>@RequestPart</code> for JSON + File,  
+      Use <code>@RequestParam</code> for only file parameters.
+      </p>
+
+      <hr>
+
+      <h5 class="text-warning">📌 4. Configure Large File Upload Size</h5>
+      <pre><code class="language-properties">
+spring.servlet.multipart.max-file-size=50MB
+spring.servlet.multipart.max-request-size=50MB
+      </code></pre>
+
+      <hr>
+
+      <h5 class="text-warning">📌 5. Store File in Database (BLOB)</h5>
+
+      <b>Entity:</b>
+      <pre><code class="language-java">
+@Entity
+public class Document {
+
+    @Id @GeneratedValue
+    private Long id;
+
+    private String name;
+
+    @Lob
+    private byte[] data;
+}
+      </code></pre>
+
+      <b>Save Logic:</b>
+      <pre><code class="language-java">
+public Document saveFile(MultipartFile file) throws Exception {
+    Document doc = new Document();
+    doc.setName(file.getOriginalFilename());
+    doc.setData(file.getBytes());
+    return repo.save(doc);
+}
+      </code></pre>
+
+      <p class="text-info">✔ Good for small PDFs/images  
+      ❌ Not recommended for large storage → use S3/local file system</p>
+
+      <hr>
+
+      <h5 class="text-warning">📌 6. How to Send File from Postman</h5>
+      <ul>
+        <li>Body → <b>form-data</b></li>
+        <li>Key → <b>file</b></li>
+        <li>Type → File</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-warning">📌 7. Important Interview Questions</h5>
+      <ul>
+        <li>🔹 What is <b>multipart/form-data</b>?</li>
+        <li>🔹 Difference between <code>@RequestParam</code> vs <code>@RequestPart</code>?</li>
+        <li>🔹 How to validate file size/type?</li>
+        <li>🔹 How to handle large file uploads without memory issues?</li>
+        <li>🔹 File storage: DB vs File System vs S3 – When to choose what?</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-warning">📌 8. Best Practices</h5>
+      <ul>
+        <li>✔ Always validate file type (mime type).</li>
+        <li>✔ Do not store large files in DB.</li>
+        <li>✔ Use streaming for huge files (&gt; 50MB).</li>
+        <li>✔ Scan uploaded files for malware (enterprise).</li>
+        <li>✔ Store only metadata in DB, file in storage.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingMultipartChunks">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseMultipartChunks"
+      aria-expanded="false" aria-controls="collapseMultipartChunks">
+      🚀 Multipart Upload: Chunk Behaviour, JVM Memory Usage & Streaming Solution
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+
+  <div id="collapseMultipartChunks" class="accordion-collapse collapse"
+    aria-labelledby="headingMultipartChunks" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <h5 class="text-warning">📌 1. Does Spring Boot Upload File Chunk-by-Chunk?</h5>
+      <p class="text-info">
+        ❌ <b>No.</b> Spring Boot's default <code>MultipartFile</code> does <b>NOT</b> upload in chunks.<br>
+        It loads the <b>entire file into memory</b> (or into a temporary disk buffer) before your controller gets it.
+      </p>
+
+      <ul>
+        <li>Multipart request arrives → Spring parses it fully</li>
+        <li>Creates <code>MultipartFile</code> object with buffered data</li>
+        <li>Your method receives file after full upload</li>
+      </ul>
+
+      <p class="text-danger">⚠️ Not suitable for large files (50MB, 100MB, etc.)</p>
+
+      <hr>
+
+      <h5 class="text-warning">📌 2. JVM Memory Impact for 10MB File</h5>
+
+      <p class="text-info">A 10MB upload consumes more memory than 10MB because Spring copies data internally:</p>
+
+      <table class="table table-dark table-striped">
+        <thead>
+          <tr><th>Stage</th><th>Memory Usage</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>HTTP multipart parsing</td><td>~10 MB</td></tr>
+          <tr><td>Multipart buffer</td><td>+ few MB</td></tr>
+          <tr><td><code>file.getBytes()</code></td><td>+10 MB new array</td></tr>
+        </tbody>
+      </table>
+
+      <p class="text-warning">
+        👉 Total JVM impact may reach <b>20–30MB</b> for a single 10MB upload.
+      </p>
+
+      <p class="text-danger">❗ 100 users uploading 10MB each → Possible <b>OutOfMemoryError</b>.</p>
+
+      <hr>
+
+      <h5 class="text-warning">📌 3. BAD Approach: Using <code>file.getBytes()</code></h5>
+      <pre><code class="language-java">
+byte[] data = file.getBytes(); // ❌ Loads full file in memory - dangerous for large files
+      </code></pre>
+
+      <p class="text-danger">Avoid this for any file > 5MB.</p>
+
+      <hr>
+
+      <h5 class="text-warning">📌 4. GOOD Approach: Stream Upload (Chunked Reading)</h5>
+
+      <p class="text-info">
+        Spring will still buffer initial upload, but your code <b>will not load full file into JVM memory</b>.
+      </p>
+
+      <pre><code class="language-java">
+@PostMapping("/upload-stream")
+public ResponseEntity<?> uploadStream(@RequestParam("file") MultipartFile file) throws IOException {
+
+    try (InputStream input = file.getInputStream()) {
+
+        // Streams the file in 8KB chunks internally
+        Files.copy(input, Paths.get("uploads/bigfile.bin"),
+                   StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    return ResponseEntity.ok("Uploaded using streaming");
+}
+      </code></pre>
+
+      <ul>
+        <li>✔ JVM stays safe</li>
+        <li>✔ InputStream reads chunk-by-chunk</li>
+        <li>✔ No large byte[] created</li>
+      </ul>
+
+      <hr>
+
+      <h5 class="text-warning">📌 5. When You REALLY Need True Chunk Upload (like YouTube)?</h5>
+
+      <p>You need a custom upload flow:</p>
+      <ul>
+        <li>Client sends chunks (1MB each)</li>
+        <li>Server appends chunks to existing temp file</li>
+        <li>Supports resume and parallel chunk uploads</li>
+      </ul>
+
+      <p class="text-info">➡️ This is NOT provided by MultipartFile. Must be implemented manually.</p>
+
+      <hr>
+
+      <h5 class="text-warning">📌 6. Summary</h5>
+      <ul class="text-info">
+        <li>❌ Spring MultipartFile does NOT stream file upload chunks.</li>
+        <li>⚠️ Full file is buffered → JVM may use 2× or 3× memory.</li>
+        <li>✔ Use <b>streaming</b> (<code>getInputStream()</code>) to avoid memory explosion.</li>
+        <li>⭐ For real chunk upload → build custom chunk API.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingChunkUpload">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseChunkUpload"
+      aria-expanded="false" aria-controls="collapseChunkUpload">
+      📦 Chunk Upload Implementation (YouTube / Google Drive Style)
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+
+  <div id="collapseChunkUpload" class="accordion-collapse collapse"
+    aria-labelledby="headingChunkUpload" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+
+
+      <h4 class="text-warning">📌 1. Why Chunk Upload?</h4>
+      <ul>
+        <li>Uploads **do not load entire file** into JVM memory</li>
+        <li>Upload can resume if network fails</li>
+        <li>Each chunk is typically 1–5 MB</li>
+        <li>Ideal for 100MB–10GB files</li>
+      </ul>
+
+
+
+      <hr>
+      <h4 class="text-warning">📌 2. API Workflow</h4>
+
+      <pre><code class="language-text">
+Client → Upload chunk 1 → Server stores it
+Client → Upload chunk 2 → Server stores it
+...
+Client → Upload last chunk → Server merges chunks → Final file created
+      </code></pre>
+
+      <hr>
+
+
+
+      <h4 class="text-warning">📌 3. Chunk Upload Request DTO</h4>
+
+      <pre><code class="language-java">
+@Data
+public class ChunkMetadata {
+    private String fileId;       // Unique ID per file upload
+    private int chunkNumber;     // Current chunk #
+    private int totalChunks;     // Total chunks for this file
+    private String fileName;     // Original filename
+}
+      </code></pre>
+
+
+
+      <hr>
+      <h4 class="text-warning">📌 4. Upload Single Chunk</h4>
+
+      <pre><code class="language-java">
+@PostMapping("/upload-chunk")
+public ResponseEntity<?> uploadChunk(
+        @RequestPart("chunk") MultipartFile chunk,
+        @RequestPart("meta") ChunkMetadata metadata) throws Exception {
+
+    String uploadDir = "uploads/chunks/" + metadata.getFileId();
+    Files.createDirectories(Paths.get(uploadDir));
+
+    // Save chunk as: 1.part, 2.part, 3.part etc.
+    Path chunkPath = Paths.get(uploadDir, metadata.getChunkNumber() + ".part");
+    Files.write(chunkPath, chunk.getBytes());
+
+    return ResponseEntity.ok("Chunk " + metadata.getChunkNumber() + " uploaded");
+}
+      </code></pre>
+
+
+
+      <hr>
+      <h4 class="text-warning">📌 5. Merge All Chunks After Final Chunk</h4>
+
+      <pre><code class="language-java">
+@PostMapping("/merge-chunks")
+public ResponseEntity<?> mergeChunks(@RequestBody ChunkMetadata metadata) throws Exception {
+
+    String uploadDir = "uploads/chunks/" + metadata.getFileId();
+    String finalFilePath = "uploads/final/" + metadata.getFileName();
+
+    Files.createDirectories(Paths.get("uploads/final"));
+
+    try (OutputStream outputStream = new FileOutputStream(finalFilePath, true)) {
+        for (int i = 1; i <= metadata.getTotalChunks(); i++) {
+            Path chunkPath = Paths.get(uploadDir, i + ".part");
+            Files.copy(chunkPath, outputStream);
+        }
+    }
+
+    return ResponseEntity.ok("File merged successfully → " + finalFilePath);
+}
+      </code></pre>
+
+
+
+      <p class="text-info">
+      ✔ Server never loads full file in JVM memory  
+      ✔ Chunks are appended directly to output file  
+      ✔ Suitable for files in GB range  
+      </p>
+
+
+
+      <hr>
+      <h4 class="text-warning">📌 6. Frontend Example (Chunk Splitter - JS)</h4>
+
+      <pre><code class="language-javascript">
+async function uploadFile(file) {
+    const chunkSize = 1024 * 1024 * 2; // 2MB per chunk
+    const totalChunks = Math.ceil(file.size / chunkSize);
+    const fileId = crypto.randomUUID();
+
+    for (let chunkNumber = 1; chunkNumber <= totalChunks; chunkNumber++) {
+
+        const start = (chunkNumber - 1) * chunkSize;
+        const end = Math.min(file.size, chunkNumber * chunkSize);
+
+        const chunk = file.slice(start, end);
+
+        const formData = new FormData();
+        formData.append("chunk", chunk);
+        formData.append("meta", new Blob([JSON.stringify({
+            fileId,
+            chunkNumber,
+            totalChunks,
+            fileName: file.name
+        })], { type: "application/json" }));
+
+        await fetch("/upload-chunk", { method: "POST", body: formData });
+    }
+
+    // Merge request
+    await fetch("/merge-chunks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            fileId,
+            totalChunks,
+            fileName: file.name
+        })
+    });
+
+    alert("Upload complete!");
+}
+      </code></pre>
+
+
+
+      <hr>
+      <h4 class="text-warning">📌 7. Resume Support Logic</h4>
+      <p>If upload fails, client can ask:</p>
+
+      <pre><code class="language-java">
+@GetMapping("/uploaded-chunks/{fileId}")
+public ResponseEntity<?> uploadedChunks(@PathVariable String fileId) throws IOException {
+    Path path = Paths.get("uploads/chunks/" + fileId);
+
+    if (!Files.exists(path)) return ResponseEntity.ok(List.of());
+
+    // Return list of chunk numbers already uploaded
+    List<Integer> chunks = Files.list(path)
+            .map(p -> Integer.parseInt(p.getFileName().toString().replace(".part", "")))
+            .sorted()
+            .toList();
+
+    return ResponseEntity.ok(chunks);
+}
+      </code></pre>
+
+      <p class="text-info">Client resumes only missing chunks.</p>
+
+
+
+      <hr>
+      <h4 class="text-warning">📌 8. Folder Structure</h4>
+
+      <pre><code class="language-text">
+uploads/
+ ├── chunks/
+ │    └── {fileId}/
+ │         ├── 1.part
+ │         ├── 2.part
+ │         ├── 3.part
+ │         └── ...
+ └── final/
+      └── finalFileName.mp4
+      </code></pre>
+
+
+
+      <hr>
+      <h4 class="text-warning">📌 9. Why This Is Better Than MultipartFile?</h4>
+
+      <ul>
+        <li>Uses <b>very low JVM memory</b></li>
+        <li>Uploads survive network failure</li>
+        <li>Works for **very large files**</li>
+        <li>No OutOfMemory risk</li>
+        <li>No need to buffer large file in memory</li>
+      </ul>
+
+
+
+      <hr>
+      <h4 class="text-warning">📌 10. Interview Highlights</h4>
+      <ul>
+        <li>✔ Spring MultipartFile loads entire file → not scalable</li>
+        <li>✔ Chunk upload uses streaming → scalable for GB files</li>
+        <li>✔ Server never stores full file in memory</li>
+        <li>✔ Resume support improves reliability</li>
+        <li>✔ Used by YouTube, Google Drive, Dropbox</li>
+      </ul>
+
+
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingRequestPartJSON">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseRequestPartJSON"
+      aria-expanded="false" aria-controls="collapseRequestPartJSON">
+      📄 @RequestPart – How JSON Is Sent in Multipart Requests
+      <span class="badge bg-info ms-2">hariPrep</span>
+    </button>
+  </h2>
+
+  <div id="collapseRequestPartJSON" class="accordion-collapse collapse"
+    aria-labelledby="headingRequestPartJSON" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+
+
+      <h4 class="text-warning">📌 1. Spring Boot Controller Using @RequestPart</h4>
+
+      <pre><code class="language-java">
+@PostMapping(value = "/upload-with-json",
+             consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+public ResponseEntity<?> upload(
+        @RequestPart("file") MultipartFile file,
+        @RequestPart("data") UserRequest data) {
+
+    System.out.println("Name = " + data.getName());
+    System.out.println("Uploaded = " + file.getOriginalFilename());
+
+    return ResponseEntity.ok("Success");
+}
+      </code></pre>
+
+      <pre><code class="language-java">
+@Data
+public class UserRequest {
+    private String name;
+    private String email;
+}
+      </code></pre>
+
+
+
+      <hr>
+      <h4 class="text-warning">📌 2. How the Request Looks in Postman</h4>
+
+      <p class="text-info">Use <b>Body → form-data</b> and send:</p>
+
+      <table class="table table-dark table-striped">
+        <thead>
+          <tr><th>Key</th><th>Type</th><th>Value</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>file</td>
+            <td>File</td>
+            <td>(Choose a file)</td>
+          </tr>
+          <tr>
+            <td>data</td>
+            <td>Text</td>
+            <td>{ "name": "Narahari", "email": "hari@example.com" }</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p class="text-warning">✔ The <b>JSON part must be a valid JSON string</b> in "Text" mode.</p>
+
+      <hr>
+
+
+
+      <h4 class="text-warning">📌 3. How the Raw Multipart Request Looks Internally</h4>
+
+      <pre><code class="language-text">
+--boundary
+Content-Disposition: form-data; name="file"; filename="photo.png"
+Content-Type: image/png
+
+(binary bytes)
+
+--boundary
+Content-Disposition: form-data; name="data"
+Content-Type: application/json
+
+{"name": "Narahari", "email": "hari@example.com"}
+
+--boundary--
+      </code></pre>
+
+      <p class="text-info">✔ Spring automatically deserializes the JSON part into <code>UserRequest</code>.</p>
+
+
+
+      <hr>
+      <h4 class="text-warning">📌 4. CURL Example for @RequestPart</h4>
+
+      <pre><code class="language-bash">
+curl -X POST http://localhost:8080/upload-with-json \
+  -F 'file=@/path/to/image.png' \
+  -F 'data={"name":"Narahari","email":"hari@example.com"};type=application/json'
+      </code></pre>
+
+      <p class="text-info">✔ <b>;type=application/json</b> ensures JSON is treated as an actual JSON part.</p>
+
+
+
+      <hr>
+      <h4 class="text-warning">📌 5. Axios / JavaScript Example</h4>
+
+      <pre><code class="language-javascript">
+const form = new FormData();
+
+form.append("file", selectedFile);
+form.append("data", new Blob(
+  [ JSON.stringify({ name: "Narahari", email: "hari@example.com" }) ],
+  { type: "application/json" }
+));
+
+axios.post("/upload-with-json", form);
+      </code></pre>
+
+      <p class="text-info">
+      ✔ JSON is wrapped in a <code>Blob</code> with <code>application/json</code> type  
+      ✔ This exactly matches what @RequestPart expects  
+      </p>
+
+
+
+      <hr>
+      <h4 class="text-warning">📌 6. @RequestPart vs @RequestParam vs @RequestBody</h4>
+
+      <table class="table table-dark table-striped">
+        <thead>
+          <tr>
+            <th>Annotation</th>
+            <th>Used For</th>
+            <th>Content-Type</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>@RequestBody</td>
+            <td>Only JSON</td>
+            <td>application/json</td>
+          </tr>
+          <tr>
+            <td>@RequestParam</td>
+            <td>Simple text parameters, form fields</td>
+            <td>multipart/form-data (text parts)</td>
+          </tr>
+          <tr>
+            <td>@RequestPart</td>
+            <td>File + JSON  
+                <br>JSON inside multipart</td>
+            <td>multipart/form-data (mixed parts)</td>
+          </tr>
+        </tbody>
+      </table>
+
+
+
+      <hr>
+      <h4 class="text-warning">📌 7. Interview Takeaways</h4>
+
+      <ul>
+        <li>✔ <code>@RequestPart</code> is used when you need <b>JSON + File</b> in the same request</li>
+        <li>✔ JSON part must be sent with <code>Content-Type: application/json</code></li>
+        <li>✔ Postman → form-data → JSON goes into a text field as string</li>
+        <li>✔ Spring deserializes JSON automatically into DTO</li>
+      </ul>
+
+
+
+    </div>
+  </div>
+</div>
+
 <div class="accordion-item">
   <h2 class="accordion-header" id="headingVersioningMS">
     <button class="accordion-button collapsed search-item text-info" type="button"
@@ -271,6 +941,7 @@ public class CustomerV2Controller { }
     </div>
   </div>
 </div>
+
 <div class="accordion-item">
   <h2 class="accordion-header" id="headingIdempotencyAPI">
     <button class="accordion-button collapsed search-item text-info" type="button"
