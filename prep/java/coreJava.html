@@ -1,0 +1,4018 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Core Java</title>
+
+  <!-- Bootstrap & Prism.js for Syntax Highlighting -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+
+  <style>
+    /* body {
+      background-color: #121212;
+      color: white;
+    } */
+
+    .accordion-button {
+      background-color: #343a40;
+      color: white;
+    }
+
+    .accordion-button:focus {
+      box-shadow: none;
+    }
+
+    .accordion-button:not(.collapsed) {
+      background-color: #007bff;
+      color: white;
+    }
+
+    .accordion-body {
+      background-color: #1e1e1e;
+      color: white;
+    }
+
+    .highlight-yellow {
+      color: #ffcc00;
+      /* Yellow */
+      font-weight: bold;
+    }
+
+    .highlight-blue {
+      color: #4db8ff;
+      /* Light blue */
+      font-weight: bold;
+    }
+
+    pre[class*="language-"] {
+      background: #1e1e1e !important;
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    /* Search Box Styling */
+    .search-container {
+      margin-bottom: 15px;
+      text-align: center;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #666;
+      background: #222;
+      color: white;
+      outline: none;
+      font-size: 16px;
+    }
+
+    .search-input::placeholder {
+      color: #aaa;
+    }
+  </style>
+</head>
+
+<body class="bg-dark text-light mb-4">
+  <div class="container">
+    <div class="header fw-bold text-center mb-4">Core Java Q&A</div>
+    <p id="questionCount" class="text-center">0 Questions</p>
+
+
+    <!-- Search Box in a Bootstrap Container -->
+    <div class="search-container">
+      <input type="text" class="search-input form-control" id="searchBox" placeholder="Search questions..."
+        onkeyup="searchQuestions()" />
+    </div>
+    <div class="accordion" id="qaAccordion">
+      <!-- Accordion items will be dynamically inserted here -->
+      <!-- Example Accordion Item -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingOne">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+            data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+            What is Java?
+          </button>
+        </h2>
+        <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne"
+          data-bs-parent="#qaAccordion">
+          <div class="accordion-body">
+            <p>Java is a high-level, class-based, object-oriented programming language that is designed to have
+              as few implementation dependencies as possible. It is widely used for building enterprise-scale
+              applications.</p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+  <h2 class="accordion-header" id="headingJavaArchitecture">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseJavaArchitecture"
+      aria-expanded="false" aria-controls="collapseJavaArchitecture">
+      🏗️ Java Architecture & JVM Internals – Diagram + Deep Explanation (HariPrep Style)
+    </button>
+  </h2>
+
+  <div id="collapseJavaArchitecture" class="accordion-collapse collapse"
+    aria-labelledby="headingJavaArchitecture" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- High-Level Architecture -->
+      <h4 class="text-warning">1️⃣ Java Architecture – High Level Flow</h4>
+
+      <!-- Diagram -->
+      
+::contentReference[oaicite:0]{index=0}
+
+
+      <pre class="text-info">
+Flow:
+  Java Source (.java)
+        ↓ javac
+  Bytecode (.class)
+        ↓ JVM
+  Native Machine Code
+
+Key Concept:
+  ✔ Bytecode is platform independent
+  ✔ JVM is platform dependent
+
+Interview Line:
+  ✔ Java achieves WORA using JVM
+      </pre>
+
+      <hr>
+
+      <!-- JVM Overview -->
+      <h4 class="text-warning">2️⃣ JVM – Internal Architecture Overview</h4>
+      <pre class="text-info">
+JVM Major Components:
+  1. Class Loader Subsystem
+  2. Runtime Data Areas
+  3. Execution Engine
+
+Interview Line:
+  ✔ JVM is responsible for loading, verifying,
+    executing bytecode and managing memory
+      </pre>
+
+      <hr>
+
+      <!-- Class Loader -->
+      <h4 class="text-warning">3️⃣ Class Loader Subsystem</h4>
+      <pre class="text-info">
+Responsibility:
+  • Loads .class files into JVM
+
+ClassLoaders:
+  • Bootstrap ClassLoader
+  • Extension ClassLoader
+  • Application ClassLoader
+
+Model:
+  • Parent Delegation Model
+
+Interview Line:
+  ✔ Class loading is secure and hierarchical
+      </pre>
+
+      <hr>
+
+      <!-- Runtime Data Areas -->
+      <h4 class="text-warning">4️⃣ Runtime Data Areas (Memory Areas)</h4>
+
+      <!-- Diagram -->
+      
+::contentReference[oaicite:1]{index=1}
+
+
+      <pre class="text-info">
+Method Area (Metaspace):
+  • Class metadata
+  • Static variables
+  • Method bytecode
+
+Heap:
+  • Objects & instance variables
+  • Shared across threads
+
+Java Stack (Per Thread):
+  • Method calls
+  • Local variables
+  • Stack frames
+
+PC Register:
+  • Current instruction pointer
+
+Native Method Stack:
+  • JNI method execution
+
+Interview Line:
+  ✔ Heap is shared, stack is thread-specific
+      </pre>
+
+      <hr>
+
+      <!-- Execution Engine -->
+      <h4 class="text-warning">5️⃣ Execution Engine</h4>
+      <pre class="text-info">
+Components:
+  • Interpreter
+  • JIT Compiler
+  • Garbage Collector
+
+Execution Flow:
+  • Interpreter executes bytecode line-by-line
+  • Hot code compiled by JIT
+  • Native code executed directly
+
+Interview Line:
+  ✔ JIT improves performance over time
+      </pre>
+
+      <hr>
+
+      <!-- Garbage Collector -->
+      <h4 class="text-warning">6️⃣ Garbage Collection (GC)</h4>
+      <pre class="text-info">
+Responsibility:
+  • Frees unused objects from heap
+  • Automatic memory management
+
+Common GCs:
+  • Serial GC
+  • Parallel GC
+  • G1 GC
+  • ZGC
+
+Interview Line:
+  ✔ GC prevents memory leaks due to manual deallocation
+      </pre>
+
+      <hr>
+
+      <!-- JDK vs JRE vs JVM -->
+      <h4 class="text-warning">7️⃣ JDK vs JRE vs JVM (Placement)</h4>
+      <pre class="text-info">
+JVM:
+  • Executes bytecode
+
+JRE:
+  • JVM + Core Libraries
+
+JDK:
+  • JRE + Development tools (javac, jar)
+
+Hierarchy:
+  JDK ⊃ JRE ⊃ JVM
+
+Interview Line:
+  ✔ JDK is required for development, not execution
+      </pre>
+
+      <hr>
+
+      <!-- Interview Summary -->
+      <h4 class="text-warning">📌 One-Line Interview Summary</h4>
+      <pre class="text-info">
+"Java source code is compiled into bytecode,
+JVM loads and verifies it, manages memory using runtime data areas,
+executes instructions using interpreter and JIT,
+and automatically handles memory using garbage collection."
+      </pre>
+
+    </div>
+  </div>
+</div>
+
+      <!-- Add more accordion items as needed -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingJavaFeatures">
+          <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+            data-bs-target="#collapseJavaFeatures" aria-expanded="false" aria-controls="collapseJavaFeatures">
+            ☕ Features of Java – Interview Ready Explanation
+          </button>
+        </h2>
+
+        <div id="collapseJavaFeatures" class="accordion-collapse collapse" aria-labelledby="headingJavaFeatures"
+          data-bs-parent="#accordionExample">
+          <div class="accordion-body bg-dark text-light">
+
+            <!-- Feature 1 -->
+            <h4 class="text-warning">1️⃣ Platform Independent (Write Once, Run Anywhere)</h4>
+            <pre class="text-info">
+Explanation:
+  • Java source code is compiled into bytecode
+  • Bytecode runs on JVM, not directly on OS
+  • Same .class file runs on Windows, Linux, Mac
+
+Interview Line:
+  ✔ Java is platform-independent due to JVM, not compiler
+      </pre>
+
+            <hr>
+
+            <!-- Feature 2 -->
+            <h4 class="text-warning">2️⃣ Object-Oriented</h4>
+            <pre class="text-info">
+Supports:
+  • Encapsulation
+  • Inheritance
+  • Polymorphism
+  • Abstraction
+
+Benefits:
+  • Better code reusability
+  • Easy maintenance
+  • Real-world modeling
+
+Interview Line:
+  ✔ Java follows pure OOP except for primitive types
+      </pre>
+
+            <hr>
+
+            <!-- Feature 3 -->
+            <h4 class="text-warning">3️⃣ Simple & Easy to Learn</h4>
+            <pre class="text-info">
+Why Simple:
+  • No pointers
+  • No multiple inheritance via classes
+  • Automatic memory management
+
+Result:
+  • Less error-prone
+  • Cleaner syntax compared to C++
+
+Interview Line:
+  ✔ Java removed complex C++ features to improve safety
+      </pre>
+
+            <hr>
+
+            <!-- Feature 4 -->
+            <h4 class="text-warning">4️⃣ Secure</h4>
+            <pre class="text-info">
+Security Features:
+  • Bytecode verification
+  • No pointer arithmetic
+  • ClassLoader + SecurityManager
+  • Strong encapsulation
+
+Usage:
+  • Banking
+  • FinTech
+  • Enterprise systems
+
+Interview Line:
+  ✔ Java provides security at language and JVM level
+      </pre>
+
+            <hr>
+
+            <!-- Feature 5 -->
+            <h4 class="text-warning">5️⃣ Robust</h4>
+            <pre class="text-info">
+Why Robust:
+  • Strong exception handling
+  • Compile-time & runtime checks
+  • Garbage Collection
+
+Result:
+  • Fewer crashes
+  • High reliability in production
+
+Interview Line:
+  ✔ Robustness comes from GC and exception handling
+      </pre>
+
+            <hr>
+
+            <!-- Feature 6 -->
+            <h4 class="text-warning">6️⃣ Multithreaded</h4>
+            <pre class="text-info">
+Capabilities:
+  • Built-in thread support
+  • Concurrency APIs
+  • Executor framework
+
+Benefits:
+  • High performance
+  • Better CPU utilization
+
+Interview Line:
+  ✔ Java supports true multithreading at language level
+      </pre>
+
+            <hr>
+
+            <!-- Feature 7 -->
+            <h4 class="text-warning">7️⃣ High Performance</h4>
+            <pre class="text-info">
+How Java Achieves Performance:
+  • JIT Compiler
+  • Hotspot optimizations
+  • Native method support (JNI)
+
+Result:
+  • Near-native performance
+
+Interview Line:
+  ✔ JIT converts bytecode to native code at runtime
+      </pre>
+
+            <hr>
+
+            <!-- Feature 8 -->
+            <h4 class="text-warning">8️⃣ Distributed</h4>
+            <pre class="text-info">
+Support:
+  • RMI
+  • Web services
+  • Networking APIs
+
+Usage:
+  • Microservices
+  • Cloud-native applications
+
+Interview Line:
+  ✔ Java supports distributed computing out of the box
+      </pre>
+
+            <hr>
+
+            <!-- Feature 9 -->
+            <h4 class="text-warning">9️⃣ Portable</h4>
+            <pre class="text-info">
+Why Portable:
+  • Fixed primitive sizes
+  • Platform-independent bytecode
+
+Difference:
+  • Platform Independent → JVM based
+  • Portable → consistent behavior
+
+Interview Line:
+  ✔ Java ensures same result on all platforms
+      </pre>
+
+            <hr>
+
+            <!-- Feature 10 -->
+            <h4 class="text-warning">🔟 Dynamic</h4>
+            <pre class="text-info">
+Dynamic Nature:
+  • Classes loaded at runtime
+  • Reflection API
+  • Dynamic linking
+
+Usage:
+  • Frameworks (Spring, Hibernate)
+
+Interview Line:
+  ✔ Java supports runtime extensibility
+      </pre>
+
+            <hr>
+
+            <!-- Summary -->
+            <h4 class="text-warning">📌 Interview-Friendly Summary</h4>
+            <pre class="text-info">
+"Java is a platform-independent, object-oriented, secure, robust, and multithreaded
+language with high performance and strong support for distributed and enterprise
+applications, making it ideal for large-scale systems."
+      </pre>
+
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingJavaBetter">
+          <button class="accordion-button collapsed search-item text-info" type="button" data-bs-toggle="collapse"
+            data-bs-target="#collapseJavaBetter" aria-expanded="false" aria-controls="collapseJavaBetter">
+            🏆 Why Java Is Better Than Other Languages – Interview Comparison
+          </button>
+        </h2>
+
+        <div id="collapseJavaBetter" class="accordion-collapse collapse" aria-labelledby="headingJavaBetter"
+          data-bs-parent="#accordionExample">
+          <div class="accordion-body bg-dark text-light">
+
+            <!-- Point 1 -->
+            <h4 class="text-warning">1️⃣ Platform Independence (Java vs C/C++)</h4>
+            <pre class="text-info">
+Java:
+  • Write Once, Run Anywhere
+  • Bytecode runs on JVM
+
+C / C++:
+  • Platform dependent
+  • Need recompilation per OS
+
+Interview Line:
+  ✔ Java avoids OS-specific binaries using JVM
+      </pre>
+
+            <hr>
+
+            <!-- Point 2 -->
+            <h4 class="text-warning">2️⃣ Strong Memory Management (Java vs C/C++)</h4>
+            <pre class="text-info">
+Java:
+  • Automatic Garbage Collection
+  • No manual memory free
+  • No dangling pointers
+
+C / C++:
+  • Manual malloc/free
+  • Memory leaks common
+
+Interview Line:
+  ✔ Java reduces memory-related bugs drastically
+      </pre>
+
+            <hr>
+
+            <!-- Point 3 -->
+            <h4 class="text-warning">3️⃣ Better Multithreading Support (Java vs Python)</h4>
+            <pre class="text-info">
+Java:
+  • True multithreading
+  • Advanced concurrency APIs
+  • No Global Interpreter Lock
+
+Python:
+  • GIL limits CPU-bound threading
+
+Interview Line:
+  ✔ Java scales better for high-concurrency systems
+      </pre>
+
+            <hr>
+
+            <!-- Point 4 -->
+            <h4 class="text-warning">4️⃣ Performance (Java vs Python / JavaScript)</h4>
+            <pre class="text-info">
+Java:
+  • JIT compilation
+  • HotSpot optimizations
+  • Near-native speed
+
+Python / JS:
+  • Interpreted / partially compiled
+  • Slower for heavy workloads
+
+Interview Line:
+  ✔ Java offers balanced performance and safety
+      </pre>
+
+            <hr>
+
+            <!-- Point 5 -->
+            <h4 class="text-warning">5️⃣ Strong Type System (Java vs JavaScript)</h4>
+            <pre class="text-info">
+Java:
+  • Statically typed
+  • Compile-time error detection
+
+JavaScript:
+  • Dynamically typed
+  • Errors at runtime
+
+Interview Line:
+  ✔ Java catches bugs early during compilation
+      </pre>
+
+            <hr>
+
+            <!-- Point 6 -->
+            <h4 class="text-warning">6️⃣ Enterprise & Ecosystem Strength</h4>
+            <pre class="text-info">
+Java:
+  • Spring, Hibernate, Kafka, Spark
+  • Banking, FinTech, Telecom, E-commerce
+  • Long-term backward compatibility
+
+Other Languages:
+  • Limited enterprise tooling
+  • Faster breaking changes
+
+Interview Line:
+  ✔ Java dominates large-scale enterprise systems
+      </pre>
+
+            <hr>
+
+            <!-- Point 7 -->
+            <h4 class="text-warning">7️⃣ Security (Java vs Many Languages)</h4>
+            <pre class="text-info">
+Java Security:
+  • Bytecode verification
+  • ClassLoader isolation
+  • No pointer arithmetic
+  • Strong encapsulation
+
+Result:
+  • Safer execution environment
+
+Interview Line:
+  ✔ Java enforces security at language + JVM level
+      </pre>
+
+            <hr>
+
+            <!-- Point 8 -->
+            <h4 class="text-warning">8️⃣ Backward Compatibility</h4>
+            <pre class="text-info">
+Java:
+  • Code written 10–15 years ago still runs
+  • Stable upgrades
+
+Other Languages:
+  • Breaking changes frequent
+
+Interview Line:
+  ✔ Java protects enterprise investments
+      </pre>
+
+            <hr>
+
+            <!-- Point 9 -->
+            <h4 class="text-warning">9️⃣ Scalability & Cloud Readiness</h4>
+            <pre class="text-info">
+Java:
+  • Excellent JVM tuning
+  • Kubernetes-friendly
+  • High throughput microservices
+
+Result:
+  • Handles millions of requests/day
+
+Interview Line:
+  ✔ Java scales vertically and horizontally
+      </pre>
+
+            <hr>
+
+            <!-- Point 10 -->
+            <h4 class="text-warning">🔟 Community & Long-Term Support</h4>
+            <pre class="text-info">
+Java:
+  • Huge developer community
+  • LTS releases
+  • Extensive documentation
+
+Result:
+  • Easy hiring
+  • Long-term maintenance
+
+Interview Line:
+  ✔ Java is future-proof for enterprises
+      </pre>
+
+            <hr>
+
+            <!-- Summary -->
+            <h4 class="text-warning">📌 Interview-Friendly Summary</h4>
+            <pre class="text-info">
+"Java is preferred over other languages because it offers platform independence,
+strong memory management, true multithreading, high performance, enterprise-grade
+security, backward compatibility, and unmatched ecosystem support, making it ideal
+for large-scale, long-term applications."
+      </pre>
+
+          </div>
+        </div>
+      </div>
+
+    <div class="accordion-item">
+  <h2 class="accordion-header" id="headingJVMJREJDK">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseJVMJREJDK"
+      aria-expanded="false" aria-controls="collapseJVMJREJDK">
+      ⚙️ JVM vs JRE vs JDK – Deep Interview Explanation
+    </button>
+  </h2>
+
+  <div id="collapseJVMJREJDK" class="accordion-collapse collapse"
+    aria-labelledby="headingJVMJREJDK" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- JVM -->
+      <h4 class="text-warning">1️⃣ JVM (Java Virtual Machine)</h4>
+      <pre class="text-info">
+What it is:
+  • Runtime engine
+  • Executes Java bytecode
+  • Platform dependent
+
+Responsibilities:
+  • Class loading
+  • Bytecode verification
+  • Memory management
+  • Garbage Collection
+  • JIT compilation
+
+Interview Line:
+  ✔ JVM makes Java platform independent
+      </pre>
+
+      <hr>
+
+      <!-- JRE -->
+      <h4 class="text-warning">2️⃣ JRE (Java Runtime Environment)</h4>
+      <pre class="text-info">
+What it contains:
+  • JVM
+  • Core Java libraries
+  • Supporting files
+
+Purpose:
+  • Run Java applications
+  • Cannot develop Java code
+
+Interview Line:
+  ✔ JRE = JVM + Libraries
+      </pre>
+
+      <hr>
+
+      <!-- JDK -->
+      <h4 class="text-warning">3️⃣ JDK (Java Development Kit)</h4>
+      <pre class="text-info">
+What it contains:
+  • JRE
+  • Compiler (javac)
+  • Debugger
+  • Build tools (jar, javadoc)
+
+Purpose:
+  • Develop + Run Java applications
+
+Interview Line:
+  ✔ JDK = JRE + Development tools
+      </pre>
+
+      <hr>
+
+      <!-- Comparison -->
+      <h4 class="text-warning">📊 JVM vs JRE vs JDK – Quick Compare</h4>
+      <pre class="text-info">
+JVM → Executes bytecode
+JRE → Runs Java programs
+JDK → Develops Java programs
+
+Relationship:
+  JDK ⊃ JRE ⊃ JVM
+      </pre>
+
+      <hr>
+
+      <h4 class="text-warning">📌 Interview-Friendly Summary</h4>
+      <pre class="text-info">
+"JVM executes bytecode, JRE provides runtime environment,
+and JDK provides tools for developing and running Java applications."
+      </pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingOOPJava">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseOOPJava"
+      aria-expanded="false" aria-controls="collapseOOPJava">
+      🧠 OOP Concepts in Java – Deep Interview Version
+    </button>
+  </h2>
+
+  <div id="collapseOOPJava" class="accordion-collapse collapse"
+    aria-labelledby="headingOOPJava" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- Encapsulation -->
+      <h4 class="text-warning">1️⃣ Encapsulation</h4>
+      <pre class="text-info">
+Definition:
+  • Binding data and methods together
+  • Hiding internal state
+
+How Java Achieves:
+  • Private variables
+  • Public getters/setters
+
+Benefits:
+  • Data security
+  • Controlled access
+  • Maintainability
+
+Interview Line:
+  ✔ Encapsulation is about data hiding, not just getters/setters
+      </pre>
+
+      <hr>
+
+      <!-- Inheritance -->
+      <h4 class="text-warning">2️⃣ Inheritance</h4>
+      <pre class="text-info">
+Definition:
+  • One class acquires properties of another
+
+Java Rules:
+  • Supports single inheritance via classes
+  • Multiple inheritance via interfaces only
+
+Why no multiple inheritance with classes?
+  • Avoids Diamond Problem
+
+Interview Line:
+  ✔ Java prefers composition over inheritance
+      </pre>
+
+      <hr>
+
+      <!-- Polymorphism -->
+      <h4 class="text-warning">3️⃣ Polymorphism</h4>
+      <pre class="text-info">
+Definition:
+  • One interface, many implementations
+
+Types:
+  • Compile-time → Method overloading
+  • Runtime → Method overriding
+
+Key Rule:
+  • Method call resolved at runtime (dynamic binding)
+
+Interview Line:
+  ✔ Runtime polymorphism is achieved via method overriding
+      </pre>
+
+      <hr>
+
+      <!-- Abstraction -->
+      <h4 class="text-warning">4️⃣ Abstraction</h4>
+      <pre class="text-info">
+Definition:
+  • Hiding implementation details
+  • Showing only essential behavior
+
+Achieved Using:
+  • Abstract classes
+  • Interfaces
+
+Abstract Class:
+  • Can have state
+  • Partial abstraction
+
+Interface:
+  • Full abstraction (before Java 8)
+  • Supports multiple inheritance
+
+Interview Line:
+  ✔ Abstraction focuses on what, not how
+      </pre>
+
+      <hr>
+
+      <!-- Association -->
+      <h4 class="text-warning">5️⃣ Association</h4>
+      <pre class="text-info">
+Definition:
+  • Relationship between two classes
+
+Types:
+  • One-to-One
+  • One-to-Many
+  • Many-to-Many
+
+Interview Line:
+  ✔ Association represents HAS-A relationship
+      </pre>
+
+      <hr>
+
+      <!-- Aggregation -->
+      <h4 class="text-warning">6️⃣ Aggregation</h4>
+      <pre class="text-info">
+Definition:
+  • Weak HAS-A relationship
+
+Example:
+  • Department has Employees
+  • Employees can exist independently
+
+Interview Line:
+  ✔ Aggregation represents weak ownership
+      </pre>
+
+      <hr>
+
+      <!-- Composition -->
+      <h4 class="text-warning">7️⃣ Composition</h4>
+      <pre class="text-info">
+Definition:
+  • Strong HAS-A relationship
+
+Example:
+  • House has Rooms
+  • Room cannot exist without House
+
+Benefits:
+  • Better encapsulation
+  • Loose coupling
+
+Interview Line:
+  ✔ Composition is stronger than aggregation
+      </pre>
+
+      <hr>
+
+      <!-- Abstraction vs Encapsulation -->
+      <h4 class="text-warning">⚖️ Abstraction vs Encapsulation (Interview Favorite)</h4>
+      <pre class="text-info">
+Abstraction:
+  • Design level
+  • What to expose
+
+Encapsulation:
+  • Implementation level
+  • How to protect data
+
+Interview Line:
+  ✔ Abstraction hides complexity, encapsulation hides data
+      </pre>
+
+      <hr>
+
+      <h4 class="text-warning">📌 Interview-Friendly Summary</h4>
+      <pre class="text-info">
+"Java OOP is built on encapsulation, inheritance, polymorphism, and abstraction.
+Encapsulation secures data, inheritance promotes reuse, polymorphism enables
+flexibility, and abstraction simplifies complexity. Composition is preferred
+over inheritance for scalable design."
+      </pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingJavacRun">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseJavacRun"
+      aria-expanded="false" aria-controls="collapseJavacRun">
+      ☕ Is javac Required to Run .class or .jar Files? (HariPrep Style)
+    </button>
+  </h2>
+
+  <div id="collapseJavacRun" class="accordion-collapse collapse"
+    aria-labelledby="headingJavacRun" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- Direct Answer -->
+      <h4 class="text-warning">✅ Direct Answer</h4>
+      <pre class="text-info">
+❌ javac is NOT required to run .class or .jar files
+✅ javac is required ONLY to compile .java files
+      </pre>
+
+      <hr>
+
+      <!-- Case 1 -->
+      <h4 class="text-warning">1️⃣ Running a .java File</h4>
+      <pre class="text-info">
+Command:
+  javac Hello.java
+
+What happens:
+  • Source code (.java) → Bytecode (.class)
+  • Compilation step
+
+Conclusion:
+  ✔ javac is REQUIRED
+      </pre>
+
+      <hr>
+
+      <!-- Case 2 -->
+      <h4 class="text-warning">2️⃣ Running a .class File</h4>
+      <pre class="text-info">
+Command:
+  java Hello
+
+What happens internally:
+  1. JVM loads Hello.class
+  2. Bytecode verification
+  3. JIT compiles bytecode → native code
+  4. Program executes
+
+Conclusion:
+  ✔ javac is NOT required
+  ✔ JVM / JRE is enough
+      </pre>
+
+      <hr>
+
+      <!-- Case 3 -->
+      <h4 class="text-warning">3️⃣ Running a .jar File</h4>
+      <pre class="text-info">
+Command:
+  java -jar app.jar
+
+What happens internally:
+  1. JVM reads MANIFEST.MF
+  2. Identifies Main-Class
+  3. Loads compiled .class files
+  4. Executes bytecode
+
+Conclusion:
+  ✔ javac is NOT required
+  ✔ Only JVM/JRE is needed
+      </pre>
+
+      <hr>
+
+      <!-- Interview Trap -->
+      <h4 class="text-warning">⚠️ Interview Trap Question</h4>
+      <pre class="text-info">
+Q: Can we run a Java application without JDK?
+
+A (HariPrep Style):
+  "Yes, JDK is required only for development.
+   To run a Java application, JVM or JRE is sufficient."
+      </pre>
+
+      <hr>
+
+      <!-- Summary -->
+      <h4 class="text-warning">📌 One-Line Interview Summary</h4>
+      <pre class="text-info">
+"javac is used for compilation,
+JVM is used for execution.
+Running does NOT need javac."
+      </pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingJavaJavacJar">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseJavaJavacJar"
+      aria-expanded="false" aria-controls="collapseJavaJavacJar">
+      ☕ java vs javac vs jar Command – HariPrep Interview Style
+    </button>
+  </h2>
+
+  <div id="collapseJavaJavacJar" class="accordion-collapse collapse"
+    aria-labelledby="headingJavaJavacJar" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- Quick Summary -->
+      <h4 class="text-warning">✅ Quick One-Line Difference</h4>
+      <pre class="text-info">
+javac → Compiles Java code
+java  → Runs Java code
+jar   → Packages Java code
+      </pre>
+
+      <hr>
+
+      <!-- javac -->
+      <h4 class="text-warning">1️⃣ javac Command (Java Compiler)</h4>
+      <pre class="text-info">
+Purpose:
+  • Compiles .java source file into .class bytecode
+
+Command:
+  javac Hello.java
+
+Input:
+  • Hello.java
+
+Output:
+  • Hello.class
+
+Requirement:
+  ✔ JDK required
+  ❌ JVM alone is not enough
+
+Interview Line:
+  ✔ javac is used only at development time
+      </pre>
+
+      <hr>
+
+      <!-- java -->
+      <h4 class="text-warning">2️⃣ java Command (Java Launcher)</h4>
+      <pre class="text-info">
+Purpose:
+  • Executes compiled bytecode
+
+Command:
+  java Hello
+
+Input:
+  • Hello.class
+
+What happens internally:
+  1. JVM loads class
+  2. Bytecode verification
+  3. JIT compilation
+  4. Program execution
+
+Requirement:
+  ✔ JVM / JRE sufficient
+  ❌ javac not required
+
+Interview Line:
+  ✔ java command starts the JVM
+      </pre>
+
+      <hr>
+
+      <!-- jar -->
+      <h4 class="text-warning">3️⃣ jar Command (Java Archiver)</h4>
+      <pre class="text-info">
+Purpose:
+  • Packages multiple .class files/resources into a single .jar file
+
+Command:
+  jar cf app.jar *.class
+
+Executable JAR:
+  jar cfe app.jar MainClass *.class
+
+Input:
+  • .class files
+  • Resources (config, images, etc.)
+
+Output:
+  • app.jar
+
+Requirement:
+  ✔ JDK required
+
+Interview Line:
+  ✔ jar is used for packaging and distribution
+      </pre>
+
+      <hr>
+
+      <!-- Comparison Table -->
+      <h4 class="text-warning">📊 java vs javac vs jar – Comparison</h4>
+      <pre class="text-info">
+Command | Purpose     | Input        | Output     | Needs JDK?
+---------------------------------------------------------------
+javac   | Compile     | .java        | .class     | Yes
+java    | Execute     | .class/.jar  | Program    | No (JRE ok)
+jar     | Package     | .class       | .jar       | Yes
+      </pre>
+
+      <hr>
+
+      <!-- Interview Trap -->
+      <h4 class="text-warning">⚠️ Interview Trap Question</h4>
+      <pre class="text-info">
+Q: Can we run a .jar without javac?
+
+A (HariPrep Style):
+  "Yes. javac is only for compilation.
+   Running a JAR needs only JVM using java -jar."
+      </pre>
+
+      <hr>
+
+      <!-- Summary -->
+      <h4 class="text-warning">📌 Final Interview Summary</h4>
+      <pre class="text-info">
+"javac compiles source code,
+java executes bytecode,
+jar packages compiled classes for distribution."
+      </pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingJVMExecutionFlow">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseJVMExecutionFlow"
+      aria-expanded="false" aria-controls="collapseJVMExecutionFlow">
+      ⚙️ How JVM Executes Bytecode – Step-by-Step Flow (HariPrep Style)
+    </button>
+  </h2>
+
+  <div id="collapseJVMExecutionFlow" class="accordion-collapse collapse"
+    aria-labelledby="headingJVMExecutionFlow" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- Step 0 -->
+      <h4 class="text-warning">0️⃣ Source Code to Bytecode (Before JVM)</h4>
+      <pre class="text-info">
+Command:
+  javac Hello.java
+
+Flow:
+  • Developer writes Hello.java
+  • javac compiles → Hello.class (bytecode)
+
+Note:
+  ✔ JVM never executes .java files
+  ✔ JVM executes only .class (bytecode)
+      </pre>
+
+      <hr>
+
+      <!-- Step 1 -->
+      <h4 class="text-warning">1️⃣ Class Loading</h4>
+      <pre class="text-info">
+Command:
+  java Hello
+
+ClassLoader Subsystems:
+  • Bootstrap ClassLoader
+  • Extension ClassLoader
+  • Application ClassLoader
+
+What happens:
+  • Loads Hello.class into JVM memory
+  • Follows parent delegation model
+
+Interview Line:
+  ✔ Class is loaded only once into JVM
+      </pre>
+
+      <hr>
+
+      <!-- Step 2 -->
+      <h4 class="text-warning">2️⃣ Bytecode Verification</h4>
+      <pre class="text-info">
+What JVM checks:
+  • Bytecode format correctness
+  • Stack overflow/underflow
+  • Illegal memory access
+  • Type safety
+
+Purpose:
+  • Security
+  • Prevents malicious bytecode
+
+Interview Line:
+  ✔ JVM ensures bytecode is safe before execution
+      </pre>
+
+      <hr>
+
+      <!-- Step 3 -->
+      <h4 class="text-warning">3️⃣ Class Linking</h4>
+      <pre class="text-info">
+Linking Phases:
+  1. Verification
+  2. Preparation
+     • Allocate memory for static variables
+     • Assign default values
+  3. Resolution
+     • Symbolic references → Direct references
+
+Interview Line:
+  ✔ Linking prepares class for execution
+      </pre>
+
+      <hr>
+
+      <!-- Step 4 -->
+      <h4 class="text-warning">4️⃣ Class Initialization</h4>
+      <pre class="text-info">
+What happens:
+  • Static variables assigned actual values
+  • Static blocks executed
+  • Happens only once per class
+
+Order:
+  • Parent class static blocks
+  • Child class static blocks
+
+Interview Line:
+  ✔ Initialization executes static content
+      </pre>
+
+      <hr>
+
+      <!-- Step 5 -->
+      <h4 class="text-warning">5️⃣ Runtime Data Areas Creation</h4>
+      <pre class="text-info">
+Memory Areas:
+  • Method Area → Class metadata
+  • Heap → Objects
+  • Stack → Method frames
+  • PC Register → Instruction tracking
+  • Native Method Stack → JNI calls
+
+Interview Line:
+  ✔ Each thread gets its own stack
+      </pre>
+
+      <hr>
+
+      <!-- Step 6 -->
+      <h4 class="text-warning">6️⃣ Execution Engine</h4>
+      <pre class="text-info">
+Components:
+  • Interpreter
+  • JIT Compiler
+  • Garbage Collector
+
+Execution Flow:
+  • Interpreter executes bytecode line by line
+  • Frequently used code → compiled by JIT
+  • Native code executed directly
+
+Interview Line:
+  ✔ JIT improves performance over time
+      </pre>
+
+      <hr>
+
+      <!-- Step 7 -->
+      <h4 class="text-warning">7️⃣ Garbage Collection</h4>
+      <pre class="text-info">
+What GC does:
+  • Identifies unused objects
+  • Frees heap memory
+  • Runs automatically
+
+Types:
+  • Serial
+  • Parallel
+  • G1
+  • ZGC
+
+Interview Line:
+  ✔ GC is handled automatically by JVM
+      </pre>
+
+      <hr>
+
+      <!-- Step 8 -->
+      <h4 class="text-warning">8️⃣ Program Termination</h4>
+      <pre class="text-info">
+When JVM stops:
+  • All non-daemon threads finish
+  • System.exit() called
+
+What happens:
+  • Memory cleanup
+  • JVM shutdown
+
+Interview Line:
+  ✔ JVM exits only when no user threads are running
+      </pre>
+
+      <hr>
+
+      <!-- Summary -->
+      <h4 class="text-warning">📌 One-Line Interview Summary</h4>
+      <pre class="text-info">
+"JVM loads bytecode, verifies it, links and initializes classes,
+executes instructions using interpreter and JIT, manages memory
+via GC, and terminates when execution completes."
+      </pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingJVMIndependent">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseJVMIndependent"
+      aria-expanded="false" aria-controls="collapseJVMIndependent">
+      ⚙️ Is JVM Platform Independent? (HariPrep Interview Style)
+    </button>
+  </h2>
+
+  <div id="collapseJVMIndependent" class="accordion-collapse collapse"
+    aria-labelledby="headingJVMIndependent" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- Direct Answer -->
+      <h4 class="text-warning">✅ Direct Answer</h4>
+      <pre class="text-info">
+❌ JVM is NOT platform independent
+✅ JVM is platform dependent
+✅ Java language is platform independent
+      </pre>
+
+      <hr>
+
+      <!-- Why JVM is Platform Dependent -->
+      <h4 class="text-warning">1️⃣ Why JVM is Platform Dependent?</h4>
+      <pre class="text-info">
+Reason:
+  • JVM is written in native language (C/C++)
+  • It interacts directly with OS and hardware
+
+Example:
+  • Windows JVM ≠ Linux JVM ≠ Mac JVM
+
+Interview Line:
+  ✔ Each OS needs its own JVM implementation
+      </pre>
+
+      <hr>
+
+      <!-- Why Java is Platform Independent -->
+      <h4 class="text-warning">2️⃣ Why Java is Platform Independent?</h4>
+      <pre class="text-info">
+Reason:
+  • Java source → Bytecode
+  • Bytecode runs on any JVM
+
+Flow:
+  Java (.java)
+      ↓ javac
+  Bytecode (.class)
+      ↓ JVM
+  Runs on any OS
+
+Interview Line:
+  ✔ Write Once, Run Anywhere is achieved using JVM
+      </pre>
+
+      <hr>
+
+      <!-- Common Interview Trap -->
+      <h4 class="text-warning">⚠️ Common Interview Trap</h4>
+      <pre class="text-info">
+Q: If JVM is platform dependent, how Java is platform independent?
+
+A (HariPrep Style):
+  "Java bytecode is platform independent.
+   JVM is platform dependent.
+   JVM acts as a bridge between bytecode and OS."
+      </pre>
+
+      <hr>
+
+      <!-- Summary -->
+      <h4 class="text-warning">📌 One-Line Interview Summary</h4>
+      <pre class="text-info">
+"JVM is platform dependent, but Java is platform independent
+because the same bytecode runs on different JVMs."
+      </pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingClassWindowsMac">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseClassWindowsMac"
+      aria-expanded="false" aria-controls="collapseClassWindowsMac">
+      ☕ Can a .class File Built on Windows Run on Mac? (HariPrep Style)
+    </button>
+  </h2>
+
+  <div id="collapseClassWindowsMac" class="accordion-collapse collapse"
+    aria-labelledby="headingClassWindowsMac" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- Direct Answer -->
+      <h4 class="text-warning">✅ Direct Answer</h4>
+      <pre class="text-info">
+✔ YES, a .class file built on Windows CAN run on macOS
+✔ Provided that a compatible JVM is installed on Mac
+      </pre>
+
+      <hr>
+
+      <!-- Why it works -->
+      <h4 class="text-warning">1️⃣ Why It Works (Key Concept)</h4>
+      <pre class="text-info">
+Reason:
+  • javac generates platform-independent bytecode
+  • Bytecode is NOT OS-specific
+  • JVM handles OS-specific execution
+
+Flow:
+  Windows:
+    Hello.java → javac → Hello.class
+
+  macOS:
+    Hello.class → JVM (Mac) → Executes
+
+Interview Line:
+  ✔ Bytecode is OS independent, JVM is OS dependent
+      </pre>
+
+      <hr>
+
+      <!-- Mandatory Condition -->
+      <h4 class="text-warning">2️⃣ Mandatory Condition</h4>
+      <pre class="text-info">
+Requirement:
+  • Same or compatible Java version on Mac
+  • JVM installed (JRE/JDK)
+
+Example:
+  • Compiled using Java 17
+  • Must run on Java 17+ JVM
+
+Interview Line:
+  ✔ Higher JVM version can run lower bytecode (mostly)
+      </pre>
+
+      <hr>
+
+      <!-- When it will NOT work -->
+      <h4 class="text-warning">3️⃣ When It Will NOT Work</h4>
+      <pre class="text-info">
+❌ Different Java versions:
+  • Compiled with Java 21
+  • Running on Java 11 JVM
+
+Error:
+  UnsupportedClassVersionError
+
+❌ Native dependencies:
+  • JNI (.dll / .so) files
+  • OS-specific native libraries
+      </pre>
+
+      <hr>
+
+      <!-- Interview Trap -->
+      <h4 class="text-warning">⚠️ Interview Trap Question</h4>
+      <pre class="text-info">
+Q: If JVM is platform dependent, how does the same .class run on Mac?
+
+A (HariPrep Style):
+  "Each OS has its own JVM.
+   The JVM understands the same bytecode and converts it
+   into OS-specific native instructions."
+      </pre>
+
+      <hr>
+
+      <!-- Summary -->
+      <h4 class="text-warning">📌 One-Line Interview Summary</h4>
+      <pre class="text-info">
+"A .class file compiled on Windows can run on macOS
+because Java bytecode is platform independent and
+the JVM handles OS-specific execution."
+      </pre>
+
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingChangeGC">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseChangeGC"
+      aria-expanded="false" aria-controls="collapseChangeGC">
+      🗑️ Can We Change the Default GC in Java? (Java 8 Example – HariPrep Style)
+    </button>
+  </h2>
+
+  <div id="collapseChangeGC" class="accordion-collapse collapse"
+    aria-labelledby="headingChangeGC" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- Direct Answer -->
+      <h4 class="text-warning">✅ Direct Answer</h4>
+      <pre class="text-info">
+✔ YES, we CAN change the default Garbage Collector
+✔ It can be changed using JVM options
+✔ No code change is required
+      </pre>
+
+      <hr>
+
+      <!-- Java 8 Default GC -->
+      <h4 class="text-warning">1️⃣ Default GC in Java 8</h4>
+      <pre class="text-info">
+Java 8 Default GC:
+  • Parallel GC (Throughput GC)
+
+Reason:
+  • Good balance between throughput and pause time
+  • Suitable for server-side applications
+
+Interview Line:
+  ✔ Java 8 uses Parallel GC by default
+      </pre>
+
+      <hr>
+
+      <!-- How to Change GC -->
+      <h4 class="text-warning">2️⃣ How to Change GC (JVM Options)</h4>
+      <pre class="text-info">
+Use JVM flags at startup:
+
+  -XX:+UseSerialGC
+  -XX:+UseParallelGC
+  -XX:+UseG1GC
+  -XX:+UseZGC   (Java 11+)
+  -XX:+UseShenandoahGC (RedHat builds)
+
+Example:
+  java -XX:+UseG1GC -jar app.jar
+
+Interview Line:
+  ✔ GC is selected at JVM startup time
+      </pre>
+
+      <hr>
+
+      <!-- When to Use Which GC -->
+      <h4 class="text-warning">3️⃣ When to Use Which GC</h4>
+      <pre class="text-info">
+Serial GC:
+  • Small applications
+  • Low memory, single CPU
+
+Parallel GC:
+  • High throughput
+  • Batch processing
+
+G1 GC:
+  • Low pause time
+  • Large heap
+  • Microservices
+
+ZGC:
+  • Ultra-low latency
+  • Very large heaps (Java 11+)
+
+Interview Line:
+  ✔ GC choice depends on latency vs throughput
+      </pre>
+
+      <hr>
+
+      <!-- Verification -->
+      <h4 class="text-warning">4️⃣ How to Verify Which GC Is Used</h4>
+      <pre class="text-info">
+Command:
+  java -XX:+PrintCommandLineFlags -version
+
+Or:
+  java -XX:+PrintGCDetails -jar app.jar
+
+Interview Line:
+  ✔ JVM logs confirm active GC
+      </pre>
+
+      <hr>
+
+      <!-- Interview Trap -->
+      <h4 class="text-warning">⚠️ Interview Trap Question</h4>
+      <pre class="text-info">
+Q: Can we change GC dynamically at runtime?
+
+A (HariPrep Style):
+  ❌ NO
+  GC is fixed at JVM startup
+  Requires JVM restart to change
+      </pre>
+
+      <hr>
+
+      <!-- Summary -->
+      <h4 class="text-warning">📌 One-Line Interview Summary</h4>
+      <pre class="text-info">
+"Yes, the default GC in Java can be changed using JVM options.
+In Java 8, Parallel GC is default, but we can switch to G1 or others
+at JVM startup without changing application code."
+      </pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingGCVersions">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseGCVersions"
+      aria-expanded="false" aria-controls="collapseGCVersions">
+      🗑️ Java 8 vs Java 11 vs Java 17 – Default Garbage Collector Changes (HariPrep Style)
+    </button>
+  </h2>
+
+  <div id="collapseGCVersions" class="accordion-collapse collapse"
+    aria-labelledby="headingGCVersions" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- Quick Answer -->
+      <h4 class="text-warning">✅ Quick Interview Answer</h4>
+      <pre class="text-info">
+Java 8  → Parallel GC (Default)
+Java 11 → G1 GC (Default)
+Java 17 → G1 GC (Default)
+      </pre>
+
+      <hr>
+
+      <!-- Java 8 -->
+      <h4 class="text-warning">1️⃣ Java 8 – Default GC</h4>
+      <pre class="text-info">
+Default GC:
+  • Parallel GC (Throughput GC)
+
+Characteristics:
+  • Multiple threads for GC
+  • Focus on high throughput
+  • Stop-The-World pauses
+
+Why chosen:
+  • Best for batch & server applications
+  • CPUs were primary scaling factor
+
+Interview Line:
+  ✔ Java 8 prioritizes throughput over latency
+      </pre>
+
+      <hr>
+
+      <!-- Java 11 -->
+      <h4 class="text-warning">2️⃣ Java 11 – Default GC</h4>
+      <pre class="text-info">
+Default GC:
+  • G1 GC (Garbage First)
+
+Characteristics:
+  • Region-based heap
+  • Predictable pause times
+  • Concurrent marking
+  • Better for large heaps
+
+Why changed from Java 8:
+  • Rise of microservices
+  • Need for low latency
+  • Better container support
+
+Interview Line:
+  ✔ Java 11 optimizes for latency and scalability
+      </pre>
+
+      <hr>
+
+      <!-- Java 17 -->
+      <h4 class="text-warning">3️⃣ Java 17 – Default GC</h4>
+      <pre class="text-info">
+Default GC:
+  • G1 GC (Continued)
+
+Enhancements:
+  • Improved G1 performance
+  • Better memory efficiency
+  • Faster startup
+  • Improved container awareness
+
+Other Available GCs:
+  • ZGC (production-ready)
+  • Shenandoah (vendor-specific)
+
+Interview Line:
+  ✔ Java 17 keeps G1 but improves internals significantly
+      </pre>
+
+      <hr>
+
+      <!-- Comparison Table -->
+      <h4 class="text-warning">📊 Comparison Table</h4>
+      <pre class="text-info">
+Java Version | Default GC   | Focus
+----------------------------------------
+Java 8       | Parallel GC | Throughput
+Java 11      | G1 GC       | Low Latency
+Java 17      | G1 GC       | Latency + Stability
+      </pre>
+
+      <hr>
+
+      <!-- Interview Trap -->
+      <h4 class="text-warning">⚠️ Interview Trap Question</h4>
+      <pre class="text-info">
+Q: If Java 17 has ZGC, why is G1 still default?
+
+A (HariPrep Style):
+  "G1 provides a stable balance of latency,
+   throughput, and backward compatibility.
+   ZGC is optional for ultra-low latency use cases."
+      </pre>
+
+      <hr>
+
+      <!-- Summary -->
+      <h4 class="text-warning">📌 One-Line Interview Summary</h4>
+      <pre class="text-info">
+"Java 8 uses Parallel GC by default, while Java 11 and Java 17
+use G1 GC as default to support low-latency, cloud-native,
+and microservice-based applications."
+      </pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingJVMMemory">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseJVMMemory"
+      aria-expanded="false" aria-controls="collapseJVMMemory">
+      🧠 How Memory Works Internally in JVM – Deep Interview Explanation (HariPrep Style)
+    </button>
+  </h2>
+
+  <div id="collapseJVMMemory" class="accordion-collapse collapse"
+    aria-labelledby="headingJVMMemory" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- JVM Memory Diagram -->
+      <h4 class="text-warning">📊 JVM Memory Architecture Diagram</h4>
+
+      
+::contentReference[oaicite:0]{index=0}
+
+
+      <hr>
+
+      <!-- Big Picture -->
+      <h4 class="text-warning">1️⃣ JVM Memory – Big Picture</h4>
+      <pre class="text-info">
+JVM Memory is divided into:
+
+  • Heap Memory        (Shared)
+  • Stack Memory       (Per Thread)
+  • Method Area        (Metaspace)
+  • PC Register        (Per Thread)
+  • Native Method Stack
+
+Interview Line:
+  ✔ Heap is shared, Stack is thread-specific
+      </pre>
+
+      <hr>
+
+      <!-- Heap -->
+      <h4 class="text-warning">2️⃣ Heap Memory (Object Storage)</h4>
+      <pre class="text-info">
+What is stored:
+  • Objects
+  • Instance variables
+  • Arrays
+
+Heap is divided into:
+  Young Generation:
+    • Eden
+    • Survivor (S0, S1)
+
+  Old Generation:
+    • Long-lived objects
+
+Flow:
+  • Objects created in Eden
+  • Minor GC moves objects to Survivor
+  • Surviving objects promoted to Old Gen
+
+Interview Line:
+  ✔ Most objects die young (Weak Generational Hypothesis)
+      </pre>
+
+      <hr>
+
+      <!-- Stack -->
+      <h4 class="text-warning">3️⃣ Stack Memory (Method Execution)</h4>
+      <pre class="text-info">
+What Stack Stores:
+  • Method calls
+  • Local variables
+  • Reference variables
+  • Return addresses
+
+Key Points:
+  • Each thread has its own stack
+  • Stack frame created per method call
+  • Stack memory is fast
+
+Error:
+  • StackOverflowError → Deep recursion
+
+Interview Line:
+  ✔ Stack memory is automatically freed on method exit
+      </pre>
+
+      <hr>
+
+      <!-- Method Area -->
+      <h4 class="text-warning">4️⃣ Method Area (Metaspace)</h4>
+      <pre class="text-info">
+What is stored:
+  • Class metadata
+  • Method bytecode
+  • Static variables
+  • Runtime constant pool
+
+Java 8+:
+  • PermGen removed
+  • Metaspace introduced
+  • Uses native memory
+
+Error:
+  • Metaspace OutOfMemoryError
+
+Interview Line:
+  ✔ Metaspace grows dynamically by default
+      </pre>
+
+      <hr>
+
+      <!-- PC Register -->
+      <h4 class="text-warning">5️⃣ PC Register</h4>
+      <pre class="text-info">
+Purpose:
+  • Stores address of current instruction
+
+Key Points:
+  • One PC Register per thread
+  • Helps JVM resume execution after context switch
+
+Interview Line:
+  ✔ PC Register enables thread scheduling
+      </pre>
+
+      <hr>
+
+      <!-- Native Stack -->
+      <h4 class="text-warning">6️⃣ Native Method Stack</h4>
+      <pre class="text-info">
+Purpose:
+  • Executes native (JNI) methods
+  • Uses C/C++ stack
+
+Example:
+  • File IO
+  • OS-level calls
+
+Interview Line:
+  ✔ Native stack is used for non-Java code
+      </pre>
+
+      <hr>
+
+      <!-- Object Creation Flow -->
+      <h4 class="text-warning">7️⃣ Object Creation & Memory Flow</h4>
+      <pre class="text-info">
+Step-by-step:
+  1. new keyword → request memory
+  2. Memory allocated in Eden
+  3. Reference stored in Stack
+  4. Object lives in Heap
+  5. GC removes unreferenced objects
+
+Interview Line:
+  ✔ Reference lives in stack, object lives in heap
+      </pre>
+
+      <hr>
+
+      <!-- GC Interaction -->
+      <h4 class="text-warning">8️⃣ How GC Works with Memory</h4>
+      <pre class="text-info">
+GC Responsibilities:
+  • Identifies unreachable objects
+  • Frees heap memory
+  • Compacts memory (depending on GC)
+
+Types:
+  • Minor GC → Young Gen
+  • Major GC → Old Gen
+  • Full GC  → Entire Heap
+
+Interview Line:
+  ✔ GC never touches stack memory
+      </pre>
+
+      <hr>
+
+      <!-- Common Errors -->
+      <h4 class="text-warning">9️⃣ Common Memory Errors (Interview Favorite)</h4>
+      <pre class="text-info">
+OutOfMemoryError:
+  • Heap exhausted
+  • Metaspace exhausted
+
+StackOverflowError:
+  • Deep recursion
+  • Large stack frames
+
+Interview Line:
+  ✔ OOM ≠ StackOverflowError
+      </pre>
+
+      <hr>
+
+      <!-- Interview Trap -->
+      <h4 class="text-warning">⚠️ Interview Trap Question</h4>
+      <pre class="text-info">
+Q: Where are objects and references stored?
+
+A (HariPrep Style):
+  "Objects are stored in heap memory.
+   References are stored in stack memory."
+      </pre>
+
+      <hr>
+
+      <!-- Summary -->
+      <h4 class="text-warning">📌 One-Line Interview Summary</h4>
+      <pre class="text-info">
+"JVM memory consists of heap for objects, stack for execution,
+metaspace for class metadata, and supporting areas like PC register
+and native stack. Garbage Collection manages heap memory automatically."
+      </pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingJVMMemoryDeep">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseJVMMemoryDeep"
+      aria-expanded="false" aria-controls="collapseJVMMemoryDeep">
+      🧠 JVM Deep Dive – Object Lifecycle, Memory Leak vs Overflow, Coding Traps (HariPrep Style)
+    </button>
+  </h2>
+
+  <div id="collapseJVMMemoryDeep" class="accordion-collapse collapse"
+    aria-labelledby="headingJVMMemoryDeep" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- ================= OBJECT LIFECYCLE ================= -->
+      <h4 class="text-warning">1️⃣ Object Lifecycle in JVM (Very Deep)</h4>
+      <pre class="text-info">
+Step-by-Step Object Lifecycle:
+
+1. Class Loading
+   • ClassLoader loads .class into Metaspace
+
+2. Object Creation
+   • new keyword requests memory
+   • Memory allocated in Eden (Young Gen)
+
+3. Initialization
+   • Constructor executes
+   • Reference stored in Stack
+   • Object lives in Heap
+
+4. Object Usage
+   • Referenced by stack / heap objects
+
+5. Object Becomes Unreachable
+   • Reference removed / goes out of scope
+   • Object becomes eligible for GC (NOT immediately removed)
+
+6. Garbage Collection
+   • Minor GC → Young Gen cleanup
+   • Major GC → Old Gen cleanup
+
+7. Memory Reclamation
+   • Heap space freed
+   • Memory reused
+
+Interview Line:
+  ✔ Object is eligible for GC, not immediately deleted
+      </pre>
+
+      <hr>
+
+      <h4 class="text-warning">⚠️ Important GC Truth (Interview Favorite)</h4>
+      <pre class="text-info">
+• finalize() is NOT guaranteed to run
+• GC timing is NOT predictable
+• System.gc() is only a request
+      </pre>
+
+      <hr>
+
+      <!-- ================= MEMORY LEAK vs OVERFLOW ================= -->
+      <h4 class="text-warning">2️⃣ Memory Leak vs Memory Overflow (Very Important)</h4>
+      <pre class="text-info">
+Memory Leak:
+  • Objects are NOT used
+  • But still referenced
+  • GC cannot clean them
+
+Memory Overflow:
+  • JVM cannot allocate more memory
+  • Heap / Metaspace exhausted
+      </pre>
+
+      <hr>
+
+      <h4 class="text-warning">📊 Comparison Table</h4>
+      <pre class="text-info">
+Memory Leak                     | Memory Overflow
+--------------------------------|-------------------------------
+Objects unreachable logically   | Memory exhausted physically
+GC cannot collect               | GC tries but fails
+Slow performance                | Application crash
+Long-term issue                 | Immediate failure
+      </pre>
+
+      <hr>
+
+      <h4 class="text-warning">🔎 Real Causes</h4>
+      <pre class="text-info">
+Memory Leak Causes:
+  • Static collections
+  • ThreadLocal not removed
+  • Listeners not deregistered
+  • Caches without eviction
+
+Memory Overflow Causes:
+  • Huge object allocation
+  • Infinite loops adding objects
+  • Small heap size
+      </pre>
+
+      <hr>
+
+      <!-- ================= CODING TRAPS ================= -->
+      <h4 class="text-warning">3️⃣ JVM Memory Interview Coding Traps</h4>
+
+      <h5 class="text-danger">❌ Trap 1: Static Collection Leak</h5>
+      <pre class="text-info">
+static List<String> list = new ArrayList<>();
+
+while(true) {
+  list.add("leak");
+}
+
+Problem:
+  • list never released
+  • GC cannot clean
+
+Interview Line:
+  ✔ Static references are GC roots
+      </pre>
+
+      <hr>
+
+      <h5 class="text-danger">❌ Trap 2: ThreadLocal Memory Leak</h5>
+      <pre class="text-info">
+ThreadLocal<User> tl = new ThreadLocal<>();
+tl.set(new User());
+
+Problem:
+  • Value remains until thread dies
+  • Common in thread pools
+
+Fix:
+  tl.remove();
+
+Interview Line:
+  ✔ ThreadLocal misuse causes hidden memory leaks
+      </pre>
+
+      <hr>
+
+      <h5 class="text-danger">❌ Trap 3: OutOfMemoryError via Heap</h5>
+      <pre class="text-info">
+List<byte[]> list = new ArrayList<>();
+while(true) {
+  list.add(new byte[10 * 1024 * 1024]);
+}
+
+Result:
+  • Heap exhausted
+  • OutOfMemoryError: Java heap space
+      </pre>
+
+      <hr>
+
+      <h5 class="text-danger">❌ Trap 4: StackOverflowError</h5>
+      <pre class="text-info">
+void recurse() {
+  recurse();
+}
+
+Result:
+  • Infinite recursion
+  • StackOverflowError
+
+Interview Line:
+  ✔ Stack errors ≠ Heap errors
+      </pre>
+
+      <hr>
+
+      <h5 class="text-danger">❌ Trap 5: Metaspace Overflow</h5>
+      <pre class="text-info">
+• Dynamic class loading
+• Proxy / reflection misuse
+• No class unloading
+
+Result:
+  OutOfMemoryError: Metaspace
+      </pre>
+
+      <hr>
+
+      <!-- ================= INTERVIEW TRAPS ================= -->
+      <h4 class="text-warning">⚠️ Interview Trap Questions</h4>
+      <pre class="text-info">
+Q: Does GC clean stack memory?
+A: ❌ No, GC works only on heap
+
+Q: Is memory leak possible in Java?
+A: ✔ Yes, via references
+
+Q: Are objects deleted immediately?
+A: ❌ No, only eligible for GC
+      </pre>
+
+      <hr>
+
+      <!-- ================= SUMMARY ================= -->
+      <h4 class="text-warning">📌 One-Line Interview Summary</h4>
+      <pre class="text-info">
+"Objects are created in heap, referenced from stack, and removed
+only when unreachable. Memory leaks occur due to references,
+while memory overflow occurs due to exhaustion. Understanding
+GC roots and JVM memory areas is key to avoiding production issues."
+      </pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingAccessSpecifiers">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseAccessSpecifiers"
+      aria-expanded="false" aria-controls="collapseAccessSpecifiers">
+      🔐 Access Modifiers & Specifiers in Java – Deep Interview Explanation (HariPrep Style)
+    </button>
+  </h2>
+
+  <div id="collapseAccessSpecifiers" class="accordion-collapse collapse"
+    aria-labelledby="headingAccessSpecifiers" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- Big Picture -->
+      <h4 class="text-warning">1️⃣ Big Picture – What & Why</h4>
+      <pre class="text-info">
+Access Modifiers:
+  • Control VISIBILITY of classes, methods, variables
+
+Non-Access Specifiers:
+  • Control BEHAVIOR of classes, methods, variables
+
+Interview Line:
+  ✔ Access modifiers = who can access
+  ✔ Specifiers = how it behaves
+      </pre>
+
+      <hr>
+
+      <!-- Access Modifiers -->
+      <h4 class="text-warning">2️⃣ Access Modifiers in Java</h4>
+      <pre class="text-info">
+Java Access Modifiers:
+  1. private
+  2. default (package-private)
+  3. protected
+  4. public
+      </pre>
+
+      <hr>
+
+      <!-- Access Scope Table -->
+      <h4 class="text-warning">📊 Access Scope Table (Must Memorize)</h4>
+      <pre class="text-info">
+Modifier    | Same Class | Same Package | Subclass | Other Package
+-----------------------------------------------------------------
+private     |    ✔       |      ❌       |    ❌     |      ❌
+default     |    ✔       |      ✔       |    ❌     |      ❌
+protected   |    ✔       |      ✔       |    ✔     |      ❌*
+public      |    ✔       |      ✔       |    ✔     |      ✔
+
+* protected works in other package ONLY via inheritance
+      </pre>
+
+      <hr>
+
+      <!-- private -->
+      <h4 class="text-warning">3️⃣ private</h4>
+      <pre class="text-info">
+Scope:
+  • Accessible only within the same class
+
+Usage:
+  • Variables
+  • Helper methods
+
+Why:
+  • Strong encapsulation
+  • Data hiding
+
+Interview Line:
+  ✔ private is the most restrictive modifier
+      </pre>
+
+      <hr>
+
+      <!-- default -->
+      <h4 class="text-warning">4️⃣ default (package-private)</h4>
+      <pre class="text-info">
+Scope:
+  • Accessible only within the same package
+
+Note:
+  • No keyword used
+
+Usage:
+  • Package-level utilities
+
+Interview Line:
+  ✔ default access is package-private
+      </pre>
+
+      <hr>
+
+      <!-- protected -->
+      <h4 class="text-warning">5️⃣ protected (Interview Favorite)</h4>
+      <pre class="text-info">
+Scope:
+  • Same package → accessible
+  • Other package → accessible ONLY via subclass
+
+Important Rule:
+  ❌ Cannot access using parent reference in other package
+
+Interview Trap:
+  ✔ protected ≠ public
+      </pre>
+
+      <hr>
+
+      <!-- public -->
+      <h4 class="text-warning">6️⃣ public</h4>
+      <pre class="text-info">
+Scope:
+  • Accessible from anywhere
+
+Rules:
+  • Only ONE public class per file
+  • File name = public class name
+
+Interview Line:
+  ✔ public gives global visibility
+      </pre>
+
+      <hr>
+
+      <!-- Non-Access Specifiers -->
+      <h4 class="text-warning">7️⃣ Non-Access Specifiers (Specifiers)</h4>
+      <pre class="text-info">
+Common Non-Access Specifiers:
+  • static
+  • final
+  • abstract
+  • synchronized
+  • volatile
+  • transient
+      </pre>
+
+      <hr>
+
+      <!-- static -->
+      <h4 class="text-warning">8️⃣ static</h4>
+      <pre class="text-info">
+Meaning:
+  • Belongs to class, not object
+
+Used for:
+  • Utility methods
+  • Constants
+
+Memory:
+  • Stored in Metaspace / Method Area
+
+Interview Line:
+  ✔ static members are shared across objects
+      </pre>
+
+      <hr>
+
+      <!-- final -->
+      <h4 class="text-warning">9️⃣ final</h4>
+      <pre class="text-info">
+final variable:
+  • Cannot be reassigned
+
+final method:
+  • Cannot be overridden
+
+final class:
+  • Cannot be inherited
+
+Interview Line:
+  ✔ final is about restriction
+      </pre>
+
+      <hr>
+
+      <!-- abstract -->
+      <h4 class="text-warning">🔟 abstract</h4>
+      <pre class="text-info">
+abstract class:
+  • Can have abstract + concrete methods
+  • Can have state
+
+abstract method:
+  • No implementation
+  • Must be overridden
+
+Rules:
+  ❌ abstract + final not allowed
+
+Interview Line:
+  ✔ abstract enforces implementation
+      </pre>
+
+      <hr>
+
+      <!-- synchronized -->
+      <h4 class="text-warning">1️⃣1️⃣ synchronized</h4>
+      <pre class="text-info">
+Purpose:
+  • Thread safety
+  • One thread at a time
+
+Cost:
+  • Performance overhead
+
+Interview Line:
+  ✔ synchronized ensures mutual exclusion
+      </pre>
+
+      <hr>
+
+      <!-- volatile -->
+      <h4 class="text-warning">1️⃣2️⃣ volatile</h4>
+      <pre class="text-info">
+Purpose:
+  • Visibility guarantee
+  • No atomicity
+
+Usage:
+  • Flags
+  • State checks
+
+Interview Line:
+  ✔ volatile ≠ thread-safe
+      </pre>
+
+      <hr>
+
+      <!-- transient -->
+      <h4 class="text-warning">1️⃣3️⃣ transient</h4>
+      <pre class="text-info">
+Purpose:
+  • Excludes field from serialization
+
+Usage:
+  • Passwords
+  • Sensitive data
+
+Interview Line:
+  ✔ transient fields are not serialized
+      </pre>
+
+      <hr>
+
+      <!-- Interview Traps -->
+      <h4 class="text-warning">⚠️ Interview Trap Questions</h4>
+      <pre class="text-info">
+Q: Can a constructor be private?
+A: ✔ Yes (Singleton)
+
+Q: Can interface methods be protected?
+A: ❌ No (They are public by default)
+
+Q: Can we reduce visibility while overriding?
+A: ❌ No (Can only increase)
+      </pre>
+
+      <hr>
+
+      <!-- Summary -->
+      <h4 class="text-warning">📌 One-Line Interview Summary</h4>
+      <pre class="text-info">
+"Access modifiers control visibility, while non-access specifiers
+control behavior. Proper use ensures encapsulation, security,
+thread safety, and clean design in Java applications."
+      </pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingProtectedOverrideStatic">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseProtectedOverrideStatic"
+      aria-expanded="false" aria-controls="collapseProtectedOverrideStatic">
+      🔐 protected Deep Dive + Overriding Rules + static vs instance (JVM View) – HariPrep Style
+    </button>
+  </h2>
+
+  <div id="collapseProtectedOverrideStatic" class="accordion-collapse collapse"
+    aria-labelledby="headingProtectedOverrideStatic" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- ================================================= -->
+      <!-- PROTECTED DEEP DIVE -->
+      <!-- ================================================= -->
+      <h4 class="text-warning">1️⃣ protected Access Modifier – Deep Dive (Interview Favorite)</h4>
+      <pre class="text-info">
+Definition:
+  • Accessible within same package
+  • Accessible in other package ONLY via inheritance
+
+Golden Rule:
+  ✔ protected is NOT global like public
+      </pre>
+
+      <h5 class="text-success">✔ Same Package Access</h5>
+      <pre class="text-info">
+package p1;
+
+class Parent {
+    protected int x = 10;
+}
+
+class Child {
+    void test() {
+        Parent p = new Parent();
+        System.out.println(p.x); // ✔ allowed (same package)
+    }
+}
+      </pre>
+
+      <h5 class="text-success">✔ Other Package – Via Inheritance ONLY</h5>
+      <pre class="text-info">
+package p2;
+import p1.Parent;
+
+class Child extends Parent {
+    void test() {
+        System.out.println(x); // ✔ allowed via inheritance
+    }
+}
+      </pre>
+
+      <h5 class="text-danger">❌ Other Package – Using Parent Reference (Trap)</h5>
+      <pre class="text-info">
+package p2;
+import p1.Parent;
+
+class Test {
+    void test() {
+        Parent p = new Parent();
+        // System.out.println(p.x); ❌ NOT allowed
+    }
+}
+
+Interview Line:
+  ✔ protected works through inheritance, not reference
+      </pre>
+
+      <hr>
+
+      <!-- ================================================= -->
+      <!-- OVERRIDING RULES -->
+      <!-- ================================================= -->
+      <h4 class="text-warning">2️⃣ Method Overriding Rules with Access Modifiers</h4>
+
+      <h5 class="text-success">✔ Rule 1: Visibility Cannot Be Reduced</h5>
+      <pre class="text-info">
+class Parent {
+    protected void show() {}
+}
+
+class Child extends Parent {
+    public void show() {} // ✔ allowed (increased visibility)
+}
+      </pre>
+
+      <h5 class="text-danger">❌ Reducing Visibility (Not Allowed)</h5>
+      <pre class="text-info">
+class Parent {
+    public void show() {}
+}
+
+class Child extends Parent {
+    // protected void show() {} ❌ compile-time error
+}
+      </pre>
+
+      <h5 class="text-warning">✔ Allowed Visibility Order</h5>
+      <pre class="text-info">
+private → default → protected → public
+(Visibility can only move RIGHT)
+      </pre>
+
+      <h5 class="text-warning">⚠️ Other Overriding Rules (Quick)</h5>
+      <pre class="text-info">
+• Method signature must be same
+• Return type can be covariant
+• Cannot override private methods
+• static methods are NOT overridden (they are hidden)
+• final methods cannot be overridden
+      </pre>
+
+      <hr>
+
+      <!-- ================================================= -->
+      <!-- STATIC vs INSTANCE -->
+      <!-- ================================================= -->
+      <h4 class="text-warning">3️⃣ static vs Instance – JVM Memory View (Very Important)</h4>
+
+      <h5 class="text-success">✔ Instance Members</h5>
+      <pre class="text-info">
+class User {
+    int id;
+}
+
+Memory:
+  • Object stored in Heap
+  • Each object gets its own copy
+
+Flow:
+  new User() → Heap allocation
+
+Interview Line:
+  ✔ Instance variables belong to object
+      </pre>
+
+      <h5 class="text-success">✔ static Members</h5>
+      <pre class="text-info">
+class User {
+    static int count;
+}
+
+Memory:
+  • Stored in Metaspace / Method Area
+  • Single copy shared across objects
+
+Flow:
+  Class loading → static memory allocated
+
+Interview Line:
+  ✔ static variables belong to class
+      </pre>
+
+      <h5 class="text-warning">📊 JVM Memory Comparison</h5>
+      <pre class="text-info">
+Feature        | static                | instance
+----------------------------------------------------
+Belongs to     | Class                 | Object
+Memory Area    | Metaspace             | Heap
+Copies         | One per class         | One per object
+Access         | ClassName.member      | object.member
+GC Impact      | GC after class unload | GC after object unreachable
+      </pre>
+
+      <h5 class="text-danger">⚠️ Interview Trap: static in Multithreading</h5>
+      <pre class="text-info">
+static int count;
+
+Problem:
+  • Shared across threads
+  • Not thread-safe
+
+Fix:
+  • Synchronization
+  • Atomic variables
+
+Interview Line:
+  ✔ static data is shared, so concurrency issues arise
+      </pre>
+
+      <hr>
+
+      <!-- ================================================= -->
+      <!-- INTERVIEW SUMMARY -->
+      <!-- ================================================= -->
+      <h4 class="text-warning">📌 One-Line Interview Summary</h4>
+      <pre class="text-info">
+"protected allows access within package and through inheritance.
+While overriding, visibility can only be increased, not reduced.
+static members belong to class and live in Metaspace, whereas
+instance members belong to objects and live in heap memory."
+      </pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingInteroperability">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseInteroperability"
+      aria-expanded="false" aria-controls="collapseInteroperability">
+      🔄 What Do You Mean by Interoperability? (HariPrep Interview Style)
+    </button>
+  </h2>
+
+  <div id="collapseInteroperability" class="accordion-collapse collapse"
+    aria-labelledby="headingInteroperability" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- Direct Definition -->
+      <h4 class="text-warning">✅ Simple Definition</h4>
+      <pre class="text-info">
+Interoperability means:
+  • Ability of different systems, languages, or components
+    to work together and exchange data seamlessly
+      </pre>
+
+      <hr>
+
+      <!-- In Java Context -->
+      <h4 class="text-warning">1️⃣ Interoperability in Java</h4>
+      <pre class="text-info">
+In Java:
+  • Java can interact with code written in other languages
+  • Java can run on different platforms
+  • Java components can communicate with other systems
+
+Interview Line:
+  ✔ Java supports interoperability at language and platform level
+      </pre>
+
+      <hr>
+
+      <!-- Examples -->
+      <h4 class="text-warning">2️⃣ Common Examples (Very Important)</h4>
+      <pre class="text-info">
+Language Interoperability:
+  • Java calling C/C++ code using JNI
+  • Java interacting with Kotlin / Scala (JVM languages)
+
+System Interoperability:
+  • Java microservice talking to Python service via REST
+  • Java app consuming data from .NET service using JSON
+
+Database Interoperability:
+  • Java working with MySQL, Oracle, MongoDB via JDBC
+      </pre>
+
+      <hr>
+
+      <!-- How Java Achieves It -->
+      <h4 class="text-warning">3️⃣ How Java Achieves Interoperability</h4>
+      <pre class="text-info">
+Key Mechanisms:
+  • JVM (common runtime)
+  • Bytecode standard
+  • APIs (REST, SOAP)
+  • Data formats (JSON, XML)
+  • JNI for native integration
+
+Interview Line:
+  ✔ JVM acts as a bridge between Java and other technologies
+      </pre>
+
+      <hr>
+
+      <!-- Java vs Platform Independence -->
+      <h4 class="text-warning">4️⃣ Interoperability vs Platform Independence (Trap)</h4>
+      <pre class="text-info">
+Platform Independence:
+  • Same Java code runs on multiple OS
+
+Interoperability:
+  • Java works with other languages / systems
+
+Interview Line:
+  ✔ These are different but related concepts
+      </pre>
+
+      <hr>
+
+      <!-- Interview Trap -->
+      <h4 class="text-warning">⚠️ Interview Trap Question</h4>
+      <pre class="text-info">
+Q: Is interoperability same as portability?
+
+A (HariPrep Style):
+  ❌ No
+
+  Portability → Run same code on different platforms
+  Interoperability → Work with different systems/languages
+      </pre>
+
+      <hr>
+
+      <!-- Summary -->
+      <h4 class="text-warning">📌 One-Line Interview Summary</h4>
+      <pre class="text-info">
+"Interoperability is the ability of Java applications to
+communicate and work with other languages, platforms,
+and systems using common standards like JVM, APIs, and data formats."
+      </pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingJavaWrittenIn">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseJavaWrittenIn"
+      aria-expanded="false" aria-controls="collapseJavaWrittenIn">
+      ☕ Java Is Written in Which Language? (HariPrep Interview Style)
+    </button>
+  </h2>
+
+  <div id="collapseJavaWrittenIn" class="accordion-collapse collapse"
+    aria-labelledby="headingJavaWrittenIn" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- Direct Answer -->
+      <h4 class="text-warning">✅ Direct Answer</h4>
+      <pre class="text-info">
+Java is written in:
+  • C
+  • C++
+      </pre>
+
+      <hr>
+
+      <!-- Why C / C++ -->
+      <h4 class="text-warning">1️⃣ Why Java Is Written in C / C++</h4>
+      <pre class="text-info">
+Reasons:
+  • JVM needs low-level access to OS and hardware
+  • C/C++ provide high performance
+  • Easy interaction with system calls
+  • Portability across operating systems
+
+Interview Line:
+  ✔ JVM is written in C/C++ for performance and portability
+      </pre>
+
+      <hr>
+
+      <!-- What is written in Java -->
+      <h4 class="text-warning">2️⃣ What Parts of Java Are Written in Java?</h4>
+      <pre class="text-info">
+Written in Java:
+  • Core libraries (java.lang, java.util, java.io, etc.)
+  • Collections Framework
+  • Concurrency utilities
+
+Written in C/C++:
+  • JVM
+  • Garbage Collector
+  • JIT Compiler
+
+Interview Line:
+  ✔ JVM internals are native, libraries are Java
+      </pre>
+
+      <hr>
+
+      <!-- Bootstrapping Concept -->
+      <h4 class="text-warning">3️⃣ Bootstrapping Concept (Interview Favorite)</h4>
+      <pre class="text-info">
+Question:
+  If Java is written in C/C++, how does Java run Java code?
+
+Answer:
+  • Initial JVM is built using C/C++
+  • JVM then loads Java core libraries
+  • Java libraries run on top of JVM
+
+Interview Line:
+  ✔ Java is self-hosted after JVM bootstrap
+      </pre>
+
+      <hr>
+
+      <!-- Interview Trap -->
+      <h4 class="text-warning">⚠️ Interview Trap Question</h4>
+      <pre class="text-info">
+Q: Is Java written in Java?
+
+A (HariPrep Style):
+  ❌ No (initially)
+  ✔ Core libraries are written in Java
+  ✔ JVM itself is written in C/C++
+      </pre>
+
+      <hr>
+
+      <!-- Summary -->
+      <h4 class="text-warning">📌 One-Line Interview Summary</h4>
+      <pre class="text-info">
+"Java core libraries are written in Java,
+but the JVM itself is written in C/C++
+to interact efficiently with the operating system."
+      </pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingJMMDeep">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseJMMDeep"
+      aria-expanded="false" aria-controls="collapseJMMDeep">
+      🧠 Java Memory Model (JMM) – Deep Explanation with Examples (HariPrep Style)
+    </button>
+  </h2>
+
+  <div id="collapseJMMDeep" class="accordion-collapse collapse"
+    aria-labelledby="headingJMMDeep" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- Big Definition -->
+      <h4 class="text-warning">1️⃣ What Is Java Memory Model?</h4>
+      <pre class="text-info">
+Java Memory Model (JMM) defines:
+  • How threads interact through memory
+  • How and when changes made by one thread
+    become visible to other threads
+  • What reordering JVM is allowed to do
+
+Interview Line:
+  ✔ JMM is about visibility, ordering, and atomicity
+      </pre>
+
+      <hr>
+
+      <!-- Why JMM is Needed -->
+      <h4 class="text-warning">2️⃣ Why Do We Need JMM?</h4>
+      <pre class="text-info">
+Problem:
+  • CPU caches
+  • Compiler optimizations
+  • Instruction reordering
+
+Without JMM:
+  • Threads may see stale values
+  • Code may behave unpredictably
+
+Interview Line:
+  ✔ JMM provides consistency guarantees in multithreading
+      </pre>
+
+      <hr>
+
+      <!-- Memory View -->
+      <h4 class="text-warning">3️⃣ JMM Memory View (Very Important)</h4>
+      <pre class="text-info">
+JMM defines two memory areas:
+
+  Main Memory:
+    • Shared between threads
+    • Stores objects and fields
+
+  Working Memory (per thread):
+    • Local copy of variables
+    • Reads/writes happen here
+
+Interview Line:
+  ✔ Threads never work directly on main memory
+      </pre>
+
+      <hr>
+
+      <!-- Visibility Problem Example -->
+      <h4 class="text-warning">4️⃣ Visibility Problem – Example</h4>
+      <pre class="text-info">
+class Test {
+    static boolean flag = false;
+}
+
+Thread-1:
+  flag = true;
+
+Thread-2:
+  while(!flag) {
+    // infinite loop
+  }
+
+Problem:
+  • Thread-2 may never see updated flag
+  • Value cached in working memory
+
+Interview Line:
+  ✔ This is a visibility issue, not a logic issue
+      </pre>
+
+      <hr>
+
+      <!-- volatile -->
+      <h4 class="text-warning">5️⃣ volatile – Visibility Guarantee</h4>
+      <pre class="text-info">
+class Test {
+    static volatile boolean flag = false;
+}
+
+Guarantees:
+  • Writes go to main memory
+  • Reads come from main memory
+  • Prevents instruction reordering
+
+What volatile DOES NOT guarantee:
+  ❌ Atomicity
+
+Interview Line:
+  ✔ volatile ensures visibility, not thread safety
+      </pre>
+
+      <hr>
+
+      <!-- Atomicity -->
+      <h4 class="text-warning">6️⃣ Atomicity – Example</h4>
+      <pre class="text-info">
+volatile int count = 0;
+
+count++; // NOT atomic
+
+Reason:
+  • Read
+  • Increment
+  • Write
+
+Fix:
+  • synchronized
+  • AtomicInteger
+
+Interview Line:
+  ✔ volatile does not make compound operations atomic
+      </pre>
+
+      <hr>
+
+      <!-- Instruction Reordering -->
+      <h4 class="text-warning">7️⃣ Instruction Reordering (Hard)</h4>
+      <pre class="text-info">
+JVM may reorder instructions for performance:
+
+Example:
+  1. Allocate memory
+  2. Initialize object
+  3. Assign reference
+
+Without rules:
+  • Reference may be visible before initialization
+
+Fix:
+  • volatile
+  • synchronized
+
+Interview Line:
+  ✔ Reordering is legal unless JMM forbids it
+      </pre>
+
+      <hr>
+
+      <!-- Happens-Before -->
+      <h4 class="text-warning">8️⃣ Happens-Before Relationship (Very Important)</h4>
+      <pre class="text-info">
+Happens-Before means:
+  • If A happens-before B
+  • Then B sees effects of A
+
+Key Happens-Before Rules:
+  • volatile write → volatile read
+  • unlock → lock
+  • thread.start() → thread run
+  • thread.join() → after join
+
+Interview Line:
+  ✔ Happens-before guarantees visibility + ordering
+      </pre>
+
+      <hr>
+
+      <!-- synchronized -->
+      <h4 class="text-warning">9️⃣ synchronized & JMM</h4>
+      <pre class="text-info">
+synchronized guarantees:
+  • Mutual exclusion
+  • Visibility
+  • Ordering
+
+Why?
+  • On lock → read from main memory
+  • On unlock → flush to main memory
+
+Interview Line:
+  ✔ synchronized is stronger than volatile
+      </pre>
+
+      <hr>
+
+      <!-- final -->
+      <h4 class="text-warning">🔟 final Fields & JMM (Tricky)</h4>
+      <pre class="text-info">
+final fields:
+  • Guaranteed visibility after constructor finishes
+  • Safe publication
+
+Example:
+  final int x;
+
+Interview Line:
+  ✔ final fields are safely published without synchronization
+      </pre>
+
+      <hr>
+
+      <!-- Real Production Scenario -->
+      <h4 class="text-warning">1️⃣1️⃣ Real Production Scenario</h4>
+      <pre class="text-info">
+Scenario:
+  • One thread initializes config
+  • Other threads read config
+
+Wrong:
+  • No volatile / synchronization
+
+Correct:
+  • volatile config
+  • or synchronized init
+  • or immutable object
+
+Interview Line:
+  ✔ Most concurrency bugs are visibility bugs
+      </pre>
+
+      <hr>
+
+      <!-- Interview Traps -->
+      <h4 class="text-warning">⚠️ Interview Trap Questions</h4>
+      <pre class="text-info">
+Q: Does JMM care about JVM memory areas?
+A: ❌ No (It is abstract)
+
+Q: Does volatile guarantee atomicity?
+A: ❌ No
+
+Q: Is JMM same as JVM memory?
+A: ❌ No (Conceptual vs Physical)
+      </pre>
+
+      <hr>
+
+      <!-- Summary -->
+      <h4 class="text-warning">📌 One-Line Interview Summary</h4>
+      <pre class="text-info">
+"Java Memory Model defines how threads see and interact with shared
+memory. It provides rules for visibility, ordering, and atomicity
+using constructs like volatile, synchronized, final, and
+happens-before relationships."
+      </pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingConcurrencyBugs">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseConcurrencyBugs"
+      aria-expanded="false" aria-controls="collapseConcurrencyBugs">
+      🐞 Concurrency Bugs Asked in FAANG Interviews (Deep + Real Scenarios)
+    </button>
+  </h2>
+
+  <div id="collapseConcurrencyBugs" class="accordion-collapse collapse"
+    aria-labelledby="headingConcurrencyBugs" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- Bug 1 -->
+      <h4 class="text-warning">1️⃣ Visibility Bug (Most Common FAANG Bug)</h4>
+      <pre class="text-info">
+Problem:
+  • One thread updates a variable
+  • Other thread never sees the update
+
+Example:
+  boolean flag = false;
+
+Thread-1:
+  flag = true;
+
+Thread-2:
+  while(!flag) { } // infinite loop
+
+Root Cause:
+  • CPU cache + no visibility guarantee
+
+Fix:
+  • volatile
+  • synchronized
+
+FAANG Line:
+  ✔ Most concurrency bugs are visibility bugs
+      </pre>
+
+      <hr>
+
+      <!-- Bug 2 -->
+      <h4 class="text-warning">2️⃣ Race Condition</h4>
+      <pre class="text-info">
+Example:
+  int count = 0;
+
+Thread-1: count++
+Thread-2: count++
+
+Expected: 2
+Actual:   1 (sometimes)
+
+Root Cause:
+  • Non-atomic operation
+
+Fix:
+  • synchronized
+  • AtomicInteger
+
+FAANG Line:
+  ✔ ++ is not thread-safe
+      </pre>
+
+      <hr>
+
+      <!-- Bug 3 -->
+      <h4 class="text-warning">3️⃣ Double-Checked Locking Bug</h4>
+      <pre class="text-info">
+Problem:
+  • Object reference visible before construction completes
+  • Happens due to instruction reordering
+
+Fix:
+  • volatile instance
+
+FAANG Line:
+  ✔ Double-checked locking is broken without volatile
+      </pre>
+
+      <hr>
+
+      <!-- Bug 4 -->
+      <h4 class="text-warning">4️⃣ Deadlock</h4>
+      <pre class="text-info">
+Example:
+  Thread-1: lock(A) → lock(B)
+  Thread-2: lock(B) → lock(A)
+
+Root Cause:
+  • Circular wait
+
+Fix:
+  • Lock ordering
+  • Timeout (tryLock)
+
+FAANG Line:
+  ✔ Deadlock is a design issue, not syntax
+      </pre>
+
+      <hr>
+
+      <!-- Bug 5 -->
+      <h4 class="text-warning">5️⃣ ThreadLocal Memory Leak</h4>
+      <pre class="text-info">
+Problem:
+  • ThreadLocal values not removed
+  • Thread pools reuse threads
+
+Fix:
+  • threadLocal.remove()
+
+FAANG Line:
+  ✔ ThreadLocal + thread pool = memory leak
+      </pre>
+
+      <hr>
+
+      <!-- Bug 6 -->
+      <h4 class="text-warning">6️⃣ False Sharing (Advanced)</h4>
+      <pre class="text-info">
+Problem:
+  • Multiple threads update variables in same CPU cache line
+  • Severe performance degradation
+
+Fix:
+  • Padding
+  • @Contended
+
+FAANG Line:
+  ✔ False sharing kills performance silently
+      </pre>
+
+      <hr>
+
+      <!-- Summary -->
+      <h4 class="text-warning">📌 FAANG Interview Summary</h4>
+      <pre class="text-info">
+"Concurrency bugs usually come from visibility issues,
+non-atomic operations, instruction reordering, and
+improper synchronization rather than logic errors."
+      </pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingJMMCPUCache">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseJMMCPUCache"
+      aria-expanded="false" aria-controls="collapseJMMCPUCache">
+      🧠 Java Memory Model + CPU Cache Interaction (Advanced)
+    </button>
+  </h2>
+
+  <div id="collapseJMMCPUCache" class="accordion-collapse collapse"
+    aria-labelledby="headingJMMCPUCache" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <!-- CPU Cache Basics -->
+      <h4 class="text-warning">1️⃣ CPU Cache Basics</h4>
+      <pre class="text-info">
+Modern CPUs have:
+  • L1 Cache (per core)
+  • L2 Cache
+  • L3 Cache (shared)
+
+Problem:
+  • Threads read from cache, not main memory
+
+Interview Line:
+  ✔ JVM cannot assume main memory access
+      </pre>
+
+      <hr>
+
+      <!-- Problem -->
+      <h4 class="text-warning">2️⃣ The Core Problem</h4>
+      <pre class="text-info">
+Thread-1:
+  writes x = 10 (cached in core-1)
+
+Thread-2:
+  reads x (cached in core-2 → old value)
+
+Result:
+  • Stale reads
+  • Visibility issues
+
+Interview Line:
+  ✔ CPU cache causes stale data
+      </pre>
+
+      <hr>
+
+      <!-- How JMM Solves -->
+      <h4 class="text-warning">3️⃣ How JMM Solves CPU Cache Issues</h4>
+      <pre class="text-info">
+JMM introduces:
+  • Memory barriers
+  • Happens-before rules
+
+volatile:
+  • Forces cache flush
+  • Reads from main memory
+
+synchronized:
+  • Flush on unlock
+  • Refresh on lock
+
+Interview Line:
+  ✔ JMM abstracts CPU cache complexity
+      </pre>
+
+      <hr>
+
+      <!-- Instruction Reordering -->
+      <h4 class="text-warning">4️⃣ Instruction Reordering + CPU</h4>
+      <pre class="text-info">
+CPU/JVM may reorder instructions for speed
+
+Without barriers:
+  • Write reordering
+  • Read reordering
+
+volatile / synchronized:
+  • Insert memory fences
+  • Prevent unsafe reordering
+
+Interview Line:
+  ✔ Reordering is legal unless forbidden by JMM
+      </pre>
+
+      <hr>
+
+      <!-- Example -->
+      <h4 class="text-warning">5️⃣ Real Example (Advanced)</h4>
+      <pre class="text-info">
+Thread-1:
+  config = new Config(); // reordered
+  initialized = true;
+
+Thread-2:
+  if(initialized) {
+     use(config); // may see partially constructed object
+  }
+
+Fix:
+  • volatile initialized
+  • or immutable object
+
+Interview Line:
+  ✔ Safe publication is critical
+      </pre>
+
+      <hr>
+
+      <!-- Happens Before -->
+      <h4 class="text-warning">6️⃣ Happens-Before vs CPU Cache</h4>
+      <pre class="text-info">
+Happens-Before ensures:
+  • Cache coherence
+  • Visibility
+  • Ordering
+
+Examples:
+  • volatile write → volatile read
+  • unlock → lock
+  • thread.start() → thread run
+
+Interview Line:
+  ✔ Happens-before bridges CPU caches
+      </pre>
+
+      <hr>
+
+      <!-- Trap -->
+      <h4 class="text-warning">⚠️ FAANG Trap Question</h4>
+      <pre class="text-info">
+Q: Does volatile flush CPU cache?
+
+A (Correct):
+  ✔ It establishes a happens-before relationship
+  ✔ JVM inserts memory barriers
+  ❌ It does not literally flush entire cache
+      </pre>
+
+      <hr>
+
+      <!-- Summary -->
+      <h4 class="text-warning">📌 Advanced Interview Summary</h4>
+      <pre class="text-info">
+"CPU caches cause visibility and ordering issues in multithreading.
+Java Memory Model abstracts this using happens-before rules,
+memory barriers, volatile, and synchronized to provide predictable
+and correct behavior across CPU architectures."
+      </pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingLockFree">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseLockFree"
+      aria-expanded="false" aria-controls="collapseLockFree">
+      ⚡ Lock-Free Programming – CAS & Atomic Internals (FAANG Level)
+    </button>
+  </h2>
+
+  <div id="collapseLockFree" class="accordion-collapse collapse"
+    aria-labelledby="headingLockFree" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <h4 class="text-warning">1️⃣ What Is Lock-Free Programming?</h4>
+      <pre class="text-info">
+Definition:
+  • Threads make progress without blocking
+  • No synchronized / no explicit locks
+
+Goal:
+  • High throughput
+  • Low latency
+  • No deadlocks
+
+Interview Line:
+  ✔ Lock-free ≠ wait-free
+      </pre>
+
+      <hr>
+
+      <h4 class="text-warning">2️⃣ CAS (Compare-And-Swap)</h4>
+      <pre class="text-info">
+CAS Operation:
+  compareAndSwap(expected, newValue)
+
+Flow:
+  if (current == expected)
+      current = newValue
+  else
+      retry
+
+Hardware Support:
+  • CPU instruction (CMPXCHG)
+
+Interview Line:
+  ✔ CAS is hardware-level atomic instruction
+      </pre>
+
+      <hr>
+
+      <h4 class="text-warning">3️⃣ AtomicInteger – Internal Working</h4>
+      <pre class="text-info">
+AtomicInteger.incrementAndGet():
+
+while(true) {
+  int current = value;
+  int next = current + 1;
+  if (CAS(current, next))
+      return next;
+}
+
+Key Points:
+  • No blocking
+  • Busy-spin retry
+  • Uses volatile + CAS
+
+Interview Line:
+  ✔ Atomics use CAS + volatile
+      </pre>
+
+      <hr>
+
+      <h4 class="text-warning">4️⃣ Problems with CAS</h4>
+      <pre class="text-info">
+ABA Problem:
+  A → B → A
+  CAS thinks nothing changed
+
+High Contention:
+  • Too many retries
+  • CPU wastage
+
+Fix:
+  • AtomicStampedReference
+  • Backoff strategies
+
+Interview Line:
+  ✔ Lock-free is not always faster
+      </pre>
+
+      <hr>
+
+      <h4 class="text-warning">📌 One-Line Summary</h4>
+      <pre class="text-info">
+"Lock-free programming uses CAS at hardware level to achieve
+thread safety without blocking, but comes with ABA and
+contention challenges."
+      </pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingMemoryBarriers">
+    <button class="accordion-button collapsed search-item text-info"
+      data-bs-toggle="collapse" data-bs-target="#collapseMemoryBarriers"
+      aria-expanded="false" aria-controls="collapseMemoryBarriers">
+      🧱 JVM Memory Barriers – Visual & Deep Explanation
+    </button>
+  </h2>
+
+  <div id="collapseMemoryBarriers" class="accordion-collapse collapse"
+    aria-labelledby="headingMemoryBarriers" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <h4 class="text-warning">1️⃣ What Is a Memory Barrier?</h4>
+      <pre class="text-info">
+Memory Barrier:
+  • CPU/JVM instruction
+  • Controls reordering
+  • Controls visibility between threads
+
+Interview Line:
+  ✔ Barriers restrict optimizations
+      </pre>
+
+      <hr>
+
+      <h4 class="text-warning">2️⃣ Why Barriers Are Needed</h4>
+      <pre class="text-info">
+Without Barriers:
+  CPU/JVM may reorder instructions
+
+Thread-1:
+  write data
+  write flag
+
+Thread-2:
+  read flag
+  read data ❌ (stale)
+
+Interview Line:
+  ✔ Reordering breaks correctness
+      </pre>
+
+      <hr>
+
+      <h4 class="text-warning">3️⃣ Visual Barrier Types</h4>
+      <pre class="text-info">
+Write Barrier:
+  [Write Data] → |Barrier| → [Write Flag]
+
+Read Barrier:
+  [Read Flag] → |Barrier| → [Read Data]
+
+volatile:
+  • Write → StoreStore + StoreLoad
+  • Read  → LoadLoad + LoadStore
+      </pre>
+
+      <hr>
+
+      <h4 class="text-warning">4️⃣ volatile & synchronized</h4>
+      <pre class="text-info">
+volatile:
+  • Visibility
+  • Ordering
+  • No mutual exclusion
+
+synchronized:
+  • Visibility
+  • Ordering
+  • Mutual exclusion
+
+Interview Line:
+  ✔ synchronized inserts stronger barriers
+      </pre>
+
+      <hr>
+
+      <h4 class="text-warning">📌 One-Line Summary</h4>
+      <pre class="text-info">
+"Memory barriers are JVM-inserted fences that prevent unsafe
+CPU and compiler reordering, ensuring visibility and ordering
+as defined by JMM."
+      </pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingCompletableFutureTraps">
+    <button class="accordion-button collapsed search-item text-info"
+      data-bs-toggle="collapse" data-bs-target="#collapseCompletableFutureTraps"
+      aria-expanded="false" aria-controls="collapseCompletableFutureTraps">
+      🔮 CompletableFuture – Concurrency Traps (FAANG Favorite)
+    </button>
+  </h2>
+
+  <div id="collapseCompletableFutureTraps" class="accordion-collapse collapse"
+    aria-labelledby="headingCompletableFutureTraps" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <h4 class="text-warning">1️⃣ Common Misconception</h4>
+      <pre class="text-info">
+Myth:
+  CompletableFuture = async by default ❌
+
+Truth:
+  supplyAsync() → async
+  thenApply()   → same thread
+
+Interview Line:
+  ✔ Async depends on method used
+      </pre>
+
+      <hr>
+
+      <h4 class="text-warning">2️⃣ ForkJoinPool Trap</h4>
+      <pre class="text-info">
+Default Executor:
+  ForkJoinPool.commonPool()
+
+Problem:
+  • Blocking calls (DB / REST)
+  • Thread starvation
+
+Fix:
+  • Custom Executor
+
+Interview Line:
+  ✔ Never block commonPool
+      </pre>
+
+      <hr>
+
+      <h4 class="text-warning">3️⃣ thenApply vs thenApplyAsync</h4>
+      <pre class="text-info">
+thenApply:
+  • Runs in same thread
+
+thenApplyAsync:
+  • Runs in ForkJoinPool or custom executor
+
+Trap:
+  Unexpected synchronous execution
+      </pre>
+
+      <hr>
+
+      <h4 class="text-warning">4️⃣ Exception Handling Trap</h4>
+      <pre class="text-info">
+Unhandled exception:
+  • Future silently completes exceptionally
+
+Fix:
+  • exceptionally()
+  • handle()
+
+Interview Line:
+  ✔ Always handle async exceptions
+      </pre>
+
+      <hr>
+
+      <h4 class="text-warning">📌 One-Line Summary</h4>
+      <pre class="text-info">
+"CompletableFuture simplifies async code but hides
+threading pitfalls like commonPool starvation,
+unexpected sync execution, and silent failures."
+      </pre>
+
+    </div>
+  </div>
+</div>
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingARMx86">
+    <button class="accordion-button collapsed search-item text-info"
+      data-bs-toggle="collapse" data-bs-target="#collapseARMx86"
+      aria-expanded="false" aria-controls="collapseARMx86">
+      🖥️ How Java Works on ARM vs x86 (Advanced JVM Internals)
+    </button>
+  </h2>
+
+  <div id="collapseARMx86" class="accordion-collapse collapse"
+    aria-labelledby="headingARMx86" data-bs-parent="#accordionExample">
+    <div class="accordion-body bg-dark text-light">
+
+      <h4 class="text-warning">1️⃣ JVM Portability Concept</h4>
+      <pre class="text-info">
+Java Bytecode:
+  • Architecture independent
+
+JVM:
+  • Architecture dependent
+
+Interview Line:
+  ✔ JVM is re-implemented per CPU architecture
+      </pre>
+
+      <hr>
+
+      <h4 class="text-warning">2️⃣ x86 vs ARM – Key Difference</h4>
+      <pre class="text-info">
+x86:
+  • Strong memory ordering
+  • Fewer barriers needed
+
+ARM:
+  • Weak memory ordering
+  • More explicit barriers required
+
+Interview Line:
+  ✔ JMM abstracts CPU differences
+      </pre>
+
+      <hr>
+
+      <h4 class="text-warning">3️⃣ JIT Compilation Difference</h4>
+      <pre class="text-info">
+JIT:
+  • Generates native code
+
+x86:
+  • CMPXCHG, strong CAS
+
+ARM:
+  • LL/SC (Load-Link / Store-Conditional)
+
+Interview Line:
+  ✔ CAS implementation differs per CPU
+      </pre>
+
+      <hr>
+
+      <h4 class="text-warning">4️⃣ Real-World Impact</h4>
+      <pre class="text-info">
+Apple Silicon (ARM):
+  • JVM adds extra memory fences
+  • Slightly different performance profiles
+
+But:
+  • Correctness guaranteed by JMM
+
+Interview Line:
+  ✔ Java behaves correctly on all CPUs
+      </pre>
+
+      <hr>
+
+      <h4 class="text-warning">📌 One-Line Summary</h4>
+      <pre class="text-info">
+"Java bytecode is CPU-agnostic, while JVM adapts
+memory barriers, CAS, and JIT strategies differently
+for ARM and x86, with JMM guaranteeing correctness."
+      </pre>
+
+    </div>
+  </div>
+</div>
+
+
+
+    </div>
+
+
+
+    <!-- Bootstrap & Search Script -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        let questionCount = document.querySelectorAll(".accordion-item").length;
+        document.getElementById("questionCount").innerHTML = `<strong>Total Questions: ${questionCount}</strong>`;
+      });
+      document.addEventListener("DOMContentLoaded", function () {
+        let items = document.querySelectorAll(".accordion-item");
+
+        items.forEach((item, index) => {
+          let button = item.querySelector(".accordion-button");
+          if (button) {
+            button.innerHTML = `<span class="fw-bold me-2">${index + 1}.</span> ` + button.innerHTML;
+          }
+        });
+      });
+
+      // Loop through all accordion bodies and add a Play button
+      document.addEventListener("DOMContentLoaded", function () {
+        // Loop through all accordion bodies
+        document.querySelectorAll(".accordion-body").forEach((body) => {
+          // Create Play button
+          const playBtn = document.createElement("button");
+          playBtn.class = "btn btn-sm btn-outline-primary me-2 mb-2";
+          playBtn.innerText = "🔊 Play Voice Over";
+          playBtn.onclick = function () {
+            speakAccordionText(this);
+          };
+
+          // Create Stop button
+          const stopBtn = document.createElement("button");
+          stopBtn.class = "btn btn-sm btn-outline-danger mb-2";
+          stopBtn.innerText = "⏹ Stop";
+          stopBtn.onclick = function () {
+            window.speechSynthesis.cancel();
+          };
+
+          // Insert buttons
+          const spacer = document.createElement("div");
+          spacer.class = "mb-2";
+          body.prepend(spacer);
+          body.prepend(stopBtn);
+          body.prepend(playBtn);
+        });
+      });
+
+      let currentUtterance = null;
+
+      function speakAccordionText(button) {
+        // Cancel any current speech
+        speechSynthesis.cancel();
+
+        const body = button.closest(".accordion-body");
+
+        // Get clean text from relevant tags
+        let rawText = Array.from(body.querySelectorAll("p, li, h5, text-warning, text-info, text-primary, text-success, text-danger, text-secondary, text-muted,text-dark, text-light, text-warning"))
+          .map(el => el.textContent.trim())
+          .filter(Boolean)
+          .join(". ");
+
+        // Remove unwanted characters
+        rawText = rawText.replace(/[`"*]+/g, "");
+
+        const chunks = splitTextIntoChunks(rawText, 200);
+
+        function getPreferredVoice() {
+          const voices = speechSynthesis.getVoices();
+          return voices.find(v =>
+            v.lang === "en-IN" && v.name.toLowerCase().includes("female")
+          ) || voices.find(v =>
+            v.lang === "en-IN"
+          ) || voices.find(v =>
+            v.name.toLowerCase().includes("female") && v.lang.startsWith("en")
+          );
+        }
+
+        function speakChunks(index = 0) {
+          if (index >= chunks.length) return;
+
+          const utterance = new SpeechSynthesisUtterance(chunks[index]);
+          utterance.voice = getPreferredVoice();
+          utterance.rate = 0.95;
+          utterance.pitch = 1.3;
+          utterance.volume = 1;
+
+          currentUtterance = utterance;
+
+          utterance.onend = () => speakChunks(index + 1);
+          utterance.onerror = (e) => console.error("Speech error:", e);
+
+          speechSynthesis.speak(utterance);
+        }
+
+        // Wait for voices to load before speaking
+        if (speechSynthesis.getVoices().length === 0) {
+          speechSynthesis.onvoiceschanged = () => speakChunks();
+        } else {
+          speakChunks();
+        }
+      }
+
+      function splitTextIntoChunks(text, maxLength) {
+        const sentences = text.match(/[^\.!\?]+[\.!\?]+/g) || [text];
+        const chunks = [];
+
+        let currentChunk = "";
+        for (let sentence of sentences) {
+          if ((currentChunk + sentence).length > maxLength) {
+            if (currentChunk) chunks.push(currentChunk);
+            currentChunk = sentence;
+          } else {
+            currentChunk += sentence;
+          }
+        }
+        if (currentChunk) chunks.push(currentChunk);
+        return chunks;
+      }
+
+      // Optional: Stop button functionality
+      function stopSpeech() {
+        if (currentUtterance) {
+          speechSynthesis.cancel();
+          currentUtterance = null;
+        }
+      }
+
+
+
+      function searchQuestions() {
+        const input = document.getElementById("searchBox").value.toLowerCase();
+        const items = document.querySelectorAll(".accordion-item");
+
+        items.forEach((item) => {
+          const buttonText = item.querySelector(".accordion-button")?.textContent.toLowerCase() || "";
+          const bodyText = item.querySelector(".accordion-body")?.textContent.toLowerCase() || "";
+
+          const combinedText = buttonText + " " + bodyText;
+
+          if (combinedText.includes(input)) {
+            item.style.display = "";
+          } else {
+            item.style.display = "none";
+          }
+        });
+      }
+
+      function copyToClipboard(text) {
+        navigator.clipboard
+          .writeText(text)
+          .then(() => {
+            alert("Copied: " + text);
+          })
+          .catch((err) => {
+            console.error("Failed to copy:", err);
+          });
+      }
+    </script>
+</body>
+
+</html>
