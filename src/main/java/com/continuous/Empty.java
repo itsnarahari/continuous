@@ -2,7 +2,10 @@ package com.continuous;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Id;
+
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.DoubleStream;
@@ -51,6 +54,11 @@ public class Empty {
         Date randomDate = new Date(ThreadLocalRandom.current()
                 .nextLong(d1.getTime(), d2.getTime()));
         System.out.println(randomDate);
+
+        List<Integer> l = null;
+        List<Integer> l2=null;
+
+        l.addAll(l2);
     }
 
     public static DoubleStream doubles(int dimension, double minValue, double maxValue )
