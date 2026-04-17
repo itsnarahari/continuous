@@ -94,6 +94,2605 @@
     <div class="accordion" id="googleAccordion">
 
 <div class="accordion-item">
+  <h2 class="accordion-header" id="headingJavaReflectionSpring">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseJavaReflectionSpring"
+      aria-expanded="false" aria-controls="collapseJavaReflectionSpring">
+      Java Reflection API - Spring Usage, Annotations, Proxies, Dynamic Proxy, AOP
+    </button>
+  </h2>
+
+  <div id="collapseJavaReflectionSpring" class="accordion-collapse collapse"
+    aria-labelledby="headingJavaReflectionSpring" data-bs-parent="#googleAccordion">
+    <div class="accordion-body bg-dark text-light">
+
+      <h4 class="text-warning">1. What is Reflection API in Java?</h4>
+      <p>
+        Reflection API allows Java code to <b>inspect and manipulate classes, fields, methods,
+          constructors, and annotations at runtime</b>.
+      </p>
+      <pre class="text-info">
+Simple meaning:
+  Normal Java code works with known classes at compile time.
+  Reflection allows us to ask questions about a class at runtime.
+
+Real-world analogy:
+  Reflection is like opening an employee file at runtime and checking name, skills, permissions, and assigned role.
+
+Real-world example:
+  Spring does not know your service classes at compile time, but at runtime it scans them and creates beans.
+      </pre>
+
+      <h4 class="text-warning">2. Why do we need Reflection?</h4>
+      <pre class="text-info">
+We need reflection for:
+  • frameworks
+  • dependency injection
+  • annotation processing at runtime
+  • testing tools
+  • object mapping
+  • serialization/deserialization
+  • dynamic method invocation
+  • proxy and AOP support
+
+Real-world example:
+  Spring finds @Service, @Repository, @Controller classes and registers them as beans without us manually creating every object.
+      </pre>
+
+      <h4 class="text-warning">3. Important classes in Reflection API</h4>
+      <pre class="text-info">
+Important classes:
+  • Class
+  • Field
+  • Method
+  • Constructor
+  • Modifier
+  • Annotation
+  • Proxy
+  • InvocationHandler
+
+Package:
+  java.lang.reflect
+
+Real-world analogy:
+  Class is the file, Field is employee data, Method is employee skill, Constructor is hiring process, Annotation is special label.
+      </pre>
+
+      <h4 class="text-warning">4. How many ways can we get Class object?</h4>
+      <pre><code class="language-java">// 1. Using .class
+Class&lt;UserService&gt; clazz1 = UserService.class;
+
+// 2. Using object.getClass()
+UserService service = new UserService();
+Class&lt;?&gt; clazz2 = service.getClass();
+
+// 3. Using Class.forName()
+Class&lt;?&gt; clazz3 = Class.forName("com.example.UserService");</code></pre>
+      <pre class="text-info">
+Real-world example:
+  Frameworks commonly use class metadata while scanning packages and loading classes dynamically.
+      </pre>
+
+      <h4 class="text-warning">5. How do we inspect fields, methods, and constructors?</h4>
+      <pre><code class="language-java">Class&lt;?&gt; clazz = UserService.class;
+
+Field[] fields = clazz.getDeclaredFields();
+Method[] methods = clazz.getDeclaredMethods();
+Constructor&lt;?&gt;[] constructors = clazz.getDeclaredConstructors();
+
+for (Method method : methods) {
+    System.out.println(method.getName());
+}</code></pre>
+      <pre class="text-info">
+Real-world example:
+  Spring inspects constructors to decide which constructor should be used for dependency injection.
+      </pre>
+
+      <h4 class="text-warning">6. How do we create an object using reflection?</h4>
+      <pre><code class="language-java">Constructor&lt;UserService&gt; constructor = UserService.class.getDeclaredConstructor();
+UserService userService = constructor.newInstance();</code></pre>
+      <pre class="text-info">
+Real-world example:
+  Spring creates bean objects dynamically instead of us writing new UserService() everywhere.
+      </pre>
+
+      <h4 class="text-warning">7. Can reflection access private fields and methods?</h4>
+      <p>
+        Yes, reflection can access private members using <code>setAccessible(true)</code>, but this should be used carefully.
+      </p>
+      <pre><code class="language-java">User user = new User();
+
+Field field = User.class.getDeclaredField("name");
+field.setAccessible(true);
+field.set(user, "Ravi");
+
+String value = (String) field.get(user);</code></pre>
+      <pre class="text-info">
+Real-world example:
+  Testing frameworks and object mappers may set private fields, but business code should avoid doing this directly.
+      </pre>
+
+      <h4 class="text-warning">8. How do we invoke a method using reflection?</h4>
+      <pre><code class="language-java">UserService service = new UserService();
+
+Method method = UserService.class.getDeclaredMethod("findUser", Long.class);
+Object result = method.invoke(service, 101L);</code></pre>
+      <pre class="text-info">
+Real-world example:
+  Frameworks can call lifecycle methods like @PostConstruct methods dynamically.
+      </pre>
+
+      <h4 class="text-warning">9. How does reflection work with annotations?</h4>
+      <pre><code class="language-java">@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+public @interface MyComponent {
+}
+
+@MyComponent
+public class PaymentService {
+}
+
+boolean present = PaymentService.class.isAnnotationPresent(MyComponent.class);</code></pre>
+      <pre class="text-info">
+Important:
+  Reflection can read annotations only if retention is RUNTIME.
+
+Real-world example:
+  Spring reads @Component, @Service, @Repository, @Controller, @Autowired, and @Transactional at runtime.
+      </pre>
+
+      <h4 class="text-warning">10. How does Spring Framework use Reflection?</h4>
+      <pre class="text-info">
+Spring uses reflection for:
+  • component scanning
+  • bean creation
+  • constructor injection
+  • field injection
+  • method injection
+  • annotation reading
+  • lifecycle callbacks
+  • controller method mapping
+  • AOP proxy metadata
+  • configuration property binding
+
+Real-world example:
+  When Spring sees @RestController and @GetMapping, it maps HTTP requests to Java methods using runtime metadata.
+      </pre>
+
+      <h4 class="text-warning">11. How does Spring use reflection for Dependency Injection?</h4>
+      <p>
+        Spring reads constructors, fields, methods, and annotations, then injects required dependencies from the container.
+      </p>
+      <pre><code class="language-java">@Service
+public class OrderService {
+
+    private final PaymentService paymentService;
+
+    public OrderService(PaymentService paymentService) {
+        this.paymentService = paymentService;
+    }
+}</code></pre>
+      <pre class="text-info">
+Internally:
+  1. Spring scans OrderService
+  2. finds constructor parameter PaymentService
+  3. searches PaymentService bean in container
+  4. creates OrderService object using reflection
+
+Real-world example:
+  We do not create PaymentService manually; Spring injects it automatically.
+      </pre>
+
+      <h4 class="text-warning">12. How does Spring inject private fields?</h4>
+      <pre><code class="language-java">@Service
+public class InvoiceService {
+
+    @Autowired
+    private PaymentService paymentService;
+}</code></pre>
+      <pre class="text-info">
+How Spring handles it:
+  Spring finds @Autowired on private field.
+  It makes the field accessible using reflection.
+  It assigns the dependency from ApplicationContext.
+
+Interview note:
+  Constructor injection is preferred because it is easier to test and makes dependencies clear.
+      </pre>
+
+      <h4 class="text-warning">13. What is a Proxy?</h4>
+      <p>
+        A proxy is an object that <b>stands in front of the real object</b> and controls access to it.
+        It can add extra behavior before or after calling the real method.
+      </p>
+      <pre class="text-info">
+Proxy can add:
+  • transaction handling
+  • logging
+  • security check
+  • caching
+  • retry logic
+  • performance monitoring
+
+Real-world analogy:
+  Proxy is like a receptionist. You do not directly enter the manager's room; receptionist checks, logs, and forwards your request.
+      </pre>
+
+      <h4 class="text-warning">14. What is Static Proxy vs Dynamic Proxy?</h4>
+      <pre class="text-info">
+Static Proxy:
+  • proxy class is written manually
+  • compile-time structure
+  • more boilerplate
+
+Dynamic Proxy:
+  • proxy class is generated at runtime
+  • used by frameworks
+  • useful when behavior is decided dynamically
+
+Real-world example:
+  Spring creates proxy objects at runtime for @Transactional, @Cacheable, @Async, and AOP advice.
+      </pre>
+
+      <h4 class="text-warning">15. What is JDK Dynamic Proxy?</h4>
+      <p>
+        JDK Dynamic Proxy creates proxy objects at runtime for <b>interfaces</b>. It uses
+        <code>Proxy</code> and <code>InvocationHandler</code>.
+      </p>
+      <pre><code class="language-java">public interface PaymentService {
+    void pay();
+}
+
+public class PaymentServiceImpl implements PaymentService {
+    public void pay() {
+        System.out.println("Payment done");
+    }
+}
+
+PaymentService target = new PaymentServiceImpl();
+
+PaymentService proxy = (PaymentService) Proxy.newProxyInstance(
+        PaymentService.class.getClassLoader(),
+        new Class[] { PaymentService.class },
+        (Object proxyObject, Method method, Object[] args) -&gt; {
+            System.out.println("Before method");
+            Object result = method.invoke(target, args);
+            System.out.println("After method");
+            return result;
+        }
+);
+
+proxy.pay();</code></pre>
+      <pre class="text-info">
+Real-world example:
+  If service has an interface, Spring AOP can use JDK Dynamic Proxy to wrap it with transaction or logging logic.
+      </pre>
+
+      <h4 class="text-warning">16. What is CGLIB Proxy?</h4>
+      <p>
+        CGLIB creates a proxy by <b>subclassing the target class</b>. It is useful when there is no interface.
+      </p>
+      <pre class="text-info">
+CGLIB behavior:
+  • creates subclass at runtime
+  • overrides methods to add extra behavior
+  • cannot proxy final classes properly
+  • cannot override final methods
+  • private methods are not advised
+
+Real-world example:
+  If OrderService has no interface, Spring can create a subclass proxy using CGLIB.
+      </pre>
+
+      <h4 class="text-warning">17. How does Spring decide JDK Proxy or CGLIB?</h4>
+      <pre class="text-info">
+Spring proxy choice:
+  • if target implements interface -> JDK Dynamic Proxy can be used
+  • if no interface -> CGLIB class-based proxy is used
+  • proxyTargetClass=true -> force CGLIB style class proxy
+
+Common Spring Boot behavior:
+  Spring AOP often uses class-based proxying in many Boot applications, but the important concept is:
+  interface proxy = JDK Dynamic Proxy, class proxy = CGLIB.
+      </pre>
+      <pre><code class="language-java">@EnableAspectJAutoProxy(proxyTargetClass = true)
+@Configuration
+public class AopConfig {
+}</code></pre>
+
+      <h4 class="text-warning">18. How does @Transactional use proxy?</h4>
+      <p>
+        Spring does not directly modify your method. It creates a proxy around the bean.
+        When another bean calls the method, the proxy starts and commits/rolls back the transaction.
+      </p>
+      <pre><code class="language-java">@Service
+public class PaymentService {
+
+    @Transactional
+    public void makePayment() {
+        debitAccount();
+        creditMerchant();
+    }
+}</code></pre>
+      <pre class="text-info">
+Internal flow:
+  1. Spring creates PaymentService bean
+  2. sees @Transactional
+  3. creates proxy around PaymentService
+  4. caller invokes proxy.makePayment()
+  5. proxy opens transaction
+  6. actual method executes
+  7. proxy commits or rolls back
+
+Real-world example:
+  In payment flow, debit and credit should either both succeed or both rollback.
+      </pre>
+
+      <h4 class="text-warning">19. What is AOP and how is reflection/proxy related?</h4>
+      <pre class="text-info">
+AOP means Aspect-Oriented Programming.
+It adds cross-cutting behavior without writing the same code everywhere.
+
+Examples:
+  • logging
+  • transaction
+  • security
+  • caching
+  • metrics
+
+How reflection/proxy helps:
+  • reflection reads annotations and method metadata
+  • proxy intercepts method call
+  • advice runs before/after/around actual method
+
+Real-world analogy:
+  AOP is like airport security. Every passenger goes through common checks without each airline rewriting security logic.
+      </pre>
+
+      <h4 class="text-warning">20. What is the self-invocation problem in Spring proxy?</h4>
+      <p>
+        If a method inside the same class calls another proxied method directly, the call may bypass the proxy.
+        Because of that, annotations like <code>@Transactional</code>, <code>@Async</code>, or <code>@Cacheable</code>
+        may not work as expected.
+      </p>
+      <pre><code class="language-java">@Service
+public class OrderService {
+
+    public void placeOrder() {
+        saveOrder(); // self-invocation, proxy may be bypassed
+    }
+
+    @Transactional
+    public void saveOrder() {
+        // transaction may not start when called from same class directly
+    }
+}</code></pre>
+      <pre class="text-info">
+Real-world example:
+  If placeOrder() calls saveOrder() inside same class, @Transactional on saveOrder() may not apply because proxy was skipped.
+      </pre>
+
+      <h4 class="text-warning">21. Reflection vs Proxy - what is the difference?</h4>
+      <pre class="text-info">
+Reflection:
+  Used to inspect and invoke metadata at runtime.
+
+Proxy:
+  Used to wrap object behavior and intercept method calls.
+
+Simple difference:
+  Reflection asks, "What does this class have?"
+  Proxy asks, "Can I stand before this object and control method calls?"
+
+Real-world example:
+  Spring uses reflection to find @Transactional and proxy to apply transaction behavior.
+      </pre>
+
+      <h4 class="text-warning">22. How many ways is Reflection used in real applications?</h4>
+      <pre class="text-info">
+Common usage areas:
+  1. Bean creation
+  2. Dependency injection
+  3. Annotation scanning
+  4. Method invocation
+  5. Field access
+  6. Constructor access
+  7. Object mapping
+  8. JSON serialization/deserialization
+  9. Testing private fields/methods
+  10. ORM frameworks like Hibernate
+  11. Spring MVC controller mapping
+  12. AOP metadata inspection
+  13. Dynamic proxy creation
+  14. Configuration binding
+  15. Validation frameworks
+
+Real-world example:
+  A Spring Boot request may involve reflection in controller mapping, validation, JSON binding, service proxy, and transaction handling.
+      </pre>
+
+      <h4 class="text-warning">23. What are the disadvantages of Reflection?</h4>
+      <pre class="text-info">
+Disadvantages:
+  • slower than direct method calls
+  • can break encapsulation
+  • harder to refactor safely
+  • runtime errors instead of compile-time errors
+  • can access private members if allowed
+  • Java module system may restrict deep reflection
+
+Real-world example:
+  If method name changes, normal code fails at compile time, but reflection may fail only at runtime.
+      </pre>
+
+      <h4 class="text-warning">24. Reflection in Spring Boot 3 and Native Images</h4>
+      <pre class="text-info">
+Important modern point:
+  Spring Boot 3 and native images try to reduce runtime reflection where possible.
+  Native image needs reflection metadata ahead of time because runtime class discovery is limited.
+
+Interview-safe answer:
+  Traditional Spring heavily uses reflection at runtime.
+  Modern Spring also uses AOT processing to prepare metadata earlier for faster startup and native image compatibility.
+
+Real-world example:
+  Cloud functions need fast startup, so AOT/native image support reduces runtime reflection overhead.
+      </pre>
+
+      <h4 class="text-warning">25. Interview-ready one-liner</h4>
+      <pre class="text-info">
+Reflection lets Java inspect and manipulate classes at runtime, and Spring uses it for bean creation,
+dependency injection, annotation scanning, lifecycle methods, controller mapping, and AOP metadata;
+proxies then use that metadata to add behaviors like transactions, security, caching, and logging around real objects.
+      </pre>
+
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingSpringBeanLifecycleInternals">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseSpringBeanLifecycleInternals"
+      aria-expanded="false" aria-controls="collapseSpringBeanLifecycleInternals">
+      Spring Bean Lifecycle Internals - 20 Q&A
+    </button>
+  </h2>
+
+  <div id="collapseSpringBeanLifecycleInternals" class="accordion-collapse collapse"
+    aria-labelledby="headingSpringBeanLifecycleInternals" data-bs-parent="#googleAccordion">
+    <div class="accordion-body bg-dark text-light">
+
+      <h4 class="text-warning">1. Spring Bean Lifecycle Internals - 20 Q&A</h4>
+      <pre class="text-info">
+1. What is Spring bean lifecycle?
+A: It is the full journey from class scanning to bean creation, dependency injection, initialization, proxy wrapping, usage, and destruction.
+Example: OrderService becomes a managed Spring bean instead of being manually created with new.
+
+2. What is component scanning?
+A: Spring scans packages to find classes annotated with @Component, @Service, @Repository, @Controller, etc.
+Example: PaymentService annotated with @Service is automatically registered.
+
+3. What is BeanDefinition?
+A: BeanDefinition is metadata that tells Spring how to create and configure a bean.
+Example: It stores bean class, scope, constructor info, lazy flag, and dependencies.
+
+4. Is object created immediately after scanning?
+A: Not always; Spring first creates BeanDefinition metadata, then creates singleton beans during context startup.
+Example: Lazy beans are created only when requested.
+
+5. What is bean instantiation?
+A: It means creating the actual object using constructor reflection or factory methods.
+Example: Spring calls OrderService constructor internally.
+
+6. What is dependency injection phase?
+A: Spring resolves dependencies and injects them through constructor, setter, or field.
+Example: OrderService gets PaymentService from ApplicationContext.
+
+7. Which injection is preferred?
+A: Constructor injection is preferred because dependencies are mandatory, final-friendly, and easy to test.
+Example: OrderService(PaymentService paymentService).
+
+8. What happens after dependency injection?
+A: Spring runs awareness callbacks, BeanPostProcessors, and initialization methods.
+Example: @PostConstruct method is called after dependencies are ready.
+
+9. What is BeanPostProcessor?
+A: It allows Spring or custom code to modify beans before and after initialization.
+Example: Spring AOP uses post-processing to wrap beans with proxies.
+
+10. When is proxy created in lifecycle?
+A: Proxy is usually created after bean initialization by a BeanPostProcessor.
+Example: @Transactional service becomes a proxy bean.
+
+11. Is the object in ApplicationContext always the original object?
+A: Not always; for AOP/transactions, ApplicationContext may expose a proxy instead of the raw object.
+Example: paymentService bean may actually be a proxy.
+
+12. What is singleton scope?
+A: One bean instance per Spring container.
+Example: UserService singleton is shared across requests.
+
+13. What is prototype scope?
+A: A new bean instance is created every time it is requested.
+Example: A temporary task object may be prototype.
+
+14. What is request scope?
+A: One bean instance per HTTP request.
+Example: RequestContext bean storing request-specific details.
+
+15. What is @PostConstruct?
+A: It marks a method to run after dependency injection is complete.
+Example: Load in-memory configuration after service dependencies are injected.
+
+16. What is @PreDestroy?
+A: It marks cleanup logic before bean destruction.
+Example: Closing a custom connection before application shutdown.
+
+17. What is ApplicationContext?
+A: It is Spring's IoC container that stores and manages beans.
+Example: It returns OrderService when another bean needs it.
+
+18. What is circular dependency?
+A: It happens when bean A needs bean B and bean B needs bean A.
+Example: OrderService depends on PaymentService and PaymentService depends on OrderService.
+
+19. How does Spring detect lifecycle annotations?
+A: Spring reads annotation metadata and invokes lifecycle methods using reflection or cached metadata.
+Example: @PostConstruct on initCache() is detected and executed.
+
+20. Interview one-liner?
+A: Spring bean lifecycle is metadata creation, object creation, dependency injection, initialization, proxy wrapping, usage, and destruction.
+Example: @Transactional service is created first, then wrapped by a transaction proxy.
+      </pre>
+
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingReflectionVsAnnotationProcessing">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseReflectionVsAnnotationProcessing"
+      aria-expanded="false" aria-controls="collapseReflectionVsAnnotationProcessing">
+      Reflection vs Annotation Processing - 20 Q&A
+    </button>
+  </h2>
+
+  <div id="collapseReflectionVsAnnotationProcessing" class="accordion-collapse collapse"
+    aria-labelledby="headingReflectionVsAnnotationProcessing" data-bs-parent="#googleAccordion">
+    <div class="accordion-body bg-dark text-light">
+      <h4 class="text-warning">2. Reflection vs Annotation Processing - 20 Q&A</h4>
+      <pre class="text-info">
+1. What is runtime reflection?
+A: It inspects classes, fields, methods, constructors, and annotations while the application is running.
+Example: Spring reads @Service during startup.
+
+2. What is annotation processing?
+A: It processes annotations at compile time to generate code or metadata.
+Example: Lombok generates getters and constructors during compilation.
+
+3. Main difference?
+A: Reflection works at runtime; annotation processing works at compile time.
+Example: Spring DI is runtime-heavy, MapStruct generates mapper code at compile time.
+
+4. Which is faster at runtime?
+A: Annotation processing is usually faster because generated code runs like normal code.
+Example: MapStruct mapper is faster than reflection-based object mapping.
+
+5. Why does Spring use reflection?
+A: It needs dynamic runtime discovery of beans, annotations, and methods.
+Example: Spring finds controllers and request mappings at application startup.
+
+6. Why does Lombok use annotation processing?
+A: Lombok modifies/generates code during compilation to reduce boilerplate.
+Example: @Getter creates getter methods before runtime.
+
+7. Why does MapStruct use annotation processing?
+A: It generates mapper implementations at compile time.
+Example: UserDtoMapperImpl is generated without reflection.
+
+8. Can annotations be available only at compile time?
+A: Yes, if retention is SOURCE or CLASS, runtime reflection may not see them.
+Example: Lombok annotations are not needed at runtime.
+
+9. What is RUNTIME retention?
+A: It keeps annotation metadata available for reflection.
+Example: Spring's @Transactional must be available at runtime.
+
+10. What is SOURCE retention?
+A: Annotation exists only in source code and is discarded after compilation.
+Example: Many code-generation hints use SOURCE retention.
+
+11. What is CLASS retention?
+A: Annotation is stored in class file but not necessarily visible through normal runtime reflection.
+Example: Tooling can inspect class metadata.
+
+12. Does Spring only use reflection?
+A: No, modern Spring also uses metadata reading, caching, generated code, and AOT processing.
+Example: Spring Boot 3 native image support uses generated hints.
+
+13. Which approach gives better startup?
+A: Compile-time metadata and AOT usually improve startup.
+Example: Cloud functions benefit from faster cold starts.
+
+14. Which approach is more flexible?
+A: Runtime reflection is usually more flexible.
+Example: Spring can discover beans dynamically based on classpath.
+
+15. What is drawback of reflection?
+A: Runtime overhead, weaker compile-time safety, and possible native-image configuration needs.
+Example: Wrong method name may fail only at runtime.
+
+16. What is drawback of annotation processing?
+A: More compile-time complexity and generated code can be harder to debug.
+Example: Lombok-generated code is not always obvious in source.
+
+17. Where does Hibernate use reflection?
+A: It uses reflection/proxies to create entities, access fields, and manage lazy loading.
+Example: Entity no-arg constructor is called reflectively.
+
+18. Where does Jackson use reflection?
+A: It discovers fields, constructors, setters, getters, and annotations.
+Example: JSON request body becomes UserRequest object.
+
+19. How to answer in interview?
+A: Reflection is runtime introspection; annotation processing is compile-time code/metadata generation.
+Example: Spring uses reflection; Lombok and MapStruct use annotation processing.
+
+20. Real project advice?
+A: Use reflection for framework flexibility, compile-time generation for performance-critical mapping.
+Example: Use MapStruct for DTO mapping instead of reflection-heavy generic mapper.
+      </pre>
+
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingJdkProxyCglibByteBuddy">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseJdkProxyCglibByteBuddy"
+      aria-expanded="false" aria-controls="collapseJdkProxyCglibByteBuddy">
+      JDK Proxy vs CGLIB vs ByteBuddy - 20 Q&A
+    </button>
+  </h2>
+
+  <div id="collapseJdkProxyCglibByteBuddy" class="accordion-collapse collapse"
+    aria-labelledby="headingJdkProxyCglibByteBuddy" data-bs-parent="#googleAccordion">
+    <div class="accordion-body bg-dark text-light">
+      <h4 class="text-warning">3. JDK Proxy vs CGLIB vs ByteBuddy - 20 Q&A</h4>
+      <pre class="text-info">
+1. What is a proxy?
+A: A proxy is a wrapper object that controls access to the real target object.
+Example: Transaction proxy starts transaction before calling service method.
+
+2. What is JDK Dynamic Proxy?
+A: It creates runtime proxy classes for interfaces using Proxy and InvocationHandler.
+Example: PaymentService interface can be proxied.
+
+3. What is CGLIB?
+A: CGLIB creates a subclass of the target class at runtime.
+Example: OrderService without interface can still be proxied.
+
+4. What is ByteBuddy?
+A: ByteBuddy is a modern bytecode generation library used to create and modify classes dynamically.
+Example: Mockito uses ByteBuddy to create mocks.
+
+5. JDK proxy requirement?
+A: Target must expose an interface.
+Example: UserService interface with UserServiceImpl.
+
+6. CGLIB requirement?
+A: Target class should be non-final and methods should be overridable.
+Example: final method cannot be advised by subclass proxy.
+
+7. ByteBuddy advantage?
+A: It is flexible, modern, and powerful for runtime bytecode generation.
+Example: Hibernate and Mockito use bytecode techniques for proxies/enhancement.
+
+8. Which proxy does Spring use with interfaces?
+A: JDK proxy can be used when interface exists.
+Example: BillingService interface.
+
+9. Which proxy does Spring use without interface?
+A: Class-based proxy such as CGLIB.
+Example: NotificationService class only.
+
+10. Can proxy intercept private methods?
+A: Spring proxy-based AOP cannot advise private methods because they are not externally invoked/overridden.
+Example: private validatePayment() is not transactional separately.
+
+11. Can proxy intercept final methods?
+A: CGLIB cannot override final methods, so advice cannot apply there.
+Example: final makePayment() will not be advised as expected.
+
+12. Can proxy intercept self-invocation?
+A: Usually no, internal same-class method call bypasses proxy.
+Example: placeOrder() calling saveOrder() in same class bypasses @Transactional.
+
+13. Is proxy same as reflection?
+A: No, reflection inspects/invokes metadata; proxy intercepts calls.
+Example: Spring uses reflection to find @Transactional and proxy to apply it.
+
+14. Is JDK proxy class visible in source code?
+A: No, it is generated at runtime.
+Example: Debugger may show com.sun.proxy style class.
+
+15. Is CGLIB proxy original class?
+A: No, it is a subclass-like generated proxy.
+Example: OrderService proxy extends OrderService.
+
+16. Why frameworks use proxies?
+A: To add cross-cutting logic without changing business code.
+Example: Logging around every service method.
+
+17. What is InvocationHandler?
+A: It is callback logic that runs when JDK proxy method is called.
+Example: handler prints before/after method logs.
+
+18. What is method interceptor?
+A: It is proxy logic that wraps target method execution.
+Example: TransactionInterceptor wraps @Transactional methods.
+
+19. Real-world proxy use cases?
+A: Transactions, caching, security, metrics, retries, rate limiting.
+Example: @Cacheable returns cached product data.
+
+20. Interview one-liner?
+A: JDK proxy works with interfaces, CGLIB subclasses classes, and ByteBuddy is a modern bytecode generation tool used by advanced frameworks.
+Example: Spring AOP uses proxies; Mockito often uses ByteBuddy for mocks.
+      </pre>
+
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingTransactionalFailureCases">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseTransactionalFailureCases"
+      aria-expanded="false" aria-controls="collapseTransactionalFailureCases">
+      @Transactional Internal Failure Cases - 20 Q&A
+    </button>
+  </h2>
+
+  <div id="collapseTransactionalFailureCases" class="accordion-collapse collapse"
+    aria-labelledby="headingTransactionalFailureCases" data-bs-parent="#googleAccordion">
+    <div class="accordion-body bg-dark text-light">
+      <h4 class="text-warning">4. @Transactional Internal Failure Cases - 20 Q&A</h4>
+      <pre class="text-info">
+1. How does @Transactional work internally?
+A: Spring creates a proxy that opens, commits, or rolls back a transaction around the method call.
+Example: makePayment() runs inside DB transaction.
+
+2. What is self-invocation issue?
+A: Same-class method call bypasses the proxy, so transaction advice may not run.
+Example: placeOrder() calling this.saveOrder().
+
+3. Does @Transactional work on private methods?
+A: No, proxy-based AOP cannot intercept private methods.
+Example: private saveAudit() with @Transactional will not work as expected.
+
+4. Does it work on final methods?
+A: Not reliably with class-based proxies because final methods cannot be overridden.
+Example: final processRefund() may bypass advice.
+
+5. Does it work on final classes?
+A: CGLIB cannot subclass final classes.
+Example: final PaymentService cannot be proxied by subclass proxy.
+
+6. Does it work when called from constructor?
+A: No, proxy is not fully active during object construction.
+Example: constructor calling transactional init method is unsafe.
+
+7. Default rollback behavior?
+A: RuntimeException and Error trigger rollback by default; checked exceptions do not unless configured.
+Example: SQLException may need rollbackFor.
+
+8. How to rollback for checked exception?
+A: Use rollbackFor.
+Example: @Transactional(rollbackFor = SQLException.class).
+
+9. What if exception is caught and not rethrown?
+A: Spring may commit because proxy sees successful method completion.
+Example: catch exception and return false can commit partial work.
+
+10. What if method is not public?
+A: Public methods are safest for proxy-based transaction interception.
+Example: package-private methods may not be advised as expected.
+
+11. Does @Transactional work on repository methods?
+A: Yes, Spring Data repositories are usually transactional or participate in service transaction.
+Example: save() joins existing transaction.
+
+12. Where should @Transactional be placed?
+A: Usually service layer, not controller.
+Example: OrderService.placeOrder().
+
+13. What is propagation REQUIRED?
+A: Join existing transaction or create a new one if none exists.
+Example: placeOrder() and savePayment() share same transaction.
+
+14. What is REQUIRES_NEW?
+A: Suspend current transaction and start a new one.
+Example: audit log saved even if main payment rolls back.
+
+15. What is readOnly=true?
+A: It hints that method only reads data and may allow optimizations.
+Example: getProductDetails() should not update DB.
+
+16. What is transaction timeout?
+A: Maximum time before transaction is rolled back.
+Example: payment confirmation should fail after configured timeout.
+
+17. What is isolation?
+A: It controls visibility of concurrent transaction changes.
+Example: avoid dirty reads in financial reports.
+
+18. Why @Transactional may fail in async method?
+A: Thread-bound transaction context does not automatically move across threads.
+Example: @Async method runs in separate thread.
+
+19. Why does proxy matter here?
+A: Transaction logic lives in proxy, not inside original method bytecode.
+Example: direct target method call has no transaction wrapper.
+
+20. Interview one-liner?
+A: @Transactional is proxy-based, so it fails mainly with self-invocation, private/final methods, constructor calls, swallowed exceptions, and wrong rollback rules.
+Example: payment rollback fails if exception is caught and not rethrown.
+      </pre>
+
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingSpringAopVsAspectj">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseSpringAopVsAspectj"
+      aria-expanded="false" aria-controls="collapseSpringAopVsAspectj">
+      Spring AOP vs AspectJ - 20 Q&A
+    </button>
+  </h2>
+
+  <div id="collapseSpringAopVsAspectj" class="accordion-collapse collapse"
+    aria-labelledby="headingSpringAopVsAspectj" data-bs-parent="#googleAccordion">
+    <div class="accordion-body bg-dark text-light">
+      <h4 class="text-warning">5. Spring AOP vs AspectJ - 20 Q&A</h4>
+      <pre class="text-info">
+1. What is AOP?
+A: AOP adds cross-cutting behavior separately from business logic.
+Example: Logging all service methods without repeating log code.
+
+2. What is Spring AOP?
+A: Proxy-based AOP for Spring beans.
+Example: @Transactional on Spring service.
+
+3. What is AspectJ?
+A: A full AOP framework that can weave advice into bytecode.
+Example: Advise constructor calls or field access.
+
+4. Main difference?
+A: Spring AOP uses proxies; AspectJ uses weaving.
+Example: Spring AOP intercepts bean method calls, AspectJ can go deeper.
+
+5. What is weaving?
+A: Adding aspect logic into bytecode at compile time, load time, or runtime.
+Example: Security check woven into method execution.
+
+6. What is join point?
+A: A point in program execution where advice can run.
+Example: Method execution of placeOrder().
+
+7. What is pointcut?
+A: Expression selecting join points.
+Example: all methods inside service package.
+
+8. What is advice?
+A: Code that runs before, after, or around selected join points.
+Example: Log method execution time.
+
+9. What is aspect?
+A: Class containing pointcuts and advice.
+Example: LoggingAspect.
+
+10. What is around advice?
+A: Advice that controls before and after method execution and can decide whether to proceed.
+Example: Measure execution time.
+
+11. Limitation of Spring AOP?
+A: It only works on Spring-managed beans and proxy-visible method calls.
+Example: new OrderService() manually created is not advised.
+
+12. Can Spring AOP advise private method?
+A: No.
+Example: private validate() not intercepted.
+
+13. Can AspectJ advise private method?
+A: AspectJ has deeper weaving capabilities than proxy-based Spring AOP.
+Example: Can support cases Spring proxy cannot.
+
+14. Which is simpler?
+A: Spring AOP is simpler and enough for most enterprise apps.
+Example: Transactions, cache, logging.
+
+15. Which is more powerful?
+A: AspectJ is more powerful but more complex.
+Example: Field access interception.
+
+16. Does @Transactional use Spring AOP?
+A: Yes, commonly through proxy-based AOP.
+Example: TransactionInterceptor around method call.
+
+17. Does @Cacheable use AOP?
+A: Yes, caching behavior is applied through proxy infrastructure.
+Example: ProductService.getProduct() returns cache data.
+
+18. Does @Async use proxy?
+A: Yes, proxy submits work to executor.
+Example: sendEmail() runs in background thread.
+
+19. When use AspectJ?
+A: Use when proxy limitations are blocking and deeper weaving is required.
+Example: Need advice on non-Spring objects.
+
+20. Interview one-liner?
+A: Spring AOP is proxy-based and practical for Spring beans; AspectJ is weaving-based and more powerful but more complex.
+Example: Use Spring AOP for @Transactional, use AspectJ only for advanced needs.
+      </pre>
+
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingReflectionPerformance">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseReflectionPerformance"
+      aria-expanded="false" aria-controls="collapseReflectionPerformance">
+      Reflection Performance - 20 Q&A
+    </button>
+  </h2>
+
+  <div id="collapseReflectionPerformance" class="accordion-collapse collapse"
+    aria-labelledby="headingReflectionPerformance" data-bs-parent="#googleAccordion">
+    <div class="accordion-body bg-dark text-light">
+      <h4 class="text-warning">6. Reflection Performance - 20 Q&A</h4>
+      <pre class="text-info">
+1. Is reflection slower than direct call?
+A: Usually yes, because it has runtime lookup, access checks, and invocation overhead.
+Example: method.invoke() is slower than userService.findUser().
+
+2. Is reflection always a problem?
+A: No, if used during startup or cached properly, impact is usually acceptable.
+Example: Spring scans metadata at startup then caches it.
+
+3. Why do frameworks cache reflection metadata?
+A: To avoid repeated field/method lookup cost.
+Example: Jackson caches serializers/deserializers.
+
+4. What is Method object caching?
+A: Store Method reference once and reuse it.
+Example: Mapper caches setter method.
+
+5. What is Field object caching?
+A: Store Field reference once to avoid repeated getDeclaredField calls.
+Example: ORM caches entity fields.
+
+6. Does setAccessible affect performance?
+A: It can reduce access checks but has security/module implications.
+Example: Framework accesses private constructor faster after setup.
+
+7. Why reflection causes runtime errors?
+A: Method/field names are strings or runtime metadata.
+Example: rename field but reflection code still searches old name.
+
+8. Direct code vs reflection?
+A: Direct code is faster and compile-time safe.
+Example: user.getName() is safer than reflected getter call.
+
+9. Reflection vs MethodHandle?
+A: MethodHandle can be more performant/flexible for dynamic invocation.
+Example: JVM-level dynamic language support.
+
+10. Reflection vs generated code?
+A: Generated code is usually faster at runtime.
+Example: MapStruct generated mapper beats reflection mapper.
+
+11. Does Spring use reflection on every request?
+A: Some paths use cached reflection metadata; not every operation performs full scanning again.
+Example: Request mapping discovered at startup.
+
+12. Does Jackson use reflection for every field each time?
+A: It builds and caches serializers/deserializers.
+Example: UserRequest binding reuses cached metadata.
+
+13. How to reduce reflection overhead?
+A: Cache metadata, use generated code, avoid reflection in tight loops.
+Example: Do not call getDeclaredFields inside every API request repeatedly.
+
+14. Is reflection okay for bean creation?
+A: Yes, startup-time use is normally fine.
+Example: Spring creates singleton beans once.
+
+15. Is reflection okay in high-frequency code?
+A: Be careful in hot paths.
+Example: Million-record ETL mapper should prefer generated mapper.
+
+16. Does JIT optimize reflection?
+A: JVM can optimize some paths, but direct calls still tend to be better.
+Example: Direct service call is easier to inline.
+
+17. What is startup overhead?
+A: Reflection scanning during application startup can increase boot time.
+Example: Large Spring app scans many classes.
+
+18. How does Spring Boot 3 improve this?
+A: AOT processing can prepare metadata earlier.
+Example: Native image startup becomes faster.
+
+19. Interview advice?
+A: Reflection is powerful but should be cached and not abused in performance-critical loops.
+Example: Cache Method once instead of lookup every call.
+
+20. Real-world one-liner?
+A: Reflection overhead is acceptable for framework infrastructure but risky in hot-path business loops.
+Example: Use MapStruct for large DTO mapping workloads.
+      </pre>
+
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingJavaModuleSystemRestrictions">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseJavaModuleSystemRestrictions"
+      aria-expanded="false" aria-controls="collapseJavaModuleSystemRestrictions">
+      Java Module System Restrictions - 20 Q&A
+    </button>
+  </h2>
+
+  <div id="collapseJavaModuleSystemRestrictions" class="accordion-collapse collapse"
+    aria-labelledby="headingJavaModuleSystemRestrictions" data-bs-parent="#googleAccordion">
+    <div class="accordion-body bg-dark text-light">
+      <h4 class="text-warning">7. Java Module System Restrictions - 20 Q&A</h4>
+      <pre class="text-info">
+1. What is Java Module System?
+A: Introduced in Java 9 to strongly encapsulate packages and define module dependencies.
+Example: module-info.java declares required modules.
+
+2. Why modules matter to reflection?
+A: Strong encapsulation can block deep reflection into non-open packages.
+Example: Framework cannot access private field if package is not opened.
+
+3. What is exports?
+A: It makes public types of a package accessible to other modules.
+Example: exports com.example.api.
+
+4. What is opens?
+A: It allows runtime reflective access to a package.
+Example: opens com.example.model to spring.core.
+
+5. exports vs opens?
+A: exports is for compile-time/public access; opens is for runtime reflection.
+Example: DTO package may be opened for Jackson.
+
+6. What is open module?
+A: A module where all packages are open for reflection.
+Example: open module com.example.app.
+
+7. What is illegal reflective access?
+A: Attempt to access encapsulated internals reflectively.
+Example: Older libraries accessing JDK internals.
+
+8. Why did Java add stronger encapsulation?
+A: To improve security, maintainability, and reliable boundaries.
+Example: Stop accidental dependency on internal JDK classes.
+
+9. How does Spring handle modules?
+A: Spring may need opened packages for reflection when using JPMS.
+Example: open domain package for dependency injection or binding.
+
+10. Does every Spring app use JPMS?
+A: No, many Spring Boot apps still run on classpath without module-info.java.
+Example: Standard executable jar.
+
+11. What happens if package is not opened?
+A: Reflection access may fail with access exception.
+Example: Jackson cannot set private field.
+
+12. How to fix reflection issue in module?
+A: Add opens directive or runtime --add-opens.
+Example: opens com.example.dto to com.fasterxml.jackson.databind.
+
+13. What is --add-opens?
+A: JVM flag to open a package reflectively at runtime.
+Example: --add-opens java.base/java.lang=ALL-UNNAMED.
+
+14. Is --add-opens ideal?
+A: It is a workaround; module-info should be cleaner when possible.
+Example: Production apps should avoid random broad opens.
+
+15. What is unnamed module?
+A: Code on classpath belongs to unnamed module.
+Example: Traditional Spring Boot jar dependencies.
+
+16. Why frameworks need opens?
+A: They inspect constructors, fields, methods, and annotations.
+Example: Hibernate entity field access.
+
+17. Security angle?
+A: Modules reduce uncontrolled deep reflection.
+Example: Private package internals remain hidden.
+
+18. Native image angle?
+A: Native images also need reflection metadata/hints ahead of time.
+Example: Register DTO reflection hints.
+
+19. Interview one-liner?
+A: JPMS makes reflection stricter; frameworks may need packages opened for runtime reflection.
+Example: Open entity package for Hibernate.
+
+20. Real-world example?
+A: Migrating Java 8 app to Java 17 may reveal reflection access issues from old libraries.
+Example: Upgrade dependencies instead of relying on JDK internals.
+      </pre>
+
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingReflectionSecurityRisks">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseReflectionSecurityRisks"
+      aria-expanded="false" aria-controls="collapseReflectionSecurityRisks">
+      Reflection Security Risks - 20 Q&A
+    </button>
+  </h2>
+
+  <div id="collapseReflectionSecurityRisks" class="accordion-collapse collapse"
+    aria-labelledby="headingReflectionSecurityRisks" data-bs-parent="#googleAccordion">
+    <div class="accordion-body bg-dark text-light">
+      <h4 class="text-warning">8. Reflection Security Risks - 20 Q&A</h4>
+      <pre class="text-info">
+1. Why is reflection a security concern?
+A: It can bypass normal access rules if allowed.
+Example: Access private field using setAccessible(true).
+
+2. Can reflection access private constructor?
+A: Yes, if access is allowed.
+Example: Break some singleton implementations.
+
+3. Can reflection modify private fields?
+A: Yes, in many cases with accessible field access.
+Example: Change user role in test object.
+
+4. Can reflection break encapsulation?
+A: Yes, it can access internals not intended for public use.
+Example: Modify private balance field directly.
+
+5. Can reflection break immutable objects?
+A: It can sometimes modify private final fields with limitations.
+Example: Change private final name in old-style immutable class.
+
+6. Can reflection break enum singleton?
+A: Java prevents reflective creation of enum instances.
+Example: Enum singleton is strongly protected.
+
+7. Why frameworks still use reflection?
+A: They need generic dynamic behavior.
+Example: Spring injects dependencies into classes it did not know at compile time.
+
+8. How to reduce reflection risk?
+A: Avoid unnecessary setAccessible, validate inputs, use modules, avoid exposing internals.
+Example: Do not let user input decide class/method to invoke.
+
+9. What is unsafe dynamic class loading?
+A: Loading arbitrary class names from untrusted input.
+Example: Class.forName(request.getParameter("class")) is dangerous.
+
+10. What is method injection risk?
+A: Invoking method names from external input can execute unintended logic.
+Example: User chooses method deleteAllData.
+
+11. What is serialization risk?
+A: Reflection-based deserialization can instantiate unexpected types if not restricted.
+Example: Insecure polymorphic JSON handling.
+
+12. How does JPMS help?
+A: It restricts deep reflection unless packages are opened.
+Example: Private module package remains inaccessible.
+
+13. Can reflection bypass validation?
+A: Yes, direct field setting can skip setters and validation logic.
+Example: Set negative balance directly.
+
+14. Should business code use reflection often?
+A: No, usually keep it inside framework/infrastructure code.
+Example: Use normal service methods for business logic.
+
+15. Security with plugins?
+A: Plugin systems must restrict class loading and permissions.
+Example: Load only trusted plugin packages.
+
+16. Testing use safe?
+A: Fine for controlled tests, but avoid copying reflection hacks into production.
+Example: ReflectionTestUtils in unit tests.
+
+17. Can reflection expose sensitive data?
+A: Yes, it can read private secrets if misused.
+Example: Read apiKey private field.
+
+18. How to protect singleton?
+A: Use enum singleton or guard constructor.
+Example: Throw exception if instance already exists.
+
+19. Interview one-liner?
+A: Reflection is powerful but can break encapsulation and security boundaries, so frameworks must use it carefully.
+Example: Do not invoke arbitrary user-selected methods.
+
+20. Real-world example?
+A: Secure apps avoid broad reflection access and prefer explicit APIs.
+Example: Use DTO mapper instead of exposing private entity fields blindly.
+      </pre>
+
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingHibernateReflectionProxy">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseHibernateReflectionProxy"
+      aria-expanded="false" aria-controls="collapseHibernateReflectionProxy">
+      Hibernate Reflection and Proxy Usage - 20 Q&A
+    </button>
+  </h2>
+
+  <div id="collapseHibernateReflectionProxy" class="accordion-collapse collapse"
+    aria-labelledby="headingHibernateReflectionProxy" data-bs-parent="#googleAccordion">
+    <div class="accordion-body bg-dark text-light">
+      <h4 class="text-warning">9. Hibernate Reflection and Proxy - 20 Q&A</h4>
+      <pre class="text-info">
+1. How does Hibernate use reflection?
+A: It creates entities, reads annotations, accesses fields, and maps database rows to objects.
+Example: @Entity User loaded from users table.
+
+2. Why does JPA need no-arg constructor?
+A: Provider needs a way to instantiate entity reflectively.
+Example: protected User() constructor.
+
+3. Why entities should not be final?
+A: Hibernate may create proxy subclasses for lazy loading.
+Example: final User cannot be subclass-proxied.
+
+4. What is Hibernate proxy?
+A: Placeholder object that loads real data lazily when accessed.
+Example: order.getCustomer() triggers customer load.
+
+5. What is lazy loading?
+A: Load associated data only when needed.
+Example: Load Order first, Customer later.
+
+6. How proxy supports lazy loading?
+A: Proxy intercepts getter call and fetches data from DB.
+Example: customer.getName() triggers SELECT.
+
+7. What is dirty checking?
+A: Hibernate tracks entity changes and flushes updates automatically.
+Example: user.setName("Ravi") causes update at transaction commit.
+
+8. Does dirty checking use reflection?
+A: Hibernate can use reflection/bytecode enhancement/accessors to inspect state.
+Example: Compare old and new field values.
+
+9. Field access vs property access?
+A: Hibernate can access fields directly or through getters/setters based on annotation placement.
+Example: @Id on field means field access.
+
+10. Why private fields are okay in entities?
+A: Hibernate can access them reflectively or via generated access.
+Example: private Long id.
+
+11. Why records are problematic as entities?
+A: Records are final and immutable; JPA entities need proxying and mutability.
+Example: Use record for DTO, not entity.
+
+12. What is N+1 issue?
+A: Lazy loading inside loop causes many extra queries.
+Example: Load orders then each order loads customer separately.
+
+13. How proxy can cause LazyInitializationException?
+A: Lazy proxy accessed after session is closed.
+Example: controller accesses order.getCustomer() outside transaction.
+
+14. How to fix lazy loading issue?
+A: Fetch join, entity graph, DTO query, or keep transaction boundary correct.
+Example: JOIN FETCH customer.
+
+15. Why equals/hashCode matters with proxies?
+A: Proxy class may differ from entity class.
+Example: getClass comparison can fail with proxy.
+
+16. What is bytecode enhancement?
+A: Hibernate can enhance classes to support lazy loading and dirty tracking more efficiently.
+Example: Build-time enhancement for entities.
+
+17. Does Hibernate always use reflection?
+A: It uses reflection plus generated accessors/proxies/enhancement depending on configuration.
+Example: Metadata read at startup, access optimized later.
+
+18. Why entity constructor should not do heavy logic?
+A: Hibernate creates entities reflectively and expects simple construction.
+Example: Do not call external API in entity constructor.
+
+19. Interview one-liner?
+A: Hibernate uses reflection and proxies to instantiate entities, map fields, support lazy loading, and track changes.
+Example: Customer proxy loads only when getCustomer() is accessed.
+
+20. Real-world example?
+A: In order system, lazy customer loading saves DB work, but careless loops create N+1 queries.
+Example: Use fetch join for order list screen.
+      </pre>
+
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingJacksonReflectionUsage">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseJacksonReflectionUsage"
+      aria-expanded="false" aria-controls="collapseJacksonReflectionUsage">
+      Jackson Reflection Usage - 20 Q&A
+    </button>
+  </h2>
+
+  <div id="collapseJacksonReflectionUsage" class="accordion-collapse collapse"
+    aria-labelledby="headingJacksonReflectionUsage" data-bs-parent="#googleAccordion">
+    <div class="accordion-body bg-dark text-light">
+      <h4 class="text-warning">10. Jackson Reflection - 20 Q&A</h4>
+      <pre class="text-info">
+1. What is Jackson?
+A: JSON serialization/deserialization library commonly used by Spring Boot.
+Example: Request JSON becomes LoginRequest object.
+
+2. How does Jackson use reflection?
+A: It inspects fields, getters, setters, constructors, and annotations.
+Example: Reads @JsonProperty on DTO field.
+
+3. What is serialization?
+A: Java object to JSON.
+Example: UserDto returned from REST API.
+
+4. What is deserialization?
+A: JSON to Java object.
+Example: POST body becomes CreateOrderRequest.
+
+5. Does Jackson need default constructor?
+A: Often helpful, but it can also use annotated constructors/records.
+Example: @JsonCreator constructor.
+
+6. How does @JsonProperty help?
+A: Maps JSON field name to Java property.
+Example: user_name to userName.
+
+7. What is @JsonIgnore?
+A: Excludes a field/property from JSON.
+Example: Do not expose passwordHash.
+
+8. What is @JsonFormat?
+A: Controls date/time or value formatting.
+Example: Format LocalDate as yyyy-MM-dd.
+
+9. Can Jackson access private fields?
+A: Yes, based on visibility/configuration.
+Example: private email can be populated.
+
+10. Why DTOs are preferred?
+A: Avoid exposing entities and control API shape.
+Example: UserResponse hides internal flags.
+
+11. What is unknown property issue?
+A: JSON contains field not present in Java class.
+Example: extra client field breaks strict deserialization.
+
+12. How to ignore unknown fields?
+A: Use @JsonIgnoreProperties(ignoreUnknown = true) or configuration.
+Example: Mobile app sends extra version field.
+
+13. What is polymorphic deserialization risk?
+A: Allowing arbitrary types can be dangerous if not restricted.
+Example: Never trust external type names blindly.
+
+14. How does Spring MVC use Jackson?
+A: HttpMessageConverter uses Jackson to convert request/response bodies.
+Example: @RequestBody CreateUserRequest.
+
+15. What if field names differ?
+A: Use @JsonProperty or naming strategy.
+Example: snake_case JSON to camelCase Java.
+
+16. How does Jackson handle records?
+A: It can map record constructor components in modern versions.
+Example: record UserDto(String name, String email).
+
+17. Reflection performance concern?
+A: Jackson caches serializers/deserializers to reduce overhead.
+Example: First request may build metadata, later requests reuse it.
+
+18. Common real-world issue?
+A: Infinite recursion in bidirectional relationships.
+Example: User has Orders and Order has User.
+
+19. How to avoid entity recursion?
+A: Use DTOs or Jackson annotations carefully.
+Example: Return OrderDto instead of entity.
+
+20. Interview one-liner?
+A: Jackson uses reflection and cached metadata to convert JSON and Java objects based on fields, methods, constructors, and annotations.
+Example: REST request body becomes validated DTO.
+      </pre>
+
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingMockitoJunitTestingInternals">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseMockitoJunitTestingInternals"
+      aria-expanded="false" aria-controls="collapseMockitoJunitTestingInternals">
+      Mockito/JUnit Testing Framework Internals - 20 Q&A
+    </button>
+  </h2>
+
+  <div id="collapseMockitoJunitTestingInternals" class="accordion-collapse collapse"
+    aria-labelledby="headingMockitoJunitTestingInternals" data-bs-parent="#googleAccordion">
+    <div class="accordion-body bg-dark text-light">
+      <h4 class="text-warning">11. Testing Frameworks, Mockito, JUnit - 20 Q&A</h4>
+      <pre class="text-info">
+1. How does JUnit use reflection?
+A: It discovers test methods and lifecycle annotations at runtime.
+Example: Methods annotated with @Test are executed.
+
+2. How does Mockito use dynamic behavior?
+A: It creates mock objects using proxies/bytecode generation.
+Example: Mock PaymentGateway in unit test.
+
+3. What is mock?
+A: Fake object with programmed behavior.
+Example: paymentGateway.charge() returns success.
+
+4. What is spy?
+A: Partial mock around real object.
+Example: Spy real service but stub one method.
+
+5. What is @InjectMocks?
+A: Mockito creates target object and injects mocks into it.
+Example: OrderService receives mocked PaymentService.
+
+6. How does @Mock work?
+A: Mockito creates mock instance at runtime.
+Example: @Mock UserRepository repository.
+
+7. How does Mockito set private fields?
+A: It may use reflection to inject dependencies.
+Example: Field injection in old code.
+
+8. Why constructor injection helps tests?
+A: Test can directly pass mock dependencies without reflection tricks.
+Example: new OrderService(mockPaymentService).
+
+9. What is ReflectionTestUtils?
+A: Spring test utility to set/read private fields or invoke methods.
+Example: Set private config value in unit test.
+
+10. Should we test private methods directly?
+A: Usually no, test behavior through public methods.
+Example: validate internally through placeOrder().
+
+11. Why mocking final classes used to be hard?
+A: Proxy/subclass limitations; modern Mockito with inline mock maker can handle more cases.
+Example: Mock final utility wrapper.
+
+12. What is dynamic proxy in tests?
+A: Runtime-generated object implementing interface or class behavior.
+Example: Mock repository interface.
+
+13. What is bytecode generation in tests?
+A: Framework generates classes at runtime for mocks/spies.
+Example: ByteBuddy creates mock class.
+
+14. How does Spring Boot test use reflection?
+A: It scans annotations, starts context, injects beans, and wires mocks.
+Example: @SpringBootTest.
+
+15. What is @MockBean?
+A: Replaces a Spring bean in ApplicationContext with a mock.
+Example: Mock external payment client in integration test.
+
+16. Difference @Mock and @MockBean?
+A: @Mock is Mockito-only; @MockBean registers mock in Spring context.
+Example: Controller test uses @MockBean service.
+
+17. What is test lifecycle?
+A: JUnit calls setup, test, cleanup methods based on annotations.
+Example: @BeforeEach runs before every test.
+
+18. Reflection drawback in tests?
+A: Tests can become tightly coupled to private implementation.
+Example: Field rename breaks test unnecessarily.
+
+19. Interview one-liner?
+A: Testing frameworks use reflection to discover tests and inject fields, and proxies/bytecode generation to create mocks.
+Example: Mockito mock intercepts repository method call.
+
+20. Real-world example?
+A: OrderService test mocks PaymentGateway so payment API is not called for real.
+Example: Unit test remains fast and deterministic.
+      </pre>
+
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingSpringBoot3AotNativeImage">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseSpringBoot3AotNativeImage"
+      aria-expanded="false" aria-controls="collapseSpringBoot3AotNativeImage">
+      Spring Boot 3 AOT and Native Image - 20 Q&A
+    </button>
+  </h2>
+
+  <div id="collapseSpringBoot3AotNativeImage" class="accordion-collapse collapse"
+    aria-labelledby="headingSpringBoot3AotNativeImage" data-bs-parent="#googleAccordion">
+    <div class="accordion-body bg-dark text-light">
+      <h4 class="text-warning">12. Spring Boot 3 AOT and Native Image - 20 Q&A</h4>
+      <pre class="text-info">
+1. What is AOT?
+A: Ahead-of-Time processing prepares framework metadata during build time instead of discovering everything at runtime.
+Example: Spring generates bean metadata before app starts.
+
+2. Why AOT matters?
+A: It improves startup time and supports native image better.
+Example: Cloud function starts faster.
+
+3. What is native image?
+A: An application compiled into a platform-specific executable.
+Example: Spring Boot app compiled with GraalVM native image.
+
+4. Why reflection is difficult in native image?
+A: Native image needs to know reflective access ahead of time.
+Example: Runtime discovery of arbitrary constructor may fail.
+
+5. What are reflection hints?
+A: Metadata telling native image which classes/members need reflection.
+Example: Register DTO constructor for Jackson.
+
+6. Does Spring Boot 3 remove reflection completely?
+A: No, but it reduces and prepares required reflection.
+Example: AOT generated code replaces some runtime scanning.
+
+7. What is benefit of native image?
+A: Faster startup and lower memory usage in many cases.
+Example: Serverless API cold start improves.
+
+8. What is drawback of native image?
+A: Longer build time, platform-specific binary, and reflection/resource configuration complexity.
+Example: Missing reflection hint can fail at runtime.
+
+9. How does Spring AOT help beans?
+A: It generates optimized code and metadata for bean registration.
+Example: Less runtime classpath scanning.
+
+10. How does AOT help proxies?
+A: It can precompute proxy requirements.
+Example: Transaction proxy metadata known at build time.
+
+11. How does AOT help Jackson?
+A: It can register reflection hints for serialization/deserialization.
+Example: Request DTO can be deserialized in native executable.
+
+12. What is RuntimeHints?
+A: Spring API to register reflection, resources, serialization, and proxy hints.
+Example: Register MyDto constructors.
+
+13. Do all libraries work in native image?
+A: Not always; libraries using heavy dynamic reflection may need hints or updates.
+Example: Old library scanning classes dynamically.
+
+14. Is JVM mode still valid?
+A: Yes, most Spring Boot apps still run on JVM normally.
+Example: Standard Kubernetes service with JIT warmup.
+
+15. Native image vs JVM performance?
+A: Native image starts faster; JVM can have stronger peak throughput after warmup.
+Example: Long-running high-throughput service may still prefer JVM.
+
+16. Is AOT only for native image?
+A: Mostly important for native, but can also improve startup metadata in JVM mode.
+Example: Faster app boot in some scenarios.
+
+17. What is closed-world assumption?
+A: Native image assumes reachable code is known at build time.
+Example: Arbitrary Class.forName at runtime is problematic.
+
+18. Why dynamic proxies need hints?
+A: Native image must know proxy interfaces/classes ahead of time.
+Example: JDK proxy for service interface.
+
+19. Interview one-liner?
+A: Spring Boot 3 AOT prepares reflection/proxy metadata at build time, making native images possible and improving startup.
+Example: Serverless Spring API starts quickly.
+
+20. Real-world decision?
+A: Use native image for fast startup and low memory; use JVM when peak throughput and ecosystem compatibility matter more.
+Example: CLI tool native image, high-load backend JVM or carefully benchmarked native.
+      </pre>
+
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingJavaGarbageCollector">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseJavaGarbageCollector"
+      aria-expanded="false" aria-controls="collapseJavaGarbageCollector">
+      Java Garbage Collector - What, Why, Types, Versions, Internals, Comparison
+    </button>
+  </h2>
+
+  <div id="collapseJavaGarbageCollector" class="accordion-collapse collapse"
+    aria-labelledby="headingJavaGarbageCollector" data-bs-parent="#googleAccordion">
+    <div class="accordion-body bg-dark text-light">
+
+      <h4 class="text-warning">1. What is Java Garbage Collector and why do we need it?</h4>
+      <p>
+        Java Garbage Collector (GC) is the JVM component that <b>automatically finds unused objects and reclaims memory</b>.
+        We need it so developers do not manually free memory like in C/C++ style programming.
+      </p>
+      <pre class="text-info">
+Why needed:
+  • reduces manual memory management mistakes
+  • prevents many dangling pointer and double-free style issues
+  • improves developer productivity
+  • makes long-running backend apps easier to maintain
+
+Real-world analogy:
+  GC is like housekeeping staff in a hotel. Guests use rooms, and once a room is empty, housekeeping cleans it so the next guest can use it.
+
+Real-world example:
+  In a Spring Boot order service, millions of request/response objects are created every day. GC clears unused objects automatically.
+      </pre>
+
+      <h4 class="text-warning">2. What problem was GC trying to solve?</h4>
+      <pre class="text-info">
+Without GC:
+  • developers must free memory manually
+  • memory leaks are easier to create
+  • dangling pointers can crash applications
+  • complex systems become harder to maintain safely
+
+Real-world analogy:
+  Imagine every employee in an office had to personally collect and dispose of all trash. It becomes messy and error-prone.
+      </pre>
+      <pre><code class="language-java">// Java handles memory cleanup automatically
+public String formatName(String first, String last) {
+    String fullName = first + " " + last;
+    return fullName.toUpperCase();
+}
+
+// Once no reference points to temporary objects, GC can reclaim them later.</code></pre>
+
+      <h4 class="text-warning">3. If GC exists, why do memory problems still happen?</h4>
+      <p>
+        GC is powerful, but it is <b>not magic</b>. If objects are still reachable, GC will not remove them.
+        So Java applications can still have <b>memory leaks, long GC pauses, fragmentation, and high CPU usage</b>.
+      </p>
+      <pre class="text-info">
+Common problems:
+  • object still referenced in static map/list
+  • caches grow without limit
+  • too many short-lived allocations
+  • stop-the-world pauses affect latency
+  • wrong collector for workload
+
+Real-world analogy:
+  Housekeeping cannot throw away items if someone still marked them as "important".
+      </pre>
+      <pre><code class="language-java">public class MemoryLeakExample {
+    private static final List&lt;byte[]&gt; cache = new ArrayList&lt;&gt;();
+
+    public void holdData() {
+        cache.add(new byte[1024 * 1024]); // 1 MB stays strongly referenced
+    }
+}
+
+// GC cannot free these arrays because static list still holds them.</code></pre>
+
+      <h4 class="text-warning">4. How does GC decide an object is garbage?</h4>
+      <p>
+        Java uses <b>reachability</b>, not simple reference counting. If an object is not reachable from
+        <b>GC Roots</b>, it becomes eligible for garbage collection.
+      </p>
+      <pre class="text-info">
+GC Roots usually include:
+  • local variables in active stack frames
+  • static fields
+  • active threads
+  • JNI references
+
+Real-world analogy:
+  If no valid person in the company claims ownership of an item, cleanup can remove it.
+      </pre>
+      <pre><code class="language-java">public void createOrder() {
+    Order order = new Order();   // reachable here
+    order.setId(101L);
+}
+
+// After method ends, if no other reference exists, Order becomes eligible for GC.</code></pre>
+
+      <h4 class="text-warning">5. How is JVM memory organized for GC?</h4>
+      <pre class="text-info">
+Heap areas commonly discussed:
+  • Young Generation -> Eden + Survivor spaces
+  • Old Generation   -> long-lived objects
+  • Metaspace        -> class metadata, not normal Java object heap
+
+How objects move:
+  • new objects usually start in Eden
+  • if they survive young collection, they move to Survivor
+  • if they keep surviving, they get promoted to Old Generation
+
+Real-world analogy:
+  A warehouse keeps fresh deliveries near the entry area first. Only items that stay useful for a long time move to long-term storage.
+      </pre>
+
+      <h4 class="text-warning">6. When does GC run? Is it independent or dependent?</h4>
+      <p>
+        GC is <b>mostly dependent on JVM memory pressure and collector heuristics</b>, not on a fixed timer.
+        It runs when allocation pressure rises, certain thresholds are crossed, or a collector decides it should start a cycle.
+      </p>
+      <pre class="text-info">
+GC trigger examples:
+  • Eden gets full -> young/minor GC
+  • Old generation pressure increases -> old/mixed/full GC
+  • Heap occupancy threshold reached
+  • Metadata pressure
+  • Explicit call like System.gc() (only a request, behavior varies)
+
+Important interview point:
+  GC is not fully independent like a cron job.
+  GC is mostly dependent on allocation rate, heap usage, live data size, and collector strategy.
+
+Real-world analogy:
+  Garbage truck does not come every second. It comes when bins are full enough, city rules require it, or a special cleanup is requested.
+      </pre>
+
+      <h4 class="text-warning">7. What are Minor GC, Major GC, and Full GC?</h4>
+      <pre class="text-info">
+Minor GC:
+  Cleans Young Generation
+  Usually frequent and faster
+
+Major GC:
+  Common interview term for old generation collection
+  Exact meaning can vary by collector
+
+Full GC:
+  Cleans almost entire heap
+  Usually most expensive
+  Often causes larger stop-the-world impact
+
+Real-world example:
+  Minor GC is like cleaning your work desk.
+  Full GC is like cleaning the entire office building.
+      </pre>
+
+      <h4 class="text-warning">8. What are the main internal GC algorithms?</h4>
+      <pre class="text-info">
+Mark:
+  Find live objects
+
+Sweep:
+  Remove dead objects and free memory
+
+Compact:
+  Move live objects together to reduce fragmentation
+
+Copying:
+  Copy live objects from one space to another
+
+Where used:
+  • Young generation often uses copying
+  • Old generation may use mark-sweep-compact depending on collector
+
+Real-world analogy:
+  First identify what furniture is useful, throw away useless items, then rearrange the room neatly to free more continuous space.
+      </pre>
+
+      <h4 class="text-warning">9. What problems do older collectors have?</h4>
+      <pre class="text-info">
+Older collector challenges:
+  • long stop-the-world pauses
+  • fragmentation
+  • poor behavior on very large heaps
+  • latency spikes under load
+
+Why new collectors came:
+  • some applications care more about low pause than raw throughput
+  • cloud systems and trading systems need predictable latency
+  • large heap microservices need better scaling
+
+Real-world example:
+  A payment system may be fine with slightly lower throughput, but not with 2-second pause spikes during checkout.
+      </pre>
+
+      <h4 class="text-warning">10. What are the main GC types in Java?</h4>
+      <pre class="text-info">
+Main collectors you should know:
+  • Serial GC
+  • Parallel GC
+  • G1 GC
+  • CMS GC (legacy, removed)
+  • ZGC
+  • Shenandoah GC
+  • Epsilon GC
+      </pre>
+
+      <h4 class="text-warning">11. How did GC defaults and support change across Java versions?</h4>
+      <pre class="text-info">
+Important version timeline:
+  • JDK 8  -> Parallel GC was the common default on server-class machines
+  • JDK 9+ -> G1 became the default collector
+  • JDK 11 -> ZGC introduced as experimental
+  • JDK 12 -> Shenandoah integrated as experimental
+  • JDK 14 -> CMS removed
+  • JDK 15 -> ZGC and Shenandoah became production features
+
+Current interview-safe statement:
+  In modern JDKs, G1 is the default for general workloads, while ZGC and Shenandoah are low-latency choices depending on JDK build/version.
+      </pre>
+
+      <h4 class="text-warning">12. How does Serial GC work internally?</h4>
+      <pre class="text-info">
+How it works:
+  • single GC thread
+  • stop-the-world during collection
+  • simple generational collection
+  • best for small heaps or single-core/simple environments
+
+Pros:
+  • simple
+  • low overhead
+
+Cons:
+  • long pauses on bigger heaps
+  • not good for high-traffic servers
+
+Real-world analogy:
+  One cleaner shuts the whole office and cleans everything alone.
+      </pre>
+      <pre><code class="language-java">java -XX:+UseSerialGC -jar app.jar</code></pre>
+
+      <h4 class="text-warning">13. How does Parallel GC work internally?</h4>
+      <pre class="text-info">
+How it works:
+  • multiple GC threads
+  • still stop-the-world for collections
+  • focuses on throughput more than pause time
+  • good when total work done matters more than response latency
+
+Pros:
+  • high throughput
+  • good for batch jobs
+
+Cons:
+  • pause times can still be high
+
+Real-world analogy:
+  Many cleaners clean the office together, but employees still must wait outside until cleaning is finished.
+      </pre>
+      <pre><code class="language-java">java -XX:+UseParallelGC -jar app.jar</code></pre>
+      <pre class="text-info">
+Real-world example:
+  Best fit for overnight report generation or ETL jobs where throughput matters more than response time.
+      </pre>
+
+      <h4 class="text-warning">14. How does G1 GC work internally?</h4>
+      <pre class="text-info">
+How it works:
+  • heap is split into regions instead of fixed contiguous generations
+  • still generational logically: young and old are sets of regions
+  • does concurrent marking
+  • does young collections and mixed collections
+  • tries to meet a pause time target
+
+Important internals:
+  • remembered sets track cross-region references
+  • picks regions with more garbage first
+  • performs incremental compaction by evacuation
+
+Pros:
+  • balanced choice
+  • good for large heaps
+  • default in modern Java
+
+Cons:
+  • not always best for ultra-low-latency workloads
+
+Real-world analogy:
+  Instead of cleaning the whole mall floor by floor, G1 cleans the dirtiest rooms first while trying to stay within a time budget.
+      </pre>
+      <pre><code class="language-java">java -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -jar app.jar</code></pre>
+      <pre class="text-info">
+Real-world example:
+  A normal Spring Boot e-commerce backend usually starts well with G1.
+      </pre>
+
+      <h4 class="text-warning">15. What was CMS and why was it removed?</h4>
+      <pre class="text-info">
+CMS:
+  • Concurrent Mark Sweep collector
+  • designed to reduce long pauses compared to older stop-the-world collectors
+  • old generation mostly collected concurrently
+  • did not compact by default, so fragmentation was a problem
+
+Why problems happened:
+  • fragmentation
+  • more maintenance complexity
+  • newer collectors like G1, ZGC, Shenandoah improved the situation
+
+Version note:
+  • deprecated in JDK 9
+  • removed in JDK 14
+
+Real-world analogy:
+  CMS tried to clean while office staff were still working, but because it did not always reorganize space well, the office became fragmented and inefficient over time.
+      </pre>
+      <pre><code class="language-java">// Legacy only, not for modern JDKs
+java -XX:+UseConcMarkSweepGC -jar app.jar</code></pre>
+
+      <h4 class="text-warning">16. How does ZGC work internally?</h4>
+      <pre class="text-info">
+How it works:
+  • low-latency collector
+  • most heavy work runs concurrently
+  • pause times are designed to stay very small and largely independent of heap size
+  • uses colored pointers and load barriers to relocate objects concurrently
+
+Pros:
+  • excellent low-latency behavior
+  • good for large heaps
+
+Cons:
+  • may trade some throughput for latency
+  • choose it only when latency matters enough
+
+Version note:
+  • experimental in JDK 11
+  • production in JDK 15
+
+Real-world analogy:
+  ZGC renovates a warehouse while people are still walking inside, using smart markers and redirection signs so traffic keeps moving.
+      </pre>
+      <pre><code class="language-java">java -XX:+UseZGC -jar app.jar</code></pre>
+      <pre class="text-info">
+Real-world example:
+  Good for trading, real-time analytics, or API platforms where latency spikes are unacceptable.
+      </pre>
+
+      <h4 class="text-warning">17. How does Shenandoah GC work internally?</h4>
+      <pre class="text-info">
+How it works:
+  • low-pause collector
+  • performs evacuation concurrently with running application threads
+  • pause time is targeted to be less dependent on heap size
+  • focuses on responsiveness
+
+Pros:
+  • very low pause times
+  • useful for latency-sensitive services
+
+Cons:
+  • may not be the best if maximum throughput is the only goal
+  • availability can depend on JDK distribution/version
+
+Version note:
+  • experimental in JDK 12
+  • production in JDK 15
+
+Real-world analogy:
+  Shenandoah moves goods in a warehouse while workers continue operating, instead of shutting the warehouse down.
+      </pre>
+      <pre><code class="language-java">java -XX:+UseShenandoahGC -jar app.jar</code></pre>
+
+      <h4 class="text-warning">18. What is Epsilon GC?</h4>
+      <pre class="text-info">
+Epsilon:
+  • no-op collector
+  • allocates memory but does not reclaim it
+  • when heap fills, JVM fails
+
+Where useful:
+  • testing
+  • benchmarking
+  • extremely short-lived programs
+
+Not for normal production APIs.
+
+Real-world analogy:
+  It is like renting new chairs for every guest and never taking old chairs away. Fine only for very short events.
+      </pre>
+      <pre><code class="language-java">java -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -jar app.jar</code></pre>
+
+      <h4 class="text-warning">19. Can we plug in a different GC? Can we build our own?</h4>
+      <p>
+        We can <b>select</b> a different built-in collector using JVM flags, but we cannot normally plug in
+        a custom collector from application code like a Spring bean.
+      </p>
+      <pre class="text-info">
+What is possible:
+  • choose built-in collector with JVM option
+  • tune heap and pause targets
+  • switch collectors between environments
+
+What is not normal:
+  • writing your own GC and dropping it into app code
+  • custom GC requires JVM/OpenJDK level work, not regular Java project code
+
+Important note:
+  Collector availability depends on JDK version and sometimes vendor/build.
+      </pre>
+      <pre><code class="language-java">// Collector selection examples
+java -XX:+UseG1GC -jar app.jar
+java -XX:+UseParallelGC -jar app.jar
+java -XX:+UseSerialGC -jar app.jar
+java -XX:+UseZGC -jar app.jar
+java -XX:+UseShenandoahGC -jar app.jar</code></pre>
+
+      <h4 class="text-warning">20. How do we compare the main collectors quickly?</h4>
+      <pre class="text-info">
+Serial GC:
+  • simplest
+  • smallest setups
+  • single-threaded stop-the-world
+
+Parallel GC:
+  • best for throughput
+  • batch jobs
+  • pause times can be bigger
+
+G1 GC:
+  • balanced default choice
+  • good for most server apps
+  • tries to control pauses
+
+ZGC:
+  • ultra-low latency
+  • large heaps
+  • concurrent heavy work
+
+Shenandoah:
+  • low pause
+  • latency-sensitive systems
+  • concurrent evacuation
+
+CMS:
+  • legacy knowledge only
+  • removed from modern JDK
+      </pre>
+
+      <h4 class="text-warning">21. Which GC should we choose in real projects?</h4>
+      <pre class="text-info">
+Typical choices:
+  • Small app / local / low resource -> Serial GC
+  • Batch processing / maximum throughput -> Parallel GC
+  • General Spring Boot production app -> G1 GC
+  • Low-latency API with large heap -> ZGC
+  • Low-pause service where Shenandoah is supported -> Shenandoah
+
+Practical advice:
+  Start with G1 in most backend applications unless latency measurements clearly justify ZGC or Shenandoah.
+      </pre>
+
+      <h4 class="text-warning">22. What is stop-the-world and why does it matter?</h4>
+      <pre class="text-info">
+Stop-the-world means:
+  Application threads pause while GC does some work.
+
+Why it matters:
+  • request latency increases
+  • API timeouts may happen
+  • user experience suffers
+
+Real-world example:
+  If GC pauses for 1 second in a checkout service, users may see payment timeout or spinning loader.
+      </pre>
+
+      <h4 class="text-warning">23. Interview-ready one-liner</h4>
+      <pre class="text-info">
+Java Garbage Collector automatically reclaims unreachable objects, reducing manual memory management problems,
+but choosing the right GC still matters because different collectors trade off throughput, pause time, heap size support,
+and latency behavior across different Java versions and workloads.
+      </pre>
+
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingRedisSpringBoot">
+    <button class="accordion-button collapsed search-item text-info" type="button"
+      data-bs-toggle="collapse" data-bs-target="#collapseRedisSpringBoot"
+      aria-expanded="false" aria-controls="collapseRedisSpringBoot">
+      Redis in Spring Boot - Internal Working, TTL, Security, HashMap vs Redis
+    </button>
+  </h2>
+
+  <div id="collapseRedisSpringBoot" class="accordion-collapse collapse"
+    aria-labelledby="headingRedisSpringBoot" data-bs-parent="#googleAccordion">
+    <div class="accordion-body bg-dark text-light">
+
+      <h4 class="text-warning">1. What is Redis and why do we use it in Spring Boot?</h4>
+      <p>
+        Redis is an <b>in-memory key-value data store</b>. In Spring Boot, we mainly use it for
+        <b>caching, session sharing, OTP storage, rate limiting, counters, distributed locking,
+          and pub/sub</b>.
+      </p>
+      <pre class="text-info">
+Real-world example:
+  In an e-commerce app, product details are cached in Redis so we do not hit MySQL for every request.
+      </pre>
+      <pre><code class="language-java">@Service
+public class ProductService {
+
+    @Cacheable(value = "products", key = "#productId")
+    public ProductDto getProduct(Long productId) {
+        return productRepository.findById(productId)
+                .map(ProductDto::from)
+                .orElseThrow();
+    }
+}</code></pre>
+
+      <h4 class="text-warning">2. Why Redis instead of HashMap?</h4>
+      <p>
+        <b>HashMap</b> lives inside one JVM only. If the app restarts, data is lost. It also cannot be shared
+        across multiple app instances. Redis is a <b>separate centralized store</b> that all services can use.
+      </p>
+      <pre class="text-info">
+HashMap:
+  • Local to one application instance
+  • Lost on restart
+  • No built-in TTL
+  • Not suitable for microservices or load-balanced apps
+
+Redis:
+  • Shared by all application instances
+  • Supports TTL, eviction, persistence, pub/sub, replication
+  • Language independent
+  • Best for distributed systems
+
+Real-world example:
+  If 3 Spring Boot pods are running behind a load balancer, HashMap cache in pod-1 is not visible to pod-2 or pod-3.
+      </pre>
+      <pre><code class="language-java">// Bad fit for distributed cache
+Map&lt;String, OtpData&gt; localCache = new HashMap&lt;&gt;();
+
+// Better for multi-instance deployment
+redisTemplate.opsForValue().set("otp:9876543210", "483921", Duration.ofMinutes(5));</code></pre>
+
+      <h4 class="text-warning">3. How Redis works internally?</h4>
+      <p>
+        Redis keeps most data in <b>memory</b>, so access is very fast. Internally it uses an
+        <b>event loop</b> and executes commands very efficiently. Keys are stored in optimized
+        internal data structures and optional background persistence writes snapshots or append logs to disk.
+      </p>
+      <pre class="text-info">
+Internal flow:
+  1. Client sends command
+  2. Redis event loop picks the request
+  3. Key is found in memory
+  4. Command executes quickly
+  5. Expiry/persistence/replication happens as configured
+
+Real-world example:
+  When a login OTP is checked, Redis can fetch that OTP in memory much faster than a database round trip.
+      </pre>
+
+      <h4 class="text-warning">4. How does Redis work with multithreading?</h4>
+      <p>
+        Multiple application threads can call Redis at the same time, but Redis is
+        <b>mostly single-threaded for command execution</b>. That means commands are generally processed
+        one by one on the server, which is why operations like <code>INCR</code> are safe and atomic.
+        Modern Redis versions can use extra threads for some I/O work, but command execution is still mostly serialized.
+      </p>
+      <pre class="text-info">
+How it behaves:
+  • 100 threads from Spring Boot can send requests together
+  • Redis accepts those requests concurrently at the network level
+  • command execution is mostly handled sequentially on the server
+  • atomic commands stay consistent even under heavy concurrency
+
+Real-world example:
+  If 50 users hit "Send OTP" at the same time, Redis can safely update counters and TTL-based keys without race conditions seen in local shared memory.
+      </pre>
+      <pre><code class="language-java">@Service
+public class RateLimitService {
+
+    private final StringRedisTemplate stringRedisTemplate;
+
+    public RateLimitService(StringRedisTemplate stringRedisTemplate) {
+        this.stringRedisTemplate = stringRedisTemplate;
+    }
+
+    public long recordRequest(String userId) {
+        String key = "rate-limit:" + userId;
+        Long count = stringRedisTemplate.opsForValue().increment(key);
+        stringRedisTemplate.expire(key, Duration.ofMinutes(1));
+        return count == null ? 0 : count;
+    }
+}</code></pre>
+      <pre><code class="language-java">ExecutorService pool = Executors.newFixedThreadPool(10);
+
+for (int i = 0; i < 100; i++) {
+    pool.submit(() -> rateLimitService.recordRequest("user-101"));
+}
+
+// Final count in Redis becomes 100 because INCR is atomic.
+// With plain HashMap and count++, race conditions can happen.</code></pre>
+      <pre class="text-info">
+Interview one-liner:
+  Many threads can access Redis concurrently, but Redis mostly executes commands one by one, so atomic commands remain safe and predictable.
+      </pre>
+
+      <h4 class="text-warning">5. Which Redis data types are commonly used?</h4>
+      <pre class="text-info">
+String:
+  Use for OTP, JWT blacklist, feature flag, cache entry
+
+Hash:
+  Use for user profile or cart summary
+
+List:
+  Use for recent notifications or queue-like data
+
+Set:
+  Use for unique tags, unique visitors, permissions
+
+Sorted Set:
+  Use for leaderboard, ranking, score based ordering
+
+Real-world example:
+  Food delivery app leaderboard can be stored in Sorted Set using delivery partner score.
+      </pre>
+      <pre><code class="language-java">// String
+redisTemplate.opsForValue().set("otp:9000000001", "112233", Duration.ofMinutes(3));
+
+// Hash
+redisTemplate.opsForHash().put("user:101", "name", "Ravi");
+redisTemplate.opsForHash().put("user:101", "city", "Hyderabad");
+
+// Sorted Set
+redisTemplate.opsForZSet().add("leaderboard", "driver-101", 980);</code></pre>
+
+      <h4 class="text-warning">6. Does Redis have a default TTL?</h4>
+      <p>
+        <b>No.</b> By default, Redis keys do <b>not</b> expire. A key lives forever unless:
+      </p>
+      <pre class="text-info">
+  • we set TTL manually
+  • the key is deleted by application logic
+  • Redis evicts it because of memory policy
+
+Real-world example:
+  OTP should expire in 5 minutes, but customer profile cache can stay longer based on business need.
+      </pre>
+      <pre><code class="language-java">// Per key TTL
+redisTemplate.opsForValue().set("otp:9000000001", "112233", Duration.ofMinutes(5));
+
+// Update TTL later
+redisTemplate.expire("otp:9000000001", Duration.ofMinutes(2));</code></pre>
+
+      <h4 class="text-warning">7. How do we configure TTL in Spring Boot cache?</h4>
+      <p>
+        We can configure a <b>global TTL</b> or a <b>per-cache TTL</b>.
+      </p>
+      <pre><code class="language-java">@Configuration
+@EnableCaching
+public class RedisCacheConfig {
+
+    @Bean
+    public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
+        RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
+                .entryTtl(Duration.ofMinutes(10));
+
+        Map&lt;String, RedisCacheConfiguration&gt; cacheConfigs = new HashMap&lt;&gt;();
+        cacheConfigs.put("otpCache",
+                RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(5)));
+        cacheConfigs.put("products",
+                RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(1)));
+
+        return RedisCacheManager.builder(connectionFactory)
+                .cacheDefaults(defaultConfig)
+                .withInitialCacheConfigurations(cacheConfigs)
+                .build();
+    }
+}</code></pre>
+      <pre class="text-info">
+Real-world example:
+  OTP cache = 5 minutes, product catalog = 1 hour, config lookup = 10 minutes.
+      </pre>
+
+      <h4 class="text-warning">8. Why is TTL important?</h4>
+      <pre class="text-info">
+TTL helps us:
+  • avoid stale data
+  • auto-clean temporary data
+  • control memory usage
+  • reduce manual cleanup code
+
+Real-world example:
+  Password reset token should disappear automatically after 15 minutes for security.
+      </pre>
+
+      <h4 class="text-warning">9. What happens when Redis memory is full?</h4>
+      <p>
+        Redis uses an <b>eviction policy</b> if memory is limited and `maxmemory` is configured.
+      </p>
+      <pre class="text-info">
+Common policies:
+  • noeviction    -> reject new writes
+  • allkeys-lru   -> remove least recently used keys
+  • volatile-lru  -> remove least recently used keys having TTL
+  • allkeys-lfu   -> remove least frequently used keys
+
+Real-world example:
+  In a heavy-read product cache, allkeys-lru is common because old unused cache entries can be removed first.
+      </pre>
+
+      <h4 class="text-warning">10. How does Redis support persistence?</h4>
+      <p>
+        Redis is primarily in-memory, but it can also persist data to disk using <b>RDB</b> and <b>AOF</b>.
+      </p>
+      <pre class="text-info">
+RDB:
+  Snapshot based
+  Better performance
+  Good for faster backups and restarts
+
+AOF:
+  Command log based
+  Better durability
+  Good when fewer writes should be lost
+
+Real-world example:
+  Cache-only data may not need strong persistence, but wallet balance counters should have stronger durability planning.
+      </pre>
+
+      <h4 class="text-warning">11. Is Redis useful only for cache?</h4>
+      <p>
+        No. Redis is also used for <b>rate limiting, distributed locks, counters, sessions, leaderboard, and pub/sub</b>.
+      </p>
+      <pre><code class="language-java">// API hit counter
+Long hits = redisTemplate.opsForValue().increment("rate-limit:user:101");
+redisTemplate.expire("rate-limit:user:101", Duration.ofMinutes(1));</code></pre>
+      <pre class="text-info">
+Real-world example:
+  Login API can allow only 5 OTP requests per minute using a Redis counter.
+      </pre>
+
+      <h4 class="text-warning">12. Are Redis operations atomic?</h4>
+      <p>
+        A single Redis command like <code>INCR</code>, <code>SETNX</code>, or <code>EXPIRE</code> is atomic.
+        This makes Redis very useful for counters and simple coordination.
+      </p>
+      <pre><code class="language-java">// Increment atomically
+Long stockCheckCount = redisTemplate.opsForValue().increment("inventory-check:SKU-1");
+
+// Lock style write if absent
+Boolean lockAcquired = redisTemplate.opsForValue()
+        .setIfAbsent("lock:order:1001", "locked", Duration.ofSeconds(30));</code></pre>
+      <pre class="text-info">
+Real-world example:
+  During payment processing, only one service instance should process order-1001 at a time.
+      </pre>
+
+      <h4 class="text-warning">13. How do we configure Redis in Spring Boot?</h4>
+      <pre class="text-info">
+Dependency:
+  spring-boot-starter-data-redis
+      </pre>
+      <pre><code class="language-java">@Configuration
+public class RedisConfig {
+
+    @Bean
+    public RedisTemplate&lt;String, Object&gt; redisTemplate(RedisConnectionFactory connectionFactory) {
+        RedisTemplate&lt;String, Object&gt; template = new RedisTemplate&lt;&gt;();
+        template.setConnectionFactory(connectionFactory);
+        return template;
+    }
+}</code></pre>
+      <pre class="text-info">
+application.properties
+
+spring.data.redis.host=localhost
+spring.data.redis.port=6379
+spring.data.redis.timeout=6000
+      </pre>
+      <pre class="text-info">
+Real-world example:
+  Order service, payment service, and auth service can all talk to the same Redis instance.
+      </pre>
+
+      <h4 class="text-warning">14. How do we handle object serialization in Redis?</h4>
+      <p>
+        Redis stores bytes, so Spring Boot serializes keys and values before storing them. In real projects,
+        <b>JSON serialization</b> is usually preferred for readability and interoperability.
+      </p>
+      <pre><code class="language-java">@Bean
+public RedisTemplate&lt;String, Object&gt; redisTemplate(RedisConnectionFactory connectionFactory) {
+    RedisTemplate&lt;String, Object&gt; template = new RedisTemplate&lt;&gt;();
+    template.setConnectionFactory(connectionFactory);
+    template.setKeySerializer(new StringRedisSerializer());
+    template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
+    return template;
+}</code></pre>
+      <pre class="text-info">
+Real-world example:
+  If Java service stores cart data as JSON, a Node.js service can also read the same data.
+      </pre>
+
+      <h4 class="text-warning">15. How does Redis help interoperability?</h4>
+      <p>
+        Redis improves interoperability because it is <b>shared outside the JVM</b>. Any service written in
+        Java, Node.js, Python, or Go can access the same keys.
+      </p>
+      <pre class="text-info">
+Real-world example:
+  Java auth service writes session token to Redis, and Python analytics service reads session activity counters from the same Redis.
+      </pre>
+
+      <h4 class="text-warning">16. Can we secure Redis?</h4>
+      <p>
+        <b>Yes.</b> Redis should always be secured in production.
+      </p>
+      <pre class="text-info">
+Security options:
+  • Password authentication
+  • ACL users and roles
+  • TLS encryption
+  • Private network / VPC only
+  • Avoid exposing Redis directly to public internet
+
+Real-world example:
+  In production, Redis is usually accessible only from internal application servers, not from the public internet.
+      </pre>
+      <pre class="text-info">
+application.properties
+
+spring.data.redis.host=redis.internal.company
+spring.data.redis.port=6379
+spring.data.redis.username=appuser
+spring.data.redis.password=StrongPassword123
+spring.data.redis.ssl.enabled=true
+      </pre>
+
+      <h4 class="text-warning">17. How do Redis high availability and scaling work?</h4>
+      <pre class="text-info">
+Replication:
+  Read replicas copy data from primary
+
+Sentinel:
+  Monitors Redis and handles failover
+
+Cluster:
+  Splits data across multiple nodes for scaling
+
+Real-world example:
+  In a busy shopping app, Redis Cluster is used when one node is not enough for traffic and memory.
+      </pre>
+
+      <h4 class="text-warning">18. What is Redis Cluster and how does it work?</h4>
+      <p>
+        Redis Cluster is used for <b>horizontal scaling</b>. Data is split across multiple Redis nodes using
+        <b>hash slots</b>. Redis has <b>16384 hash slots</b>, and each master node owns some of those slots.
+        When a key comes in, Redis calculates its slot and stores that key on the node responsible for that slot.
+      </p>
+      <pre class="text-info">
+How it works:
+  1. Key comes from client
+  2. Redis calculates hash slot for that key
+  3. Request goes to the correct master node
+  4. Replica nodes copy data for failover
+
+Why use it:
+  • data is distributed across nodes
+  • more memory and more throughput
+  • failover support with replicas
+
+Real-world example:
+  In a flash sale app, cart cache, product cache, and session data can be spread across many Redis nodes instead of one server.
+      </pre>
+      <pre><code class="language-java">spring.data.redis.cluster.nodes=10.0.0.11:6379,10.0.0.12:6379,10.0.0.13:6379
+spring.data.redis.timeout=6000
+spring.data.redis.password=StrongPassword123</code></pre>
+      <pre class="text-info">
+Interview one-liner:
+  Redis Cluster is mainly for scaling and data partitioning, while Sentinel is mainly for failover and high availability.
+      </pre>
+
+      <h4 class="text-warning">19. Redis Single Node vs Sentinel vs Cluster</h4>
+      <pre class="text-info">
+Single Node:
+  • one Redis server
+  • simple setup
+  • no automatic failover
+  • limited by one machine memory and CPU
+
+Sentinel:
+  • primary + replica setup
+  • automatic failover
+  • improves high availability
+  • does not do horizontal data partitioning
+
+Cluster:
+  • multiple masters and replicas
+  • automatic partitioning using hash slots
+  • high availability + horizontal scaling
+  • best when one Redis node is not enough
+
+When to use:
+  • Single Node -> dev, testing, small internal apps
+  • Sentinel -> production app needing failover but data fits in one primary node
+  • Cluster -> large scale production app needing both failover and sharding
+
+Real-world example:
+  A startup may begin with single Redis, move to Sentinel for production stability, and later use Cluster during heavy traffic growth.
+      </pre>
+
+      <h4 class="text-warning">20. What are the limitations of Redis Cluster?</h4>
+      <pre class="text-info">
+Limitations:
+  • multi-key operations are harder if keys are in different slots
+  • transaction support across different slots is limited
+  • setup and operations are more complex than a single Redis instance
+
+Real-world example:
+  If cart:101 and inventory:501 are in different slots, some combined operations become tricky unless key design is planned well.
+      </pre>
+
+      <h4 class="text-warning">21. What are common pitfalls while using Redis cache?</h4>
+      <pre class="text-info">
+Common pitfalls:
+  • cache stampede
+  • stale data
+  • wrong TTL
+  • storing huge objects
+  • missing cache invalidation
+
+Real-world example:
+  If product price changes in DB but cache is not evicted, users may see old price.
+      </pre>
+
+      <h4 class="text-warning">22. Interview-ready one-liner</h4>
+      <pre class="text-info">
+Redis is preferred over HashMap in Spring Boot because it is fast, shared across instances,
+supports TTL, persistence, atomic operations, security, and distributed system use cases like cache,
+OTP, rate limiting, locking, and session sharing.
+      </pre>
+
+    </div>
+  </div>
+</div>
+
+<div class="accordion-item">
   <h2 class="accordion-header" id="headingMajorChallenge">
     <button class="accordion-button collapsed search-item text-info" type="button"
       data-bs-toggle="collapse" data-bs-target="#collapseMajorChallenge"
