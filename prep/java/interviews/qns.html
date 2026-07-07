@@ -101,6 +101,2762 @@
     </div>
     <div class="accordion" id="accordionSeniorJava">
 
+      <!-- Q0 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q0">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c0">
+            Why do we create custom/global exceptions by extending RuntimeException instead of Exception?
+          </button>
+        </h2>
+        <div id="c0" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              In Java, custom/global exceptions are often extended from <code>RuntimeException</code>, especially in
+              Spring Boot REST APIs, because most application exceptions are not realistically recoverable by the
+              immediate caller.
+            </p>
+            <p>
+              The core difference is:
+            </p>
+            <pre><code class="language-java">// Checked exception
+public class UserNotFoundException extends Exception {
+    public UserNotFoundException(String message) {
+        super(message);
+    }
+}
+
+// Unchecked exception
+public class UserNotFoundException extends RuntimeException {
+    public UserNotFoundException(String message) {
+        super(message);
+    }
+}</code></pre>
+            <p>
+              If you extend <code>Exception</code>, Java forces the caller to handle or declare it:
+            </p>
+            <pre><code class="language-java">public User getUser(Long id) throws UserNotFoundException {
+    if (id == null) {
+        throw new UserNotFoundException("User not found");
+    }
+    return repository.findById(id).orElse(null);
+}</code></pre>
+            <p>
+              Then this caller must also deal with it:
+            </p>
+            <pre><code class="language-java">public void processUser() {
+    try {
+        User user = getUser(10L);
+    } catch (UserNotFoundException e) {
+        // forced handling
+    }
+}</code></pre>
+            <p>
+              Or propagate it:
+            </p>
+            <pre><code class="language-java">public void processUser() throws UserNotFoundException {
+    User user = getUser(10L);
+}</code></pre>
+            <p>
+              That can spread through many layers:
+            </p>
+            <pre><code class="language-java">Controller
+   -&gt; throws UserNotFoundException
+Service
+   -&gt; throws UserNotFoundException
+Repository</code></pre>
+            <p>
+              But in a Spring Boot REST API, suppose the user does not exist:
+            </p>
+            <pre><code class="language-java">public User getUser(Long id) {
+    return repository.findById(id)
+        .orElseThrow(() -&gt;
+            new UserNotFoundException("User not found: " + id)
+        );
+}</code></pre>
+            <p>
+              Usually, the service caller cannot meaningfully fix that missing user. We want the exception to bubble up
+              to centralized handling:
+            </p>
+            <pre><code class="language-java">public class UserNotFoundException extends RuntimeException {
+
+    public UserNotFoundException(String message) {
+        super(message);
+    }
+}
+
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity&lt;String&gt; handleUserNotFound(
+            UserNotFoundException ex) {
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(ex.getMessage());
+    }
+}</code></pre>
+            <p>
+              The flow is:
+            </p>
+            <pre><code class="language-java">HTTP GET /users/100
+        -&gt;
+Controller
+        -&gt;
+Service
+        -&gt;
+repository.findById(100)
+        -&gt;
+Not found
+        -&gt;
+throw UserNotFoundException
+        -&gt;
+No try/catch needed in Service
+        -&gt;
+No try/catch needed in Controller
+        -&gt;
+@RestControllerAdvice catches it
+        -&gt;
+HTTP 404 response</code></pre>
+            <p>
+              That is why <code>RuntimeException</code> fits very naturally.
+            </p>
+            <h5 class="text-warning">Useful rule</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Situation</th>
+                  <th>Prefer</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>User not found</td>
+                  <td>RuntimeException</td>
+                </tr>
+                <tr>
+                  <td>Invalid business state</td>
+                  <td>RuntimeException</td>
+                </tr>
+                <tr>
+                  <td>Duplicate email</td>
+                  <td>RuntimeException</td>
+                </tr>
+                <tr>
+                  <td>Insufficient balance</td>
+                  <td>Usually RuntimeException</td>
+                </tr>
+                <tr>
+                  <td>Validation failure</td>
+                  <td>RuntimeException</td>
+                </tr>
+                <tr>
+                  <td>REST API domain error</td>
+                  <td>RuntimeException</td>
+                </tr>
+                <tr>
+                  <td>Caller is expected to recover</td>
+                  <td>Checked Exception</td>
+                </tr>
+                <tr>
+                  <td>Caller must consciously handle failure</td>
+                  <td>Checked Exception</td>
+                </tr>
+              </tbody>
+            </table>
+            <p>
+              For example, a checked exception can make sense when recovery is genuinely expected:
+            </p>
+            <pre><code class="language-java">public void importFile(Path path) throws InvalidImportFileException {
+    // caller may ask user to upload another file
+}</code></pre>
+            <p>
+              But even here, many modern Java/Spring applications still choose unchecked exceptions depending on
+              architecture.
+            </p>
+            <h5 class="text-warning">Spring transaction rollback behavior</h5>
+            <p>
+              One more important reason in Spring: by default, Spring rolls back transactions for unchecked exceptions
+              such as <code>RuntimeException</code>, but not generally for checked exceptions.
+            </p>
+            <pre><code class="language-java">@Transactional
+public void transferMoney() {
+    debit();
+    credit();
+
+    throw new PaymentFailedException();
+}</code></pre>
+            <p>
+              If:
+            </p>
+            <pre><code class="language-java">class PaymentFailedException extends RuntimeException</code></pre>
+            <p>
+              Rollback happens by default.
+            </p>
+            <p>
+              If:
+            </p>
+            <pre><code class="language-java">class PaymentFailedException extends Exception</code></pre>
+            <p>
+              You may need:
+            </p>
+            <pre><code class="language-java">@Transactional(rollbackFor = PaymentFailedException.class)</code></pre>
+            <p>
+              So the deeper answer is: we do not extend <code>RuntimeException</code> merely because it is convenient.
+              We use it when the caller is not expected to recover locally and the exception should propagate to a
+              centralized boundary such as <code>@RestControllerAdvice</code>.
+            </p>
+            <p>
+              <strong>Best interview sentence:</strong> I use checked exceptions when the caller is expected to explicitly
+              recover from the failure; I use unchecked exceptions for programming errors, invalid state, and domain/API
+              failures that should propagate to centralized exception handling.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Q1A -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q1a">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c1a">
+            What happens if a parent method throws RuntimeException or ArithmeticException and the child overridden
+            method throws Exception?
+          </button>
+        </h2>
+        <div id="c1a" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              If the child overridden method declares <code>Exception</code>, the compiler gives an error because
+              <code>Exception</code> is a broader checked exception than the parent contract allows.
+            </p>
+            <p>
+              The rule is simple:
+            </p>
+            <ul>
+              <li>A child method cannot introduce a broader checked exception than the parent method declares.</li>
+              <li>A child method may throw the same exception or a narrower checked exception.</li>
+              <li>A child method may throw any unchecked exception, even if the parent throws none.</li>
+            </ul>
+            <pre><code class="language-java">class Parent {
+    void calculate() throws RuntimeException {
+        System.out.println("Parent");
+    }
+}
+
+class Child extends Parent {
+    @Override
+    void calculate() throws Exception {   // Compile-time error
+        System.out.println("Child");
+    }
+}</code></pre>
+            <p>
+              This also fails:
+            </p>
+            <pre><code class="language-java">class Parent {
+    void calculate() throws ArithmeticException {
+    }
+}
+
+class Child extends Parent {
+    @Override
+    void calculate() throws Exception {  // Compile-time error
+    }
+}</code></pre>
+            <p>
+              But these are allowed:
+            </p>
+            <pre><code class="language-java">class Parent {
+    void calculate() throws RuntimeException {
+    }
+}
+
+class Child extends Parent {
+    @Override
+    void calculate() throws ArithmeticException {
+    }
+}</code></pre>
+            <pre><code class="language-java">class Parent {
+    void calculate() {
+    }
+}
+
+class Child extends Parent {
+    @Override
+    void calculate() throws ArithmeticException {
+    }
+}</code></pre>
+            <p>
+              The vice versa cases follow the same inheritance rule:
+            </p>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Parent method</th>
+                  <th>Child method</th>
+                  <th>Result</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>throws Exception</code></td>
+                  <td><code>throws IOException</code></td>
+                  <td>Allowed</td>
+                </tr>
+                <tr>
+                  <td><code>throws IOException</code></td>
+                  <td><code>throws Exception</code></td>
+                  <td>Compile-time error</td>
+                </tr>
+                <tr>
+                  <td><code>throws RuntimeException</code></td>
+                  <td><code>throws Exception</code></td>
+                  <td>Compile-time error</td>
+                </tr>
+                <tr>
+                  <td><code>throws RuntimeException</code></td>
+                  <td><code>throws ArithmeticException</code></td>
+                  <td>Allowed</td>
+                </tr>
+                <tr>
+                  <td>No throws</td>
+                  <td><code>throws RuntimeException</code></td>
+                  <td>Allowed</td>
+                </tr>
+                <tr>
+                  <td>No throws</td>
+                  <td><code>throws IOException</code></td>
+                  <td>Compile-time error</td>
+                </tr>
+              </tbody>
+            </table>
+            <p>
+              Interview one-liner: a child method can narrow checked exceptions, but it cannot widen them; unchecked
+              exceptions are always allowed in overriding.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Q1B -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q1b">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c1b">
+            What is relational mapping in Spring Boot JPA, and how do entity relationships map to tables?
+          </button>
+        </h2>
+        <div id="c1b" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Relational mapping means mapping Java entities to database tables and mapping object relationships to
+              foreign keys or join tables in the database.
+            </p>
+            <p>
+              In Spring Boot, JPA/Hibernate handles this using annotations like <code>@Entity</code>,
+              <code>@Id</code>, <code>@OneToOne</code>, <code>@OneToMany</code>, <code>@ManyToOne</code>,
+              <code>@ManyToMany</code>, <code>@JoinColumn</code>, and <code>@JoinTable</code>.
+            </p>
+            <h5 class="text-warning">1. One-to-One example</h5>
+            <p>
+              Example: one user has one profile.
+            </p>
+            <pre><code class="language-java">@Entity
+class User {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "profile_id")
+    private UserProfile profile;
+}
+
+@Entity
+class UserProfile {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String bio;
+}</code></pre>
+            <pre><code class="language-sql">CREATE TABLE user_profile (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    bio VARCHAR(255)
+);
+
+CREATE TABLE users (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    profile_id BIGINT UNIQUE,
+    CONSTRAINT fk_user_profile
+        FOREIGN KEY (profile_id) REFERENCES user_profile(id)
+);</code></pre>
+            <h5 class="text-warning">2. One-to-Many and Many-to-One example</h5>
+            <p>
+              Example: one department has many employees.
+            </p>
+            <pre><code class="language-java">@Entity
+class Department {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+
+    @OneToMany(mappedBy = "department", cascade = CascadeType.ALL)
+    private List&lt;Employee&gt; employees;
+}
+
+@Entity
+class Employee {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+
+    @ManyToOne
+    @JoinColumn(name = "department_id")
+    private Department department;
+}</code></pre>
+            <pre><code class="language-sql">CREATE TABLE department (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE employee (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    department_id BIGINT,
+    CONSTRAINT fk_employee_department
+        FOREIGN KEY (department_id) REFERENCES department(id)
+);</code></pre>
+            <p>
+              In this relationship, the many side owns the foreign key. The <code>@ManyToOne</code> side is usually the
+              owning side, and <code>mappedBy</code> is used on the parent collection side.
+            </p>
+            <h5 class="text-warning">Important mapping points</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Relation</th>
+                  <th>Typical annotation</th>
+                  <th>Database shape</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>One-to-One</td>
+                  <td><code>@OneToOne</code></td>
+                  <td>Foreign key + unique constraint</td>
+                </tr>
+                <tr>
+                  <td>One-to-Many</td>
+                  <td><code>@OneToMany</code></td>
+                  <td>Foreign key on many-side table</td>
+                </tr>
+                <tr>
+                  <td>Many-to-One</td>
+                  <td><code>@ManyToOne</code></td>
+                  <td>Foreign key on current table</td>
+                </tr>
+                <tr>
+                  <td>Many-to-Many</td>
+                  <td><code>@ManyToMany</code></td>
+                  <td>Join table with two foreign keys</td>
+                </tr>
+              </tbody>
+            </table>
+            <p>
+              In real projects, keep the owning side clear, use <code>cascade</code> carefully, and prefer
+              <code>FetchType.LAZY</code> for collection relationships unless eager loading is truly required.
+            </p>
+            <p>
+              For <code>Many-to-Many</code>, the mapping is usually handled through a separate join table, which is
+              covered in the next question.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Q1C -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q1c">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c1c">
+            How does Many-to-Many work in Spring Boot JPA? Show table creation and example.
+          </button>
+        </h2>
+        <div id="c1c" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              A <code>Many-to-Many</code> relation means many rows in one table can match many rows in another table.
+              In relational databases, this is not stored directly in the two tables. Instead, Hibernate creates a join
+              table.
+            </p>
+            <p>
+              Example: one student can join many courses, and one course can have many students.
+            </p>
+            <pre><code class="language-java">@Entity
+class Student {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+
+    @ManyToMany
+    @JoinTable(
+        name = "student_course",
+        joinColumns = @JoinColumn(name = "student_id"),
+        inverseJoinColumns = @JoinColumn(name = "course_id")
+    )
+    private Set&lt;Course&gt; courses;
+}
+
+@Entity
+class Course {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String title;
+
+    @ManyToMany(mappedBy = "courses")
+    private Set&lt;Student&gt; students;
+}</code></pre>
+            <pre><code class="language-sql">CREATE TABLE student (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE course (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    title VARCHAR(150) NOT NULL
+);
+
+CREATE TABLE student_course (
+    student_id BIGINT NOT NULL,
+    course_id BIGINT NOT NULL,
+    PRIMARY KEY (student_id, course_id),
+    CONSTRAINT fk_sc_student
+        FOREIGN KEY (student_id) REFERENCES student(id),
+    CONSTRAINT fk_sc_course
+        FOREIGN KEY (course_id) REFERENCES course(id)
+);</code></pre>
+            <p>
+              Here, <code>student_course</code> is the join table. It stores only the relationship, not extra business
+              data.
+            </p>
+            <h5 class="text-warning">When to avoid direct Many-to-Many</h5>
+            <ul>
+              <li>
+                If the join table needs extra columns like <code>enrolled_at</code>, <code>status</code>, or
+                <code>grade</code>, use a separate entity instead of plain <code>@ManyToMany</code>.
+              </li>
+              <li>
+                In that case, model it as two <code>@ManyToOne</code> relationships through an intermediate entity such
+                as <code>Enrollment</code>.
+              </li>
+              <li>
+                Be careful with cascade and fetch type because many-to-many graphs can grow quickly.
+              </li>
+            </ul>
+            <p>
+              Interview one-liner: <code>Many-to-Many</code> in JPA is backed by a join table, and if the association has
+              extra attributes, an intermediate entity is usually the better design.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Q1D - Java Annotations Overview -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q1d">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c1d">
+            What are Java Annotations and why do we use them?
+          </button>
+        </h2>
+        <div id="c1d" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Annotations are metadata attached to Java code. They do not change program logic by themselves, but they
+              give instructions to the compiler, runtime, or frameworks about how to treat that code.
+            </p>
+            <p>
+              Before Java 5, metadata lived in external XML or comments. Annotations moved that metadata into the source
+              code itself, making it type-safe, discoverable, and easier to maintain.
+            </p>
+            <pre><code class="language-java">@Override
+public String toString() {
+    return "User{id=1}";
+}
+
+@RestController
+@RequestMapping("/users")
+public class UserController {
+
+    @GetMapping("/{id}")
+    public User getUser(@PathVariable Long id) {
+        return userService.findById(id);
+    }
+}</code></pre>
+            <h5 class="text-warning">Why we use annotations</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Reason</th>
+                  <th>What it solves</th>
+                  <th>Real-time example</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Reduce boilerplate</td>
+                  <td>No repeated XML/config for every class</td>
+                  <td><code>@Entity</code> instead of manual Hibernate mapping XML</td>
+                </tr>
+                <tr>
+                  <td>Declarative programming</td>
+                  <td>Describe what you want, not how to wire it</td>
+                  <td><code>@Transactional</code> starts/commits DB transaction automatically</td>
+                </tr>
+                <tr>
+                  <td>Framework integration</td>
+                  <td>Tools scan code and apply behavior</td>
+                  <td>Spring creates beans from <code>@Service</code>, <code>@Repository</code></td>
+                </tr>
+                <tr>
+                  <td>Compile-time safety</td>
+                  <td>Catch mistakes early</td>
+                  <td><code>@Override</code> fails if method signature does not match parent</td>
+                </tr>
+                <tr>
+                  <td>Cross-cutting concerns</td>
+                  <td>Logging, security, caching in one place</td>
+                  <td><code>@PreAuthorize</code>, <code>@Cacheable</code></td>
+                </tr>
+                <tr>
+                  <td>Documentation</td>
+                  <td>Self-describing API contracts</td>
+                  <td><code>@Deprecated</code>, <code>@NotNull</code></td>
+                </tr>
+              </tbody>
+            </table>
+            <p>
+              Annotations are processed in three phases:
+            </p>
+            <pre><code class="language-java">Source Code
+   + @Annotation
+        |
+        v
+Compile Time  -&gt; Compiler checks (@Override, @FunctionalInterface)
+        |
+        v
+Runtime       -&gt; Reflection / Spring scans (@Component, @Autowired)
+        |
+        v
+Framework     -&gt; AOP, JPA, Validation, Security applied automatically</code></pre>
+            <p>
+              <strong>Best interview sentence:</strong> Annotations are metadata markers that let frameworks and tools
+              inspect code and apply behavior declaratively, instead of forcing developers to write repetitive wiring
+              code manually.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Q1E - Built-in and Meta Annotations -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q1e">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c1e">
+            What are built-in annotations and meta-annotations in Java?
+          </button>
+        </h2>
+        <div id="c1e" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <h5 class="text-warning">Built-in annotations (java.lang)</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Annotation</th>
+                  <th>Purpose</th>
+                  <th>Example</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>@Override</code></td>
+                  <td>Compiler verifies method override</td>
+                  <td>Prevents typo in method name during inheritance</td>
+                </tr>
+                <tr>
+                  <td><code>@Deprecated</code></td>
+                  <td>Marks API as obsolete</td>
+                  <td>Warn developers not to use old REST endpoint</td>
+                </tr>
+                <tr>
+                  <td><code>@SuppressWarnings</code></td>
+                  <td>Suppress compiler warnings</td>
+                  <td><code>@SuppressWarnings("unchecked")</code> on legacy generic code</td>
+                </tr>
+                <tr>
+                  <td><code>@FunctionalInterface</code></td>
+                  <td>Single abstract method interface</td>
+                  <td>Lambdas: <code>() -&gt; System.out.println("hi")</code></td>
+                </tr>
+                <tr>
+                  <td><code>@SafeVarargs</code></td>
+                  <td>Suppress varargs generic warnings</td>
+                  <td>Utility methods with generic varargs</td>
+                </tr>
+              </tbody>
+            </table>
+            <pre><code class="language-java">class Parent {
+    void print() {
+        System.out.println("Parent");
+    }
+}
+
+class Child extends Parent {
+    @Override
+    void print() {          // OK
+        System.out.println("Child");
+    }
+
+    // @Override
+    // void prnt() {       // Compile error — typo caught by @Override
+    // }
+}</code></pre>
+            <h5 class="text-warning">Meta-annotations (annotations on annotations)</h5>
+            <p>
+              Meta-annotations define rules for custom annotations.
+            </p>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Meta-annotation</th>
+                  <th>Meaning</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>@Target</code></td>
+                  <td>Where annotation can be applied (class, method, field, parameter, etc.)</td>
+                </tr>
+                <tr>
+                  <td><code>@Retention</code></td>
+                  <td>How long annotation survives: SOURCE, CLASS, or RUNTIME</td>
+                </tr>
+                <tr>
+                  <td><code>@Documented</code></td>
+                  <td>Include in generated Javadoc</td>
+                </tr>
+                <tr>
+                  <td><code>@Inherited</code></td>
+                  <td>Subclass inherits annotation from parent class</td>
+                </tr>
+                <tr>
+                  <td><code>@Repeatable</code></td>
+                  <td>Same annotation can appear multiple times on one element</td>
+                </tr>
+              </tbody>
+            </table>
+            <pre><code class="language-java">@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+public @interface AuditLog {
+    String action();
+}</code></pre>
+            <p>
+              Real-time: Spring's <code>@RestController</code> is itself meta-annotated with
+              <code>@Controller</code> + <code>@ResponseBody</code>. When you write
+              <code>@RestController</code>, Spring understands both behaviors without you repeating them.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Q1F - Types of Annotations -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q1f">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c1f">
+            What are the different types of annotations in Java?
+          </button>
+        </h2>
+        <div id="c1f" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <h5 class="text-warning">1. Marker annotation (no elements)</h5>
+            <p>
+              Pure tag with no attributes. Framework checks only presence.
+            </p>
+            <pre><code class="language-java">@FunctionalInterface
+public interface PaymentProcessor {
+    void process();
+}
+
+@Entity   // JPA marker — tells Hibernate this class maps to a table
+public class Order {
+    @Id
+    private Long id;
+}</code></pre>
+            <h5 class="text-warning">2. Single-value annotation</h5>
+            <p>
+              One element named <code>value()</code>. You can omit the element name when using it.
+            </p>
+            <pre><code class="language-java">@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface RolesAllowed {
+    String value();   // single element
+}
+
+// Usage — "value=" is optional
+@RolesAllowed("ADMIN")
+public void deleteUser() { }</code></pre>
+            <h5 class="text-warning">3. Normal / multi-value annotation</h5>
+            <p>
+              Multiple named elements.
+            </p>
+            <pre><code class="language-java">@Table(name = "employees", schema = "hr")
+public class Employee { }
+
+@RequestMapping(value = "/api/users", method = RequestMethod.GET)
+public List&lt;User&gt; getUsers() { }</code></pre>
+            <h5 class="text-warning">4. Meta-annotation</h5>
+            <p>
+              Annotation applied to another annotation definition.
+            </p>
+            <pre><code class="language-java">@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@SpringBootApplication   // meta-annotated with @Configuration, @EnableAutoConfiguration, @ComponentScan
+public class Application {
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class, args);
+    }
+}</code></pre>
+            <h5 class="text-warning">5. Repeatable annotation</h5>
+            <pre><code class="language-java">@Repeatable(Schedules.class)
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Schedule {
+    String cron();
+}
+
+public @interface Schedules {
+    Schedule[] value();
+}
+
+@Schedule(cron = "0 0 8 * * *")
+@Schedule(cron = "0 0 20 * * *")
+public void sendReport() { }</code></pre>
+            <p>
+              Real-time: Bean Validation uses multi-value annotations like
+              <code>@Size(min = 2, max = 50, message = "Name too long")</code> on DTO fields in REST APIs.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Q1G - Creating Custom Annotations -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q1g">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c1g">
+            How do you create a custom annotation in Java? Show full example.
+          </button>
+        </h2>
+        <div id="c1g" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Creating a custom annotation has four steps: define it, set meta-annotations, use it, and process it
+              (via reflection, AOP, or annotation processor).
+            </p>
+            <h5 class="text-warning">Step 1 — Define the annotation</h5>
+            <pre><code class="language-java">import java.lang.annotation.*;
+
+@Target({ElementType.METHOD, ElementType.TYPE})
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+public @interface RateLimited {
+    int requests() default 100;      // max requests
+    int perSeconds() default 60;     // time window
+    String key() default "";         // optional custom key
+}</code></pre>
+            <h5 class="text-warning">Step 2 — Use the annotation</h5>
+            <pre><code class="language-java">@RestController
+@RequestMapping("/payments")
+public class PaymentController {
+
+    @RateLimited(requests = 10, perSeconds = 60)
+    @PostMapping("/pay")
+    public ResponseEntity&lt;String&gt; pay(@RequestBody PaymentRequest req) {
+        paymentService.process(req);
+        return ResponseEntity.ok("Payment success");
+    }
+}</code></pre>
+            <h5 class="text-warning">Step 3 — Process at runtime with Aspect (Spring AOP)</h5>
+            <pre><code class="language-java">@Aspect
+@Component
+public class RateLimitAspect {
+
+    private final Map&lt;String, AtomicInteger&gt; counters = new ConcurrentHashMap&lt;&gt;();
+
+    @Around("@annotation(rateLimited)")
+    public Object enforce(ProceedingJoinPoint pjp, RateLimited rateLimited) throws Throwable {
+        String key = rateLimited.key().isBlank()
+                ? pjp.getSignature().toShortString()
+                : rateLimited.key();
+
+        AtomicInteger count = counters.computeIfAbsent(key, k -&gt; new AtomicInteger(0));
+        if (count.incrementAndGet() &gt; rateLimited.requests()) {
+            throw new TooManyRequestsException("Rate limit exceeded for " + key);
+        }
+
+        return pjp.proceed();
+    }
+}</code></pre>
+            <h5 class="text-warning">Step 4 — Read annotation via reflection (without AOP)</h5>
+            <pre><code class="language-java">Method method = PaymentController.class
+        .getMethod("pay", PaymentRequest.class);
+
+if (method.isAnnotationPresent(RateLimited.class)) {
+    RateLimited rl = method.getAnnotation(RateLimited.class);
+    System.out.println("Limit: " + rl.requests() + " per " + rl.perSeconds() + " sec");
+}</code></pre>
+            <p>
+              Annotation elements must be compile-time constants: primitives, String, Class, enum, other annotations,
+              or arrays of those types. You cannot use arbitrary objects.
+            </p>
+            <pre><code class="language-java">public @interface ValidExample {
+    int count() default 1;
+    String message() default "invalid";
+    Class&lt;?&gt; validator() default String.class;
+    Severity level() default Severity.ERROR;
+}
+
+enum Severity { ERROR, WARN }</code></pre>
+            <p>
+              Real-time use case: Teams build <code>@AuditLog</code>, <code>@Retry</code>, or
+              <code>@FeatureFlag</code> annotations so business code stays clean and cross-cutting logic lives in one
+              aspect or interceptor.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Q1H - Retention and Target -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q1h">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c1h">
+            What is @Retention and @Target? Explain with examples.
+          </button>
+        </h2>
+        <div id="c1h" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <h5 class="text-warning">@Retention — how long annotation lives</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Policy</th>
+                  <th>Available at</th>
+                  <th>Typical use</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>SOURCE</code></td>
+                  <td>Source file only; stripped by compiler</td>
+                  <td><code>@Override</code>, Lombok <code>@Getter</code></td>
+                </tr>
+                <tr>
+                  <td><code>CLASS</code></td>
+                  <td>Bytecode; not visible via reflection at runtime</td>
+                  <td>Bytecode tools, default if @Retention omitted</td>
+                </tr>
+                <tr>
+                  <td><code>RUNTIME</code></td>
+                  <td>Bytecode + reflection at runtime</td>
+                  <td>Spring, JPA, Jackson, Bean Validation</td>
+                </tr>
+              </tbody>
+            </table>
+            <pre><code class="language-java">@Retention(RetentionPolicy.SOURCE)
+public @interface GeneratedCode { }
+
+@Retention(RetentionPolicy.RUNTIME)
+public @interface JsonField {
+    String name();
+}</code></pre>
+            <p>
+              If Spring cannot see your custom annotation at runtime, you almost certainly forgot
+              <code>@Retention(RetentionPolicy.RUNTIME)</code>.
+            </p>
+            <h5 class="text-warning">@Target — where annotation can be placed</h5>
+            <pre><code class="language-java">@Target(ElementType.FIELD)
+public @interface Encrypted { }
+
+@Target(ElementType.PARAMETER)
+public @interface CurrentUser { }
+
+@Target({ElementType.METHOD, ElementType.TYPE})
+public @interface Secured {
+    String[] roles();
+}</code></pre>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>ElementType</th>
+                  <th>Real-time example</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>TYPE</code></td>
+                  <td><code>@Entity</code>, <code>@Service</code>, <code>@RestController</code></td>
+                </tr>
+                <tr>
+                  <td><code>METHOD</code></td>
+                  <td><code>@GetMapping</code>, <code>@Transactional</code>, <code>@Scheduled</code></td>
+                </tr>
+                <tr>
+                  <td><code>FIELD</code></td>
+                  <td><code>@Autowired</code>, <code>@Column</code>, <code>@JsonProperty</code></td>
+                </tr>
+                <tr>
+                  <td><code>PARAMETER</code></td>
+                  <td><code>@PathVariable</code>, <code>@RequestBody</code>, <code>@Valid</code></td>
+                </tr>
+                <tr>
+                  <td><code>CONSTRUCTOR</code></td>
+                  <td><code>@Autowired</code> on constructor injection (recommended in Spring)</td>
+                </tr>
+              </tbody>
+            </table>
+            <pre><code class="language-java">// Compile error if @Target(ElementType.METHOD) only:
+@Encrypted
+private String creditCardNumber;   // needs ElementType.FIELD
+
+@GetMapping("/{id}")
+public User get(@PathVariable Long id) { }  // PARAMETER + METHOD targets</code></pre>
+            <p>
+              Interview one-liner: <code>@Target</code> controls where you can write the annotation;
+              <code>@Retention(RUNTIME)</code> is required for Spring, Hibernate, and any reflection-based framework.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Q1I - Compile vs Runtime Processing -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q1i">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c1i">
+            How are annotations processed at compile-time vs runtime?
+          </button>
+        </h2>
+        <div id="c1i" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <pre><code class="language-java">                    COMPILE TIME                    RUNTIME
+                         |                              |
+              Annotation Processor                 Reflection / Spring
+              (javax.annotation.processing)        (Class.getAnnotations)
+                         |                              |
+              Generates code at build               Applies behavior when app runs
+              e.g. Lombok, MapStruct                e.g. @Autowired, @Transactional</code></pre>
+            <h5 class="text-warning">Compile-time processing</h5>
+            <p>
+              Annotation processors run during <code>javac</code> and can generate source files or validate code.
+            </p>
+            <pre><code class="language-java">// Lombok @Getter generates getName() at compile time — you never write it
+@Getter
+public class User {
+    private String name;
+}
+
+// MapStruct generates mapper implementation at compile time
+@Mapper
+public interface UserMapper {
+    UserDto toDto(User user);
+}</code></pre>
+            <h5 class="text-warning">Runtime processing</h5>
+            <p>
+              Framework scans classpath, reads annotations via reflection, and wires behavior.
+            </p>
+            <pre><code class="language-java">@SpringBootApplication
+public class App { }
+
+// At startup Spring does roughly:
+// 1. Scan packages for @Component, @Service, @Repository
+// 2. Create beans and inject @Autowired dependencies
+// 3. Register @RestController mappings
+// 4. Enable @Transactional proxy for @Service methods</code></pre>
+            <h5 class="text-warning">Comparison table</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Aspect</th>
+                  <th>Compile-time</th>
+                  <th>Runtime</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>When it runs</td>
+                  <td>During build (<code>mvn compile</code>)</td>
+                  <td>When application starts / method invoked</td>
+                </tr>
+                <tr>
+                  <td>Performance</td>
+                  <td>No runtime cost after generation</td>
+                  <td>Reflection + proxy overhead (usually small)</td>
+                </tr>
+                <tr>
+                  <td>Examples</td>
+                  <td>Lombok, MapStruct, Immutables</td>
+                  <td>Spring, JPA, Jackson, Validation</td>
+                </tr>
+                <tr>
+                  <td>Retention needed</td>
+                  <td><code>SOURCE</code> or <code>CLASS</code></td>
+                  <td><code>RUNTIME</code></td>
+                </tr>
+              </tbody>
+            </table>
+            <p>
+              Real-time: In a microservice, MapStruct generates DTO mappers at compile time (fast, type-safe), while
+              Spring reads <code>@KafkaListener</code> at runtime to subscribe to topics when the app boots.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Q1J - Spring Boot Real-time Use Cases -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q1j">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c1j">
+            What are real-time Spring Boot use cases of Java Annotations?
+          </button>
+        </h2>
+        <div id="c1j" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Most backend Java developers use annotations daily through Spring Boot. Each annotation triggers
+              framework behavior without manual wiring.
+            </p>
+            <h5 class="text-warning">REST API layer</h5>
+            <pre><code class="language-java">@RestController
+@RequestMapping("/api/orders")
+@Validated
+public class OrderController {
+
+    private final OrderService orderService;
+
+    public OrderController(OrderService orderService) {
+        this.orderService = orderService;   // constructor injection
+    }
+
+    @PostMapping
+    public ResponseEntity&lt;OrderResponse&gt; create(
+            @Valid @RequestBody CreateOrderRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(orderService.create(request));
+    }
+
+    @GetMapping("/{orderId}")
+    public OrderResponse get(@PathVariable Long orderId) {
+        return orderService.getById(orderId);
+    }
+}</code></pre>
+            <h5 class="text-warning">Service + transaction + caching</h5>
+            <pre><code class="language-java">@Service
+public class OrderService {
+
+    @Cacheable(value = "orders", key = "#orderId")
+    public OrderResponse getById(Long orderId) {
+        return orderRepository.findById(orderId)
+                .map(this::toResponse)
+                .orElseThrow(() -&gt; new OrderNotFoundException(orderId));
+    }
+
+    @Transactional
+    @CacheEvict(value = "orders", allEntries = true)
+    public OrderResponse create(CreateOrderRequest request) {
+        Order order = orderRepository.save(toEntity(request));
+        eventPublisher.publish(new OrderCreatedEvent(order.getId()));
+        return toResponse(order);
+    }
+}</code></pre>
+            <h5 class="text-warning">JPA entity mapping</h5>
+            <pre><code class="language-java">@Entity
+@Table(name = "orders")
+public class Order {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false)
+    private BigDecimal amount;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "customer_id")
+    private Customer customer;
+
+    @CreatedDate
+    private Instant createdAt;
+}</code></pre>
+            <h5 class="text-warning">Validation on DTO</h5>
+            <pre><code class="language-java">public class CreateOrderRequest {
+
+    @NotNull
+    private Long customerId;
+
+    @DecimalMin(value = "0.01", message = "Amount must be positive")
+    private BigDecimal amount;
+
+    @Size(max = 200)
+    private String notes;
+}</code></pre>
+            <h5 class="text-warning">Security</h5>
+            <pre><code class="language-java">@PreAuthorize("hasRole('ADMIN')")
+@DeleteMapping("/{orderId}")
+public void delete(@PathVariable Long orderId) {
+    orderService.delete(orderId);
+}</code></pre>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Annotation</th>
+                  <th>What Spring/framework does</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>@RestController</code></td>
+                  <td>Registers HTTP endpoints, serializes response to JSON</td>
+                </tr>
+                <tr>
+                  <td><code>@Transactional</code></td>
+                  <td>Opens/commits/rolls back DB transaction via AOP proxy</td>
+                </tr>
+                <tr>
+                  <td><code>@Cacheable</code></td>
+                  <td>Stores method result in Redis/Caffeine cache</td>
+                </tr>
+                <tr>
+                  <td><code>@Entity</code></td>
+                  <td>Maps class to database table via Hibernate</td>
+                </tr>
+                <tr>
+                  <td><code>@Valid</code></td>
+                  <td>Triggers Bean Validation on request body</td>
+                </tr>
+                <tr>
+                  <td><code>@Scheduled</code></td>
+                  <td>Runs method on cron expression</td>
+                </tr>
+                <tr>
+                  <td><code>@KafkaListener</code></td>
+                  <td>Subscribes to Kafka topic at startup</td>
+                </tr>
+              </tbody>
+            </table>
+            <p>
+              Without annotations, the same app would need hundreds of lines of XML or manual bean registration.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Q1K - Custom Annotation with Real Project Pattern -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q1k">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c1k">
+            How to build a production-ready custom annotation (@AuditLog example)?
+          </button>
+        </h2>
+        <div id="c1k" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              A common real-time pattern: create a custom annotation for audit logging so every sensitive operation
+              is tracked consistently without copy-pasting log statements.
+            </p>
+            <h5 class="text-warning">1. Define annotation</h5>
+            <pre><code class="language-java">@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface AuditLog {
+    String action();
+    String module() default "GENERAL";
+    boolean logArgs() default false;
+}</code></pre>
+            <h5 class="text-warning">2. Use on business methods</h5>
+            <pre><code class="language-java">@Service
+public class AccountService {
+
+    @AuditLog(action = "TRANSFER_MONEY", module = "PAYMENTS", logArgs = true)
+    @Transactional
+    public void transfer(Long from, Long to, BigDecimal amount) {
+        debit(from, amount);
+        credit(to, amount);
+    }
+
+    @AuditLog(action = "BLOCK_ACCOUNT", module = "COMPLIANCE")
+    public void blockAccount(Long accountId) {
+        accountRepository.updateStatus(accountId, Status.BLOCKED);
+    }
+}</code></pre>
+            <h5 class="text-warning">3. Aspect to process annotation</h5>
+            <pre><code class="language-java">@Aspect
+@Component
+@Slf4j
+public class AuditLogAspect {
+
+    private final AuditRepository auditRepository;
+
+    public AuditLogAspect(AuditRepository auditRepository) {
+        this.auditRepository = auditRepository;
+    }
+
+    @Around("@annotation(auditLog)")
+    public Object logAudit(ProceedingJoinPoint pjp, AuditLog auditLog) throws Throwable {
+        String user = SecurityContextHolder.getContext()
+                .getAuthentication().getName();
+
+        long start = System.currentTimeMillis();
+        try {
+            Object result = pjp.proceed();
+            saveAudit(user, auditLog, pjp, "SUCCESS", System.currentTimeMillis() - start);
+            return result;
+        } catch (Exception ex) {
+            saveAudit(user, auditLog, pjp, "FAILED", System.currentTimeMillis() - start);
+            throw ex;
+        }
+    }
+
+    private void saveAudit(String user, AuditLog auditLog,
+                           ProceedingJoinPoint pjp, String status, long durationMs) {
+        auditRepository.save(new AuditEntry(
+                user,
+                auditLog.module(),
+                auditLog.action(),
+                pjp.getSignature().toShortString(),
+                status,
+                durationMs
+        ));
+    }
+}</code></pre>
+            <h5 class="text-warning">4. Optional — compose with meta-annotations</h5>
+            <pre><code class="language-java">@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+@AuditLog(action = "DEFAULT", module = "PAYMENTS")
+public @interface PaymentAudit {
+    String value();   // overrides action
+}
+
+// Usage
+@PaymentAudit("REFUND")
+public void refund(Long orderId) { }</code></pre>
+            <p>
+              This pattern is used in banking, healthcare, and e-commerce for compliance (who did what, when, and
+              whether it succeeded). The business method stays focused on domain logic; the annotation + aspect handle
+              cross-cutting audit concerns.
+            </p>
+            <p>
+              <strong>Best interview sentence:</strong> Custom annotations shine when you need reusable, declarative
+              metadata that frameworks or AOP can interpret — logging, retries, feature flags, rate limits, and audit
+              trails are all common production examples.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Q1L - Annotation Inheritance and Common Pitfalls -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q1l">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c1l">
+            What is @Inherited? What are common annotation mistakes in interviews?
+          </button>
+        </h2>
+        <div id="c1l" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <h5 class="text-warning">@Inherited behavior</h5>
+            <p>
+              By default, annotations on a parent class are <strong>not</strong> inherited by subclasses.
+              <code>@Inherited</code> changes that for class-level annotations only.
+            </p>
+            <pre><code class="language-java">@Inherited
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+public @interface SecureService { }
+
+@SecureService
+public class BasePaymentService { }
+
+public class RazorpayPaymentService extends BasePaymentService {
+    // inherits @SecureService because of @Inherited
+}
+
+public interface PaymentGateway { }
+
+@SecureService
+public abstract class AbstractGateway implements PaymentGateway { }
+
+public class StripeGateway extends AbstractGateway { }
+// @SecureService is visible on StripeGateway.class</code></pre>
+            <p>
+              Note: method-level annotations are never inherited, even with <code>@Inherited</code>.
+            </p>
+            <h5 class="text-warning">Common pitfalls</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Mistake</th>
+                  <th>Problem</th>
+                  <th>Fix</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Missing <code>@Retention(RUNTIME)</code></td>
+                  <td>Reflection returns null at runtime</td>
+                  <td>Add <code>@Retention(RetentionPolicy.RUNTIME)</code></td>
+                </tr>
+                <tr>
+                  <td>Wrong <code>@Target</code></td>
+                  <td>Compile error when placing annotation</td>
+                  <td>Allow METHOD, FIELD, PARAMETER as needed</td>
+                </tr>
+                <tr>
+                  <td>Expecting annotations to execute code</td>
+                  <td>Annotation alone does nothing</td>
+                  <td>Need processor: Spring, AOP, or annotation processor</td>
+                </tr>
+                <tr>
+                  <td><code>@Transactional</code> on private method</td>
+                  <td>Proxy cannot intercept — no transaction</td>
+                  <td>Put on public service method; use self-injection if needed</td>
+                </tr>
+                <tr>
+                  <td>Non-constant default values</td>
+                  <td>Compile error</td>
+                  <td>Only constants, Class, enum, annotation allowed</td>
+                </tr>
+              </tbody>
+            </table>
+            <pre><code class="language-java">// WRONG — annotation elements must be compile-time constants
+public @interface Bad {
+    // List&lt;String&gt; tags();   // not allowed
+    String createdAt() default LocalDateTime.now().toString();  // not allowed
+}
+
+// CORRECT
+public @interface Good {
+    String[] tags() default {};
+    Class&lt;?&gt; handler() default Void.class;
+}</code></pre>
+            <h5 class="text-warning">Quick revision — annotation lifecycle</h5>
+            <pre><code class="language-java">1. Define  -&gt; @interface MyAnno { String value(); }
+2. Meta    -&gt; @Target + @Retention + optional @Inherited/@Documented
+3. Apply   -&gt; @MyAnno("demo") on class/method/field
+4. Process -&gt; Compiler / Annotation Processor / Reflection / AOP</code></pre>
+            <p>
+              Interview one-liner: Annotations are metadata; they become powerful only when a compiler, framework, or
+              aspect knows how to read and act on them.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Q1M - HTTP 3xx Redirection -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q1m">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c1m">
+            Explain all HTTP 3xx (300 series) redirection status codes with examples
+          </button>
+        </h2>
+        <div id="c1m" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              The <strong>3xx series</strong> tells the client: "the request was understood, but you need to take
+              another step — usually follow a different URL." These are <strong>redirection</strong> responses.
+            </p>
+            <pre><code class="language-java">Client  --GET /old-page-->  Server
+Client  &lt;--301 Location: /new-page--  Server
+Client  --GET /new-page-->  Server
+Client  &lt;--200 OK--  Server</code></pre>
+            <h5 class="text-warning">Complete 3xx status code reference</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Name</th>
+                  <th>Meaning</th>
+                  <th>Real-time use case</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>300</code></td>
+                  <td>Multiple Choices</td>
+                  <td>Server offers multiple options; client chooses one</td>
+                  <td>Content negotiation — same resource in JSON or XML format</td>
+                </tr>
+                <tr>
+                  <td><code>301</code></td>
+                  <td>Moved Permanently</td>
+                  <td>Resource permanently moved to new URL</td>
+                  <td>Old API <code>/v1/users</code> permanently moved to <code>/v2/users</code>; SEO redirects</td>
+                </tr>
+                <tr>
+                  <td><code>302</code></td>
+                  <td>Found (Temporary Redirect)</td>
+                  <td>Resource temporarily at different URL</td>
+                  <td>Maintenance page redirect, legacy temporary migration</td>
+                </tr>
+                <tr>
+                  <td><code>303</code></td>
+                  <td>See Other</td>
+                  <td>After POST, redirect client to GET another URL</td>
+                  <td>Form submit → redirect to success page (PRG pattern)</td>
+                </tr>
+                <tr>
+                  <td><code>304</code></td>
+                  <td>Not Modified</td>
+                  <td>Cached version is still valid; no body returned</td>
+                  <td>Browser/CDN cache — send <code>If-None-Match</code> ETag header</td>
+                </tr>
+                <tr>
+                  <td><code>307</code></td>
+                  <td>Temporary Redirect</td>
+                  <td>Like 302 but method must not change (POST stays POST)</td>
+                  <td>Load balancer temporary routing during deployment</td>
+                </tr>
+                <tr>
+                  <td><code>308</code></td>
+                  <td>Permanent Redirect</td>
+                  <td>Like 301 but method must not change</td>
+                  <td>Permanent API URL change where POST must remain POST</td>
+                </tr>
+              </tbody>
+            </table>
+            <h5 class="text-warning">301 vs 302 vs 307 vs 308</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Permanent?</th>
+                  <th>Method preserved?</th>
+                  <th>When to use</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>301</td>
+                  <td>Yes</td>
+                  <td>May change POST → GET (browser behavior)</td>
+                  <td>Deprecated URL, SEO permanent move</td>
+                </tr>
+                <tr>
+                  <td>302</td>
+                  <td>No</td>
+                  <td>May change method</td>
+                  <td>Short-term redirect</td>
+                </tr>
+                <tr>
+                  <td>307</td>
+                  <td>No</td>
+                  <td>Yes — POST stays POST</td>
+                  <td>Temporary redirect for APIs/forms</td>
+                </tr>
+                <tr>
+                  <td>308</td>
+                  <td>Yes</td>
+                  <td>Yes — POST stays POST</td>
+                  <td>Permanent API migration</td>
+                </tr>
+              </tbody>
+            </table>
+            <h5 class="text-warning">Spring Boot examples</h5>
+            <pre><code class="language-java">@RestController
+public class RedirectController {
+
+    // 301 — permanent redirect
+    @GetMapping("/old-users")
+    public ResponseEntity&lt;Void&gt; oldUsers() {
+        return ResponseEntity
+                .status(HttpStatus.MOVED_PERMANENTLY)   // 301
+                .location(URI.create("/api/v2/users"))
+                .build();
+    }
+
+    // 302 — temporary redirect
+    @GetMapping("/maintenance")
+    public ResponseEntity&lt;Void&gt; maintenance() {
+        return ResponseEntity
+                .status(HttpStatus.FOUND)               // 302
+                .location(URI.create("/status/maintenance"))
+                .build();
+    }
+
+    // 303 — Post/Redirect/Get after form submission
+    @PostMapping("/orders")
+    public ResponseEntity&lt;Void&gt; createOrder(@RequestBody OrderRequest req) {
+        Long orderId = orderService.create(req);
+        return ResponseEntity
+                .status(HttpStatus.SEE_OTHER)           // 303
+                .location(URI.create("/orders/" + orderId))
+                .build();
+    }
+}</code></pre>
+            <h5 class="text-warning">304 Not Modified — caching in REST APIs</h5>
+            <pre><code class="language-java">@GetMapping("/products/{id}")
+public ResponseEntity&lt;Product&gt; getProduct(
+        @PathVariable Long id,
+        @RequestHeader(value = "If-None-Match", required = false) String etag) {
+
+    Product product = productService.findById(id);
+    String currentEtag = "\"" + product.getVersion() + "\"";
+
+    if (currentEtag.equals(etag)) {
+        return ResponseEntity
+                .status(HttpStatus.NOT_MODIFIED)        // 304 — no body
+                .eTag(currentEtag)
+                .build();
+    }
+
+    return ResponseEntity.ok()
+            .eTag(currentEtag)
+            .body(product);
+}</code></pre>
+            <p>
+              Real-time: CDNs (CloudFront, Akamai) and browsers rely heavily on <code>304</code> to avoid re-downloading
+              unchanged assets. API gateways use <code>301/308</code> when deprecating old endpoint paths.
+            </p>
+            <p>
+              <strong>Best interview sentence:</strong> 3xx codes redirect the client to another resource; use
+              <code>301/308</code> for permanent moves, <code>302/307</code> for temporary ones, and
+              <code>304</code> for cache validation without sending the body again.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Q1N - HTTP 4xx Client Errors -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q1n">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c1n">
+            Explain all HTTP 4xx (400 series) client error status codes with examples
+          </button>
+        </h2>
+        <div id="c1n" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              The <strong>4xx series</strong> means the client sent a bad or unauthorized request. The server understood
+              the request but refuses to process it (or cannot find what was asked). These are <strong>client errors</strong>.
+            </p>
+            <pre><code class="language-java">Client  --POST /api/users (invalid JSON)-->  Server
+Client  &lt;--400 Bad Request--  Server
+
+Client  --GET /api/users/999 (no token)-->  Server
+Client  &lt;--401 Unauthorized--  Server
+
+Client  --DELETE /api/admin (user role=USER)-->  Server
+Client  &lt;--403 Forbidden--  Server</code></pre>
+            <h5 class="text-warning">Complete 4xx status code reference</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Name</th>
+                  <th>Meaning</th>
+                  <th>Real-time use case</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>400</code></td>
+                  <td>Bad Request</td>
+                  <td>Malformed syntax, invalid JSON, missing required field</td>
+                  <td>Broken JSON body, invalid query param format</td>
+                </tr>
+                <tr>
+                  <td><code>401</code></td>
+                  <td>Unauthorized</td>
+                  <td>Authentication missing or invalid</td>
+                  <td>No JWT token, expired login session</td>
+                </tr>
+                <tr>
+                  <td><code>403</code></td>
+                  <td>Forbidden</td>
+                  <td>Authenticated but not allowed to access resource</td>
+                  <td>User logged in but lacks ADMIN role</td>
+                </tr>
+                <tr>
+                  <td><code>404</code></td>
+                  <td>Not Found</td>
+                  <td>Resource or endpoint does not exist</td>
+                  <td>User ID 999 not in database, wrong URL path</td>
+                </tr>
+                <tr>
+                  <td><code>405</code></td>
+                  <td>Method Not Allowed</td>
+                  <td>HTTP method not supported on this URL</td>
+                  <td>POST sent to GET-only endpoint</td>
+                </tr>
+                <tr>
+                  <td><code>406</code></td>
+                  <td>Not Acceptable</td>
+                  <td>Server cannot produce response in requested format</td>
+                  <td>Client asks for <code>Accept: application/xml</code> but API returns JSON only</td>
+                </tr>
+                <tr>
+                  <td><code>408</code></td>
+                  <td>Request Timeout</td>
+                  <td>Client took too long to send complete request</td>
+                  <td>Slow upload, idle connection on API gateway</td>
+                </tr>
+                <tr>
+                  <td><code>409</code></td>
+                  <td>Conflict</td>
+                  <td>Request conflicts with current server state</td>
+                  <td>Duplicate email registration, optimistic lock version mismatch</td>
+                </tr>
+                <tr>
+                  <td><code>410</code></td>
+                  <td>Gone</td>
+                  <td>Resource permanently removed (stronger than 404)</td>
+                  <td>Deprecated account deleted forever, old promo link expired</td>
+                </tr>
+                <tr>
+                  <td><code>413</code></td>
+                  <td>Payload Too Large</td>
+                  <td>Request body exceeds server limit</td>
+                  <td>File upload &gt; 10 MB limit, huge JSON payload</td>
+                </tr>
+                <tr>
+                  <td><code>415</code></td>
+                  <td>Unsupported Media Type</td>
+                  <td>Content-Type not supported</td>
+                  <td>Send <code>text/plain</code> to endpoint expecting <code>application/json</code></td>
+                </tr>
+                <tr>
+                  <td><code>422</code></td>
+                  <td>Unprocessable Entity</td>
+                  <td>Syntax valid but semantic/business validation failed</td>
+                  <td>Valid JSON but email format wrong, age negative, insufficient balance</td>
+                </tr>
+                <tr>
+                  <td><code>429</code></td>
+                  <td>Too Many Requests</td>
+                  <td>Rate limit exceeded</td>
+                  <td>API gateway throttling, login brute-force protection</td>
+                </tr>
+              </tbody>
+            </table>
+            <h5 class="text-warning">400 vs 422 — most asked interview question</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Aspect</th>
+                  <th>400 Bad Request</th>
+                  <th>422 Unprocessable Entity</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Request syntax</td>
+                  <td>Invalid — broken JSON, wrong data type in raw payload</td>
+                  <td>Valid JSON/XML — structure parses correctly</td>
+                </tr>
+                <tr>
+                  <td>Problem type</td>
+                  <td>Malformed request</td>
+                  <td>Semantic / business rule violation</td>
+                </tr>
+                <tr>
+                  <td>Example</td>
+                  <td><code>{ "age": "twenty" }</code> — age must be number</td>
+                  <td><code>{ "age": -5 }</code> — age must be positive</td>
+                </tr>
+                <tr>
+                  <td>Spring default</td>
+                  <td><code>HttpMessageNotReadableException</code></td>
+                  <td><code>MethodArgumentNotValidException</code> (often mapped to 400 or 422)</td>
+                </tr>
+                <tr>
+                  <td>Who uses 422</td>
+                  <td>Less common for validation</td>
+                  <td>Rails, Laravel, many REST APIs, OpenAPI specs</td>
+                </tr>
+              </tbody>
+            </table>
+            <pre><code class="language-java">// 400 — malformed JSON (Spring returns automatically)
+POST /api/users
+Content-Type: application/json
+{ "email": "not-closed-quote }
+
+// 422 — valid JSON but validation fails
+POST /api/users
+Content-Type: application/json
+{
+  "email": "invalid-email",
+  "age": -1,
+  "password": "12"
+}
+// Response: field-level errors for @Email, @Min, @Size</code></pre>
+            <h5 class="text-warning">401 vs 403</h5>
+            <pre><code class="language-java">401 Unauthorized  = "Who are you?"     → missing/invalid token
+403 Forbidden     = "I know you, but no" → valid token, insufficient permission
+
+// Example
+GET /api/reports/salary
+Authorization: Bearer &lt;valid-user-token&gt;   → 403 (user is not HR/ADMIN)
+
+GET /api/reports/salary
+(no Authorization header)                  → 401</code></pre>
+            <h5 class="text-warning">404 vs 410</h5>
+            <pre><code class="language-java">404 Not Found  → resource may never have existed OR ID wrong
+410 Gone       → resource existed but is permanently deleted
+
+// E-commerce: product was removed and will never come back
+GET /api/products/deleted-promo-2023  → 410 Gone</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Q1O - HTTP 422 and Spring Boot Implementation -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q1o">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c1o">
+            What is HTTP 422 Unprocessable Entity? How to implement in Spring Boot?
+          </button>
+        </h2>
+        <div id="c1o" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <code>422 Unprocessable Entity</code> (WebDAV RFC 4918, widely adopted in REST APIs) means: the server
+              understood the request format, but the content failed validation or business rules.
+            </p>
+            <p>
+              Use <strong>422</strong> when:
+            </p>
+            <ul>
+              <li>JSON/XML is syntactically correct</li>
+              <li>Bean Validation (<code>@NotNull</code>, <code>@Email</code>, <code>@Size</code>) fails</li>
+              <li>Business rules fail (e.g., order amount exceeds credit limit)</li>
+              <li>Domain constraints violated (duplicate SKU, invalid state transition)</li>
+            </ul>
+            <p>
+              Use <strong>400</strong> when the request itself is broken (malformed JSON, wrong Content-Type).
+            </p>
+            <h5 class="text-warning">DTO with validation annotations</h5>
+            <pre><code class="language-java">public class CreateUserRequest {
+
+    @NotBlank(message = "Name is required")
+    @Size(min = 2, max = 100, message = "Name must be 2-100 characters")
+    private String name;
+
+    @NotBlank(message = "Email is required")
+    @Email(message = "Email format is invalid")
+    private String email;
+
+    @NotNull(message = "Age is required")
+    @Min(value = 18, message = "User must be at least 18 years old")
+    private Integer age;
+
+    @Size(min = 8, message = "Password must be at least 8 characters")
+    private String password;
+}</code></pre>
+            <h5 class="text-warning">Controller</h5>
+            <pre><code class="language-java">@RestController
+@RequestMapping("/api/users")
+public class UserController {
+
+    @PostMapping
+    public ResponseEntity&lt;UserResponse&gt; createUser(
+            @Valid @RequestBody CreateUserRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(userService.create(request));
+    }
+}</code></pre>
+            <h5 class="text-warning">Global exception handler — return 422 with field errors</h5>
+            <pre><code class="language-java">@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    // 422 — validation failed on valid JSON
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity&lt;ErrorResponse&gt; handleValidation(
+            MethodArgumentNotValidException ex) {
+
+        Map&lt;String, String&gt; fieldErrors = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .collect(Collectors.toMap(
+                        FieldError::getField,
+                        FieldError::getDefaultMessage,
+                        (a, b) -&gt; a
+                ));
+
+        ErrorResponse body = new ErrorResponse(
+                "VALIDATION_FAILED",
+                "Request body is valid JSON but failed validation",
+                fieldErrors
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.UNPROCESSABLE_ENTITY)   // 422
+                .body(body);
+    }
+
+    // 400 — malformed JSON
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity&lt;ErrorResponse&gt; handleBadJson(
+            HttpMessageNotReadableException ex) {
+
+        ErrorResponse body = new ErrorResponse(
+                "BAD_REQUEST",
+                "Malformed JSON or invalid request body",
+                Map.of()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)            // 400
+                .body(body);
+    }
+
+    // 409 — duplicate resource
+    @ExceptionHandler(DuplicateEmailException.class)
+    public ResponseEntity&lt;ErrorResponse&gt; handleDuplicate(
+            DuplicateEmailException ex) {
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)               // 409
+                .body(new ErrorResponse("DUPLICATE_EMAIL", ex.getMessage(), Map.of()));
+    }
+}</code></pre>
+            <h5 class="text-warning">Sample 422 response body</h5>
+            <pre><code class="language-java">HTTP/1.1 422 Unprocessable Entity
+Content-Type: application/json
+
+{
+  "code": "VALIDATION_FAILED",
+  "message": "Request body is valid JSON but failed validation",
+  "errors": {
+    "email": "Email format is invalid",
+    "age": "User must be at least 18 years old",
+    "password": "Password must be at least 8 characters"
+  }
+}</code></pre>
+            <h5 class="text-warning">Other 4xx — Spring Boot quick examples</h5>
+            <pre><code class="language-java">// 401 — Spring Security handles automatically when unauthenticated
+
+// 403 — method security
+@PreAuthorize("hasRole('ADMIN')")
+@DeleteMapping("/{id}")
+public void deleteUser(@PathVariable Long id) { }
+
+// 404 — resource not found
+return repository.findById(id)
+    .orElseThrow(() -&gt; new UserNotFoundException(id));
+
+@ExceptionHandler(UserNotFoundException.class)
+public ResponseEntity&lt;ErrorResponse&gt; notFound(UserNotFoundException ex) {
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(...);  // 404
+}
+
+// 429 — rate limit
+@ExceptionHandler(TooManyRequestsException.class)
+public ResponseEntity&lt;ErrorResponse&gt; rateLimit() {
+    return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(...);  // 429
+}</code></pre>
+            <h5 class="text-warning">Decision flow for REST APIs</h5>
+            <pre><code class="language-java">Incoming Request
+      |
+      v
+Is JSON/body parseable? ----NO----&gt; 400 Bad Request
+      |
+     YES
+      v
+Is user authenticated? ----NO----&gt; 401 Unauthorized
+      |
+     YES
+      v
+Has permission? ----------NO----&gt; 403 Forbidden
+      |
+     YES
+      v
+Resource exists? ---------NO----&gt; 404 Not Found
+      |
+     YES
+      v
+Validation / business rules pass? --NO--&gt; 422 Unprocessable Entity
+      |
+     YES
+      v
+State conflict (duplicate)? --YES--&gt; 409 Conflict
+      |
+     NO
+      v
+200 / 201 Success</code></pre>
+            <p>
+              Real-time: Payment APIs return <code>422</code> when card details are well-formed but fail Luhn check or
+              expiry validation. E-commerce returns <code>409</code> when two users checkout the last item simultaneously.
+              API gateways return <code>429</code> when a client exceeds rate limits.
+            </p>
+            <p>
+              <strong>Best interview sentence:</strong> Use 400 for malformed requests, 401 for missing auth, 403 for
+              insufficient permissions, 404 for missing resources, 409 for state conflicts, and 422 when the payload is
+              syntactically valid but fails validation or business rules.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Q1P - Tricky HashMap mutable key -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q1p">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c1p">
+            🔥 Tricky: What happens if HashMap key is mutable and you change it after put()?
+          </button>
+        </h2>
+        <div id="c1p" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>Trap:</strong> If a key object's hash code changes after insertion, the entry becomes unreachable
+              in the bucket — <code>get()</code> returns <code>null</code> even though the entry still exists in memory.
+            </p>
+            <pre><code class="language-java">class MutableKey {
+    private int id;
+
+    MutableKey(int id) { this.id = id; }
+
+    void setId(int id) { this.id = id; }   // mutating field used in hashCode
+
+    @Override
+    public int hashCode() { return id; }
+
+    @Override
+    public boolean equals(Object o) {
+        return o instanceof MutableKey mk &amp;&amp; mk.id == this.id;
+    }
+}
+
+Map&lt;MutableKey, String&gt; map = new HashMap&lt;&gt;();
+MutableKey key = new MutableKey(1);
+map.put(key, "Order-100");
+
+System.out.println(map.get(key));        // Order-100
+
+key.setId(99);                           // hash bucket is now wrong!
+System.out.println(map.get(key));        // null  ← entry lost
+System.out.println(map.size());          // 1     ← ghost entry still inside</code></pre>
+            <p>
+              <strong>Why:</strong> HashMap stores entry in bucket <code>hash(key) % capacity</code>. After mutation,
+              hash changes but entry stays in old bucket. Lookup searches new bucket → miss.
+            </p>
+            <h5 class="text-warning">Senior dev rule</h5>
+            <ul>
+              <li>Keys must be immutable (<code>String</code>, <code>Integer</code>, record with final fields).</li>
+              <li>Never use mutable entity as key unless ID is set once and never changed.</li>
+              <li>Real-time bug: JPA entity with lazy-loaded fields changing hashCode after persist.</li>
+            </ul>
+            <pre><code class="language-java">// Safe pattern — use immutable ID as key
+Map&lt;Long, Order&gt; orders = new HashMap&lt;&gt;();
+orders.put(order.getId(), order);   // Long is immutable</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Q1Q - Tricky ConcurrentModificationException -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q1q">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c1q">
+            🔥 Tricky: When does ConcurrentModificationException happen? How to fix safely?
+          </button>
+        </h2>
+        <div id="c1q" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Thrown when a collection is structurally modified while being iterated (except via iterator's own
+              <code>remove()</code>).
+            </p>
+            <pre><code class="language-java">List&lt;String&gt; list = new ArrayList&lt;&gt;(List.of("A", "B", "C"));
+
+// FAIL — for-each uses Iterator internally
+for (String s : list) {
+    if (s.equals("B")) {
+        list.remove(s);   // ConcurrentModificationException
+    }
+}
+
+// FAIL — stream + external mutation
+list.stream()
+    .filter(s -&gt; s.equals("B"))
+    .forEach(s -&gt; list.remove(s));   // CME or unpredictable</code></pre>
+            <h5 class="text-warning">Safe fixes</h5>
+            <pre><code class="language-java">// 1. Iterator.remove()
+Iterator&lt;String&gt; it = list.iterator();
+while (it.hasNext()) {
+    if (it.next().equals("B")) {
+        it.remove();   // safe
+    }
+}
+
+// 2. removeIf (Java 8+)
+list.removeIf(s -&gt; s.equals("B"));
+
+// 3. Collect to new list (functional style)
+list = list.stream()
+        .filter(s -&gt; !s.equals("B"))
+        .collect(Collectors.toList());
+
+// 4. CopyOnWriteArrayList for heavy concurrent reads + rare writes
+List&lt;String&gt; cow = new CopyOnWriteArrayList&lt;&gt;(list);</code></pre>
+            <h5 class="text-warning">SubList trap (very common in interviews)</h5>
+            <pre><code class="language-java">List&lt;Integer&gt; nums = new ArrayList&lt;&gt;(List.of(1, 2, 3, 4, 5));
+List&lt;Integer&gt; sub = nums.subList(1, 4);   // [2, 3, 4]
+
+sub.clear();                               // modifies parent too!
+System.out.println(nums);                // [1, 5]
+
+nums.add(99);                              // structural change on parent
+sub.get(0);                              // ConcurrentModificationException</code></pre>
+            <p>
+              Real-time: Batch jobs that filter-and-remove from in-memory lists during ETL often hit CME. Use
+              <code>removeIf</code> or stream-to-new-collection instead.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Q1R - Tricky Arrays.asList vs List.of -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q1r">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c1r">
+            🔥 Tricky: Arrays.asList vs List.of vs new ArrayList — what's the catch?
+          </button>
+        </h2>
+        <div id="c1r" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>API</th>
+                  <th>Mutable?</th>
+                  <th>Null allowed?</th>
+                  <th>Backed by array?</th>
+                  <th>Trap</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>Arrays.asList(a, b)</code></td>
+                  <td>Fixed size — no add/remove</td>
+                  <td>Yes</td>
+                  <td>Yes — changes reflect in array</td>
+                  <td><code>list.add()</code> throws; set() mutates source array</td>
+                </tr>
+                <tr>
+                  <td><code>List.of(a, b)</code></td>
+                  <td>Immutable</td>
+                  <td>No — NPE if null element</td>
+                  <td>No</td>
+                  <td><code>set()</code> or <code>add()</code> throws</td>
+                </tr>
+                <tr>
+                  <td><code>new ArrayList&lt;&gt;()</code></td>
+                  <td>Fully mutable</td>
+                  <td>Yes</td>
+                  <td>No</td>
+                  <td>None — safe default for business logic</td>
+                </tr>
+              </tbody>
+            </table>
+            <pre><code class="language-java">String[] arr = {"A", "B"};
+List&lt;String&gt; list1 = Arrays.asList(arr);
+list1.set(0, "Z");
+System.out.println(arr[0]);              // Z — array changed!
+
+List&lt;String&gt; list2 = List.of("A", "B");
+list2.set(0, "Z");                       // UnsupportedOperationException
+
+List&lt;String&gt; list3 = new ArrayList&lt;&gt;(List.of("A", "B"));
+list3.add("C");                          // OK</code></pre>
+            <pre><code class="language-java">// Interview trap — varargs + Arrays.asList
+List&lt;Integer&gt; nums = Arrays.asList(1, 2, 3);
+nums.sort(Comparator.naturalOrder());    // OK — set is allowed
+
+nums.add(4);                             // UnsupportedOperationException</code></pre>
+            <p>
+              <strong>Best interview sentence:</strong> Use <code>List.of</code> for immutable constants,
+              <code>new ArrayList&lt;&gt;(List.of(...))</code> when you need to modify, and avoid
+              <code>Arrays.asList</code> unless you intentionally share backing array.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Q1S - Tricky TreeSet / Comparable -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q1s">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c1s">
+            🔥 Tricky: TreeSet duplicate removal — why are two "equal" objects both kept?
+          </button>
+        </h2>
+        <div id="c1s" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <code>TreeSet</code> uses <code>compareTo()</code> (or <code>Comparator</code>), <strong>not</strong>
+              <code>equals()</code>. If <code>compareTo</code> returns 0 but <code>equals</code> is false, both objects
+              can exist — breaking Set contract.
+            </p>
+            <pre><code class="language-java">class Employee {
+    int id;
+    String name;
+
+    Employee(int id, String name) {
+        this.id = id;
+        this.name = name;
+    }
+
+    @Override
+    public int compareTo(Employee other) {
+        return this.name.compareTo(other.name);   // sort by name only
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        return o instanceof Employee e &amp;&amp; e.id == this.id;
+    }
+
+    @Override
+    public int hashCode() { return id; }
+}
+
+Set&lt;Employee&gt; set = new TreeSet&lt;&gt;();
+set.add(new Employee(1, "Alice"));
+set.add(new Employee(2, "Alice"));   // same name, different id
+
+System.out.println(set.size());      // 1 — compareTo returns 0, second rejected
+
+// But with broken compareTo:
+class BrokenEmployee {
+    int id;
+    String name;
+    // compareTo NOT implemented, only equals/hashCode by id
+}
+
+Set&lt;BrokenEmployee&gt; tree = new TreeSet&lt;&gt;(
+    Comparator.comparing(e -&gt; e.name));   // only name
+
+tree.add(new BrokenEmployee(1, "Alice"));
+tree.add(new BrokenEmployee(2, "Alice"));
+System.out.println(tree.size());     // 1
+
+// HashSet uses equals/hashCode — different behavior:
+Set&lt;BrokenEmployee&gt; hash = new HashSet&lt;&gt;();
+hash.add(new BrokenEmployee(1, "Alice"));
+hash.add(new BrokenEmployee(2, "Alice"));
+System.out.println(hash.size());     // 2 — different ids</code></pre>
+            <h5 class="text-warning">Golden rule for Comparable</h5>
+            <pre><code class="language-java">// compareTo consistent with equals:
+// if compareTo(a,b)==0 then a.equals(b) should be true
+
+// TreeMap null key trap:
+TreeMap&lt;String, String&gt; map = new TreeMap&lt;&gt;();
+map.put(null, "x");   // NullPointerException — natural order cannot compare null</code></pre>
+            <p>
+              Real-time: Sorting DTOs in memory for reports — inconsistent <code>compareTo</code> vs
+              <code>equals</code> causes duplicate rows in TreeSet-based dedup logic.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Q1T - Tricky Stream lazy evaluation -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q1t">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c1t">
+            🔥 Tricky: What does this stream code print? (lazy evaluation trap)
+          </button>
+        </h2>
+        <div id="c1t" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <pre><code class="language-java">List&lt;String&gt; names = new ArrayList&lt;&gt;(List.of("Alice", "Bob", "Charlie"));
+
+System.out.println("--- Start ---");
+
+names.stream()
+    .peek(n -&gt; System.out.println("Peek: " + n))
+    .filter(n -&gt; {
+        System.out.println("Filter: " + n);
+        return n.startsWith("A");
+    })
+    .findFirst();
+
+System.out.println("--- End ---");</code></pre>
+            <p><strong>Output:</strong></p>
+            <pre><code class="language-java">--- Start ---
+Peek: Alice
+Filter: Alice
+--- End ---</code></pre>
+            <p>
+              <strong>Why:</strong> Streams are <strong>lazy</strong>. Intermediate ops run only when terminal op
+              needs next element. <code>findFirst()</code> stops after first match — Bob and Charlie never processed.
+            </p>
+            <h5 class="text-warning">More traps</h5>
+            <pre><code class="language-java">// Trap 1 — stream can be used only once
+Stream&lt;String&gt; stream = names.stream();
+stream.forEach(System.out::println);
+stream.count();   // IllegalStateException: stream already operated upon
+
+// Trap 2 — no terminal op = nothing runs
+names.stream()
+    .peek(System.out::println);   // prints NOTHING
+
+// Trap 3 — short-circuit skips rest
+names.stream()
+    .map(n -&gt; { System.out.println("Map: " + n); return n; })
+    .anyMatch(n -&gt; n.equals("Alice"));   // only Alice mapped if ordered</code></pre>
+            <p>
+              Real-time: Logging inside <code>map()</code> in a pipeline with <code>findFirst()</code> or
+              <code>limit()</code> gives incomplete logs — misleading during production debugging.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Q1U - Tricky Collectors.toMap -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q1u">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c1u">
+            🔥 Tricky: Collectors.toMap() — why IllegalStateException duplicate key?
+          </button>
+        </h2>
+        <div id="c1u" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <pre><code class="language-java">record Employee(int id, String dept, double salary) {}
+
+List&lt;Employee&gt; employees = List.of(
+    new Employee(1, "IT", 80000),
+    new Employee(2, "IT", 90000),
+    new Employee(3, "HR", 70000)
+);
+
+// BOOM — duplicate key "IT"
+Map&lt;String, Employee&gt; map = employees.stream()
+    .collect(Collectors.toMap(Employee::dept, e -&gt; e));
+// IllegalStateException: Duplicate key IT</code></pre>
+            <h5 class="text-warning">Fixes senior devs must know</h5>
+            <pre><code class="language-java">// 1. Merge function — keep higher salary
+Map&lt;String, Employee&gt; highestPaid = employees.stream()
+    .collect(Collectors.toMap(
+        Employee::dept,
+        e -&gt; e,
+        (e1, e2) -&gt; e1.salary() &gt;= e2.salary() ? e1 : e2
+    ));
+
+// 2. groupingBy — list per department
+Map&lt;String, List&lt;Employee&gt;&gt; byDept = employees.stream()
+    .collect(Collectors.groupingBy(Employee::dept));
+
+// 3. groupingBy with downstream — count
+Map&lt;String, Long&gt; count = employees.stream()
+    .collect(Collectors.groupingBy(Employee::dept, Collectors.counting()));</code></pre>
+            <h5 class="text-warning">groupingBy + null value NPE trap</h5>
+            <pre><code class="language-java">List&lt;Employee&gt; withNull = List.of(
+    new Employee(1, "IT", 80000),
+    new Employee(2, null, 60000)
+);
+
+// NPE — HashMap does not allow null values in groupingBy by default
+employees.stream()
+    .collect(Collectors.groupingBy(Employee::dept));   // fails if dept is null
+
+// Fix — use mapping with Optional or filter nulls first
+employees.stream()
+    .filter(e -&gt; e.dept() != null)
+    .collect(Collectors.groupingBy(Employee::dept));</code></pre>
+            <h5 class="text-warning">toMap vs groupingBy quick rule</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Need</th>
+                  <th>Use</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>One value per key</td>
+                  <td><code>toMap(key, val, mergeFn)</code></td>
+                </tr>
+                <tr>
+                  <td>Multiple values per key</td>
+                  <td><code>groupingBy</code></td>
+                </tr>
+                <tr>
+                  <td>Aggregate (sum, max, count)</td>
+                  <td><code>groupingBy(key, counting/summing/summarizing)</code></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Q1V - Tricky Optional -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q1v">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c1v">
+            🔥 Tricky: Optional.orElse vs orElseGet — which one hits performance trap?
+          </button>
+        </h2>
+        <div id="c1v" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <pre><code class="language-java">Optional&lt;User&gt; user = userRepository.findById(1L);   // empty
+
+// BAD — expensive default ALWAYS computed
+User result = user.orElse(buildDefaultUserFromDb());  // DB call even when present!
+
+// GOOD — supplier called only when empty
+User result = user.orElseGet(() -&gt; buildDefaultUserFromDb());</code></pre>
+            <pre><code class="language-java">// More Optional traps
+
+Optional&lt;String&gt; opt = Optional.ofNullable(getName());
+
+opt.get();                    // NoSuchElementException if empty — avoid in prod
+
+opt.orElse(null);             // OK but defeats purpose
+
+Optional.of(null);            // NPE immediately
+
+Optional.ofNullable(null);    // Optional.empty() — safe
+
+// Anti-pattern — Optional as field or method param everywhere
+public void save(Optional&lt;User&gt; user) { }   // prefer @Nullable or overloads</code></pre>
+            <h5 class="text-warning">flatMap chain for nested Optional</h5>
+            <pre><code class="language-java">// Nested: user -> address -> zipCode
+String zip = userRepository.findById(1L)
+    .flatMap(User::getAddress)
+    .flatMap(Address::getZipCode)
+    .orElse("000000");
+
+// Without flatMap — ugly
+Optional&lt;User&gt; u = userRepository.findById(1L);
+String zip2 = "000000";
+if (u.isPresent() &amp;&amp; u.get().getAddress().isPresent()) {
+    zip2 = u.get().getAddress().get().getZipCode().orElse("000000");
+}</code></pre>
+            <p>
+              Real-time: Service layer using <code>orElse(heavyQuery())</code> adds unnecessary DB load on every
+              cache hit path.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Q1W - Tricky Parallel Stream -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q1w">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c1w">
+            🔥 Tricky: Parallel stream on ArrayList — why wrong count or missing elements?
+          </button>
+        </h2>
+        <div id="c1w" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <pre><code class="language-java">// DANGEROUS — shared mutable state
+List&lt;Integer&gt; result = new ArrayList&lt;&gt;();
+IntStream.range(0, 1000)
+    .parallel()
+    .forEach(result::add);   // race condition — size &lt; 1000, corrupted data
+
+// SAFE — use collector
+List&lt;Integer&gt; safe = IntStream.range(0, 1000)
+    .parallel()
+    .boxed()
+    .collect(Collectors.toList());</code></pre>
+            <pre><code class="language-java">// DANGEROUS — non-thread-safe HashMap in parallel collect
+Map&lt;Integer, Long&gt; freq = new HashMap&lt;&gt;();
+list.parallelStream()
+    .forEach(i -&gt; freq.merge(i, 1L, Long::sum));   // corrupt map
+
+// SAFE
+Map&lt;Integer, Long&gt; safeFreq = list.parallelStream()
+    .collect(Collectors.groupingBy(i -&gt; i, Collectors.counting()));</code></pre>
+            <h5 class="text-warning">When parallel stream helps vs hurts</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Scenario</th>
+                  <th>Parallel?</th>
+                  <th>Reason</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Large list (100k+), CPU-heavy map/filter</td>
+                  <td>Maybe yes</td>
+                  <td>ForkJoinPool can utilize cores</td>
+                </tr>
+                <tr>
+                  <td>Small list (&lt; 10k)</td>
+                  <td>No</td>
+                  <td>Split/merge overhead &gt; benefit</td>
+                </tr>
+                <tr>
+                  <td>IO-bound (DB/HTTP inside stream)</td>
+                  <td>No</td>
+                  <td>Blocks common pool — starves other parallel streams</td>
+                </tr>
+                <tr>
+                  <td>Ordered terminal (forEachOrdered)</td>
+                  <td>Caution</td>
+                  <td>May lose parallel benefit</td>
+                </tr>
+                <tr>
+                  <td>LinkedList / slow spliterator</td>
+                  <td>No</td>
+                  <td>ArrayList/IntStream split better</td>
+                </tr>
+              </tbody>
+            </table>
+            <pre><code class="language-java">// Common ForkJoinPool — parallelStream shares one pool
+ForkJoinPool.commonPool().getParallelism();   // usually CPU cores - 1
+
+// Custom pool for isolation (advanced)
+ForkJoinPool customPool = new ForkJoinPool(4);
+try {
+    customPool.submit(() -&gt;
+        list.parallelStream().map(this::heavyCpuWork).collect(Collectors.toList())
+    ).get();
+} finally {
+    customPool.shutdown();
+}</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Q1X - Tricky Map computeIfAbsent -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q1x">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c1x">
+            🔥 Tricky: ConcurrentHashMap computeIfAbsent — recursive update deadlock?
+          </button>
+        </h2>
+        <div id="c1x" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <pre><code class="language-java">Map&lt;String, String&gt; map = new ConcurrentHashMap&lt;&gt;();
+
+map.computeIfAbsent("A", key -&gt; {
+    map.computeIfAbsent("B", k -&gt; "valueB");   // DEADLOCK in CHM (Java 8)
+    return "valueA";
+});</code></pre>
+            <p>
+              In Java 8, <code>ConcurrentHashMap</code> locks the bucket during <code>computeIfAbsent</code>. Nested
+              compute on same map → deadlock. Fixed/improved in later JDKs but still risky pattern.
+            </p>
+            <h5 class="text-warning">putIfAbsent vs computeIfAbsent</h5>
+            <pre><code class="language-java">// putIfAbsent — only puts if key missing, returns existing
+map.putIfAbsent("key", expensiveObject);   // may still create object twice in race
+
+// computeIfAbsent — atomic, but mapping function must be fast and side-effect free
+map.computeIfAbsent("key", k -&gt; loadFromDb(k));   // DB call — keep short
+
+// Anti-pattern — long IO inside compute
+cache.computeIfAbsent(id, k -&gt; {
+    return restTemplate.getForObject("/users/" + k, User.class);  // blocks bucket
+});</code></pre>
+            <h5 class="text-warning">groupingBy concurrent collector</h5>
+            <pre><code class="language-java">// Thread-safe grouping in parallel stream
+Map&lt;String, List&lt;Employee&gt;&gt; map = employees.parallelStream()
+    .collect(Collectors.groupingByConcurrent(Employee::dept));
+// Uses ConcurrentHashMap internally — safe for parallel</code></pre>
+            <p>
+              Real-time: In-memory caches using <code>computeIfAbsent</code> for lazy load must avoid calling back
+              into same map or doing slow network I/O while holding internal locks.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Q1Y - Tricky Stream flatMap grouping -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q1y">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c1y">
+            🔥 Tricky: flatMap vs map — orders with line items (senior stream puzzle)
+          </button>
+        </h2>
+        <div id="c1y" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Classic senior question: total revenue per product across all orders.
+            </p>
+            <pre><code class="language-java">record LineItem(String product, int qty, double price) {}
+record Order(String id, List&lt;LineItem&gt; items) {}
+
+List&lt;Order&gt; orders = List.of(
+    new Order("O1", List.of(
+        new LineItem("Laptop", 1, 50000),
+        new LineItem("Mouse", 2, 500)
+    )),
+    new Order("O2", List.of(
+        new LineItem("Laptop", 2, 48000),
+        new LineItem("Keyboard", 1, 1500)
+    ))
+);
+
+// Total qty sold per product
+Map&lt;String, Integer&gt; qtyByProduct = orders.stream()
+    .flatMap(order -&gt; order.items().stream())   // Order -> Stream&lt;LineItem&gt;
+    .collect(Collectors.groupingBy(
+        LineItem::product,
+        Collectors.summingInt(LineItem::qty)
+    ));
+// {Laptop=3, Mouse=2, Keyboard=1}
+
+// Total revenue per product
+Map&lt;String, Double&gt; revenue = orders.stream()
+    .flatMap(order -&gt; order.items().stream())
+    .collect(Collectors.groupingBy(
+        LineItem::product,
+        Collectors.summingDouble(item -&gt; item.qty() * item.price())
+    ));</code></pre>
+            <h5 class="text-warning">map vs flatMap</h5>
+            <pre><code class="language-java">orders.stream()
+    .map(order -&gt; order.items())      // Stream&lt;List&lt;LineItem&gt;&gt; — nested!
+
+orders.stream()
+    .flatMap(order -&gt; order.items().stream())  // Stream&lt;LineItem&gt; — flat</code></pre>
+            <h5 class="text-warning">Tricky — find top product by revenue</h5>
+            <pre><code class="language-java">String topProduct = orders.stream()
+    .flatMap(o -&gt; o.items().stream())
+    .collect(Collectors.groupingBy(
+        LineItem::product,
+        Collectors.summingDouble(i -&gt; i.qty() * i.price())
+    ))
+    .entrySet().stream()
+    .max(Map.Entry.comparingByValue())
+    .map(Map.Entry::getKey)
+    .orElse("NONE");   // Laptop</code></pre>
+            <p>
+              Real-time: E-commerce dashboards flatten order → line items exactly this way for analytics without nested loops.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Q1Z - Tricky equals hashCode contract -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q1z">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c1z">
+            🔥 Tricky: Break equals/hashCode contract — what goes wrong in HashSet and HashMap?
+          </button>
+        </h2>
+        <div id="c1z" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <pre><code class="language-java">// Broken — equals overridden, hashCode NOT
+class BadUser {
+    Long id;
+    String email;
+
+    @Override
+    public boolean equals(Object o) {
+        return o instanceof BadUser u &amp;&amp; Objects.equals(id, u.id);
+    }
+    // hashCode missing — Object.hashCode (identity based)
+}
+
+Set&lt;BadUser&gt; set = new HashSet&lt;&gt;();
+BadUser u1 = new BadUser(); u1.id = 1L;
+BadUser u2 = new BadUser(); u2.id = 1L;
+
+set.add(u1);
+set.add(u2);
+System.out.println(set.size());        // 2 — should be 1! duplicates allowed
+
+Map&lt;BadUser, String&gt; map = new HashMap&lt;&gt;();
+map.put(u1, "A");
+System.out.println(map.get(u2));       // null — equals says same, hashCode says different bucket</code></pre>
+            <h5 class="text-warning">Contract rules</h5>
+            <ul>
+              <li>If <code>a.equals(b)</code> then <code>a.hashCode() == b.hashCode()</code></li>
+              <li>Consistent: same object → same hashCode unless fields used in hash change</li>
+              <li>Use <code>Objects.hash(id, email)</code> or Lombok <code>@EqualsAndHashCode</code></li>
+            </ul>
+            <pre><code class="language-java">// Lombok record — auto correct equals/hashCode
+record User(Long id, String email) {}
+
+// JPA entity trap — lazy collections in equals/hashCode cause bugs
+// Never use @Data on entity with lazy fields — use id-only equals</code></pre>
+            <h5 class="text-warning">IdentityHashMap — uses == not equals</h5>
+            <pre><code class="language-java">Map&lt;String, String&gt; identity = new IdentityHashMap&lt;&gt;();
+String a = new String("Java");
+String b = new String("Java");
+
+Map&lt;String, String&gt; hash = new HashMap&lt;&gt;();
+hash.put(a, "1");
+hash.put(b, "2");
+System.out.println(hash.size());       // 1 — equal strings
+
+IdentityHashMap&lt;String, String&gt; idMap = new IdentityHashMap&lt;&gt;();
+idMap.put(a, "1");
+idMap.put(b, "2");
+System.out.println(idMap.size());      // 2 — different object identity</code></pre>
+            <p>
+              Real-time: Deduplicating webhook events by DTO without proper <code>hashCode</code> causes duplicate
+              processing in HashSet-based idempotency checks.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Q1AA - Tricky primitive streams -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q1aa">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c1aa">
+            🔥 Tricky: sum of List&lt;Integer&gt; — boxing, null, and overflow traps
+          </button>
+        </h2>
+        <div id="c1aa" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <pre><code class="language-java">List&lt;Integer&gt; nums = Arrays.asList(1, 2, null, 4);
+
+// NPE — unboxing null Integer
+int sum = nums.stream()
+    .mapToInt(i -&gt; i)          // null -> NPE
+    .sum();
+
+// Safe — filter nulls
+int safeSum = nums.stream()
+    .filter(Objects::nonNull)
+    .mapToInt(Integer::intValue)
+    .sum();
+
+// reduce with identity — trap when identity wrong
+int product = List.of(0, 1, 2, 3).stream()
+    .reduce(1, (a, b) -&gt; a * b);   // 0 — multiply identity 1 OK
+// but sum with identity 1 is wrong: use 0</code></pre>
+            <h5 class="text-warning">Overflow trap</h5>
+            <pre><code class="language-java">List&lt;Integer&gt; big = List.of(Integer.MAX_VALUE, 1);
+
+int wrong = big.stream().mapToInt(i -&gt; i).sum();   // overflow -> Integer.MIN_VALUE
+
+long correct = big.stream()
+    .mapToLong(Integer::longValue)
+    .sum();   // 2147483648</code></pre>
+            <h5 class="text-warning">Collectors.summingInt vs mapToInt().sum()</h5>
+            <pre><code class="language-java">// groupingBy + summingInt — null-safe if filtered
+Map&lt;String, Integer&gt; totalQty = orders.stream()
+    .collect(Collectors.groupingBy(
+        Order::dept,
+        Collectors.summingInt(Order::qty)
+    ));</code></pre>
+            <p>
+              Real-time: Billing systems summing line amounts must use <code>long</code> or <code>BigDecimal</code>,
+              not chained <code>int</code> streams, to avoid overflow on large invoices.
+            </p>
+          </div>
+        </div>
+      </div>
+
       <!-- Q1 -->
       <div class="accordion-item">
         <h2 class="accordion-header" id="q1">
