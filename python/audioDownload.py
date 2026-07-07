@@ -10,7 +10,7 @@ download_dir = "./general/folkAndBanjaraSongs"
 
 # Create directory if it doesn't exist
 os.makedirs(download_dir, exist_ok=True)
-video_ids = ["vfwJTEgj4co"]
+video_ids = ["W0DM5lcj6mw,0GVExpdmoDs,JGwWNGJdvx8,D-YDEyuDxWU,JgDNFQ2RaLQ,cNGjD0VG4R8,3Kxf2dHlDpQ,byxFUKxhT3s,AX6OrbgS8lI,HrnrqYxYrbk"]
 
 # Fetch video IDs
 # print("Fetching video list from playlist...")

@@ -12,6 +12,15 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-groovy.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-docker.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markup.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-properties.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
   <style>
     /* body {
       background-color: #121212;
@@ -1565,6 +1574,1066 @@ public @interface Good {
         </div>
       </div>
 
+      <!-- Migration, Scaling, DevOps, File Handling and Process Questions -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="qMigrationIssues">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#cMigrationIssues">
+            While migrating an application, what issues did you face?
+          </button>
+        </h2>
+        <div id="cMigrationIssues" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              In real projects, migration is rarely only code movement. It usually includes framework upgrades,
+              infrastructure changes, database changes, security changes, CI/CD changes, and production traffic cutover.
+            </p>
+            <h5 class="text-warning">Common migration issues</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Area</th>
+                  <th>Issue faced</th>
+                  <th>How to handle</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Java/Spring upgrade</td>
+                  <td>Deprecated APIs, dependency conflicts, javax to jakarta migration</td>
+                  <td>Upgrade in small steps, run regression tests, fix imports and library versions</td>
+                </tr>
+                <tr>
+                  <td>Database</td>
+                  <td>Schema mismatch, slow migration scripts, data inconsistency</td>
+                  <td>Use Flyway/Liquibase, dry-run scripts, backups, rollback scripts</td>
+                </tr>
+                <tr>
+                  <td>Configuration</td>
+                  <td>Wrong environment variables, missing secrets, profile mismatch</td>
+                  <td>Externalize config and validate startup properties</td>
+                </tr>
+                <tr>
+                  <td>Performance</td>
+                  <td>New version has different memory, connection pool, or query behavior</td>
+                  <td>Load test before go-live, tune JVM, HikariCP, indexes, cache</td>
+                </tr>
+                <tr>
+                  <td>Security</td>
+                  <td>Old auth filters break, CORS/CSRF behavior changes</td>
+                  <td>Test login, token refresh, role checks, API gateway rules</td>
+                </tr>
+                <tr>
+                  <td>Deployment</td>
+                  <td>Docker image works locally but fails in Kubernetes</td>
+                  <td>Check env vars, health probes, config maps, secrets, resource limits</td>
+                </tr>
+                <tr>
+                  <td>Production cutover</td>
+                  <td>Downtime, DNS/cache delay, partial traffic issues</td>
+                  <td>Use blue-green/canary deployment and rollback plan</td>
+                </tr>
+              </tbody>
+            </table>
+            <h5 class="text-warning">Example interview answer</h5>
+            <p>
+              In one migration, we moved a Spring Boot service to a newer Java/Spring version and containerized it. The
+              main issues were dependency conflicts, changed security configuration, database script ordering, and memory
+              tuning in Docker. We handled it by creating a migration checklist, running automated tests, doing data
+              backup, using canary deployment, monitoring logs/metrics, and keeping rollback images ready.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="qScalingApplication">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#cScalingApplication">
+            How do we scale an application? Explain web replication, app scaling, DB scaling, algorithms, horizontal and vertical scaling, and load balancer
+          </button>
+        </h2>
+        <div id="cScalingApplication" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Scaling means increasing the system capacity so it can handle more users, requests, data, or background
+              jobs without breaking SLA.
+            </p>
+            <h5 class="text-warning">Horizontal vs vertical scaling</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Meaning</th>
+                  <th>Example</th>
+                  <th>Best for</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Vertical scaling</td>
+                  <td>Increase CPU/RAM of the same machine or pod</td>
+                  <td>2 CPU/4 GB to 8 CPU/16 GB</td>
+                  <td>Database, memory-heavy jobs, quick capacity increase</td>
+                </tr>
+                <tr>
+                  <td>Horizontal scaling</td>
+                  <td>Add more instances/pods/nodes</td>
+                  <td>Run 2 app pods to 10 app pods</td>
+                  <td>Stateless APIs, web apps, workers, microservices</td>
+                </tr>
+              </tbody>
+            </table>
+            <h5 class="text-warning">What can be scaled?</h5>
+            <ul>
+              <li><strong>Web layer:</strong> replicate UI/static web servers behind CDN or load balancer.</li>
+              <li><strong>Application layer:</strong> run multiple stateless Spring Boot replicas behind load balancer.</li>
+              <li><strong>Database read layer:</strong> add read replicas for SELECT-heavy traffic.</li>
+              <li><strong>Database write layer:</strong> shard/partition data, optimize indexes, batch writes.</li>
+              <li><strong>Cache layer:</strong> Redis cluster, local cache, CDN cache.</li>
+              <li><strong>Queue/worker layer:</strong> scale consumers based on queue depth.</li>
+              <li><strong>Infrastructure layer:</strong> add Kubernetes worker nodes through cluster autoscaler.</li>
+            </ul>
+            <h5 class="text-warning">Load balancer algorithms</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Algorithm</th>
+                  <th>How it works</th>
+                  <th>Use case</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Round robin</td>
+                  <td>Sends requests one by one to each server</td>
+                  <td>Similar app instances with similar capacity</td>
+                </tr>
+                <tr>
+                  <td>Least connections</td>
+                  <td>Sends request to server with fewest active connections</td>
+                  <td>Long-running requests or uneven request duration</td>
+                </tr>
+                <tr>
+                  <td>Weighted round robin</td>
+                  <td>More traffic to powerful servers</td>
+                  <td>Mixed capacity servers</td>
+                </tr>
+                <tr>
+                  <td>IP hash</td>
+                  <td>Same client IP goes to same backend</td>
+                  <td>Sticky session requirement</td>
+                </tr>
+                <tr>
+                  <td>Latency based</td>
+                  <td>Routes to fastest/nearest healthy backend</td>
+                  <td>Multi-region systems</td>
+                </tr>
+              </tbody>
+            </table>
+            <h5 class="text-warning">Important rule</h5>
+            <p>
+              For application horizontal scaling, keep the service stateless. Store session in Redis/JWT/database, store
+              files in object storage like S3, and never depend on local container memory or disk for shared state.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="qKubernetesNodesClustersPods">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#cKubernetesNodesClustersPods">
+            What are nodes, clusters, and pods in Kubernetes?
+          </button>
+        </h2>
+        <div id="cKubernetesNodesClustersPods" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Kubernetes is used to run containers at scale. The most common building blocks are cluster, node, pod,
+              deployment, service, and ingress.
+            </p>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Term</th>
+                  <th>Meaning</th>
+                  <th>Example</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Cluster</td>
+                  <td>Group of machines managed by Kubernetes</td>
+                  <td>Production EKS/AKS/GKE cluster</td>
+                </tr>
+                <tr>
+                  <td>Node</td>
+                  <td>Worker machine where containers run</td>
+                  <td>EC2 VM with CPU/RAM</td>
+                </tr>
+                <tr>
+                  <td>Pod</td>
+                  <td>Smallest deployable unit; wraps one or more containers</td>
+                  <td>One Spring Boot container inside one pod</td>
+                </tr>
+                <tr>
+                  <td>Deployment</td>
+                  <td>Manages desired number of pod replicas and rollout</td>
+                  <td>Keep 3 app pods running</td>
+                </tr>
+                <tr>
+                  <td>Service</td>
+                  <td>Stable internal network endpoint for pods</td>
+                  <td><code>user-service:8080</code></td>
+                </tr>
+                <tr>
+                  <td>Ingress</td>
+                  <td>External HTTP routing into services</td>
+                  <td><code>api.company.com/users</code></td>
+                </tr>
+              </tbody>
+            </table>
+            <pre><code class="language-bash">Cluster
+  Node 1
+    Pod: app-1
+    Pod: app-2
+  Node 2
+    Pod: app-3
+    Pod: worker-1</code></pre>
+            <p>
+              Interview one-liner: A cluster is the full Kubernetes environment, nodes are machines inside it, and pods
+              are the smallest units where our containers actually run.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="qAutoScale">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#cAutoScale">
+            What is autoscaling and in which cases do we autoscale?
+          </button>
+        </h2>
+        <div id="cAutoScale" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Autoscaling automatically increases or decreases resources based on load. In Kubernetes, the common
+              mechanisms are HPA, VPA, and Cluster Autoscaler.
+            </p>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Autoscaler</th>
+                  <th>Scales what?</th>
+                  <th>Trigger examples</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>HPA - Horizontal Pod Autoscaler</td>
+                  <td>Number of pods</td>
+                  <td>CPU, memory, RPS, queue length, custom metrics</td>
+                </tr>
+                <tr>
+                  <td>VPA - Vertical Pod Autoscaler</td>
+                  <td>CPU/memory requests of pods</td>
+                  <td>Pod consistently needs more/less memory or CPU</td>
+                </tr>
+                <tr>
+                  <td>Cluster Autoscaler</td>
+                  <td>Number of worker nodes</td>
+                  <td>Pods are pending because cluster has no capacity</td>
+                </tr>
+              </tbody>
+            </table>
+            <h5 class="text-warning">HPA example</h5>
+            <pre><code class="language-yaml">apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: user-service-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: user-service
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70</code></pre>
+            <h5 class="text-warning">When to autoscale</h5>
+            <ul>
+              <li>Traffic changes by time, campaign, sale, or seasonal load.</li>
+              <li>Queue processing needs more consumers when backlog increases.</li>
+              <li>CPU or memory crosses a defined threshold for a sustained time.</li>
+              <li>Pods are stateless and can safely run in multiple replicas.</li>
+            </ul>
+            <h5 class="text-warning">When to be careful</h5>
+            <ul>
+              <li>Do not blindly autoscale database writers; first optimize queries, indexes, pooling, and locking.</li>
+              <li>Use cooldown/stabilization windows to avoid scaling up/down continuously.</li>
+              <li>Set proper resource requests and limits; HPA decisions depend on them.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="qFileUploadDownload">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#cFileUploadDownload">
+            File stream upload/download business logic: multipart, resumable upload, chunks, approaches, Spring Boot examples, default size and how to increase
+          </button>
+        </h2>
+        <div id="cFileUploadDownload" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              File handling can be done as simple multipart upload, streaming upload/download, chunk upload, or direct
+              object-storage upload using pre-signed URLs.
+            </p>
+            <h5 class="text-warning">What is multipart?</h5>
+            <p>
+              <code>multipart/form-data</code> is an HTTP request format where text fields and files are sent as separate
+              parts in one request. In Spring Boot, a file part is commonly received as <code>MultipartFile</code>.
+            </p>
+            <h5 class="text-warning">Default Spring Boot upload size</h5>
+            <p>
+              Spring Boot's default multipart limits are commonly <code>1MB</code> per file and <code>10MB</code> per
+              request. Increase them in configuration when your use case needs larger files.
+            </p>
+            <pre><code class="language-properties">spring.servlet.multipart.max-file-size=100MB
+spring.servlet.multipart.max-request-size=100MB
+spring.servlet.multipart.file-size-threshold=2MB</code></pre>
+            <h5 class="text-warning">Approach 1 - Simple multipart upload</h5>
+            <pre><code class="language-java">@RestController
+@RequestMapping("/files")
+public class FileController {
+
+    private final Path root = Paths.get("uploads");
+
+    @PostMapping("/upload")
+    public ResponseEntity&lt;String&gt; upload(@RequestParam("file") MultipartFile file) throws IOException {
+        if (file.isEmpty()) {
+            return ResponseEntity.badRequest().body("File is empty");
+        }
+
+        Files.createDirectories(root);
+        String safeName = Paths.get(file.getOriginalFilename()).getFileName().toString();
+        Path target = root.resolve(UUID.randomUUID() + "-" + safeName);
+
+        try (InputStream inputStream = file.getInputStream()) {
+            Files.copy(inputStream, target, StandardCopyOption.REPLACE_EXISTING);
+        }
+
+        return ResponseEntity.ok("Uploaded: " + target.getFileName());
+    }
+}</code></pre>
+            <h5 class="text-warning">Approach 2 - Stream download</h5>
+            <pre><code class="language-java">@GetMapping("/download/{fileName}")
+public ResponseEntity&lt;StreamingResponseBody&gt; download(@PathVariable String fileName) throws IOException {
+    Path file = Paths.get("uploads").resolve(fileName).normalize();
+    if (!Files.exists(file)) {
+        return ResponseEntity.notFound().build();
+    }
+
+    StreamingResponseBody body = outputStream -&gt; {
+        try (InputStream inputStream = Files.newInputStream(file)) {
+            inputStream.transferTo(outputStream);
+        }
+    };
+
+    return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getFileName() + "\"")
+            .contentType(MediaType.APPLICATION_OCTET_STREAM)
+            .body(body);
+}</code></pre>
+            <h5 class="text-warning">Approach 3 - Chunk upload business logic</h5>
+            <p>
+              Chunk upload means the client splits a large file into smaller parts and sends each part with metadata like
+              upload id, chunk number, total chunks, and file name. The server stores chunks temporarily and merges them
+              after all parts arrive.
+            </p>
+            <pre><code class="language-java">@PostMapping("/upload-chunk")
+public ResponseEntity&lt;String&gt; uploadChunk(
+        @RequestParam String uploadId,
+        @RequestParam int chunkNumber,
+        @RequestParam int totalChunks,
+        @RequestParam String fileName,
+        @RequestParam("chunk") MultipartFile chunk) throws IOException {
+
+    Path tempDir = Paths.get("uploads", "tmp", uploadId);
+    Files.createDirectories(tempDir);
+
+    Path chunkPath = tempDir.resolve(String.valueOf(chunkNumber));
+    try (InputStream in = chunk.getInputStream()) {
+        Files.copy(in, chunkPath, StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    long uploadedChunks = Files.list(tempDir).count();
+    if (uploadedChunks == totalChunks) {
+        Path finalFile = Paths.get("uploads").resolve(fileName).normalize();
+        try (OutputStream out = Files.newOutputStream(finalFile, StandardOpenOption.CREATE,
+                StandardOpenOption.TRUNCATE_EXISTING)) {
+            for (int i = 1; i &lt;= totalChunks; i++) {
+                Files.copy(tempDir.resolve(String.valueOf(i)), out);
+            }
+        }
+        return ResponseEntity.ok("Upload completed: " + finalFile.getFileName());
+    }
+
+    return ResponseEntity.ok("Chunk " + chunkNumber + " uploaded");
+}</code></pre>
+            <h5 class="text-warning">What is resumable upload?</h5>
+            <p>
+              Resumable upload allows retrying only missing chunks instead of uploading the full file again. Store
+              metadata in DB/Redis: <code>uploadId</code>, file name, total chunks, uploaded chunk numbers, checksum,
+              status, and expiry time.
+            </p>
+            <pre><code class="language-java">@GetMapping("/upload-status/{uploadId}")
+public ResponseEntity&lt;Set&lt;Integer&gt;&gt; uploadedChunks(@PathVariable String uploadId) {
+    Set&lt;Integer&gt; chunks = uploadSessionService.findUploadedChunkNumbers(uploadId);
+    return ResponseEntity.ok(chunks);
+}</code></pre>
+            <h5 class="text-warning">Different approaches</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Approach</th>
+                  <th>Use when</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Multipart upload to app server</td>
+                  <td>Small/medium files and simple business validation</td>
+                </tr>
+                <tr>
+                  <td>Streaming</td>
+                  <td>Large downloads/uploads where memory usage must stay low</td>
+                </tr>
+                <tr>
+                  <td>Chunk upload</td>
+                  <td>Large files, flaky networks, resumable behavior</td>
+                </tr>
+                <tr>
+                  <td>Pre-signed URL to S3/Azure Blob/GCS</td>
+                  <td>Very large files; avoid routing bytes through app server</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="qNoSqlVsRdbms">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#cNoSqlVsRdbms">
+            NoSQL vs RDBMS and when to choose which
+          </button>
+        </h2>
+        <div id="cNoSqlVsRdbms" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Point</th>
+                  <th>RDBMS</th>
+                  <th>NoSQL</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Data model</td>
+                  <td>Tables, rows, joins</td>
+                  <td>Document, key-value, column, graph</td>
+                </tr>
+                <tr>
+                  <td>Schema</td>
+                  <td>Fixed schema</td>
+                  <td>Flexible schema</td>
+                </tr>
+                <tr>
+                  <td>Transaction</td>
+                  <td>Strong ACID support</td>
+                  <td>Varies by database; often optimized for scale/flexibility</td>
+                </tr>
+                <tr>
+                  <td>Query style</td>
+                  <td>SQL, joins, relational queries</td>
+                  <td>Access-pattern based queries</td>
+                </tr>
+                <tr>
+                  <td>Examples</td>
+                  <td>MySQL, PostgreSQL, Oracle</td>
+                  <td>MongoDB, Cassandra, DynamoDB, Redis, Neo4j</td>
+                </tr>
+              </tbody>
+            </table>
+            <h5 class="text-warning">Choose RDBMS when</h5>
+            <ul>
+              <li>You need strong transactions, joins, constraints, reporting, and relational integrity.</li>
+              <li>Examples: banking, order management, payments, inventory, ERP.</li>
+            </ul>
+            <h5 class="text-warning">Choose NoSQL when</h5>
+            <ul>
+              <li>You need flexible schema, very high read/write scale, low latency, or document-style data.</li>
+              <li>Examples: product catalog, user preferences, logs, events, session store, IoT data.</li>
+            </ul>
+            <p>
+              Interview one-liner: I choose RDBMS for relational consistency and transactions; I choose NoSQL when access
+              patterns, scale, flexibility, or low latency matter more than complex joins.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="qVulnerabilityManagement">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#cVulnerabilityManagement">
+            What is vulnerability management and how do we fix vulnerabilities?
+          </button>
+        </h2>
+        <div id="cVulnerabilityManagement" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Vulnerability management is the process of continuously finding, prioritizing, fixing, and verifying
+              security weaknesses in code, dependencies, containers, infrastructure, and runtime configuration.
+            </p>
+            <h5 class="text-warning">Typical flow</h5>
+            <pre><code class="language-bash">Scan -> Triage -> Prioritize -> Fix -> Test -> Deploy -> Rescan -> Monitor</code></pre>
+            <h5 class="text-warning">Common tools</h5>
+            <ul>
+              <li>SCA/dependency scan: Snyk, OWASP Dependency-Check, Dependabot, GitHub Advanced Security.</li>
+              <li>SAST/code scan: SonarQube, Checkmarx, Fortify, Semgrep.</li>
+              <li>Container scan: Trivy, Grype, Docker Scout, ECR image scanning.</li>
+              <li>DAST/runtime scan: OWASP ZAP, Burp Suite.</li>
+            </ul>
+            <h5 class="text-warning">How to fix</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Vulnerability type</th>
+                  <th>Fix</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Dependency CVE</td>
+                  <td>Upgrade direct dependency or override vulnerable transitive dependency</td>
+                </tr>
+                <tr>
+                  <td>Container base image CVE</td>
+                  <td>Use patched base image, smaller runtime image, rebuild regularly</td>
+                </tr>
+                <tr>
+                  <td>SQL injection</td>
+                  <td>Use prepared statements/JPA parameters, never string-concatenate SQL</td>
+                </tr>
+                <tr>
+                  <td>XSS</td>
+                  <td>Escape output, sanitize input, use CSP headers</td>
+                </tr>
+                <tr>
+                  <td>Secret leakage</td>
+                  <td>Remove secret, rotate it, move to vault/secret manager</td>
+                </tr>
+                <tr>
+                  <td>Misconfiguration</td>
+                  <td>Disable debug endpoints, enforce TLS, least privilege IAM/RBAC</td>
+                </tr>
+              </tbody>
+            </table>
+            <pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;com.fasterxml.jackson.core&lt;/groupId&gt;
+    &lt;artifactId&gt;jackson-databind&lt;/artifactId&gt;
+    &lt;version&gt;2.17.2&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="qNexus">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#cNexus">
+            What is Nexus, why is it used, and give an example
+          </button>
+        </h2>
+        <div id="cNexus" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Nexus Repository Manager is an artifact repository. It stores build artifacts and proxies external
+              repositories like Maven Central, npm registry, Docker registry, and PyPI.
+            </p>
+            <h5 class="text-warning">Why use Nexus?</h5>
+            <ul>
+              <li>Store internal company libraries and application artifacts.</li>
+              <li>Cache Maven Central dependencies to make builds faster and more reliable.</li>
+              <li>Control which dependencies are allowed in enterprise builds.</li>
+              <li>Publish Docker images, npm packages, jar files, and release artifacts.</li>
+            </ul>
+            <h5 class="text-warning">Maven example</h5>
+            <pre><code class="language-xml">&lt;distributionManagement&gt;
+    &lt;repository&gt;
+        &lt;id&gt;nexus-releases&lt;/id&gt;
+        &lt;url&gt;http://nexus.company.com/repository/maven-releases/&lt;/url&gt;
+    &lt;/repository&gt;
+    &lt;snapshotRepository&gt;
+        &lt;id&gt;nexus-snapshots&lt;/id&gt;
+        &lt;url&gt;http://nexus.company.com/repository/maven-snapshots/&lt;/url&gt;
+    &lt;/snapshotRepository&gt;
+&lt;/distributionManagement&gt;</code></pre>
+            <pre><code class="language-bash"># Build and publish jar to Nexus
+mvn clean deploy</code></pre>
+            <h5 class="text-warning">Docker image flow</h5>
+            <pre><code class="language-bash">docker build -t nexus.company.com:5000/user-service:1.0 .
+docker login nexus.company.com:5000
+docker push nexus.company.com:5000/user-service:1.0</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="qAiProductivity">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#cAiProductivity">
+            How are you using AI to maximize your productivity?
+          </button>
+        </h2>
+        <div id="cAiProductivity" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              A good interview answer should show that you use AI as an engineering assistant, but you still own design,
+              correctness, security, testing, and production responsibility.
+            </p>
+            <ul>
+              <li>Understanding legacy code faster by asking for flow summaries and risk areas.</li>
+              <li>Generating first drafts of boilerplate code, unit tests, DTOs, mappings, and documentation.</li>
+              <li>Debugging errors by sharing stack traces and asking for likely root causes.</li>
+              <li>Improving SQL queries, API contracts, log messages, and code readability.</li>
+              <li>Writing test cases for edge cases that I may miss manually.</li>
+              <li>Creating Jenkins/Kubernetes/Docker templates faster and then reviewing them carefully.</li>
+            </ul>
+            <h5 class="text-warning">Important boundaries</h5>
+            <ul>
+              <li>I do not paste secrets, credentials, customer PII, or proprietary data into public AI tools.</li>
+              <li>I review every AI-generated code change before using it.</li>
+              <li>I run tests, static analysis, and security scans instead of trusting generated code blindly.</li>
+            </ul>
+            <p>
+              Interview one-liner: AI helps me reduce repetitive work and explore options faster, but I treat its output
+              like a junior developer's draft that must be reviewed, tested, and secured.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="qAgileMethodology">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#cAgileMethodology">
+            Explain Agile methodology
+          </button>
+        </h2>
+        <div id="cAgileMethodology" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Agile is an iterative delivery approach where teams deliver small increments frequently, get feedback, and
+              adapt. Scrum is one common Agile framework.
+            </p>
+            <h5 class="text-warning">Scrum events</h5>
+            <ul>
+              <li><strong>Sprint planning:</strong> decide sprint goal and stories.</li>
+              <li><strong>Daily standup:</strong> discuss progress, blockers, and plan for the day.</li>
+              <li><strong>Backlog refinement:</strong> clarify upcoming stories and acceptance criteria.</li>
+              <li><strong>Sprint review/demo:</strong> show completed work to stakeholders.</li>
+              <li><strong>Retrospective:</strong> discuss what went well and what to improve.</li>
+            </ul>
+            <h5 class="text-warning">Common terms</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Term</th>
+                  <th>Meaning</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>User story</td>
+                  <td>Requirement written from user's perspective</td>
+                </tr>
+                <tr>
+                  <td>Acceptance criteria</td>
+                  <td>Conditions that define when story is complete</td>
+                </tr>
+                <tr>
+                  <td>Story points</td>
+                  <td>Relative estimation of complexity and effort</td>
+                </tr>
+                <tr>
+                  <td>Definition of Done</td>
+                  <td>Code complete, reviewed, tested, documented, deployable</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="qPeerReview">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#cPeerReview">
+            What is peer-to-peer review and how do we follow it?
+          </button>
+        </h2>
+        <div id="cPeerReview" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Peer review means another developer reviews your code before it is merged. The goal is to catch bugs,
+              improve maintainability, share knowledge, and maintain team standards.
+            </p>
+            <h5 class="text-warning">Typical review process</h5>
+            <ul>
+              <li>Developer creates feature branch and commits changes.</li>
+              <li>Developer opens pull request with description, screenshots/logs if needed, and test evidence.</li>
+              <li>CI runs build, unit tests, static analysis, and security scans.</li>
+              <li>One or two peers review correctness, edge cases, readability, performance, and security.</li>
+              <li>Developer fixes comments and gets approval.</li>
+              <li>Code is merged using squash/merge/rebase based on team policy.</li>
+            </ul>
+            <h5 class="text-warning">Reviewer checklist</h5>
+            <ul>
+              <li>Does it meet acceptance criteria?</li>
+              <li>Are there missing validations, null checks, or error handling?</li>
+              <li>Are tests added for important flows and edge cases?</li>
+              <li>Are logs meaningful without exposing secrets?</li>
+              <li>Does it follow existing project patterns?</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="qLetGlobal">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#cLetGlobal">
+            Can't we assign a global variable using let in JavaScript?
+          </button>
+        </h2>
+        <div id="cLetGlobal" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Yes, you can create a global variable using <code>let</code> if it is declared at the top level of a script.
+              But unlike <code>var</code>, top-level <code>let</code> does not become a property of the
+              <code>window</code> object in browsers.
+            </p>
+            <pre><code class="language-javascript">var a = 10;
+let b = 20;
+
+console.log(window.a); // 10
+console.log(window.b); // undefined
+console.log(b);        // 20</code></pre>
+            <h5 class="text-warning">In modules</h5>
+            <p>
+              In ES modules and most React files, top-level variables are module-scoped, not true browser globals.
+            </p>
+            <pre><code class="language-javascript">// userStore.js
+let currentUser = null;
+
+export function setCurrentUser(user) {
+    currentUser = user;
+}
+
+export function getCurrentUser() {
+    return currentUser;
+}</code></pre>
+            <p>
+              Interview one-liner: <code>let</code> can be global in a normal script, but it does not attach to
+              <code>window</code>; in modules/React it is module-scoped.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="qJsClassInterface">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#cJsClassInterface">
+            For objects, will you use class or interface in JavaScript or React?
+          </button>
+        </h2>
+        <div id="cJsClassInterface" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Plain JavaScript does not have interfaces. TypeScript has <code>interface</code> and <code>type</code>.
+              React applications commonly use TypeScript interfaces/types for props, API objects, and state shape.
+            </p>
+            <h5 class="text-warning">Use interface/type for data shape</h5>
+            <pre><code class="language-typescript">interface User {
+    id: number;
+    name: string;
+    email: string;
+}
+
+function UserCard({ user }: { user: User }) {
+    return &lt;div&gt;{user.name}&lt;/div&gt;;
+}</code></pre>
+            <h5 class="text-warning">Use class when you need behavior</h5>
+            <pre><code class="language-typescript">class Money {
+    constructor(private amount: number, private currency: string) {}
+
+    format() {
+        return `${this.currency} ${this.amount}`;
+    }
+}</code></pre>
+            <h5 class="text-warning">Practical rule</h5>
+            <ul>
+              <li>Use <code>interface</code> or <code>type</code> for props, DTOs, API responses, and plain objects.</li>
+              <li>Use <code>class</code> only when you need methods, encapsulation, inheritance, or object instances.</li>
+              <li>In modern React, prefer functional components with typed props over class components.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="qPipelinesCount">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#cPipelinesCount">
+            How many pipelines will you create?
+          </button>
+        </h2>
+        <div id="cPipelinesCount" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              It depends on project size, compliance, environments, and deployment strategy. For a typical Spring Boot
+              microservice, I prefer separate pipelines or stages for CI, image build, security scan, and environment
+              deployments.
+            </p>
+            <h5 class="text-warning">Common pipeline structure</h5>
+            <ul>
+              <li><strong>CI pipeline:</strong> compile, unit test, code quality, package jar.</li>
+              <li><strong>Docker pipeline:</strong> build image, scan image, push image to registry.</li>
+              <li><strong>Dev deploy pipeline:</strong> auto-deploy to dev after merge.</li>
+              <li><strong>QA/UAT pipeline:</strong> deploy with approvals and run integration/regression tests.</li>
+              <li><strong>Prod pipeline:</strong> manual approval, canary/blue-green deployment, smoke tests, rollback.</li>
+            </ul>
+            <p>
+              For a small project, this can be one Jenkinsfile with multiple stages. For enterprise projects, teams often
+              separate build and deployment pipelines for better control and approvals.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="qJenkinsDeploymentTask">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#cJenkinsDeploymentTask">
+            What are deployment tasks in Jenkins?
+          </button>
+        </h2>
+        <div id="cJenkinsDeploymentTask" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              A Jenkins deployment task takes a tested artifact or Docker image and releases it to an environment like
+              dev, QA, staging, or production.
+            </p>
+            <h5 class="text-warning">Typical deployment tasks</h5>
+            <ul>
+              <li>Checkout code and read version/commit id.</li>
+              <li>Build jar using Maven/Gradle.</li>
+              <li>Run unit tests and publish reports.</li>
+              <li>Run SonarQube/security/dependency scans.</li>
+              <li>Build Docker image and tag with build number or git commit.</li>
+              <li>Push image to Nexus/ECR/Docker Hub.</li>
+              <li>Update Kubernetes manifest or Helm values with new image tag.</li>
+              <li>Deploy using <code>kubectl apply</code> or <code>helm upgrade</code>.</li>
+              <li>Run smoke tests and verify rollout.</li>
+              <li>Rollback if rollout or health check fails.</li>
+            </ul>
+            <pre><code class="language-bash">kubectl set image deployment/user-service \
+  user-service=nexus.company.com:5000/user-service:${BUILD_NUMBER} \
+  -n dev
+
+kubectl rollout status deployment/user-service -n dev</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="qFullJenkinsSpringDockerK8s">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#cFullJenkinsSpringDockerK8s">
+            Full Jenkins pipeline for Spring Boot, Docker, and Kubernetes deployment with real example
+          </button>
+        </h2>
+        <div id="cFullJenkinsSpringDockerK8s" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <h5 class="text-warning">Dockerfile</h5>
+            <pre><code class="language-docker">FROM eclipse-temurin:21-jre
+WORKDIR /app
+COPY target/*.jar app.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "app.jar"]</code></pre>
+            <h5 class="text-warning">Kubernetes deployment.yaml</h5>
+            <pre><code class="language-yaml">apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+        - name: user-service
+          image: nexus.company.com:5000/user-service:latest
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 40
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"</code></pre>
+            <h5 class="text-warning">Kubernetes service.yaml</h5>
+            <pre><code class="language-yaml">apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+spec:
+  type: ClusterIP
+  selector:
+    app: user-service
+  ports:
+    - port: 80
+      targetPort: 8080</code></pre>
+            <h5 class="text-warning">Jenkinsfile</h5>
+            <pre><code class="language-groovy">pipeline {
+    agent any
+
+    environment {
+        APP_NAME = "user-service"
+        REGISTRY = "nexus.company.com:5000"
+        IMAGE = "${REGISTRY}/${APP_NAME}"
+        K8S_NAMESPACE = "dev"
+    }
+
+    stages {
+        stage("Checkout") {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage("Build and Unit Test") {
+            steps {
+                sh "mvn clean package"
+            }
+            post {
+                always {
+                    junit "target/surefire-reports/*.xml"
+                }
+            }
+        }
+
+        stage("Code Quality") {
+            steps {
+                sh "mvn sonar:sonar -Dsonar.projectKey=${APP_NAME}"
+            }
+        }
+
+        stage("Build Docker Image") {
+            steps {
+                sh "docker build -t ${IMAGE}:${BUILD_NUMBER} ."
+                sh "docker tag ${IMAGE}:${BUILD_NUMBER} ${IMAGE}:latest"
+            }
+        }
+
+        stage("Push Docker Image") {
+            steps {
+                withCredentials([usernamePassword(credentialsId: "nexus-docker-creds",
+                        usernameVariable: "DOCKER_USER",
+                        passwordVariable: "DOCKER_PASS")]) {
+                    sh "echo ${DOCKER_PASS} | docker login ${REGISTRY} -u ${DOCKER_USER} --password-stdin"
+                    sh "docker push ${IMAGE}:${BUILD_NUMBER}"
+                    sh "docker push ${IMAGE}:latest"
+                }
+            }
+        }
+
+        stage("Deploy to Kubernetes") {
+            steps {
+                withKubeConfig([credentialsId: "dev-kubeconfig"]) {
+                    sh "kubectl apply -f k8s/deployment.yaml -n ${K8S_NAMESPACE}"
+                    sh "kubectl apply -f k8s/service.yaml -n ${K8S_NAMESPACE}"
+                    sh "kubectl set image deployment/${APP_NAME} ${APP_NAME}=${IMAGE}:${BUILD_NUMBER} -n ${K8S_NAMESPACE}"
+                    sh "kubectl rollout status deployment/${APP_NAME} -n ${K8S_NAMESPACE} --timeout=120s"
+                }
+            }
+        }
+
+        stage("Smoke Test") {
+            steps {
+                sh "curl -f http://user-service.dev.company.com/actuator/health"
+            }
+        }
+    }
+
+    post {
+        failure {
+            withKubeConfig([credentialsId: "dev-kubeconfig"]) {
+                sh "kubectl rollout undo deployment/${APP_NAME} -n ${K8S_NAMESPACE} || true"
+            }
+        }
+        always {
+            cleanWs()
+        }
+    }
+}</code></pre>
+            <h5 class="text-warning">Pipeline explanation</h5>
+            <ul>
+              <li><code>mvn clean package</code> creates the Spring Boot jar and runs tests.</li>
+              <li>Docker image is tagged with Jenkins <code>BUILD_NUMBER</code> for traceability.</li>
+              <li>Image is pushed to Nexus Docker registry.</li>
+              <li>Kubernetes deployment is updated with the new image tag.</li>
+              <li><code>kubectl rollout status</code> verifies that the new pods became healthy.</li>
+              <li>On failure, Jenkins tries <code>kubectl rollout undo</code>.</li>
+            </ul>
+            <h5 class="text-warning">Production improvements</h5>
+            <ul>
+              <li>Add manual approval before production deployment.</li>
+              <li>Use Helm/Kustomize instead of editing raw YAML in large projects.</li>
+              <li>Add Trivy/Snyk image scan before pushing or deploying.</li>
+              <li>Use blue-green/canary rollout with Argo Rollouts or service mesh.</li>
+              <li>Store credentials in Jenkins Credentials, Vault, or cloud secret manager.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
       <!-- Q1M - HTTP 3xx Redirection -->
       <div class="accordion-item">
         <h2 class="accordion-header" id="q1m">
@@ -2295,6 +3364,135 @@ nums.add(4);                             // UnsupportedOperationException</code>
       </div>
 
       <!-- Q1S - Tricky TreeSet / Comparable -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q1s-internals">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#c1s-internals">
+            What is the internal implementation of ArrayList and Set in Java?
+          </button>
+        </h2>
+        <div id="c1s-internals" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              `ArrayList` and `Set` look simple from the outside, but internally they use very different storage and
+              lookup strategies. That is why they behave differently for duplicates, ordering, memory usage, and search
+              performance.
+            </p>
+
+            <h5 class="text-warning">1. ArrayList internals</h5>
+            <ul>
+              <li>Backed by a resizable array called <code>elementData</code>.</li>
+              <li>Insertion at the end is usually fast because the array grows amortized.</li>
+              <li>When capacity is full, Java allocates a bigger array and copies the old elements.</li>
+              <li>Random access by index is fast because it reads directly from the array.</li>
+              <li>Middle insert/remove is expensive because elements must shift left or right.</li>
+            </ul>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Operation</th>
+                  <th>Typical cost</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>get(index)</code></td>
+                  <td>O(1)</td>
+                </tr>
+                <tr>
+                  <td><code>add(value)</code> at end</td>
+                  <td>Amortized O(1)</td>
+                </tr>
+                <tr>
+                  <td><code>add(index, value)</code></td>
+                  <td>O(n)</td>
+                </tr>
+                <tr>
+                  <td><code>remove(index)</code></td>
+                  <td>O(n)</td>
+                </tr>
+                <tr>
+                  <td><code>contains(value)</code></td>
+                  <td>O(n)</td>
+                </tr>
+              </tbody>
+            </table>
+            <pre><code class="language-java">List&lt;String&gt; list = new ArrayList&lt;&gt;();
+list.add("A");
+list.add("B");
+list.add("C");
+
+System.out.println(list.get(1));   // B
+list.add(1, "X");                  // shifts B, C to the right
+System.out.println(list);          // [A, X, B, C]</code></pre>
+            <p>
+              In interviews, remember the growth behavior too: ArrayList starts with a small internal array and grows
+              when needed, which reduces frequent reallocation but can still cause occasional copy overhead.
+            </p>
+
+            <h5 class="text-warning">2. Set internals</h5>
+            <p>
+              `Set` is an interface. Its internal implementation depends on the concrete class you choose.
+            </p>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Implementation</th>
+                  <th>Internal structure</th>
+                  <th>Ordering</th>
+                  <th>How duplicates are handled</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>HashSet</code></td>
+                  <td>Backed by <code>HashMap</code></td>
+                  <td>No guaranteed order</td>
+                  <td>Uses <code>hashCode()</code> + <code>equals()</code></td>
+                </tr>
+                <tr>
+                  <td><code>LinkedHashSet</code></td>
+                  <td>Backed by <code>LinkedHashMap</code></td>
+                  <td>Insertion order preserved</td>
+                  <td>Uses <code>hashCode()</code> + <code>equals()</code></td>
+                </tr>
+                <tr>
+                  <td><code>TreeSet</code></td>
+                  <td>Backed by <code>TreeMap</code> / Red-Black Tree</td>
+                  <td>Sorted order</td>
+                  <td>Uses <code>compareTo()</code> or <code>Comparator</code></td>
+                </tr>
+              </tbody>
+            </table>
+            <h5 class="text-warning">HashSet example</h5>
+            <pre><code class="language-java">Set&lt;String&gt; set = new HashSet&lt;&gt;();
+set.add("A");
+set.add("B");
+set.add("A");   // duplicate ignored
+
+System.out.println(set); // order not guaranteed</code></pre>
+            <h5 class="text-warning">TreeSet example</h5>
+            <pre><code class="language-java">Set&lt;Integer&gt; sorted = new TreeSet&lt;&gt;();
+sorted.add(20);
+sorted.add(10);
+sorted.add(30);
+
+System.out.println(sorted); // [10, 20, 30]</code></pre>
+            <h5 class="text-warning">When to use which</h5>
+            <ul>
+              <li>Use <code>ArrayList</code> when you need fast index access and frequent reads.</li>
+              <li>Use <code>HashSet</code> when you need uniqueness and fast membership checks.</li>
+              <li>Use <code>LinkedHashSet</code> when insertion order matters.</li>
+              <li>Use <code>TreeSet</code> when you need sorted unique values.</li>
+            </ul>
+            <p>
+              Interview one-liner: ArrayList is a resizable array with fast indexed access, while Set implementations
+              are built on hash-based or tree-based structures to enforce uniqueness and, in some cases, ordering.
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div class="accordion-item">
         <h2 class="accordion-header" id="q1s">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c1s">
@@ -3616,7 +4814,7 @@ Map&lt;String, Integer&gt; totalQty = orders.stream()
 
 
     </div>
-    <div class="accordion" id="accordionCodingRound">
+    <div class="accordion container" id="accordionCodingRound">
 
       <!-- P1 -->
       <div class="accordion-item">
@@ -4428,7 +5626,7 @@ public static int missingNumber(int[] arr) {
       </div>
 
     </div>
-    <div class="accordion" id="accordionEmployeePrograms">
+    <div class="accordion container" id="accordionEmployeePrograms">
 
       <!-- EMP1 -->
       <div class="accordion-item">
@@ -4674,6 +5872,556 @@ Map<String, Employee> youngest =
         ));
 </code></pre>
 
+          </div>
+        </div>
+      </div>
+
+      <!-- Spring Boot Dockerfile -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="springBootDockerfile">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#springBootDockerfileBody">
+            Create a Dockerfile for a Spring Boot app end to end with example
+          </button>
+        </h2>
+        <div id="springBootDockerfileBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              A <code>Dockerfile</code> is a set of instructions used to package a Spring Boot application into a Docker
+              image. The image contains the JRE, application jar, runtime configuration, and startup command, so the same
+              app can run consistently on any machine with Docker.
+            </p>
+
+            <h5 class="text-warning">1. Typical Spring Boot project structure</h5>
+            <pre><code class="language-bash">spring-boot-docker-demo/
+  pom.xml
+  Dockerfile
+  .dockerignore
+  docker-compose.yml
+  src/
+    main/
+      java/com/example/demo/DemoApplication.java
+      java/com/example/demo/HelloController.java
+      resources/application.properties</code></pre>
+
+            <h5 class="text-warning">2. Example Spring Boot code</h5>
+            <pre><code class="language-java">package com.example.demo;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class DemoApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(DemoApplication.class, args);
+    }
+}</code></pre>
+
+            <pre><code class="language-java">package com.example.demo;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class HelloController {
+
+    @GetMapping("/hello")
+    public String hello() {
+        return "Spring Boot is running inside Docker";
+    }
+}</code></pre>
+
+            <h5 class="text-warning">3. pom.xml dependencies</h5>
+            <pre><code class="language-xml">&lt;dependencies&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+        &lt;artifactId&gt;spring-boot-starter-web&lt;/artifactId&gt;
+    &lt;/dependency&gt;
+
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+        &lt;artifactId&gt;spring-boot-starter-actuator&lt;/artifactId&gt;
+    &lt;/dependency&gt;
+
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+        &lt;artifactId&gt;spring-boot-starter-test&lt;/artifactId&gt;
+        &lt;scope&gt;test&lt;/scope&gt;
+    &lt;/dependency&gt;
+&lt;/dependencies&gt;</code></pre>
+
+            <h5 class="text-warning">4. application.properties</h5>
+            <pre><code class="language-properties">server.port=8080
+spring.application.name=spring-boot-docker-demo
+management.endpoints.web.exposure.include=health,info
+management.endpoint.health.probes.enabled=true</code></pre>
+
+            <h5 class="text-warning">5. Recommended Dockerfile - multi-stage build</h5>
+            <p>
+              This Dockerfile builds the jar inside Docker and then copies only the final jar into a smaller runtime
+              image.
+            </p>
+            <pre><code class="language-docker"># Stage 1: build the application
+FROM maven:3.9.8-eclipse-temurin-21 AS build
+WORKDIR /workspace
+
+# Copy pom first so dependency download can be cached
+COPY pom.xml .
+RUN mvn -q -DskipTests dependency:go-offline
+
+# Copy source and create executable jar
+COPY src ./src
+RUN mvn -q -DskipTests clean package
+
+# Stage 2: run the application
+FROM eclipse-temurin:21-jre
+WORKDIR /app
+
+# Create a non-root user for better container security
+RUN useradd -r -u 1001 spring
+
+COPY --from=build /workspace/target/*.jar app.jar
+
+ENV JAVA_OPTS=""
+EXPOSE 8080
+
+USER spring
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]</code></pre>
+
+            <h5 class="text-warning">6. Simpler Dockerfile - jar already built locally</h5>
+            <p>
+              Use this when your CI pipeline already runs <code>mvn clean package</code> before Docker build.
+            </p>
+            <pre><code class="language-docker">FROM eclipse-temurin:21-jre
+WORKDIR /app
+
+COPY target/*.jar app.jar
+
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "app.jar"]</code></pre>
+
+            <h5 class="text-warning">7. .dockerignore</h5>
+            <p>
+              <code>.dockerignore</code> keeps unnecessary local files out of the Docker build context.
+            </p>
+            <pre><code class="language-bash">.git
+.idea
+.vscode
+target/*
+!target/*.jar
+*.iml
+*.log
+.DS_Store
+README.md</code></pre>
+
+            <h5 class="text-warning">8. Build and run commands</h5>
+            <pre><code class="language-bash"># Build Docker image
+docker build -t spring-boot-docker-demo:1.0 .
+
+# Run container
+docker run -d \
+  --name spring-demo \
+  -p 8080:8080 \
+  spring-boot-docker-demo:1.0
+
+# Check running containers
+docker ps
+
+# Test API
+curl http://localhost:8080/hello
+curl http://localhost:8080/actuator/health
+
+# See logs
+docker logs -f spring-demo
+
+# Stop and remove container
+docker stop spring-demo
+docker rm spring-demo</code></pre>
+
+            <h5 class="text-warning">9. Passing environment variables</h5>
+            <p>
+              Spring Boot reads environment variables automatically. For example,
+              <code>SPRING_PROFILES_ACTIVE=prod</code> maps to <code>spring.profiles.active=prod</code>.
+            </p>
+            <pre><code class="language-bash">docker run -d \
+  --name spring-demo-prod \
+  -p 8080:8080 \
+  -e SPRING_PROFILES_ACTIVE=prod \
+  -e SERVER_PORT=8080 \
+  -e JAVA_OPTS="-Xms256m -Xmx512m" \
+  spring-boot-docker-demo:1.0</code></pre>
+
+            <h5 class="text-warning">10. Docker Compose example with MySQL</h5>
+            <pre><code class="language-yaml">services:
+  app:
+    build: .
+    container_name: spring-demo-app
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/demo_db?useSSL=false&amp;allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: demo_user
+      SPRING_DATASOURCE_PASSWORD: demo_pass
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mysql:8.4
+    container_name: spring-demo-mysql
+    environment:
+      MYSQL_DATABASE: demo_db
+      MYSQL_USER: demo_user
+      MYSQL_PASSWORD: demo_pass
+      MYSQL_ROOT_PASSWORD: root_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot_pass"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mysql_data:</code></pre>
+
+            <pre><code class="language-bash"># Start app and MySQL
+docker compose up -d --build
+
+# Check logs
+docker compose logs -f app
+
+# Stop everything
+docker compose down
+
+# Stop and delete database volume also
+docker compose down -v</code></pre>
+
+            <h5 class="text-warning">11. How Dockerfile works step by step</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Instruction</th>
+                  <th>Purpose</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>FROM</code></td>
+                  <td>Selects the base image, such as Maven for build or JRE for runtime.</td>
+                </tr>
+                <tr>
+                  <td><code>WORKDIR</code></td>
+                  <td>Sets the folder inside the container.</td>
+                </tr>
+                <tr>
+                  <td><code>COPY</code></td>
+                  <td>Copies project files or jar into the image.</td>
+                </tr>
+                <tr>
+                  <td><code>RUN</code></td>
+                  <td>Runs build-time commands while creating the image.</td>
+                </tr>
+                <tr>
+                  <td><code>ENV</code></td>
+                  <td>Defines environment variables available at runtime.</td>
+                </tr>
+                <tr>
+                  <td><code>EXPOSE</code></td>
+                  <td>Documents the port the app listens on inside the container.</td>
+                </tr>
+                <tr>
+                  <td><code>ENTRYPOINT</code></td>
+                  <td>Defines the command that starts the Spring Boot app.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">12. Interview best practices</h5>
+            <ul>
+              <li>Use multi-stage builds to keep final images smaller.</li>
+              <li>Use JRE image at runtime instead of full JDK when compilation is not needed.</li>
+              <li>Run containers as a non-root user.</li>
+              <li>Use <code>.dockerignore</code> to reduce build context size.</li>
+              <li>Pass profiles, database URLs, and secrets using environment variables or secret managers.</li>
+              <li>Do not hardcode passwords in the Dockerfile.</li>
+              <li>Use Actuator health checks for Docker Compose or Kubernetes readiness checks.</li>
+            </ul>
+
+            <p>
+              Interview one-liner: I usually use a multi-stage Dockerfile where Maven builds the Spring Boot jar in the
+              first stage, then a lightweight JRE image runs only the final jar with environment-based configuration.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Spring Boot Production JSON Logging -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="springBootJsonLogging">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#springBootJsonLoggingBody">
+            How do you print production-ready JSON logs with request execution time, method type, app name, start and end times in Spring Boot?
+          </button>
+        </h2>
+        <div id="springBootJsonLoggingBody" class="accordion-collapse collapse"
+          data-bs-parent="#accordionEmployeePrograms">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              In production, logs should be structured JSON so tools like ELK, Splunk, Datadog, CloudWatch, or Grafana
+              Loki can search by fields like <code>requestId</code>, <code>method</code>, <code>path</code>,
+              <code>status</code>, <code>durationMs</code>, <code>applicationName</code>, and <code>instanceId</code>.
+            </p>
+
+            <h5 class="text-warning">Expected JSON logs</h5>
+            <pre><code class="language-json">{
+  "@timestamp": "2026-07-07T10:15:30.150+05:30",
+  "level": "INFO",
+  "logger_name": "com.example.demo.logging.RequestLoggingFilter",
+  "message": "request_end",
+  "applicationName": "order-service",
+  "instanceId": "order-service-7f9d85b6c8-abc12",
+  "requestId": "6ce50a6d-4af8-4f71-b7c4-d6aa09afdd1b",
+  "method": "POST",
+  "path": "/api/orders",
+  "query": "source=mobile",
+  "status": "201",
+  "durationMs": "84",
+  "clientIp": "10.20.30.40"
+}</code></pre>
+
+            <h5 class="text-warning">1. Maven dependency</h5>
+            <p>
+              Spring Boot uses Logback by default. Add <code>logstash-logback-encoder</code> to print logs as JSON.
+            </p>
+            <pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;net.logstash.logback&lt;/groupId&gt;
+    &lt;artifactId&gt;logstash-logback-encoder&lt;/artifactId&gt;
+    &lt;version&gt;7.4&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+
+            <h5 class="text-warning">2. application.yml</h5>
+            <pre><code class="language-yaml">spring:
+  application:
+    name: order-service
+
+server:
+  port: 8080
+
+app:
+  instance-id: ${HOSTNAME:${spring.application.name}-local}
+
+logging:
+  level:
+    root: INFO
+    com.example.demo: INFO</code></pre>
+
+            <h5 class="text-warning">3. logback-spring.xml</h5>
+            <p>
+              This config prints every log line as JSON and includes MDC fields added by our request filter.
+            </p>
+            <pre><code class="language-xml">&lt;configuration&gt;
+    &lt;springProperty scope="context" name="appName" source="spring.application.name"/&gt;
+
+    &lt;appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender"&gt;
+        &lt;encoder class="net.logstash.logback.encoder.LogstashEncoder"&gt;
+            &lt;customFields&gt;{"applicationName":"${appName}"}&lt;/customFields&gt;
+        &lt;/encoder&gt;
+    &lt;/appender&gt;
+
+    &lt;root level="INFO"&gt;
+        &lt;appender-ref ref="JSON_CONSOLE"/&gt;
+    &lt;/root&gt;
+&lt;/configuration&gt;</code></pre>
+
+            <h5 class="text-warning">4. Request logging filter</h5>
+            <p>
+              Use <code>OncePerRequestFilter</code> so each HTTP request gets exactly one start log and one end log.
+              <code>MDC</code> adds searchable fields to all logs printed during the same request thread.
+            </p>
+            <pre><code class="language-java">package com.example.demo.logging;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.io.IOException;
+import java.time.Instant;
+import java.util.Optional;
+import java.util.UUID;
+
+@Component
+public class RequestLoggingFilter extends OncePerRequestFilter {
+
+    private static final Logger log = LoggerFactory.getLogger(RequestLoggingFilter.class);
+
+    @Value("${spring.application.name}")
+    private String applicationName;
+
+    @Value("${app.instance-id:${spring.application.name}-local}")
+    private String instanceId;
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain)
+            throws ServletException, IOException {
+
+        long startNanos = System.nanoTime();
+        Instant startTime = Instant.now();
+
+        String requestId = Optional.ofNullable(request.getHeader("X-Request-Id"))
+                .filter(id -&gt; !id.isBlank())
+                .orElse(UUID.randomUUID().toString());
+
+        response.setHeader("X-Request-Id", requestId);
+
+        MDC.put("applicationName", applicationName);
+        MDC.put("instanceId", instanceId);
+        MDC.put("requestId", requestId);
+        MDC.put("method", request.getMethod());
+        MDC.put("path", request.getRequestURI());
+        MDC.put("query", Optional.ofNullable(request.getQueryString()).orElse(""));
+        MDC.put("clientIp", getClientIp(request));
+        MDC.put("startTime", startTime.toString());
+
+        log.info("request_start");
+
+        try {
+            filterChain.doFilter(request, response);
+        } catch (Exception ex) {
+            MDC.put("exception", ex.getClass().getSimpleName());
+            log.error("request_failed", ex);
+            throw ex;
+        } finally {
+            long durationMs = (System.nanoTime() - startNanos) / 1_000_000;
+
+            MDC.put("endTime", Instant.now().toString());
+            MDC.put("durationMs", String.valueOf(durationMs));
+            MDC.put("status", String.valueOf(response.getStatus()));
+
+            log.info("request_end");
+            MDC.clear();
+        }
+    }
+
+    private String getClientIp(HttpServletRequest request) {
+        String forwardedFor = request.getHeader("X-Forwarded-For");
+        if (forwardedFor != null &amp;&amp; !forwardedFor.isBlank()) {
+            return forwardedFor.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
+    }
+}</code></pre>
+
+            <h5 class="text-warning">5. Application startup and shutdown logs</h5>
+            <p>
+              This logs application lifecycle events with application name, instance id, start time, ready time, and
+              shutdown time.
+            </p>
+            <pre><code class="language-java">package com.example.demo.logging;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.stereotype.Component;
+
+import jakarta.annotation.PreDestroy;
+import java.lang.management.ManagementFactory;
+import java.time.Instant;
+
+@Component
+public class ApplicationLifecycleLogger {
+
+    private static final Logger log = LoggerFactory.getLogger(ApplicationLifecycleLogger.class);
+
+    @Value("${spring.application.name}")
+    private String applicationName;
+
+    @Value("${app.instance-id:${spring.application.name}-local}")
+    private String instanceId;
+
+    private final Instant appStartTime =
+            Instant.ofEpochMilli(ManagementFactory.getRuntimeMXBean().getStartTime());
+
+    @EventListener(ApplicationReadyEvent.class)
+    public void onApplicationReady() {
+        MDC.put("applicationName", applicationName);
+        MDC.put("instanceId", instanceId);
+        MDC.put("appStartTime", appStartTime.toString());
+        MDC.put("appReadyTime", Instant.now().toString());
+
+        log.info("application_ready");
+        MDC.clear();
+    }
+
+    @PreDestroy
+    public void onShutdown() {
+        MDC.put("applicationName", applicationName);
+        MDC.put("instanceId", instanceId);
+        MDC.put("shutdownTime", Instant.now().toString());
+
+        log.info("application_shutdown");
+        MDC.clear();
+    }
+}</code></pre>
+
+            <h5 class="text-warning">6. Example controller logs</h5>
+            <p>
+              Any log inside the request automatically carries the same MDC fields like <code>requestId</code>,
+              <code>method</code>, <code>path</code>, <code>applicationName</code>, and <code>instanceId</code>.
+            </p>
+            <pre><code class="language-java">@RestController
+@RequestMapping("/api/orders")
+public class OrderController {
+
+    private static final Logger log = LoggerFactory.getLogger(OrderController.class);
+    private final OrderService orderService;
+
+    public OrderController(OrderService orderService) {
+        this.orderService = orderService;
+    }
+
+    @PostMapping
+    public ResponseEntity&lt;OrderResponse&gt; createOrder(@RequestBody OrderRequest request) {
+        log.info("creating_order");
+
+        OrderResponse response = orderService.create(request);
+
+        log.info("order_created");
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+}</code></pre>
+
+            <h5 class="text-warning">Production best practices</h5>
+            <ul>
+              <li>Always log in JSON in container/Kubernetes environments.</li>
+              <li>Use a correlation id such as <code>X-Request-Id</code> or trace id from OpenTelemetry/Sleuth/Micrometer tracing.</li>
+              <li>Do not log passwords, tokens, OTPs, card numbers, or full request bodies with PII.</li>
+              <li>Log request metadata, status, duration, and business identifiers like order id or user id only when safe.</li>
+              <li>Use <code>INFO</code> for start/end/business events, <code>WARN</code> for recoverable problems, and <code>ERROR</code> for failures.</li>
+              <li>Set log retention and masking rules in ELK/Splunk/CloudWatch.</li>
+              <li>For async execution, copy MDC context to async threads using a <code>TaskDecorator</code>.</li>
+            </ul>
+
+            <p>
+              Interview one-liner: In production Spring Boot apps, I use JSON logs with MDC fields and a
+              <code>OncePerRequestFilter</code> to log request start, request end, method, path, status, duration,
+              request id, application name, and instance id so every request can be traced end to end.
+            </p>
           </div>
         </div>
       </div>
