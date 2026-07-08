@@ -11224,7 +11224,7 @@ the connection can return to readiness monitoring.</code></pre>
   <div id="c9" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
     <div class="accordion-body bg-dark text-light">
 
-```
+
   <h5 class="text-warning">The main problem Virtual Threads are trying to solve</h5>
 
   <p>
@@ -11237,7 +11237,7 @@ the connection can return to readiness monitoring.</code></pre>
 
   <pre><code class="language-text">Request 1
 -&gt;
-```
+
 
 Platform Thread 1
 
@@ -11249,7 +11249,7 @@ Request 3
 ->
 Platform Thread 3</code></pre>
 
-```
+
   <p>
     If we configure:
   </p>
@@ -11261,17 +11261,17 @@ Platform Thread 3</code></pre>
   </p>
 
   <pre><code class="language-text">At most around 200 request-processing
-```
+
 
 platform threads can be active concurrently</code></pre>
 
-```
+
   <p>
     The problem appears when those threads spend most of their time waiting:
   </p>
 
   <pre><code class="language-text">Waiting for Database
-```
+
 
 Waiting for External REST API
 
@@ -11283,23 +11283,23 @@ Waiting for Message Broker
 
 Waiting for Remote Service</code></pre>
 
-```
+
   <p>
     Example:
   </p>
 
   <pre><code class="language-java">@GetMapping("/orders/{id}")
-```
+
 
 public Order getOrder(@PathVariable Long id) {
 
-```
+
 return orderService.getOrder(id);
-```
+
 
 }</code></pre>
 
-```
+
   <p>
     Service:
   </p>
@@ -11308,11 +11308,11 @@ return orderService.getOrder(id);
 
 return repository.findById(id)
         .orElseThrow();
-```
+
 
 }</code></pre>
 
-```
+
   <p>
     Suppose the database takes:
   </p>
@@ -11326,7 +11326,7 @@ return repository.findById(id)
   <pre><code class="language-text">Platform Thread
 |
 v
-```
+
 
 Call JDBC
 |
@@ -11339,7 +11339,7 @@ Database responds
 v
 Continue</code></pre>
 
-```
+
   <p>
     Virtual Threads make this blocking programming style much cheaper at high concurrency.
   </p>
@@ -11355,13 +11355,13 @@ Continue</code></pre>
   <pre><code class="language-java">Thread thread = new Thread(() -&gt; {
 
 System.out.println("Hello");
-```
+
 
 });
 
 thread.start();</code></pre>
 
-```
+
   <p>
     Conceptually:
   </p>
@@ -11369,22 +11369,22 @@ thread.start();</code></pre>
   <pre><code class="language-text">Java Platform Thread
     |
     v
-```
+
 
 Operating System Thread</code></pre>
 
-```
+
   <p>
     A useful simplified model is:
   </p>
 
   <pre><code class="language-text">1 Java Platform Thread
     approximately
-```
+
 
 1 OS Thread</code></pre>
 
-```
+
   <p>
     This is not meant as a statement about every internal implementation detail, but it is the correct practical
     mental model for understanding traditional Java concurrency.
@@ -11399,7 +11399,7 @@ Operating System Thread</code></pre>
   </p>
 
   <pre><code class="language-text">Native thread resources
-```
+
 
 Thread stack memory
 
@@ -11407,14 +11407,14 @@ OS scheduling overhead
 
 Context switching overhead</code></pre>
 
-```
+
   <p>
     Therefore:
   </p>
 
   <pre><code class="language-text">200 platform threads
 -&gt;
-```
+
 
 Normal
 
@@ -11426,13 +11426,13 @@ Possible but expensive
 ->
 Generally not a practical request-per-thread design</code></pre>
 
-```
+
   <p>
     Exact limits depend on:
   </p>
 
   <pre><code class="language-text">Operating System
-```
+
 
 Memory
 
@@ -11444,7 +11444,7 @@ Container limits
 
 Workload</code></pre>
 
-```
+
   <hr>
 
   <h5 class="text-warning">Traditional Spring MVC thread pool model</h5>
@@ -11452,7 +11452,7 @@ Workload</code></pre>
   <pre><code class="language-text">10,000 Requests
     |
     v
-```
+
 
 Tomcat
 |
@@ -11469,7 +11469,7 @@ Worker Thread Pool
 |
 +-- Thread 200</code></pre>
 
-```
+
   <p>
     If:
   </p>
@@ -11489,13 +11489,13 @@ Worker Thread Pool
   </p>
 
   <pre><code class="language-text">200 Tomcat Threads
-```
+
 
 Each request:
 10 ms CPU work
 990 ms waiting for DB</code></pre>
 
-```
+
   <p>
     Total request time:
   </p>
@@ -11513,7 +11513,7 @@ Each request:
   </p>
 
   <pre><code class="language-text">Thread lifetime:
-```
+
 
 1 second
 
@@ -11523,7 +11523,7 @@ Useful CPU work:
 Waiting:
 990 ms</code></pre>
 
-```
+
   <p>
     This means an expensive platform thread is occupied mostly because downstream I/O is slow.
   </p>
@@ -11544,11 +11544,11 @@ Waiting:
   <pre><code class="language-java">Thread.startVirtualThread(() -&gt; {
 
 System.out.println("Running in virtual thread");
-```
+
 
 });</code></pre>
 
-```
+
   <p>
     Or:
   </p>
@@ -11570,11 +11570,11 @@ System.out.println("Running in virtual thread");
 executor.submit(() -&gt; {
     processRequest();
 });
-```
+
 
 }</code></pre>
 
-```
+
   <hr>
 
   <h5 class="text-warning">The key architecture</h5>
@@ -11582,7 +11582,7 @@ executor.submit(() -&gt; {
   <pre><code class="language-text">Many Virtual Threads
     |
     v
-```
+
 
 JVM Scheduler
 |
@@ -11592,13 +11592,13 @@ Smaller Number of Carrier Threads
 v
 Operating System Threads</code></pre>
 
-```
+
   <p>
     Example:
   </p>
 
   <pre><code class="language-text">Virtual Thread 1
-```
+
 
 Virtual Thread 2
 Virtual Thread 3
@@ -11622,19 +11622,19 @@ Carrier Thread Pool
 v
 OS Threads</code></pre>
 
-```
+
   <p>
     The important idea:
   </p>
 
   <pre><code class="language-text">100,000 Virtual Threads
-```
+
 
 does not mean
 
 100,000 OS Threads</code></pre>
 
-```
+
   <hr>
 
   <h5 class="text-warning">What is a Carrier Thread?</h5>
@@ -11651,14 +11651,14 @@ does not mean
     |
     | mounted on
     v
-```
+
 
 Carrier Thread
 |
 v
 OS Thread</code></pre>
 
-```
+
   <p>
     Example:
   </p>
@@ -11666,11 +11666,11 @@ OS Thread</code></pre>
   <pre><code class="language-text">Virtual Thread 101
     |
     v
-```
+
 
 Carrier Thread 3</code></pre>
 
-```
+
   <p>
     The virtual thread executes Java code using that carrier.
   </p>
@@ -11685,12 +11685,12 @@ Carrier Thread 3</code></pre>
 
   <pre><code class="language-text">Virtual Thread
 is currently attached to
-```
+
 
 Carrier Thread
 and executing</code></pre>
 
-```
+
   <p>
     Example:
   </p>
@@ -11699,14 +11699,14 @@ and executing</code></pre>
     |
     | MOUNT
     v
-```
+
 
 Carrier Thread C1
 |
 v
 Execute Java code</code></pre>
 
-```
+
   <p>
     Suppose:
   </p>
@@ -11717,11 +11717,11 @@ validate(id);
 
 return repository.findById(id)
         .orElseThrow();
-```
+
 
 }</code></pre>
 
-```
+
   <p>
     During:
   </p>
@@ -11759,7 +11759,7 @@ return repository.findById(id)
   <pre><code class="language-text">Virtual Thread V1
     |
     v
-```
+
 
 Running on Carrier C1
 |
@@ -11775,7 +11775,7 @@ Carrier C1 becomes available
 v
 Carrier C1 runs another Virtual Thread</code></pre>
 
-```
+
   <p>
     This is one of the most important ideas in Virtual Threads.
   </p>
@@ -11787,7 +11787,7 @@ Carrier C1 runs another Virtual Thread</code></pre>
   <pre><code class="language-text">Virtual Thread V1
     |
     v
-```
+
 
 Mount on Carrier C1
 |
@@ -11821,7 +11821,7 @@ Unmount V2
 v
 Carrier C1 runs V3</code></pre>
 
-```
+
   <p>
     Later:
   </p>
@@ -11829,7 +11829,7 @@ Carrier C1 runs V3</code></pre>
   <pre><code class="language-text">Remote API response for V1 arrives
     |
     v
-```
+
 
 V1 becomes runnable
 |
@@ -11842,19 +11842,19 @@ Mount V1 on available Carrier C4
 v
 Continue execution</code></pre>
 
-```
+
   <p>
     Important:
   </p>
 
   <pre><code class="language-text">Virtual Thread V1
-```
+
 
 started on Carrier C1
 
 but may later continue on Carrier C4</code></pre>
 
-```
+
   <hr>
 
   <h5 class="text-warning">A Virtual Thread is not permanently attached to one Carrier</h5>
@@ -11865,17 +11865,17 @@ but may later continue on Carrier C4</code></pre>
 
   <pre><code class="language-text">Virtual Thread 1
 permanently belongs to
-```
+
 
 Carrier Thread 1</code></pre>
 
-```
+
   <p>
     Better mental model:
   </p>
 
   <pre><code class="language-text">Virtual Thread V1
-```
+
 
 Run on Carrier C1
 |
@@ -11893,7 +11893,7 @@ Later
 
 Run on Carrier C2</code></pre>
 
-```
+
   <p>
     The JVM scheduler manages this.
   </p>
@@ -11913,18 +11913,18 @@ Run on Carrier C2</code></pre>
   </p>
 
   <pre><code class="language-text">5 ms CPU work
-```
+
 
 995 ms waiting for external service</code></pre>
 
-```
+
   <p>
     Traditional platform-thread approach:
   </p>
 
   <pre><code class="language-text">Request 1
 -&gt;
-```
+
 
 Platform Thread 1
 ->
@@ -11941,7 +11941,7 @@ Wait 995 ms
 Huge number of platform threads required
 for huge concurrency</code></pre>
 
-```
+
   <p>
     Virtual-thread approach:
   </p>
@@ -11949,7 +11949,7 @@ for huge concurrency</code></pre>
   <pre><code class="language-text">100,000 Requests
     |
     v
-```
+
 
 100,000 Virtual Threads
 |
@@ -11959,13 +11959,13 @@ Most become suspended while waiting
 v
 Carrier threads execute runnable work</code></pre>
 
-```
+
   <p>
     At one instant:
   </p>
 
   <pre><code class="language-text">100,000 Virtual Threads
-```
+
 
 95,000 waiting
 
@@ -11973,7 +11973,7 @@ Carrier threads execute runnable work</code></pre>
 
 100 currently runnable</code></pre>
 
-```
+
   <p>
     The carrier pool needs to execute the currently runnable work, not permanently dedicate one OS thread to every
     waiting virtual thread.
@@ -11988,7 +11988,7 @@ Carrier threads execute runnable work</code></pre>
   </p>
 
   <pre><code class="language-text">REST API calls
-```
+
 
 Database calls
 
@@ -12000,19 +12000,19 @@ Waiting for network
 
 Blocking-style request processing</code></pre>
 
-```
+
   <p>
     Especially when:
   </p>
 
   <pre><code class="language-text">Many concurrent tasks
-```
+
 
 +
 
 Most tasks spend time waiting</code></pre>
 
-```
+
   <hr>
 
   <h5 class="text-warning">Virtual Threads do not make CPU work faster</h5>
@@ -12030,11 +12030,11 @@ for (long i = 0; i &lt; 10_000_000_000L; i++) {
 }
 
 return result;
-```
+
 
 }</code></pre>
 
-```
+
   <p>
     This is CPU-heavy.
   </p>
@@ -12056,11 +12056,11 @@ return result;
   </p>
 
   <pre><code class="language-text">8 CPU cores
-```
+
 
 100,000 CPU-bound Virtual Threads</code></pre>
 
-```
+
   <p>
     You do not magically get:
   </p>
@@ -12100,7 +12100,7 @@ return result;
 
   <pre><code class="language-text">100,000 Virtual Threads
 -&gt;
-```
+
 
 High concurrency
 
@@ -12108,7 +12108,7 @@ High concurrency
 ->
 Limited physical parallelism</code></pre>
 
-```
+
   <hr>
 
   <h5 class="text-warning">Now the critical topic: Pinning</h5>
@@ -12123,7 +12123,7 @@ Limited physical parallelism</code></pre>
   </p>
 
   <pre><code class="language-text">Normal case:
-```
+
 
 Virtual Thread blocks
 |
@@ -12133,7 +12133,7 @@ Unmount
 v
 Carrier becomes free</code></pre>
 
-```
+
   <p>
     Pinned case:
   </p>
@@ -12141,14 +12141,14 @@ Carrier becomes free</code></pre>
   <pre><code class="language-text">Virtual Thread blocks
 |
 v
-```
+
 
 Cannot unmount
 |
 v
 Carrier remains occupied</code></pre>
 
-```
+
   <p>
     This can reduce scalability.
   </p>
@@ -12160,11 +12160,11 @@ Carrier remains occupied</code></pre>
   <pre><code class="language-java">public synchronized void process() {
 
 callSlowExternalApi();
-```
+
 
 }</code></pre>
 
-```
+
   <p>
     Or:
   </p>
@@ -12176,11 +12176,11 @@ synchronized (lock) {
     callSlowExternalApi();
 
 }
-```
+
 
 }</code></pre>
 
-```
+
   <p>
     Conceptually:
   </p>
@@ -12188,7 +12188,7 @@ synchronized (lock) {
   <pre><code class="language-text">Virtual Thread V1
     |
     v
-```
+
 
 Enter synchronized block
 |
@@ -12204,13 +12204,13 @@ Potential pinning situation
 v
 Carrier C1 remains occupied</code></pre>
 
-```
+
   <p>
     If many virtual threads do this:
   </p>
 
   <pre><code class="language-text">V1 pins C1
-```
+
 
 V2 pins C2
 
@@ -12222,17 +12222,17 @@ V4 pins C4
 
 Carrier pool becomes constrained</code></pre>
 
-```
+
   <p>
     Important:
   </p>
 
   <pre><code class="language-text">Do not interpret this as:
-```
+
 
 "Never use synchronized with Virtual Threads"</code></pre>
 
-```
+
   <p>
     Short synchronized sections that do not perform long blocking operations may be perfectly reasonable.
   </p>
@@ -12242,13 +12242,13 @@ Carrier pool becomes constrained</code></pre>
   </p>
 
   <pre><code class="language-text">Long-running blocking I/O
-```
+
 
 inside
 
 synchronized region</code></pre>
 
-```
+
   <hr>
 
   <h5 class="text-warning">Better approach for long blocking critical sections</h5>
@@ -12269,11 +12269,11 @@ synchronized region</code></pre>
 
   <pre><code class="language-java">private final ReentrantLock lock =
     new ReentrantLock();
-```
+
 
 public void process() {
 
-```
+
 lock.lock();
 
 try {
@@ -12285,11 +12285,11 @@ try {
     lock.unlock();
 
 }
-```
+
 
 }</code></pre>
 
-```
+
   <p>
     But do not blindly replace every synchronized block. Correctness, contention, JVM version, and actual profiling
     matter.
@@ -12314,14 +12314,14 @@ try {
   </p>
 
   <pre><code class="language-text">Pinning behavior depends on the JDK version
-```
+
 
 and the blocking construct involved.
 
 Long blocking operations while holding monitors
 or entering native/foreign code require careful analysis.</code></pre>
 
-```
+
   <p>
     This is more accurate than repeating an outdated absolute rule.
   </p>
@@ -12356,13 +12356,13 @@ or entering native/foreign code require careful analysis.</code></pre>
   </p>
 
   <pre><code class="language-text">Spring Data JPA
-```
+
 
 Hibernate
 
 JDBC Driver</code></pre>
 
-```
+
   <p>
     Virtual Threads do not make JDBC non-blocking.
   </p>
@@ -12378,7 +12378,7 @@ JDBC Driver</code></pre>
   <pre><code class="language-text">Request 1
 |
 v
-```
+
 
 Platform Thread 1
 |
@@ -12391,7 +12391,7 @@ Wait 500 ms
 v
 Platform Thread 1 occupied</code></pre>
 
-```
+
   <hr>
 
   <h5 class="text-warning">JDBC with Virtual Threads</h5>
@@ -12399,7 +12399,7 @@ Platform Thread 1 occupied</code></pre>
   <pre><code class="language-text">Request 1
 |
 v
-```
+
 
 Virtual Thread V1
 |
@@ -12415,7 +12415,7 @@ Virtual Thread can often suspend
 v
 Carrier can execute other work</code></pre>
 
-```
+
   <p>
     But the exact behavior depends on the blocking path, driver, native operations, and runtime behavior.
   </p>
@@ -12429,11 +12429,11 @@ Carrier can execute other work</code></pre>
   </p>
 
   <pre><code class="language-text">100,000 Virtual Threads
-```
+
 
 HikariCP maximumPoolSize = 20</code></pre>
 
-```
+
   <p>
     All requests need database access.
   </p>
@@ -12444,7 +12444,7 @@ HikariCP maximumPoolSize = 20</code></pre>
 
   <pre><code class="language-text">Virtual Thread 1
 -&gt;
-```
+
 
 Gets DB Connection
 
@@ -12468,7 +12468,7 @@ Virtual Thread 100,000
 ->
 May wait</code></pre>
 
-```
+
   <p>
     Virtual Threads make waiting threads cheaper.
   </p>
@@ -12492,13 +12492,13 @@ May wait</code></pre>
   </p>
 
   <pre><code class="language-text">100,000 Virtual Threads
-```
+
 
 All call:
 
 Payment Service</code></pre>
 
-```
+
   <p>
     Downstream payment service supports:
   </p>
@@ -12510,19 +12510,19 @@ Payment Service</code></pre>
   </p>
 
   <pre><code class="language-text">Your JVM survives
-```
+
 
 but
 
 Payment Service collapses</code></pre>
 
-```
+
   <p>
     Therefore Virtual Threads still need:
   </p>
 
   <pre><code class="language-text">Semaphores
-```
+
 
 Rate Limiting
 
@@ -12534,18 +12534,18 @@ Timeouts
 
 Bounded downstream concurrency</code></pre>
 
-```
+
   <hr>
 
   <h5 class="text-warning">Example using Semaphore</h5>
 
   <pre><code class="language-java">private final Semaphore semaphore =
     new Semaphore(100);
-```
+
 
 public PaymentResponse callPayment() {
 
-```
+
 try {
 
     semaphore.acquire();
@@ -12563,11 +12563,11 @@ try {
     semaphore.release();
 
 }
-```
+
 
 }</code></pre>
 
-```
+
   <p>
     Conceptually:
   </p>
@@ -12575,14 +12575,14 @@ try {
   <pre><code class="language-text">100,000 Virtual Threads
     |
     v
-```
+
 
 Semaphore permits = 100
 |
 v
 Only 100 payment calls concurrently</code></pre>
 
-```
+
   <p>
     Cheap threads do not mean unlimited downstream concurrency.
   </p>
@@ -12608,23 +12608,23 @@ Only 100 payment calls concurrently</code></pre>
   </p>
 
   <pre><code class="language-java">USER_CONTEXT.set("user-101");
-```
+
 
 try {
 
-```
+
 process();
-```
+
 
 } finally {
 
-```
+
 USER_CONTEXT.remove();
-```
+
 
 }</code></pre>
 
-```
+
   <p>
     This works conceptually because the ThreadLocal belongs to the virtual thread, not permanently to whichever
     carrier happens to execute it.
@@ -12635,7 +12635,7 @@ USER_CONTEXT.remove();
   <h5 class="text-warning">Important: Carrier switching does not break ThreadLocal identity</h5>
 
   <pre><code class="language-text">Virtual Thread V1
-```
+
 
 runs on Carrier C1
 |
@@ -12652,13 +12652,13 @@ V1 runs on Carrier C5
 v
 ThreadLocal user still belongs to V1</code></pre>
 
-```
+
   <p>
     Therefore:
   </p>
 
   <pre><code class="language-text">ThreadLocal
-```
+
 
 is associated with
 
@@ -12666,7 +12666,7 @@ Virtual Thread identity
 
 not permanent Carrier identity</code></pre>
 
-```
+
   <hr>
 
   <h5 class="text-warning">But ThreadLocal can still become expensive</h5>
@@ -12692,13 +12692,13 @@ not permanent Carrier identity</code></pre>
   </p>
 
   <pre><code class="language-text">Virtual Threads are cheap
-```
+
 
 but
 
 Per-thread state is not automatically cheap</code></pre>
 
-```
+
   <p>
     Avoid using ThreadLocal as a giant per-request storage mechanism.
   </p>
@@ -12718,7 +12718,7 @@ Per-thread state is not automatically cheap</code></pre>
   <pre><code class="language-text">Request
 |
 v
-```
+
 
 Virtual Thread V1
 |
@@ -12731,17 +12731,17 @@ Controller
 v
 Service</code></pre>
 
-```
+
   <p>
     Carrier switching itself does not mean:
   </p>
 
   <pre><code class="language-text">Security Context randomly moves
-```
+
 
 to another request</code></pre>
 
-```
+
   <p>
     The virtual thread remains the logical thread.
   </p>
@@ -12755,19 +12755,19 @@ to another request</code></pre>
   </p>
 
   <pre><code class="language-java">@Transactional
-```
+
 
 public void transferMoney() {
 
-```
+
 debit();
 
 credit();
-```
+
 
 }</code></pre>
 
-```
+
   <p>
     Spring transaction management commonly binds transactional resources to the executing thread context.
   </p>
@@ -12779,7 +12779,7 @@ credit();
   <pre><code class="language-text">Virtual Thread V1
 |
 v
-```
+
 
 Enter @Transactional method
 |
@@ -12795,7 +12795,7 @@ credit()
 v
 Commit</code></pre>
 
-```
+
   <p>
     Carrier switching does not mean the transaction suddenly belongs to another logical request.
   </p>
@@ -12811,13 +12811,13 @@ Commit</code></pre>
   </p>
 
   <pre><code class="language-text">V1 executes on C1
-```
+
 
 then later
 
 V1 executes on C5</code></pre>
 
-```
+
   <hr>
 
   <h5 class="text-warning">But @Async changes the thread</h5>
@@ -12827,46 +12827,46 @@ V1 executes on C5</code></pre>
   </p>
 
   <pre><code class="language-java">@Transactional
-```
+
 
 public void createOrder() {
 
-```
+
 saveOrder();
 
 notificationService.sendAsync();
-```
+
 
 }</code></pre>
 
-```
+
   <p>
     Async method:
   </p>
 
   <pre><code class="language-java">@Async
-```
+
 
 public void sendAsync() {
 
-```
+
 // different task/thread context
-```
+
 
 }</code></pre>
 
-```
+
   <p>
     Here:
   </p>
 
   <pre><code class="language-text">@Transactional Thread
 !=
-```
+
 
 @Async Thread</code></pre>
 
-```
+
   <p>
     Virtual Threads do not magically propagate every ThreadLocal or transaction context across arbitrary asynchronous
     task boundaries.
@@ -12884,7 +12884,7 @@ public void sendAsync() {
     CompletableFuture.supplyAsync(
         () -&gt; userService.getUser()
     );
-```
+
 
 CompletableFuture<Orders> ordersFuture =
 CompletableFuture.supplyAsync(
@@ -12896,7 +12896,7 @@ userFuture,
 ordersFuture
 ).join();</code></pre>
 
-```
+
   <p>
     With Virtual Threads, blocking-style code can remain simpler:
   </p>
@@ -12918,11 +12918,11 @@ return new Response(
     user.get(),
     orders.get()
 );
-```
+
 
 }</code></pre>
 
-```
+
   <p>
     The code remains imperative and easier to debug for many teams.
   </p>
@@ -12942,7 +12942,7 @@ return new Response(
   <pre><code class="language-text">Request
 |
 v
-```
+
 
 Thread
 |
@@ -12955,7 +12955,7 @@ Service
 v
 Blocking call</code></pre>
 
-```
+
   <p>
     Virtual Thread MVC:
   </p>
@@ -12963,7 +12963,7 @@ Blocking call</code></pre>
   <pre><code class="language-text">Request
 |
 v
-```
+
 
 Virtual Thread
 |
@@ -12979,7 +12979,7 @@ Blocking-style call
 v
 Virtual Thread may suspend</code></pre>
 
-```
+
   <p>
     WebFlux:
   </p>
@@ -12987,7 +12987,7 @@ Virtual Thread may suspend</code></pre>
   <pre><code class="language-text">Request
 |
 v
-```
+
 
 Event Loop
 |
@@ -13003,24 +13003,24 @@ Completion event
 v
 Continue pipeline</code></pre>
 
-```
+
   <hr>
 
   <h5 class="text-warning">Spring WebFlux example</h5>
 
   <pre><code class="language-java">@GetMapping("/users/{id}")
-```
+
 
 public Mono<User> getUser(
 @PathVariable Long id) {
 
-```
+
 return userService.getUser(id);
-```
+
 
 }</code></pre>
 
-```
+
   <p>
     Service:
   </p>
@@ -13028,11 +13028,11 @@ return userService.getUser(id);
   <pre><code class="language-java">public Mono&lt;User&gt; getUser(Long id) {
 
 return repository.findById(id);
-```
+
 
 }</code></pre>
 
-```
+
   <p>
     Conceptually:
   </p>
@@ -13040,7 +13040,7 @@ return repository.findById(id);
   <pre><code class="language-text">Request arrives
 |
 v
-```
+
 
 Event Loop Thread
 |
@@ -13062,7 +13062,7 @@ Continuation scheduled
 v
 Return response</code></pre>
 
-```
+
   <hr>
 
   <h5 class="text-warning">WebFlux Event Loop model</h5>
@@ -13070,7 +13070,7 @@ Return response</code></pre>
   <pre><code class="language-text">10,000 Connections
     |
     v
-```
+
 
 Small Number of Event Loop Threads
 |
@@ -13085,7 +13085,7 @@ Small Number of Event Loop Threads
 v
 Reactive Pipelines</code></pre>
 
-```
+
   <p>
     The event-loop threads must not be blocked.
   </p>
@@ -13095,22 +13095,22 @@ Reactive Pipelines</code></pre>
   <h5 class="text-warning">The dangerous WebFlux mistake</h5>
 
   <pre><code class="language-java">@GetMapping("/users/{id}")
-```
+
 
 public Mono<User> getUser(
 @PathVariable Long id) {
 
-```
+
 User user =
     jpaRepository.findById(id)
         .orElseThrow();
 
 return Mono.just(user);
-```
+
 
 }</code></pre>
 
-```
+
   <p>
     This is dangerous because:
   </p>
@@ -13118,7 +13118,7 @@ return Mono.just(user);
   <pre><code class="language-text">WebFlux Event Loop
 |
 v
-```
+
 
 Blocking JPA/JDBC call
 |
@@ -13128,13 +13128,13 @@ Event Loop thread blocked
 v
 Many other requests delayed</code></pre>
 
-```
+
   <p>
     Therefore:
   </p>
 
   <pre><code class="language-text">WebFlux
-```
+
 
 +
 
@@ -13143,7 +13143,7 @@ Blocking JDBC/JPA
 can destroy the main benefit
 if blocking work runs on event-loop threads</code></pre>
 
-```
+
   <hr>
 
   <h5 class="text-warning">Proper reactive database approach</h5>
@@ -13161,7 +13161,7 @@ if blocking work runs on event-loop threads</code></pre>
   <pre><code class="language-text">WebFlux
 |
 v
-```
+
 
 Reactive Repository
 |
@@ -13171,35 +13171,35 @@ R2DBC
 v
 Non-blocking DB interaction model</code></pre>
 
-```
+
   <p>
     Example:
   </p>
 
   <pre><code class="language-java">public interface UserRepository
     extends ReactiveCrudRepository&lt;User, Long&gt; {
-```
+
 
 }</code></pre>
 
-```
+
   <p>
     Controller:
   </p>
 
   <pre><code class="language-java">@GetMapping("/users/{id}")
-```
+
 
 public Mono<User> getUser(
 @PathVariable Long id) {
 
-```
+
 return repository.findById(id);
-```
+
 
 }</code></pre>
 
-```
+
   <hr>
 
   <h5 class="text-warning">Virtual Threads allow blocking-style code</h5>
@@ -13209,25 +13209,25 @@ return repository.findById(id);
   </p>
 
   <pre><code class="language-java">@GetMapping("/users/{id}")
-```
+
 
 public User getUser(
 @PathVariable Long id) {
 
-```
+
 return repository.findById(id)
         .orElseThrow();
-```
+
 
 }</code></pre>
 
-```
+
   <p>
     No:
   </p>
 
   <pre><code class="language-text">Mono
-```
+
 
 Flux
 
@@ -13235,7 +13235,7 @@ flatMap
 
 Reactive chain</code></pre>
 
-```
+
   <p>
     This is a major productivity advantage for many teams.
   </p>
@@ -13267,7 +13267,7 @@ Reactive chain</code></pre>
 
   <pre><code class="language-java">User user =
     userService.getUser(id);
-```
+
 
 Orders orders =
 orderService.getOrders(user.getId());
@@ -13277,7 +13277,7 @@ user,
 orders
 );</code></pre>
 
-```
+
   <p>
     Much more familiar for traditional Java developers.
   </p>
@@ -13292,12 +13292,12 @@ orders
 
   <pre><code class="language-java">User user =
     userService.getUser(id);
-```
+
 
 Orders orders =
 orderService.getOrders(id);</code></pre>
 
-```
+
   <p>
     means:
   </p>
@@ -13305,7 +13305,7 @@ orderService.getOrders(id);</code></pre>
   <pre><code class="language-text">Get User
 |
 v
-```
+
 
 Wait
 |
@@ -13315,7 +13315,7 @@ Get Orders
 v
 Wait</code></pre>
 
-```
+
   <p>
     If calls are independent, you may want concurrency.
   </p>
@@ -13347,11 +13347,11 @@ return new UserResponse(
     user,
     orders
 );
-```
+
 
 }</code></pre>
 
-```
+
   <p>
     Flow:
   </p>
@@ -13361,7 +13361,7 @@ return new UserResponse(
     +----------------------+
     |                      |
     v                      v
-```
+
 
 Virtual Task A          Virtual Task B
 Get User                Get Orders
@@ -13374,7 +13374,7 @@ Wait Remote A           Wait Remote B
 v
 Combine Result</code></pre>
 
-```
+
   <hr>
 
   <h5 class="text-warning">Spring Boot Virtual Thread configuration</h5>
@@ -13392,7 +13392,7 @@ Combine Result</code></pre>
   <pre><code class="language-text">Incoming Request
 |
 v
-```
+
 
 Servlet Container
 |
@@ -13408,13 +13408,13 @@ Service
 v
 Repository</code></pre>
 
-```
+
   <p>
     Exact behavior depends on:
   </p>
 
   <pre><code class="language-text">Spring Boot version
-```
+
 
 Embedded server
 
@@ -13422,7 +13422,7 @@ JDK version
 
 Application configuration</code></pre>
 
-```
+
   <hr>
 
   <h5 class="text-warning">Traditional Tomcat vs Virtual Thread enabled application</h5>
@@ -13434,7 +13434,7 @@ Application configuration</code></pre>
   <pre><code class="language-text">Requests
 |
 v
-```
+
 
 Bounded Platform Worker Pool
 |
@@ -13443,7 +13443,7 @@ Bounded Platform Worker Pool
 ...
 +-- Platform Thread 200</code></pre>
 
-```
+
   <p>
     Virtual Thread style:
   </p>
@@ -13451,7 +13451,7 @@ Bounded Platform Worker Pool
   <pre><code class="language-text">Requests
 |
 v
-```
+
 
 Virtual Thread per request/task
 |
@@ -13464,7 +13464,7 @@ Virtual Thread per request/task
 v
 Carrier Threads</code></pre>
 
-```
+
   <hr>
 
   <h5 class="text-warning">Critical warning: maxThreads thinking changes</h5>
@@ -13474,32 +13474,32 @@ Carrier Threads</code></pre>
   </p>
 
   <pre><code class="language-text">Thread count itself
-```
+
 
 acts as a concurrency limiter</code></pre>
 
-```
+
   <p>
     Example:
   </p>
 
   <pre><code class="language-text">maxThreads = 200
-```
+
 
 Therefore only around 200 request workers
 execute concurrently</code></pre>
 
-```
+
   <p>
     With Virtual Threads:
   </p>
 
   <pre><code class="language-text">Very large number of request tasks
-```
+
 
 can exist concurrently</code></pre>
 
-```
+
   <p>
     Therefore you must deliberately protect scarce resources.
   </p>
@@ -13509,7 +13509,7 @@ can exist concurrently</code></pre>
   <h5 class="text-warning">Scarce resources that still need limits</h5>
 
   <pre><code class="language-text">Database Connections
-```
+
 
 External API Capacity
 
@@ -13527,7 +13527,7 @@ Rate Limits
 
 Third-party quotas</code></pre>
 
-```
+
   <p>
     Virtual Threads remove one bottleneck:
   </p>
@@ -13547,7 +13547,7 @@ Third-party quotas</code></pre>
   </p>
 
   <pre><code class="language-text">100,000 Virtual Threads
-```
+
 
 HikariCP Pool:
 50 connections
@@ -13555,7 +13555,7 @@ HikariCP Pool:
 Database:
 Maximum useful concurrency = 100 queries</code></pre>
 
-```
+
   <p>
     Flow:
   </p>
@@ -13563,7 +13563,7 @@ Maximum useful concurrency = 100 queries</code></pre>
   <pre><code class="language-text">100,000 Requests
     |
     v
-```
+
 
 100,000 Virtual Threads
 |
@@ -13577,7 +13577,7 @@ HikariCP
 |
 +-- 99,950 wait</code></pre>
 
-```
+
   <p>
     JVM may handle the waiting more efficiently than 100,000 platform threads.
   </p>
@@ -13587,7 +13587,7 @@ HikariCP
   </p>
 
   <pre><code class="language-text">Latency can become enormous
-```
+
 
 Memory still consumed
 
@@ -13595,19 +13595,19 @@ Timeouts may occur
 
 Database remains bottleneck</code></pre>
 
-```
+
   <p>
     Therefore:
   </p>
 
   <pre><code class="language-text">Virtual Threads
-```
+
 
 do not eliminate
 
 capacity planning</code></pre>
 
-```
+
   <hr>
 
   <h5 class="text-warning">Little's Law intuition</h5>
@@ -13618,22 +13618,22 @@ capacity planning</code></pre>
 
   <pre><code class="language-text">Concurrency
 approximately
-```
+
 
 Throughput × Response Time</code></pre>
 
-```
+
   <p>
     Example:
   </p>
 
   <pre><code class="language-text">10,000 requests/second
-```
+
 
 Average response time:
 2 seconds</code></pre>
 
-```
+
   <p>
     Then approximate in-flight concurrency:
   </p>
@@ -13777,7 +13777,7 @@ Average response time:
   </p>
 
   <pre><code class="language-text">Spring MVC Application
-```
+
 
 Existing JPA/Hibernate code
 
@@ -13791,7 +13791,7 @@ Need simple imperative code
 
 Migrating existing thread-per-request application</code></pre>
 
-```
+
   <p>
     Example architecture:
   </p>
@@ -13799,7 +13799,7 @@ Migrating existing thread-per-request application</code></pre>
   <pre><code class="language-text">Spring Boot MVC
 |
 v
-```
+
 
 Virtual Threads
 |
@@ -13816,7 +13816,7 @@ RestClient
 v
 External Services</code></pre>
 
-```
+
   <hr>
 
   <h5 class="text-warning">When should I choose WebFlux?</h5>
@@ -13826,7 +13826,7 @@ External Services</code></pre>
   </p>
 
   <pre><code class="language-text">End-to-end reactive architecture
-```
+
 
 Reactive database drivers
 
@@ -13842,7 +13842,7 @@ Backpressure requirements
 
 Team understands Reactor deeply</code></pre>
 
-```
+
   <p>
     Example:
   </p>
@@ -13850,7 +13850,7 @@ Team understands Reactor deeply</code></pre>
   <pre><code class="language-text">WebFlux
 |
 v
-```
+
 
 Reactor Netty
 |
@@ -13863,7 +13863,7 @@ R2DBC
 v
 Reactive Kafka</code></pre>
 
-```
+
   <hr>
 
   <h5 class="text-warning">When should I keep Platform Threads?</h5>
@@ -13873,7 +13873,7 @@ Reactive Kafka</code></pre>
   </p>
 
   <pre><code class="language-text">Concurrency is moderate
-```
+
 
 Application is CPU-heavy
 
@@ -13883,7 +13883,7 @@ Operational simplicity matters
 
 No proven thread scalability problem exists</code></pre>
 
-```
+
   <p>
     Do not migrate only because a technology is newer.
   </p>
@@ -13903,25 +13903,25 @@ No proven thread scalability problem exists</code></pre>
   </p>
 
   <pre><code class="language-text">Virtual Threads improve scalability
-```
+
 
 for high-concurrency waiting-heavy workloads.
 
 They do not automatically reduce
 single-request execution time.</code></pre>
 
-```
+
   <hr>
 
   <h5 class="text-warning">Common misconception 2</h5>
 
   <pre><code class="language-text">100,000 Virtual Threads
-```
+
 
 means
 100,000 requests execute simultaneously</code></pre>
 
-```
+
   <p>
     Wrong.
   </p>
@@ -13931,12 +13931,12 @@ means
   </p>
 
   <pre><code class="language-text">100,000 tasks may be concurrent
-```
+
 
 but actual parallel execution
 is limited by carriers and CPU cores</code></pre>
 
-```
+
   <hr>
 
   <h5 class="text-warning">Common misconception 3</h5>
@@ -13952,12 +13952,12 @@ is limited by carriers and CPU cores</code></pre>
   </p>
 
   <pre><code class="language-text">JDBC remains blocking.
-```
+
 
 Virtual Threads make waiting
 cheaper from the thread-resource perspective.</code></pre>
 
-```
+
   <hr>
 
   <h5 class="text-warning">Common misconception 4</h5>
@@ -13973,13 +13973,13 @@ cheaper from the thread-resource perspective.</code></pre>
   </p>
 
   <pre><code class="language-text">100,000 Virtual Threads
-```
+
 
 still may need
 
 20 / 50 / 100 DB Connections</code></pre>
 
-```
+
   <hr>
 
   <h5 class="text-warning">Common misconception 5</h5>
@@ -13995,7 +13995,7 @@ still may need
   </p>
 
   <pre><code class="language-text">Reactive Streams
-```
+
 
 Backpressure model
 
@@ -14007,7 +14007,7 @@ Event-loop architecture
 
 End-to-end non-blocking design</code></pre>
 
-```
+
   <p>
     Virtual Threads solve a different problem.
   </p>
@@ -14021,12 +14021,12 @@ End-to-end non-blocking design</code></pre>
   </p>
 
   <pre><code class="language-java">@GetMapping("/dashboard/{userId}")
-```
+
 
 public DashboardResponse dashboard(
 @PathVariable Long userId) {
 
-```
+
 User user =
     userService.getUser(userId);
 
@@ -14041,18 +14041,18 @@ return new DashboardResponse(
     orders,
     wallet
 );
-```
+
 
 }</code></pre>
 
-```
+
   <p>
     Dependencies:
   </p>
 
   <pre><code class="language-text">User Service
 -&gt;
-```
+
 
 300 ms
 
@@ -14064,13 +14064,13 @@ Wallet Service
 ->
 400 ms</code></pre>
 
-```
+
   <p>
     Sequential execution:
   </p>
 
   <pre><code class="language-text">300 ms
-```
+
 
 +
 500 ms
@@ -14081,7 +14081,7 @@ approximately
 
 1,200 ms</code></pre>
 
-```
+
   <hr>
 
   <h5 class="text-warning">Concurrent Virtual Thread version</h5>
@@ -14109,11 +14109,11 @@ return new DashboardResponse(
     ordersFuture.get(),
     walletFuture.get()
 );
-```
+
 
 }</code></pre>
 
-```
+
   <p>
     Conceptually:
   </p>
@@ -14123,7 +14123,7 @@ return new DashboardResponse(
     +--------------+--------------+
     |              |              |
     v              v              v
-```
+
 
 User Service   Order Service   Wallet Service
 300 ms         500 ms          400 ms
@@ -14133,13 +14133,13 @@ User Service   Order Service   Wallet Service
 v
 Combine Response</code></pre>
 
-```
+
   <p>
     Approximate total:
   </p>
 
   <pre><code class="language-text">max(300, 500, 400)
-```
+
 
 approximately
 
@@ -14147,7 +14147,7 @@ approximately
 
 plus coordination overhead</code></pre>
 
-```
+
   <p>
     This is where concurrency can reduce latency when operations are independent.
   </p>
@@ -14167,7 +14167,7 @@ plus coordination overhead</code></pre>
   </p>
 
   <pre><code class="language-text">100,000 requests
-```
+
 
 ×
 
@@ -14177,7 +14177,7 @@ plus coordination overhead</code></pre>
 
 300,000 downstream calls</code></pre>
 
-```
+
   <p>
     Your application may survive thread creation.
   </p>
@@ -14191,13 +14191,13 @@ plus coordination overhead</code></pre>
   </p>
 
   <pre><code class="language-text">Virtual Thread Scalability
-```
+
 
 must be combined with
 
 Downstream Capacity Control</code></pre>
 
-```
+
   <hr>
 
   <h5 class="text-warning">Best production architecture mental model</h5>
@@ -14205,7 +14205,7 @@ Downstream Capacity Control</code></pre>
   <pre><code class="language-text">100,000 Clients
     |
     v
-```
+
 
 Load Balancer
 |
@@ -14226,7 +14226,7 @@ HikariCP Pool          External API
 v
 Database</code></pre>
 
-```
+
   <p>
     Virtual Threads handle cheap concurrency.
   </p>
@@ -14244,7 +14244,7 @@ Database</code></pre>
   </p>
 
   <pre><code class="language-text">Threads may be cheap
-```
+
 
 but
 
@@ -14260,19 +14260,19 @@ External API capacity is not free
 
 Network sockets are not free</code></pre>
 
-```
+
   <p>
     Therefore:
   </p>
 
   <pre><code class="language-text">Cheap concurrency
-```
+
 
 does not mean
 
 Unlimited system capacity</code></pre>
 
-```
+
   <hr>
 
   <h5 class="text-warning">Best interview question: Do Virtual Threads use ForkJoinPool?</h5>
@@ -14282,7 +14282,7 @@ Unlimited system capacity</code></pre>
   </p>
 
   <pre><code class="language-text">Virtual Threads are scheduled by the JVM
-```
+
 
 onto carrier platform threads.
 
@@ -14292,7 +14292,7 @@ but you should not confuse Virtual Threads
 with ordinary CompletableFuture tasks
 submitted to ForkJoinPool.commonPool().</code></pre>
 
-```
+
   <p>
     They are different abstractions.
   </p>
@@ -14310,7 +14310,7 @@ submitted to ForkJoinPool.commonPool().</code></pre>
   <pre><code class="language-text">Virtual Thread
 |
 v
-```
+
 
 sleep()
 |
@@ -14320,18 +14320,18 @@ Virtual Thread parked/suspended
 v
 Carrier can run another Virtual Thread</code></pre>
 
-```
+
   <p>
     Therefore:
   </p>
 
   <pre><code class="language-text">Sleeping Virtual Thread
-```
+
 
 does not need to waste
 one dedicated OS thread</code></pre>
 
-```
+
   <hr>
 
   <h5 class="text-warning">Best interview question: What happens when Virtual Thread blocks on synchronized?</h5>
@@ -14341,7 +14341,7 @@ one dedicated OS thread</code></pre>
   </p>
 
   <pre><code class="language-text">You must consider the JDK version and exact blocking situation.
-```
+
 
 Historically, blocking while holding an intrinsic monitor
 could pin the Virtual Thread to its carrier.
@@ -14352,7 +14352,7 @@ so avoid repeating outdated blanket statements.
 Native/foreign calls and other pinning scenarios
 still require attention.</code></pre>
 
-```
+
   <hr>
 
   <h5 class="text-warning">Best interview question: Are Virtual Threads pooled?</h5>
@@ -14379,7 +14379,7 @@ still require attention.</code></pre>
 
   <pre><code class="language-text">Platform Threads are scarce
 -&gt;
-```
+
 
 Pool them
 
@@ -14387,13 +14387,13 @@ Virtual Threads are lightweight
 ->
 Create per task</code></pre>
 
-```
+
   <hr>
 
   <h5 class="text-warning">Final architecture comparison</h5>
 
   <pre><code class="language-text">PLATFORM THREAD MODEL
-```
+
 
 10,000 Requests
 |
@@ -14438,7 +14438,7 @@ Non-blocking I/O
 v
 Completion Events</code></pre>
 
-```
+
   <hr>
 
   <h5 class="text-warning">Top senior-level interview questions</h5>
@@ -14448,11 +14448,11 @@ Completion Events</code></pre>
   </p>
 
   <pre><code class="language-text">A lightweight Java Thread managed by the JVM
-```
+
 
 that can be scheduled onto carrier platform threads.</code></pre>
 
-```
+
   <p>
     <strong>2. What is a Carrier Thread?</strong>
   </p>
@@ -14464,127 +14464,127 @@ that can be scheduled onto carrier platform threads.</code></pre>
   </p>
 
   <pre><code class="language-text">Attaching a Virtual Thread to a carrier
-```
+
 
 so it can execute.</code></pre>
 
-```
+
   <p>
     <strong>4. What is unmounting?</strong>
   </p>
 
   <pre><code class="language-text">Suspending the Virtual Thread
-```
+
 
 and freeing the carrier for other work.</code></pre>
 
-```
+
   <p>
     <strong>5. What is pinning?</strong>
   </p>
 
   <pre><code class="language-text">A situation where a Virtual Thread cannot unmount
-```
+
 
 and remains attached to its carrier during blocking.</code></pre>
 
-```
+
   <p>
     <strong>6. Are Virtual Threads faster?</strong>
   </p>
 
   <pre><code class="language-text">Not necessarily per request.
-```
+
 
 They improve scalability for high-concurrency,
 waiting-heavy workloads.</code></pre>
 
-```
+
   <p>
     <strong>7. Do Virtual Threads make JDBC non-blocking?</strong>
   </p>
 
   <pre><code class="language-text">No.
-```
+
 
 JDBC remains blocking.</code></pre>
 
-```
+
   <p>
     <strong>8. Do Virtual Threads remove HikariCP?</strong>
   </p>
 
   <pre><code class="language-text">No.
-```
+
 
 Database connections remain scarce resources.</code></pre>
 
-```
+
   <p>
     <strong>9. Can ThreadLocal work with Virtual Threads?</strong>
   </p>
 
   <pre><code class="language-text">Yes.
-```
+
 
 But excessive per-thread state can become expensive
 when Virtual Thread counts are huge.</code></pre>
 
-```
+
   <p>
     <strong>10. Does carrier switching break @Transactional?</strong>
   </p>
 
   <pre><code class="language-text">No.
-```
+
 
 The Virtual Thread remains the logical Thread
 even if it executes on different carriers over time.</code></pre>
 
-```
+
   <p>
     <strong>11. Virtual Threads or WebFlux?</strong>
   </p>
 
   <pre><code class="language-text">Choose Virtual Threads for simpler imperative code
-```
+
 
 and blocking ecosystem integration.
 
 Choose WebFlux for end-to-end reactive systems,
 streaming, and reactive backpressure.</code></pre>
 
-```
+
   <p>
     <strong>12. Should Virtual Threads be pooled?</strong>
   </p>
 
   <pre><code class="language-text">Generally no.
-```
+
 
 Use a Virtual Thread per task model.</code></pre>
 
-```
+
   <p>
     <strong>13. Are Virtual Threads useful for CPU-bound work?</strong>
   </p>
 
   <pre><code class="language-text">They do not create more CPU cores
-```
+
 
 and do not magically improve CPU-bound parallelism.</code></pre>
 
-```
+
   <p>
     <strong>14. What is the biggest production risk?</strong>
   </p>
 
   <pre><code class="language-text">Creating huge concurrency
-```
+
 
 without protecting downstream scarce resources.</code></pre>
 
-```
+
   <hr>
 
   <h5 class="text-warning">Best interview answer</h5>
@@ -14611,7 +14611,7 @@ without protecting downstream scarce resources.</code></pre>
   </p>
 
 </div>
-```
+
 
   </div>
 </div>
