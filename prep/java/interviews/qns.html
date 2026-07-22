@@ -15230,6 +15230,123 @@ public void makePayment() throws PaymentFailedException {
     credit();
     throw new PaymentFailedException("Payment failed");
 }</code></pre>
+            <h5 class="text-warning">Who defines isolation - Spring or the database?</h5>
+            <p>
+              Spring lets you request an isolation level through <code>@Transactional(isolation = ...)</code>, but the
+              actual enforcement happens at the database/driver level through JDBC. Spring does not invent isolation on
+              its own. It simply translates the request into a transaction setting for the underlying connection.
+            </p>
+            <p>
+              So the short answer is:
+            </p>
+            <ul>
+              <li><strong>Spring</strong> exposes the annotation and passes the requested setting.</li>
+              <li><strong>The database</strong> decides what that setting really means and whether it can honor it.</li>
+              <li>If the database or driver cannot support the requested isolation, Spring does not emulate it in memory.</li>
+            </ul>
+            <h5 class="text-warning">What happens if the requested isolation is not supported?</h5>
+            <p>
+              It depends on the database and JDBC driver. In many cases, the driver or transaction manager will either
+              throw an exception or fall back to the nearest supported behavior. Spring itself does not magically
+              guarantee the unsupported level.
+            </p>
+            <p>
+              Example: if you request <code>SERIALIZABLE</code> on a database that supports it, the database will try to
+              enforce the strictest behavior. If you request a level that the database cannot provide, the transaction
+              may fail to start or the database may map it to a supported level, depending on the vendor.
+            </p>
+            <h5 class="text-warning">Default isolation level</h5>
+            <p>
+              In Spring, the default is <code>Isolation.DEFAULT</code>. That means "use the database default isolation
+              level." The actual default depends on the database:
+            </p>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Layer</th>
+                  <th>Default</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Spring</td>
+                  <td><code>Isolation.DEFAULT</code></td>
+                </tr>
+                <tr>
+                  <td>Most databases</td>
+                  <td>Commonly <code>READ_COMMITTED</code></td>
+                </tr>
+                <tr>
+                  <td>MySQL InnoDB</td>
+                  <td>Commonly <code>REPEATABLE_READ</code></td>
+                </tr>
+                <tr>
+                  <td>Oracle</td>
+                  <td>Commonly <code>READ_COMMITTED</code></td>
+                </tr>
+              </tbody>
+            </table>
+            <h5 class="text-warning">Isolation levels with real-world analogy</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Isolation</th>
+                  <th>Analogy</th>
+                  <th>Meaning</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>READ_UNCOMMITTED</code></td>
+                  <td>Looking at a whiteboard while someone is still writing on it</td>
+                  <td>You may see unfinished changes.</td>
+                </tr>
+                <tr>
+                  <td><code>READ_COMMITTED</code></td>
+                  <td>Only reading notes after the writer says "done"</td>
+                  <td>You never see uncommitted changes.</td>
+                </tr>
+                <tr>
+                  <td><code>REPEATABLE_READ</code></td>
+                  <td>Photographing a page and reading the same snapshot again</td>
+                  <td>Same row stays stable inside the transaction.</td>
+                </tr>
+                <tr>
+                  <td><code>SERIALIZABLE</code></td>
+                  <td>Only one person is allowed in the room at a time</td>
+                  <td>Transactions behave one after another.</td>
+                </tr>
+              </tbody>
+            </table>
+            <h5 class="text-warning">Clear-cut example</h5>
+            <pre><code class="language-java">@Transactional(isolation = Isolation.READ_COMMITTED)
+public BigDecimal checkBalance(Long accountId) {
+    return accountRepository.findById(accountId)
+            .orElseThrow()
+            .getBalance();
+}</code></pre>
+            <pre><code class="language-java">@Transactional(isolation = Isolation.REPEATABLE_READ)
+public void readSameBalanceTwice(Long accountId) {
+    BigDecimal first = accountRepository.findById(accountId).orElseThrow().getBalance();
+    // another transaction may update the row here
+    BigDecimal second = accountRepository.findById(accountId).orElseThrow().getBalance();
+    // with REPEATABLE_READ, first and second should remain consistent within this transaction
+}</code></pre>
+            <p>
+              A common business example is wallet balance or inventory stock. If two checkout requests run together,
+              lower isolation can allow one request to see changing values, while higher isolation reduces that risk but
+              can reduce throughput.
+            </p>
+            <h5 class="text-warning">Quick interview questions on isolation</h5>
+            <ul>
+              <li>What is the difference between propagation and isolation in <code>@Transactional</code>?</li>
+              <li>Is isolation controlled by Spring or by the database?</li>
+              <li>What is Spring's default isolation level?</li>
+              <li>What are dirty read, non-repeatable read, and phantom read?</li>
+              <li>When would you choose <code>READ_COMMITTED</code> over <code>REPEATABLE_READ</code>?</li>
+              <li>What happens if the requested isolation level is not supported by the database?</li>
+              <li>Why is <code>SERIALIZABLE</code> the safest but usually the slowest?</li>
+            </ul>
             <h5 class="text-warning">Common pitfalls</h5>
             <ul>
               <li><code>@Transactional</code> usually works through Spring proxy, so self-invocation may not apply it.</li>
@@ -22728,11 +22845,748 @@ Map&lt;String, Integer&gt; totalQty = orders.stream()
             <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c28">2️⃣8️⃣
               What is a Message Queue? Why do we use RabbitMQ/Kafka?</button>
           </h2>
-          <div id="c28" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+        <div id="c28" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
             <div class="accordion-body bg-dark text-light">
               MQ decouples systems, improves reliability and async communication.
               Kafka → high throughput
               RabbitMQ → routing-based messaging
+            </div>
+          </div>
+        </div>
+
+        <!-- Q28A -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q28a">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c28a">
+              What is Kafka, why do we use it, how is it different from traditional JMS, and how do we get started?
+            </button>
+          </h2>
+          <div id="c28a" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              <p>
+                Apache Kafka is a distributed event streaming platform. We use it when we need to move large volumes of
+                events reliably between services with high throughput, durability, and replay capability.
+              </p>
+              <h5 class="text-warning">Why we use Kafka</h5>
+              <ul>
+                <li>Decouple services so producers do not call consumers directly.</li>
+                <li>Handle high-volume events like orders, payments, clicks, logs, and notifications.</li>
+                <li>Keep events for a retention period so consumers can replay them later.</li>
+                <li>Scale consumers horizontally using partitions and consumer groups.</li>
+                <li>Build event-driven systems, audit trails, outbox pipelines, and streaming analytics.</li>
+              </ul>
+              <h5 class="text-warning">Kafka vs traditional JMS</h5>
+              <table class="table table-dark table-bordered table-sm">
+                <thead>
+                  <tr>
+                    <th>Aspect</th>
+                    <th>Kafka</th>
+                    <th>Traditional JMS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Model</td>
+                    <td>Distributed commit log / event stream</td>
+                    <td>Message queue / broker API</td>
+                  </tr>
+                  <tr>
+                    <td>Storage</td>
+                    <td>Messages are retained on disk for time/size based retention</td>
+                    <td>Messages are usually consumed and removed from the queue</td>
+                  </tr>
+                  <tr>
+                    <td>Replay</td>
+                    <td>Consumers can replay old messages by resetting offsets</td>
+                    <td>Replay is not a core design goal</td>
+                  </tr>
+                  <tr>
+                    <td>Throughput</td>
+                    <td>Very high throughput, partitioned and append-only</td>
+                    <td>Good for enterprise messaging, but typically lower throughput</td>
+                  </tr>
+                  <tr>
+                    <td>Scaling</td>
+                    <td>Horizontal scaling with partitions and consumer groups</td>
+                    <td>Depends on broker/queue setup, often more queue-oriented</td>
+                  </tr>
+                  <tr>
+                    <td>Ordering</td>
+                    <td>Guaranteed within a partition</td>
+                    <td>Usually queue-based ordering per destination</td>
+                  </tr>
+                  <tr>
+                    <td>Best fit</td>
+                    <td>Event streaming, logs, audit, analytics, microservices integration</td>
+                    <td>Classic enterprise messaging, command/message routing, request-reply use cases</td>
+                  </tr>
+                </tbody>
+              </table>
+              <p>
+                JMS is a Java messaging API specification. Kafka is a distributed platform and ecosystem. JMS is a
+                programming model, while Kafka is a concrete event streaming system. They solve overlapping problems
+                but are not the same thing.
+              </p>
+              <h5 class="text-warning">Real-world analogy</h5>
+              <p>
+                JMS is like sending a package to a mailbox and expecting it to be picked up. Kafka is like publishing a
+                durable newspaper edition that multiple readers can subscribe to, read later, and even reread.
+              </p>
+              <h5 class="text-warning">Core Kafka terms</h5>
+              <table class="table table-dark table-bordered table-sm">
+                <thead>
+                  <tr>
+                    <th>Term</th>
+                    <th>Meaning</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Broker</td>
+                    <td>Kafka server that stores and serves messages</td>
+                  </tr>
+                  <tr>
+                    <td>Topic</td>
+                    <td>Named stream of events</td>
+                  </tr>
+                  <tr>
+                    <td>Partition</td>
+                    <td>Parallel shard of a topic</td>
+                  </tr>
+                  <tr>
+                    <td>Producer</td>
+                    <td>Publishes events to Kafka</td>
+                  </tr>
+                  <tr>
+                    <td>Consumer</td>
+                    <td>Reads events from Kafka</td>
+                  </tr>
+                  <tr>
+                    <td>Consumer Group</td>
+                    <td>Multiple consumers sharing work from partitions</td>
+                  </tr>
+                  <tr>
+                    <td>Offset</td>
+                    <td>Position of a record inside a partition</td>
+                  </tr>
+                </tbody>
+              </table>
+              <h5 class="text-warning">Getting started with Spring Boot</h5>
+              <p>
+                The usual Spring Boot setup is simple: add the Kafka starter, configure the bootstrap server, create a
+                producer, and create a <code>@KafkaListener</code> consumer.
+              </p>
+              <pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.kafka&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-kafka&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+              <pre><code class="language-yaml">spring:
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: order-service
+      auto-offset-reset: earliest
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer</code></pre>
+              <pre><code class="language-java">@Configuration
+public class KafkaConfig {
+
+    @Bean
+    public NewTopic orderTopic() {
+        return TopicBuilder.name("orders")
+                .partitions(3)
+                .replicas(1)
+                .build();
+    }
+}</code></pre>
+              <pre><code class="language-java">@Service
+public class OrderEventPublisher {
+
+    private final KafkaTemplate&lt;String, OrderCreatedEvent&gt; kafkaTemplate;
+
+    public OrderEventPublisher(KafkaTemplate&lt;String, OrderCreatedEvent&gt; kafkaTemplate) {
+        this.kafkaTemplate = kafkaTemplate;
+    }
+
+    public void publish(OrderCreatedEvent event) {
+        kafkaTemplate.send("orders", event.orderId().toString(), event);
+    }
+}</code></pre>
+              <pre><code class="language-java">@Component
+public class OrderEventConsumer {
+
+    @KafkaListener(topics = "orders", groupId = "order-service")
+    public void consume(OrderCreatedEvent event) {
+        System.out.println("Consumed order event: " + event);
+    }
+}</code></pre>
+              <h5 class="text-warning">Producer and consumer flow</h5>
+              <pre><code class="language-text">REST API
+  -&gt; Spring Boot service
+  -&gt; KafkaTemplate.send()
+  -&gt; Topic partition
+  -&gt; Consumer group
+  -&gt; @KafkaListener processes message
+  -&gt; Offset committed after processing</code></pre>
+              <h5 class="text-warning">When Kafka is a better fit</h5>
+              <ul>
+                <li>Need to replay events for rebuilding read models or analytics.</li>
+                <li>Many services must consume the same event independently.</li>
+                <li>Need durable buffering between spikes in traffic.</li>
+                <li>Need event-driven architecture with auditability.</li>
+              </ul>
+              <h5 class="text-warning">When JMS may be enough</h5>
+              <ul>
+                <li>Simple enterprise queueing with one producer and one consumer.</li>
+                <li>Traditional Java EE or Spring JMS integration already exists.</li>
+                <li>Routing, selectors, or request-reply patterns are the main need.</li>
+              </ul>
+              <h5 class="text-warning">Important interview notes</h5>
+              <ul>
+                <li>Ordering is guaranteed only within a partition, not across the whole topic.</li>
+                <li>More partitions can increase parallelism, but too many partitions also add overhead.</li>
+                <li>Exactly-once processing needs idempotent producers, transactions, and careful consumer handling.</li>
+                <li>Kafka is not just a queue; it is also a durable event log.</li>
+              </ul>
+              <p>
+                Interview one-liner: Kafka is a distributed event streaming platform used for high-throughput, durable,
+                replayable communication between services, while JMS is a messaging API/specification commonly used for
+                classic queue-based enterprise messaging.
+              </p>
+            </div>
+        </div>
+      </div>
+
+        <!-- Q28B -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q28b">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c28b">
+              Why is Kafka usually faster than RabbitMQ?
+            </button>
+          </h2>
+        <div id="c28b" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              <p>
+                Kafka is usually faster for very high-throughput event streaming because it is built like an append-only
+                distributed log, while RabbitMQ is designed more like a traditional message broker with richer routing
+                and queue semantics.
+              </p>
+              <h5 class="text-warning">Why Kafka is often faster</h5>
+              <ul>
+                <li>Kafka appends records sequentially to disk instead of doing a lot of per-message queue movement.</li>
+                <li>Kafka batches records efficiently, which reduces network and disk overhead.</li>
+                <li>Kafka keeps messages on disk for retention, so consumers control their own offset progress.</li>
+                <li>Kafka partitions topics, so many consumers can read in parallel.</li>
+                <li>Kafka avoids expensive broker-side routing logic for every message in many common use cases.</li>
+                <li>Kafka uses zero-copy and other storage optimizations in its architecture.</li>
+              </ul>
+              <h5 class="text-warning">Why RabbitMQ can feel slower at very high scale</h5>
+              <ul>
+                <li>RabbitMQ performs more broker-side queue and routing work per message.</li>
+                <li>It is excellent for flexible routing, but that flexibility can add overhead.</li>
+                <li>It is usually better for command delivery, task queues, and complex message patterns than raw streaming throughput.</li>
+              </ul>
+              <h5 class="text-warning">Important nuance</h5>
+              <p>
+                Faster does not always mean better. RabbitMQ may be the better fit when you need routing keys, priorities,
+                dead-lettering, per-message acknowledgements, or classic work queues. Kafka is generally faster for
+                append-heavy streaming and replayable event pipelines.
+              </p>
+              <h5 class="text-warning">Simple analogy</h5>
+              <p>
+                Kafka is like writing entries into a long ledger book and letting multiple readers keep their own page
+                number. RabbitMQ is more like a package sorting desk that routes each item to a destination box.
+              </p>
+              <h5 class="text-warning">Example use cases</h5>
+              <table class="table table-dark table-bordered table-sm">
+                <thead>
+                  <tr>
+                    <th>System</th>
+                    <th>Better fit</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Clickstream analytics</td>
+                    <td>Kafka</td>
+                  </tr>
+                  <tr>
+                    <td>Order events for microservices</td>
+                    <td>Kafka</td>
+                  </tr>
+                  <tr>
+                    <td>Background job queue</td>
+                    <td>RabbitMQ</td>
+                  </tr>
+                  <tr>
+                    <td>Complex routing between consumers</td>
+                    <td>RabbitMQ</td>
+                  </tr>
+                </tbody>
+              </table>
+              <p>
+                Interview one-liner: Kafka is usually faster because it is an append-only distributed log optimized for
+                batching, partitioning, and replay, while RabbitMQ spends more work on per-message routing and queue
+                management.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Q28C -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q28c">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c28c">
+              What is topic, partition, consumer group, ordering, and what happens if a consumer dies in Kafka?
+            </button>
+          </h2>
+          <div id="c28c" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              <h5 class="text-warning">What is a topic?</h5>
+              <p>
+                A topic is a named stream of records in Kafka. Producers publish events to a topic, and consumers read
+                from that topic.
+              </p>
+              <pre><code class="language-text">orders
+payments
+user-events
+audit-logs</code></pre>
+
+              <h5 class="text-warning">What is a partition?</h5>
+              <p>
+                A partition is a shard of a topic. Kafka stores records inside partitions in append-only order, and each
+                record inside a partition gets a unique offset.
+              </p>
+              <pre><code class="language-text">Topic: orders
+Partition 0 -> offsets 0,1,2,3
+Partition 1 -> offsets 0,1,2,3
+Partition 2 -> offsets 0,1,2,3</code></pre>
+
+              <h5 class="text-warning">Why partitions?</h5>
+              <ul>
+                <li>Partitions allow parallel write and read throughput.</li>
+                <li>More partitions mean more consumers can process in parallel.</li>
+                <li>Partitions help distribute load across brokers and disks.</li>
+                <li>Ordering is preserved inside a partition, so you can keep related events together.</li>
+              </ul>
+
+              <h5 class="text-warning">Does Kafka guarantee message order?</h5>
+              <p>
+                Kafka guarantees order only within a single partition. It does not guarantee global order across the
+                entire topic when multiple partitions are involved.
+              </p>
+
+              <h5 class="text-warning">How do you maintain ordering?</h5>
+              <ul>
+                <li>Use the same message key for related records, such as the same order id or customer id.</li>
+                <li>Kafka routes records with the same key to the same partition.</li>
+                <li>Keep the number of consumers in a group less than or equal to the number of partitions if you want
+                  each partition processed by a single consumer at a time.</li>
+                <li>Do not split one business entity across multiple partitions if strict ordering is required.</li>
+              </ul>
+              <pre><code class="language-java">kafkaTemplate.send("orders", orderId.toString(), event);</code></pre>
+
+              <h5 class="text-warning">What is a consumer group?</h5>
+              <p>
+                A consumer group is a set of consumers working together to process a topic. Kafka assigns partitions so
+                that each partition is consumed by only one consumer within the same group at a time.
+              </p>
+              <pre><code class="language-text">Topic with 3 partitions
+Consumer Group with 3 consumers
+
+P0 -> C1
+P1 -> C2
+P2 -> C3</code></pre>
+
+              <h5 class="text-warning">What happens if one consumer dies?</h5>
+              <p>
+                Kafka detects that the consumer has stopped heartbeating. Then the group coordinator triggers a
+                rebalance and reassigns that consumer's partitions to the remaining consumers in the group.
+              </p>
+              <pre><code class="language-text">Before failure
+P0 -> C1
+P1 -> C2
+P2 -> C3
+
+C2 dies
+
+After rebalance
+P0 -> C1
+P1 -> C3
+P2 -> C3</code></pre>
+              <p>
+                If offsets were already committed, the new consumer continues from the last committed offset. If the
+                old consumer died after processing but before committing, duplicate processing can happen, so consumer
+                logic should be idempotent.
+              </p>
+
+              <h5 class="text-warning">Small Spring Boot example</h5>
+              <pre><code class="language-java">@Service
+public class OrderPublisher {
+    private final KafkaTemplate&lt;String, OrderCreatedEvent&gt; kafkaTemplate;
+
+    public OrderPublisher(KafkaTemplate&lt;String, OrderCreatedEvent&gt; kafkaTemplate) {
+        this.kafkaTemplate = kafkaTemplate;
+    }
+
+    public void publish(OrderCreatedEvent event) {
+        kafkaTemplate.send("orders", event.orderId().toString(), event);
+    }
+}</code></pre>
+
+              <pre><code class="language-java">@KafkaListener(topics = "orders", groupId = "order-service")
+public void consume(OrderCreatedEvent event) {
+    // idempotent processing is important here
+}</code></pre>
+
+              <h5 class="text-warning">Quick interview answers</h5>
+              <ul>
+                <li><strong>Topic:</strong> logical stream of events.</li>
+                <li><strong>Partition:</strong> ordered shard of a topic.</li>
+                <li><strong>Why partitions:</strong> scale and parallelism.</li>
+                <li><strong>Ordering:</strong> guaranteed only within a partition.</li>
+                <li><strong>Consumer group:</strong> multiple consumers sharing partitions.</li>
+                <li><strong>Consumer dies:</strong> rebalance and reassignment of partitions.</li>
+              </ul>
+              <p>
+                Interview one-liner: Kafka stores events in topics, splits topics into partitions for scale, preserves
+                order only within a partition, and uses consumer groups so partitions can be rebalanced automatically
+                when a consumer fails.
+              </p>
+            </div>
+        </div>
+      </div>
+
+        <!-- Q28D -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q28d">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c28d">
+              What is offset, where are offsets stored, auto commit vs manual commit, delivery guarantees, idempotent producer, producer crash, and ACKs in Kafka?
+            </button>
+          </h2>
+          <div id="c28d" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              <h5 class="text-warning">What is an offset?</h5>
+              <p>
+                An offset is the position number of a record inside a Kafka partition. It is like a line number in a
+                log file. Each partition has its own offset sequence.
+              </p>
+              <pre><code class="language-text">orders-topic
+Partition 0:
+  offset 0 -> order-101
+  offset 1 -> order-102
+  offset 2 -> order-103</code></pre>
+
+              <h5 class="text-warning">Where are offsets stored?</h5>
+              <p>
+                Consumer group offsets are stored in Kafka itself, in the internal topic called
+                <code>__consumer_offsets</code>. Kafka uses that to remember what each consumer group has already
+                processed.
+              </p>
+
+              <h5 class="text-warning">Auto commit vs manual commit</h5>
+              <table class="table table-dark table-bordered table-sm">
+                <thead>
+                  <tr>
+                    <th>Mode</th>
+                    <th>How it works</th>
+                    <th>Risk / use case</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Auto commit</td>
+                    <td>Kafka commits offsets automatically at intervals</td>
+                    <td>Simple, but you can lose records or commit before processing finishes</td>
+                  </tr>
+                  <tr>
+                    <td>Manual commit</td>
+                    <td>Your code commits the offset after successful processing</td>
+                    <td>Safer for business logic because you control when a message is marked done</td>
+                  </tr>
+                </tbody>
+              </table>
+              <pre><code class="language-yaml">spring:
+  kafka:
+    consumer:
+      enable-auto-commit: false</code></pre>
+              <pre><code class="language-java">@KafkaListener(topics = "orders", groupId = "order-service")
+public void consume(OrderCreatedEvent event, Acknowledgment ack) {
+    process(event);
+    ack.acknowledge(); // manual commit after successful processing
+}</code></pre>
+
+              <h5 class="text-warning">At most once, at least once, exactly once</h5>
+              <table class="table table-dark table-bordered table-sm">
+                <thead>
+                  <tr>
+                    <th>Guarantee</th>
+                    <th>Meaning</th>
+                    <th>Tradeoff</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>At most once</td>
+                    <td>Message is processed zero or one time</td>
+                    <td>May lose messages, but no duplicates</td>
+                  </tr>
+                  <tr>
+                    <td>At least once</td>
+                    <td>Message is processed one or more times</td>
+                    <td>Can create duplicates, so consumer should be idempotent</td>
+                  </tr>
+                  <tr>
+                    <td>Exactly once</td>
+                    <td>Message is processed exactly one time from the business point of view</td>
+                    <td>Hardest to implement; needs transactions/idempotence carefully</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <h5 class="text-warning">What is an idempotent producer?</h5>
+              <p>
+                An idempotent producer ensures that retries do not create duplicate records in Kafka when the same send
+                is attempted again. Kafka can detect duplicate producer attempts using producer id and sequence numbers.
+              </p>
+              <pre><code class="language-yaml">spring:
+  kafka:
+    producer:
+      properties:
+        enable.idempotence: true</code></pre>
+
+              <h5 class="text-warning">What are ACKs?</h5>
+              <p>
+                ACKs define when Kafka considers a producer send successful.
+              </p>
+              <table class="table table-dark table-bordered table-sm">
+                <thead>
+                  <tr>
+                    <th>ACK level</th>
+                    <th>Meaning</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>acks=0</code></td>
+                    <td>Producer does not wait for broker response; fastest, least safe</td>
+                  </tr>
+                  <tr>
+                    <td><code>acks=1</code></td>
+                    <td>Leader broker confirms write; faster but replicas may not yet have it</td>
+                  </tr>
+                  <tr>
+                    <td><code>acks=all</code> or <code>-1</code></td>
+                    <td>Leader waits for all in-sync replicas; safest, slower than acks=1</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <h5 class="text-warning">What happens if producer crashes?</h5>
+              <p>
+                If the producer crashes before Kafka receives the record, the message is lost unless the client retries.
+                If the producer crashes after Kafka already accepted the record, the message may already be stored. With
+                retries and idempotence disabled, duplicate sends can happen. With idempotence enabled, Kafka can avoid
+                many duplicate writes caused by retries.
+              </p>
+              <pre><code class="language-text">Producer sends record
+  -> network issue
+  -> producer retries
+  -> if idempotence is OFF, duplicate can happen
+  -> if idempotence is ON, Kafka can deduplicate retry attempts</code></pre>
+
+              <h5 class="text-warning">Clear delivery rule of thumb</h5>
+              <ul>
+                <li><strong>At most once:</strong> commit before processing.</li>
+                <li><strong>At least once:</strong> process first, commit later.</li>
+                <li><strong>Exactly once:</strong> combine idempotent producer, proper commit strategy, and business idempotency.</li>
+              </ul>
+
+              <h5 class="text-warning">Simple Spring Boot producer example</h5>
+              <pre><code class="language-java">@Service
+public class PaymentPublisher {
+
+    private final KafkaTemplate&lt;String, PaymentEvent&gt; kafkaTemplate;
+
+    public PaymentPublisher(KafkaTemplate&lt;String, PaymentEvent&gt; kafkaTemplate) {
+        this.kafkaTemplate = kafkaTemplate;
+    }
+
+    public void publish(PaymentEvent event) {
+        kafkaTemplate.send("payments", event.paymentId().toString(), event);
+    }
+}</code></pre>
+
+              <h5 class="text-warning">Quick interview answers</h5>
+              <ul>
+                <li><strong>Offset:</strong> position of a record in a partition.</li>
+                <li><strong>Stored where:</strong> Kafka internal topic <code>__consumer_offsets</code>.</li>
+                <li><strong>Auto commit:</strong> Kafka commits automatically.</li>
+                <li><strong>Manual commit:</strong> app commits after processing.</li>
+                <li><strong>At most once:</strong> no duplicates, possible loss.</li>
+                <li><strong>At least once:</strong> no loss, possible duplicates.</li>
+                <li><strong>Exactly once:</strong> no duplicates from business perspective, hardest to achieve.</li>
+                <li><strong>Idempotent producer:</strong> retry-safe producer behavior.</li>
+                <li><strong>ACKs:</strong> when producer gets confirmation from broker.</li>
+              </ul>
+              <p>
+                Interview one-liner: Offsets track progress inside partitions, Kafka stores consumer offsets in
+                <code>__consumer_offsets</code>, auto commit is simpler but less safe, manual commit gives control,
+                ACKs control producer durability, and idempotence helps avoid duplicate writes during retries.
+              </p>
+            </div>
+        </div>
+      </div>
+
+        <!-- Q28E -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q28e">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c28e">
+              What are leader and follower replicas, ISR, replication factor, rebalancing, sticky assignor, and cooperative rebalancing in Kafka?
+            </button>
+          </h2>
+          <div id="c28e" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              <h5 class="text-warning">Leader and follower replicas</h5>
+              <p>
+                Each Kafka partition can have multiple replicas across brokers. One replica is elected as the
+                <strong>leader</strong>. Producers write to the leader, and consumers usually read from the leader. The
+                other replicas are <strong>followers</strong> that copy data from the leader.
+              </p>
+              <pre><code class="language-text">Partition 0
+Broker 1 -> Leader
+Broker 2 -> Follower
+Broker 3 -> Follower</code></pre>
+
+              <h5 class="text-warning">Replication factor</h5>
+              <p>
+                Replication factor is the total number of copies of a partition. If the replication factor is 3, each
+                partition has one leader and two followers across three brokers.
+              </p>
+
+              <h5 class="text-warning">What is ISR?</h5>
+              <p>
+                ISR means <strong>In-Sync Replicas</strong>. These are replicas that are sufficiently caught up with the
+                leader. Kafka prefers to keep replicas in ISR so data is safe and failover can happen cleanly.
+              </p>
+              <ul>
+                <li>If a follower lags too much, it can fall out of ISR.</li>
+                <li>If a follower catches up again, it can rejoin ISR.</li>
+                <li>Kafka uses ISR to decide which replicas are safe enough for acknowledgements and leader election.</li>
+              </ul>
+
+              <h5 class="text-warning">What happens if the leader crashes?</h5>
+              <p>
+                Kafka elects a new leader from the ISR replicas for that partition. If at least one in-sync follower is
+                available, the partition can keep serving traffic with minimal disruption.
+              </p>
+              <pre><code class="language-text">Leader broker fails
+Kafka controller elects new leader from ISR
+Partition continues serving reads/writes</code></pre>
+              <p>
+                If no ISR replica is available, the partition may become unavailable until Kafka can recover a
+                suitable replica.
+              </p>
+
+              <h5 class="text-warning">Why replication matters</h5>
+              <ul>
+                <li>Provides fault tolerance if a broker goes down.</li>
+                <li>Improves availability during maintenance or hardware failure.</li>
+                <li>Helps protect data durability when combined with proper acknowledgements.</li>
+              </ul>
+
+              <h5 class="text-warning">What is rebalancing?</h5>
+              <p>
+                Rebalancing is the process of redistributing partitions among consumers in a consumer group when
+                consumers join, leave, or change membership.
+              </p>
+              <p>
+                It also happens when partitions are added, consumer group settings change, or a consumer stops
+                heartbeating.
+              </p>
+
+              <h5 class="text-warning">Problems during rebalance</h5>
+              <ul>
+                <li>Temporary pause in consumption while partitions are reassigned.</li>
+                <li>Duplicate processing if offsets were not committed before rebalance.</li>
+                <li>In-flight messages may be processed twice after reassignment.</li>
+                <li>In large clusters, frequent rebalances can create instability and latency spikes.</li>
+              </ul>
+
+              <h5 class="text-warning">Sticky assignor</h5>
+              <p>
+                Sticky assignor tries to keep the same partition-to-consumer assignment as much as possible during
+                rebalances. That reduces movement, reduces cache loss, and makes rebalances less disruptive.
+              </p>
+
+              <h5 class="text-warning">Cooperative rebalancing</h5>
+              <p>
+                Cooperative rebalancing is a more gradual rebalance strategy. Instead of revoking all partitions at
+                once, Kafka moves partitions incrementally, which reduces stop-the-world style pauses.
+              </p>
+
+              <h5 class="text-warning">Can multiple consumers read the same partition?</h5>
+              <p>
+                In the same consumer group, one partition is assigned to only one consumer at a time. But multiple
+                consumer groups can read the same partition independently. So:
+              </p>
+              <ul>
+                <li><strong>Same group:</strong> no, not at the same time.</li>
+                <li><strong>Different groups:</strong> yes, each group can read the same partition separately.</li>
+              </ul>
+
+              <h5 class="text-warning">What happens if partitions are more than consumers?</h5>
+              <p>
+                If there are more partitions than consumers in a group, some consumers will be assigned more than one
+                partition. That is normal. Kafka tries to balance the partitions as evenly as possible.
+              </p>
+              <pre><code class="language-text">6 partitions
+2 consumers
+
+C1 -> P0, P1, P2
+C2 -> P3, P4, P5</code></pre>
+              <p>
+                This improves parallelism, but one consumer may become a hotspot if it gets too many busy partitions.
+              </p>
+
+              <h5 class="text-warning">Simple real-world analogy</h5>
+              <p>
+                Think of partitions as lanes on a highway. The leader is the active lane controller, followers are backup
+                lanes ready to take over, ISR are the healthy backups, rebalancing is reassigning lanes to drivers, and
+                sticky/cooperative strategies try to avoid unnecessary lane changes.
+              </p>
+
+              <h5 class="text-warning">Spring Boot example with replicas and consumer group</h5>
+              <pre><code class="language-yaml">spring:
+  kafka:
+    consumer:
+      group-id: billing-service
+      auto-offset-reset: earliest
+    producer:
+      acks: all</code></pre>
+              <pre><code class="language-java">@KafkaListener(topics = "payments", groupId = "billing-service")
+public void consume(PaymentEvent event) {
+    // one partition is processed by one consumer in this group at a time
+}</code></pre>
+
+              <h5 class="text-warning">Quick interview answers</h5>
+              <ul>
+                <li><strong>Leader:</strong> handles reads/writes for a partition.</li>
+                <li><strong>Follower:</strong> replica that copies data from the leader.</li>
+                <li><strong>ISR:</strong> replicas in sync with the leader.</li>
+                <li><strong>Replication factor:</strong> number of copies of a partition.</li>
+                <li><strong>Rebalance:</strong> repartitioning work across consumers.</li>
+                <li><strong>Sticky assignor:</strong> keeps assignments stable when possible.</li>
+                <li><strong>Cooperative rebalance:</strong> incremental rebalance with fewer pauses.</li>
+                <li><strong>More partitions than consumers:</strong> some consumers get multiple partitions.</li>
+              </ul>
+
+              <p>
+                Interview one-liner: Kafka uses leader-follower replication with ISR for fault tolerance, and
+                consumer-group rebalancing to spread partitions across consumers; sticky and cooperative strategies
+                reduce rebalance disruption.
+              </p>
             </div>
           </div>
         </div>
