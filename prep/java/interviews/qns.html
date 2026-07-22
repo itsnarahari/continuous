@@ -23591,6 +23591,252 @@ public void consume(PaymentEvent event) {
           </div>
         </div>
 
+        <!-- Q28F -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q28f">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c28f">
+              How do retention, log compaction, schema registry, Kafka transactions, Kafka Streams, and Kafka Connect fit together?
+            </button>
+          </h2>
+          <div id="c28f" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              <h5 class="text-warning">Retention vs log compaction</h5>
+              <table class="table table-dark table-bordered table-sm">
+                <thead>
+                  <tr>
+                    <th>Concept</th>
+                    <th>Meaning</th>
+                    <th>Use case</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Retention</td>
+                    <td>Delete records after time or size limit</td>
+                    <td>Event streams, audit logs, clickstream, replay for a limited time</td>
+                  </tr>
+                  <tr>
+                    <td>Log compaction</td>
+                    <td>Keep latest record for each key, older duplicates can be removed</td>
+                    <td>Reference data, current state, user profile cache, key-value style topics</td>
+                  </tr>
+                </tbody>
+              </table>
+              <pre><code class="language-yaml">spring:
+  kafka:
+    topics:
+      orders:
+        retention-ms: 604800000
+      user-profile:
+        cleanup-policy: compact</code></pre>
+
+              <h5 class="text-warning">Schema Registry and message versioning</h5>
+              <p>
+                Schema Registry stores and manages Avro/Protobuf/JSON Schema definitions so producers and consumers can
+                evolve message formats safely over time.
+              </p>
+              <ul>
+                <li>Add new optional fields instead of breaking old consumers.</li>
+                <li>Keep backward or forward compatibility rules in place.</li>
+                <li>Version messages intentionally instead of changing payloads randomly.</li>
+              </ul>
+              <p>
+                A schema registry is especially useful when many services share the same events.
+              </p>
+
+              <h5 class="text-warning">Kafka transactions and exactly-once</h5>
+              <p>
+                Kafka transactions allow a producer to write to multiple partitions and commit offsets atomically for a
+                consume-transform-produce pipeline. This is one of the building blocks for exactly-once semantics.
+              </p>
+              <pre><code class="language-java">@Transactional
+public void processAndPublish() {
+    // read from Kafka
+    // write result
+    // publish output
+    // commit offsets in the same transactional flow
+}</code></pre>
+
+              <h5 class="text-warning">Kafka Streams</h5>
+              <p>
+                Kafka Streams is a Java library for building stream-processing applications on top of Kafka. Use it when
+                you need transformations, joins, aggregations, or windowing over Kafka data.
+              </p>
+              <ul>
+                <li>Great for stream processing inside your Spring/Java ecosystem.</li>
+                <li>Supports stateless and stateful processing.</li>
+                <li>Useful for enrich, group, aggregate, window, and join pipelines.</li>
+              </ul>
+
+              <h5 class="text-warning">Kafka Connect and CDC</h5>
+              <p>
+                Kafka Connect is used to move data between Kafka and external systems like databases, object storage,
+                and search engines. CDC tools like Debezium can capture database changes and publish them to Kafka.
+              </p>
+              <pre><code class="language-text">MySQL/Postgres
+   -> Debezium CDC
+   -> Kafka topic
+   -> Consumers / search index / analytics</code></pre>
+
+              <h5 class="text-warning">When to use what</h5>
+              <table class="table table-dark table-bordered table-sm">
+                <thead>
+                  <tr>
+                    <th>Need</th>
+                    <th>Use</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Keep all events for a while</td>
+                    <td>Retention</td>
+                  </tr>
+                  <tr>
+                    <td>Keep latest state per key</td>
+                    <td>Log compaction</td>
+                  </tr>
+                  <tr>
+                    <td>Safe schema evolution</td>
+                    <td>Schema Registry</td>
+                  </tr>
+                  <tr>
+                    <td>Atomic consume-process-publish</td>
+                    <td>Kafka transactions</td>
+                  </tr>
+                  <tr>
+                    <td>Stream transformations</td>
+                    <td>Kafka Streams</td>
+                  </tr>
+                  <tr>
+                    <td>Database-to-Kafka sync</td>
+                    <td>Kafka Connect / CDC</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p>
+                Interview one-liner: retention keeps event history, compaction keeps latest state per key, Schema
+                Registry manages payload evolution, transactions help exactly-once workflows, Kafka Streams handles
+                stream processing, and Kafka Connect/CDC move data between Kafka and external systems.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Q28G -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q28g">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c28g">
+              How do you handle retries, poison messages, DLT, lag, security, partition sizing, and broker health in Kafka?
+            </button>
+          </h2>
+          <div id="c28g" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              <h5 class="text-warning">Retries and poison messages</h5>
+              <p>
+                A poison message is a record that keeps failing because of bad data or a bug in consumer logic. If you
+                keep retrying forever, the consumer can get stuck. Production systems usually use bounded retries and then
+                move the message to a Dead Letter Topic.
+              </p>
+              <h5 class="text-warning">Dead Letter Topic (DLT)</h5>
+              <p>
+                A DLT is a separate Kafka topic where failed messages are parked after retries are exhausted. It lets
+                the main consumer keep moving while a human or a separate process inspects the bad record later.
+              </p>
+              <h5 class="text-warning">Spring Kafka retry + DLT example</h5>
+              <pre><code class="language-java">@Bean
+public DefaultErrorHandler errorHandler(KafkaTemplate&lt;String, Object&gt; kafkaTemplate) {
+    DeadLetterPublishingRecoverer recoverer =
+            new DeadLetterPublishingRecoverer(kafkaTemplate,
+                    (record, ex) -&gt; new TopicPartition(record.topic() + ".DLT", record.partition()));
+
+    FixedBackOff backOff = new FixedBackOff(1000L, 3L); // 3 retries
+    return new DefaultErrorHandler(recoverer, backOff);
+}</code></pre>
+              <p>
+                In this setup, the listener retries a few times. If it still fails, the message goes to
+                <code>orders.DLT</code>.
+              </p>
+
+              <h5 class="text-warning">How do you avoid duplicate processing?</h5>
+              <ul>
+                <li>Use manual commits after successful processing.</li>
+                <li>Make consumers idempotent using message ids or business keys.</li>
+                <li>Use transactions when you need consume-transform-produce behavior.</li>
+                <li>Store processing state in a database or Redis if needed.</li>
+              </ul>
+
+              <h5 class="text-warning">Consumer lag</h5>
+              <p>
+                Consumer lag is the difference between the latest offset in a partition and the last committed offset by
+                the consumer group. High lag means the consumer is falling behind.
+              </p>
+              <p>
+                Causes include slow consumer code, large message spikes, too few partitions, insufficient consumer
+                instances, slow downstream dependencies, or broker throttling.
+              </p>
+              <h5 class="text-warning">How to monitor lag</h5>
+              <ul>
+                <li>Monitor Kafka consumer group lag metrics in Prometheus/Grafana.</li>
+                <li>Use Kafka Exporter or built-in observability tools.</li>
+                <li>Alert when lag crosses thresholds or keeps growing.</li>
+              </ul>
+
+              <h5 class="text-warning">Security</h5>
+              <table class="table table-dark table-bordered table-sm">
+                <thead>
+                  <tr>
+                    <th>Area</th>
+                    <th>Common choice</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Transport security</td>
+                    <td>SSL/TLS</td>
+                  </tr>
+                  <tr>
+                    <td>Authentication</td>
+                    <td>SASL/SCRAM, Kerberos, OAuth depending on platform</td>
+                  </tr>
+                  <tr>
+                    <td>Authorization</td>
+                    <td>Kafka ACLs</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <h5 class="text-warning">How do you choose partition count?</h5>
+              <ul>
+                <li>Estimate expected throughput and required parallelism.</li>
+                <li>Keep partition count high enough for scale, but not absurdly high.</li>
+                <li>Remember that each partition adds memory, file handles, and operational overhead.</li>
+                <li>Plan for future consumers, but avoid over-partitioning from day one.</li>
+              </ul>
+
+              <h5 class="text-warning">Broker health and replication health</h5>
+              <ul>
+                <li>Watch under-replicated partitions.</li>
+                <li>Watch offline partitions and broker availability.</li>
+                <li>Monitor disk usage, network saturation, request latency, and ISR shrink/expand events.</li>
+              </ul>
+
+              <h5 class="text-warning">Broker sizing rule of thumb</h5>
+              <p>
+                Size brokers based on disk I/O, network throughput, CPU, memory, and expected partition count. A broker
+                with too many hot partitions or too little disk/network capacity will become a bottleneck even if
+                consumer code is efficient.
+              </p>
+
+              <p>
+                Interview one-liner: use bounded retries and DLT for poison messages, monitor consumer lag and broker
+                health, secure Kafka with TLS/SASL/ACLs, choose partition counts for future parallelism, and keep an eye
+                on under-replicated partitions and disk/network pressure.
+              </p>
+            </div>
+          </div>
+        </div>
+
         <!-- Q29 -->
         <div class="accordion-item">
           <h2 class="accordion-header" id="q29">
