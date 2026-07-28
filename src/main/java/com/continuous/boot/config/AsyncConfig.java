@@ -1,7 +1,7 @@
 package com.continuous.boot.config;
 
 import com.continuous.boot.models.Address;
-import com.continuous.boot.models.Employee;
+import com.continuous.boot.models.EmployeeDto;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,8 +17,8 @@ public class AsyncConfig {
 
     @Bean("employee")
     @Scope(scopeName = "singleton")
-    public Employee employee() {
-        return new Employee();
+    public EmployeeDto employee() {
+        return new EmployeeDto();
     }
 
     @Bean("prototype")

@@ -1,5 +1,7 @@
 package com.continuous.practice;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.util.List;
@@ -13,8 +15,11 @@ import java.util.Objects;
 public class Employee{
 
     private int id;
+    @NotBlank
     private String name;
+    @NotBlank
     private int age;
+    @Size(min = 2, max = 4)
     private String gender;
     private String department;
     private int yearOfJoining;

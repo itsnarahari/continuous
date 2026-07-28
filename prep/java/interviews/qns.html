@@ -12,6 +12,7 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-groovy.min.js"></script>
@@ -109,6 +110,304 @@
         onkeyup="searchQuestions()" />
     </div>
     <div class="accordion" id="accordionSeniorJava">
+
+      <!-- SQL Top Shortcut -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="sqlShortcut">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#sqlShortcutBody">
+            SQL - Scenario Based Interview Questions
+          </button>
+        </h2>
+        <div id="sqlShortcutBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              The full SQL question bank is available as a collapsed section below. It includes joins, aggregates,
+              constraints, ranking, sales analytics, customer/order scenarios, and extra real-world interview cases.
+            </p>
+            <button class="btn btn-sm btn-outline-info" type="button" onclick="openSqlSection()">
+              Open full SQL section
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Q1AJ -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q1aj">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c1aj">
+            SQL Joins - All Types with Real-World Examples
+          </button>
+        </h2>
+        <div id="c1aj" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              SQL joins are used to combine rows from two or more tables based on related columns. In real projects,
+              joins are used for reports like customers with orders, employees with departments, products with sales,
+              and users with roles.
+            </p>
+
+            <h5 class="text-warning">Sample tables used in examples</h5>
+            <pre><code class="language-sql">customers
+---------
+customer_id | customer_name
+1           | Ravi
+2           | Anu
+3           | Kiran
+
+orders
+------
+order_id | customer_id | order_amount
+101      | 1           | 500
+102      | 1           | 800
+103      | 2           | 300</code></pre>
+
+            <h5 class="text-warning">1. INNER JOIN</h5>
+            <p>
+              <code>INNER JOIN</code> returns only matching records from both tables. If a customer has no order, that
+              customer will not appear.
+            </p>
+            <pre><code class="language-sql">SELECT c.customer_id,
+       c.customer_name,
+       o.order_id,
+       o.order_amount
+FROM customers c
+INNER JOIN orders o
+    ON c.customer_id = o.customer_id;</code></pre>
+            <p>
+              Real-world use: show customers who have placed orders.
+            </p>
+
+            <h5 class="text-warning">2. LEFT JOIN / LEFT OUTER JOIN</h5>
+            <p>
+              <code>LEFT JOIN</code> returns all rows from the left table and matching rows from the right table. If no
+              match exists, right-side columns become <code>NULL</code>.
+            </p>
+            <pre><code class="language-sql">SELECT c.customer_id,
+       c.customer_name,
+       o.order_id,
+       o.order_amount
+FROM customers c
+LEFT JOIN orders o
+    ON c.customer_id = o.customer_id;</code></pre>
+            <p>
+              Real-world use: show all customers, including customers who have not ordered yet.
+            </p>
+
+            <h5 class="text-warning">3. RIGHT JOIN / RIGHT OUTER JOIN</h5>
+            <p>
+              <code>RIGHT JOIN</code> returns all rows from the right table and matching rows from the left table. It is
+              less commonly used because most developers rewrite it as a <code>LEFT JOIN</code> for readability.
+            </p>
+            <pre><code class="language-sql">SELECT c.customer_id,
+       c.customer_name,
+       o.order_id,
+       o.order_amount
+FROM customers c
+RIGHT JOIN orders o
+    ON c.customer_id = o.customer_id;</code></pre>
+            <p>
+              Real-world use: show all orders even if some order has a missing or invalid customer reference.
+            </p>
+
+            <h5 class="text-warning">4. FULL OUTER JOIN</h5>
+            <p>
+              <code>FULL OUTER JOIN</code> returns all matching and non-matching records from both tables. MySQL does
+              not directly support <code>FULL OUTER JOIN</code>, so use <code>LEFT JOIN</code> plus
+              <code>RIGHT JOIN</code> with <code>UNION</code>.
+            </p>
+            <pre><code class="language-sql">SELECT c.customer_id,
+       c.customer_name,
+       o.order_id,
+       o.order_amount
+FROM customers c
+LEFT JOIN orders o
+    ON c.customer_id = o.customer_id
+
+UNION
+
+SELECT c.customer_id,
+       c.customer_name,
+       o.order_id,
+       o.order_amount
+FROM customers c
+RIGHT JOIN orders o
+    ON c.customer_id = o.customer_id;</code></pre>
+            <p>
+              Real-world use: reconciliation reports, where you need all customers and all orders, including unmatched
+              records from either side.
+            </p>
+
+            <h5 class="text-warning">5. CROSS JOIN</h5>
+            <p>
+              <code>CROSS JOIN</code> returns every combination of rows from both tables. If table A has 3 rows and
+              table B has 4 rows, result will have 12 rows.
+            </p>
+            <pre><code class="language-sql">SELECT p.product_name,
+       s.store_name
+FROM products p
+CROSS JOIN stores s;</code></pre>
+            <p>
+              Real-world use: generate all product-store combinations before checking inventory availability.
+            </p>
+
+            <h5 class="text-warning">6. SELF JOIN</h5>
+            <p>
+              <code>SELF JOIN</code> joins a table with itself. It is commonly used for hierarchy data like employee and
+              manager relationships.
+            </p>
+            <pre><code class="language-sql">SELECT e.employee_id,
+       e.first_name AS employee_name,
+       m.first_name AS manager_name
+FROM employees e
+LEFT JOIN employees m
+    ON e.manager_id = m.employee_id;</code></pre>
+            <p>
+              Real-world use: show every employee with their manager name.
+            </p>
+
+            <h5 class="text-warning">7. ANTI JOIN using LEFT JOIN</h5>
+            <p>
+              An anti join finds records in one table that do not have a matching record in another table.
+            </p>
+            <pre><code class="language-sql">SELECT c.customer_id,
+       c.customer_name
+FROM customers c
+LEFT JOIN orders o
+    ON c.customer_id = o.customer_id
+WHERE o.order_id IS NULL;</code></pre>
+            <p>
+              Real-world use: find customers who registered but never placed an order.
+            </p>
+
+            <h5 class="text-warning">8. SEMI JOIN using EXISTS</h5>
+            <p>
+              A semi join returns rows from the first table when a match exists in the second table, without duplicating
+              the first table rows.
+            </p>
+            <pre><code class="language-sql">SELECT c.customer_id,
+       c.customer_name
+FROM customers c
+WHERE EXISTS (
+    SELECT 1
+    FROM orders o
+    WHERE o.customer_id = c.customer_id
+);</code></pre>
+            <p>
+              Real-world use: find customers who have at least one order without showing each order row.
+            </p>
+
+            <h5 class="text-warning">9. NON-EQUI JOIN</h5>
+            <p>
+              A non-equi join uses conditions other than equality, such as ranges. It is common in salary slabs,
+              tax brackets, discounts, and commission rules.
+            </p>
+            <pre><code class="language-sql">SELECT e.employee_id,
+       e.first_name,
+       e.salary,
+       s.grade
+FROM employees e
+JOIN salary_grades s
+    ON e.salary BETWEEN s.min_salary AND s.max_salary;</code></pre>
+            <p>
+              Real-world use: assign each employee to a salary grade.
+            </p>
+
+            <h5 class="text-warning">10. MULTIPLE JOINS</h5>
+            <p>
+              Real reports often need more than two tables. This example shows orders with customer name, product name,
+              quantity, and item amount.
+            </p>
+            <pre><code class="language-sql">SELECT o.order_id,
+       c.customer_name,
+       p.product_name,
+       oi.quantity,
+       oi.total_amount
+FROM orders o
+JOIN customers c
+    ON o.customer_id = c.customer_id
+JOIN order_items oi
+    ON o.order_id = oi.order_id
+JOIN products p
+    ON oi.product_id = p.product_id;</code></pre>
+            <p>
+              Real-world use: invoice details, order history, sales reports, and product revenue reports.
+            </p>
+
+            <h5 class="text-warning">Join comparison summary</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Join type</th>
+                  <th>What it returns</th>
+                  <th>Real-world use</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>INNER JOIN</code></td>
+                  <td>Only matching rows from both tables</td>
+                  <td>Customers with orders</td>
+                </tr>
+                <tr>
+                  <td><code>LEFT JOIN</code></td>
+                  <td>All left rows plus matching right rows</td>
+                  <td>All customers with optional orders</td>
+                </tr>
+                <tr>
+                  <td><code>RIGHT JOIN</code></td>
+                  <td>All right rows plus matching left rows</td>
+                  <td>All orders even if customer is missing</td>
+                </tr>
+                <tr>
+                  <td><code>FULL OUTER JOIN</code></td>
+                  <td>All rows from both tables</td>
+                  <td>Reconciliation reports</td>
+                </tr>
+                <tr>
+                  <td><code>CROSS JOIN</code></td>
+                  <td>Every combination of rows</td>
+                  <td>Product-store combinations</td>
+                </tr>
+                <tr>
+                  <td><code>SELF JOIN</code></td>
+                  <td>Table joined with itself</td>
+                  <td>Employee-manager hierarchy</td>
+                </tr>
+                <tr>
+                  <td><code>ANTI JOIN</code></td>
+                  <td>Rows with no matching record</td>
+                  <td>Customers without orders</td>
+                </tr>
+                <tr>
+                  <td><code>SEMI JOIN</code></td>
+                  <td>Rows where a match exists</td>
+                  <td>Customers who have at least one order</td>
+                </tr>
+                <tr>
+                  <td><code>NON-EQUI JOIN</code></td>
+                  <td>Rows matched by range or inequality</td>
+                  <td>Salary grade or tax slab matching</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Important interview points</h5>
+            <ul>
+              <li><code>INNER JOIN</code> removes non-matching rows.</li>
+              <li><code>LEFT JOIN</code> keeps all rows from the left table.</li>
+              <li>Use <code>LEFT JOIN ... IS NULL</code> to find missing child records.</li>
+              <li>Use <code>EXISTS</code> when you only need to check whether a related row exists.</li>
+              <li>Avoid unnecessary <code>CROSS JOIN</code> because it can create a huge result set.</li>
+              <li>For readability, many teams prefer <code>LEFT JOIN</code> over <code>RIGHT JOIN</code>.</li>
+            </ul>
+            <p>
+              Interview one-liner: joins combine related tables; use <code>INNER JOIN</code> for matching rows,
+              <code>LEFT JOIN</code> for all left-side records, <code>SELF JOIN</code> for hierarchy, and
+              <code>EXISTS</code> or <code>LEFT JOIN ... IS NULL</code> for existence and missing-record checks.
+            </p>
+          </div>
+        </div>
+      </div>
 
       <!-- Q0 -->
       <div class="accordion-item">
@@ -18705,6 +19004,627 @@ Output: [1, 1, 1, 0, 0, 0]</code></pre>
         </div>
       </div>
 
+      <!-- Q1AI -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q1ai">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c1ai">
+            SQL Scenario Based Interview Questions
+          </button>
+        </h2>
+        <div id="c1ai" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              This section collects SQL scenario-based interview questions from filtering, joins, constraints,
+              aggregation, subqueries, ranking, sales analytics, and real-world business cases. The examples use MySQL
+              style syntax like <code>LIMIT</code>, <code>DATE_FORMAT</code>, and <code>INTERVAL</code>.
+            </p>
+            <p class="text-warning">
+              Note: The provided screenshots contain questions 1-40 and 46-53. Questions 41-45 were not present in the
+              shared images, so extra real-world interview cases are added at the end.
+            </p>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">1. Find employees whose salary is greater than 50,000</h5>
+              <pre><code class="language-sql">SELECT *
+FROM employees
+WHERE salary &gt; 50000;</code></pre>
+              <p>Use <code>WHERE</code> to filter rows before results are returned.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">2. Identify duplicate email addresses in customers</h5>
+              <pre><code class="language-sql">SELECT email, COUNT(*) AS email_count
+FROM customers
+GROUP BY email
+HAVING COUNT(*) &gt; 1;</code></pre>
+              <p><code>GROUP BY</code> groups same emails, and <code>HAVING</code> filters grouped results.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">3. Correct wrong data inserted into a table</h5>
+              <pre><code class="language-sql">UPDATE table_name
+SET column_name = 'correct_value'
+WHERE condition;</code></pre>
+              <p>Always use a proper <code>WHERE</code> condition with <code>UPDATE</code> to avoid modifying all rows.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">4. Retrieve rows where phone number is missing</h5>
+              <pre><code class="language-sql">SELECT *
+FROM table_name
+WHERE phone_number IS NULL;</code></pre>
+              <p>Use <code>IS NULL</code>, not <code>= NULL</code>, because null means unknown value.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">5. Display employees sorted by highest salary first</h5>
+              <pre><code class="language-sql">SELECT *
+FROM employees
+ORDER BY salary DESC;</code></pre>
+              <p><code>ORDER BY DESC</code> sorts from highest to lowest.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">6. Retrieve customers along with their orders</h5>
+              <pre><code class="language-sql">SELECT c.customer_id,
+       c.customer_name,
+       o.order_id,
+       o.order_date
+FROM customers c
+INNER JOIN orders o
+    ON c.customer_id = o.customer_id;</code></pre>
+              <p><code>INNER JOIN</code> returns only customers who have matching orders.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">7. Find customers who have not placed any orders</h5>
+              <pre><code class="language-sql">SELECT c.customer_id,
+       c.customer_name
+FROM customers c
+LEFT JOIN orders o
+    ON c.customer_id = o.customer_id
+WHERE o.order_id IS NULL;</code></pre>
+              <p>Use <code>LEFT JOIN</code> plus <code>IS NULL</code> to find missing related records.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">8. Find total sales made by each employee</h5>
+              <pre><code class="language-sql">SELECT employee_id,
+       SUM(sales_amount) AS total_sales
+FROM sales
+GROUP BY employee_id;</code></pre>
+              <p><code>SUM</code> calculates total amount per employee.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">9. Count how many employees work in each department</h5>
+              <pre><code class="language-sql">SELECT department_id,
+       COUNT(*) AS employee_count
+FROM employees
+GROUP BY department_id;</code></pre>
+              <p><code>COUNT(*)</code> counts rows in each department group.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">10. Show departments with more than 10 employees</h5>
+              <pre><code class="language-sql">SELECT department_id,
+       COUNT(*) AS employee_count
+FROM employees
+GROUP BY department_id
+HAVING COUNT(*) &gt; 10;</code></pre>
+              <p>Use <code>HAVING</code> when filtering aggregate results.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">11. Fetch only the first 5 records from a table</h5>
+              <pre><code class="language-sql">SELECT *
+FROM table_name
+LIMIT 5;</code></pre>
+              <p><code>LIMIT</code> restricts the number of returned rows.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">12. Update one employee's department</h5>
+              <pre><code class="language-sql">UPDATE employees
+SET department_id = 5
+WHERE employee_id = 101;</code></pre>
+              <p>The <code>WHERE</code> clause ensures only employee <code>101</code> is updated.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">13. Remove all records but keep table structure</h5>
+              <pre><code class="language-sql">TRUNCATE TABLE table_name;</code></pre>
+              <p><code>TRUNCATE</code> removes rows quickly but keeps the table definition.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">14. Prevent duplicate employee IDs</h5>
+              <pre><code class="language-sql">ALTER TABLE employees
+ADD CONSTRAINT pk_employee_id
+PRIMARY KEY (employee_id);</code></pre>
+              <p>A primary key enforces uniqueness and prevents null values for the key column.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">15. Ensure salary values cannot be null</h5>
+              <pre><code class="language-sql">ALTER TABLE employees
+MODIFY salary DECIMAL(10, 2) NOT NULL;</code></pre>
+              <p><code>NOT NULL</code> ensures every employee must have a salary value.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">16. Combine results from two same-structure tables and remove duplicates</h5>
+              <pre><code class="language-sql">SELECT column1, column2, column3
+FROM table1
+UNION
+SELECT column1, column2, column3
+FROM table2;</code></pre>
+              <p><code>UNION</code> removes duplicates. Use <code>UNION ALL</code> when duplicates should remain.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">17. Ensure usernames are unique in a login system</h5>
+              <pre><code class="language-sql">ALTER TABLE users
+ADD CONSTRAINT username_unique
+UNIQUE (username);</code></pre>
+              <p>A unique constraint prevents duplicate usernames.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">18. Search customers whose names start with A</h5>
+              <pre><code class="language-sql">SELECT *
+FROM customers
+WHERE customer_name LIKE 'A%';</code></pre>
+              <p><code>LIKE 'A%'</code> matches names starting with <code>A</code>.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">19. Find the second highest salary</h5>
+              <pre><code class="language-sql">SELECT MAX(salary) AS second_highest_salary
+FROM employees
+WHERE salary &lt; (
+    SELECT MAX(salary)
+    FROM employees
+);</code></pre>
+              <p>This finds the highest salary that is less than the maximum salary.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">20. Improve search performance on employee_id</h5>
+              <pre><code class="language-sql">CREATE INDEX idx_employee_id
+ON employees (employee_id);</code></pre>
+              <p>An index improves lookup speed for frequently searched columns.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">21. List departments that do not have employees</h5>
+              <pre><code class="language-sql">SELECT d.department_id,
+       d.department_name
+FROM departments d
+LEFT JOIN employees e
+    ON d.department_id = e.department_id
+WHERE e.employee_id IS NULL;</code></pre>
+              <p>This is another common <code>LEFT JOIN</code> missing-child-record scenario.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">22. Count employees hired in each year</h5>
+              <pre><code class="language-sql">SELECT EXTRACT(YEAR FROM hire_date) AS hire_year,
+       COUNT(*) AS employee_count
+FROM employees
+GROUP BY EXTRACT(YEAR FROM hire_date)
+ORDER BY hire_year;</code></pre>
+              <p>Use date extraction functions to group records by year.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">23. Find employees earning more than their department average salary</h5>
+              <pre><code class="language-sql">SELECT employee_id,
+       first_name,
+       salary,
+       department_id
+FROM employees e
+WHERE salary &gt; (
+    SELECT AVG(salary)
+    FROM employees e2
+    WHERE e2.department_id = e.department_id
+);</code></pre>
+              <p>This uses a correlated subquery because the inner query depends on the outer employee's department.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">24. List every employee with their manager name</h5>
+              <pre><code class="language-sql">SELECT e.employee_id,
+       e.first_name,
+       e.last_name,
+       m.first_name AS manager_first_name,
+       m.last_name AS manager_last_name
+FROM employees e
+LEFT JOIN employees m
+    ON e.manager_id = m.employee_id;</code></pre>
+              <p>This is a self join because the employee and manager are in the same table.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">25. Find top 3 highest paid employees in each department</h5>
+              <pre><code class="language-sql">SELECT department_id,
+       employee_id,
+       first_name,
+       salary
+FROM (
+    SELECT e.*,
+           RANK() OVER (
+               PARTITION BY department_id
+               ORDER BY salary DESC
+           ) AS rnk
+    FROM employees e
+) t
+WHERE rnk &lt;= 3
+ORDER BY department_id, salary DESC;</code></pre>
+              <p><code>RANK()</code> gives the same rank to ties. Use <code>ROW_NUMBER()</code> for exactly 3 rows.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">26. Find total orders placed by each customer</h5>
+              <pre><code class="language-sql">SELECT customer_id,
+       COUNT(*) AS order_count
+FROM orders
+GROUP BY customer_id;</code></pre>
+              <p>Basic aggregation by customer.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">27. Find average order amount for each customer</h5>
+              <pre><code class="language-sql">SELECT customer_id,
+       AVG(order_amount) AS avg_order_amount
+FROM orders
+GROUP BY customer_id;</code></pre>
+              <p><code>AVG</code> calculates average order value per customer.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">28. Find customers who placed more than 5 orders</h5>
+              <pre><code class="language-sql">SELECT customer_id,
+       COUNT(*) AS order_count
+FROM orders
+GROUP BY customer_id
+HAVING COUNT(*) &gt; 5;</code></pre>
+              <p>Use <code>HAVING</code> to filter customers after counting orders.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">29. Find total revenue generated each month</h5>
+              <pre><code class="language-sql">SELECT DATE_FORMAT(order_date, '%Y-%m') AS order_month,
+       SUM(order_amount) AS total_revenue
+FROM orders
+GROUP BY DATE_FORMAT(order_date, '%Y-%m')
+ORDER BY order_month;</code></pre>
+              <p>This groups revenue by month.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">30. Find the most recent order date for each customer</h5>
+              <pre><code class="language-sql">SELECT customer_id,
+       MAX(order_date) AS last_order_date
+FROM orders
+GROUP BY customer_id;</code></pre>
+              <p><code>MAX</code> returns the latest order date per customer.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">31. List all products that are out of stock</h5>
+              <pre><code class="language-sql">SELECT product_id,
+       product_name
+FROM products
+WHERE stock_quantity = 0;</code></pre>
+              <p>Inventory checks often use simple filtering.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">32. Find the number of active customers</h5>
+              <pre><code class="language-sql">SELECT COUNT(*) AS active_customer_count
+FROM customers
+WHERE status = 'Active';</code></pre>
+              <p>This counts customers with active status.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">33. Find customers registered in the last 30 days</h5>
+              <pre><code class="language-sql">SELECT customer_id,
+       customer_name,
+       register_date
+FROM customers
+WHERE register_date &gt;= CURRENT_DATE - INTERVAL 30 DAY;</code></pre>
+              <p>Useful for recently joined users, onboarding reports, and growth dashboards.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">34. List orders with customer names</h5>
+              <pre><code class="language-sql">SELECT o.order_id,
+       o.order_date,
+       c.customer_name
+FROM orders o
+INNER JOIN customers c
+    ON o.customer_id = c.customer_id;</code></pre>
+              <p>Join order rows to customer details for readable reports.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">35. Find top 5 best-selling products by quantity sold</h5>
+              <pre><code class="language-sql">SELECT product_id,
+       product_name,
+       SUM(quantity) AS total_quantity_sold
+FROM order_items
+GROUP BY product_id, product_name
+ORDER BY total_quantity_sold DESC
+LIMIT 5;</code></pre>
+              <p>This is a common product analytics query.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">36. Find total quantity sold for each product each month</h5>
+              <pre><code class="language-sql">SELECT product_id,
+       DATE_FORMAT(order_date, '%Y-%m') AS order_month,
+       SUM(quantity) AS total_quantity_sold
+FROM order_items
+GROUP BY product_id, DATE_FORMAT(order_date, '%Y-%m')
+ORDER BY product_id, order_month;</code></pre>
+              <p>Monthly product movement is useful for demand forecasting.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">37. Find average rating of each product</h5>
+              <pre><code class="language-sql">SELECT product_id,
+       AVG(rating) AS average_rating
+FROM product_reviews
+GROUP BY product_id
+ORDER BY average_rating DESC;</code></pre>
+              <p>Ratings are commonly aggregated for product ranking.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">38. Find products that have never been ordered</h5>
+              <pre><code class="language-sql">SELECT p.product_id,
+       p.product_name
+FROM products p
+LEFT JOIN order_items oi
+    ON p.product_id = oi.product_id
+WHERE oi.product_id IS NULL;</code></pre>
+              <p>This finds products with no matching row in <code>order_items</code>.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">39. Find customers who spent more than 1000 in total</h5>
+              <pre><code class="language-sql">SELECT c.customer_id,
+       c.customer_name,
+       SUM(o.total_amount) AS total_spent
+FROM customers c
+JOIN orders o
+    ON c.customer_id = o.customer_id
+GROUP BY c.customer_id, c.customer_name
+HAVING SUM(o.total_amount) &gt; 1000
+ORDER BY total_spent DESC;</code></pre>
+              <p>Use <code>HAVING</code> for aggregate spend filters.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">40. Find the category with the highest total sales</h5>
+              <pre><code class="language-sql">SELECT p.category_id,
+       c.category_name,
+       SUM(oi.total_quantity) AS total_sales
+FROM order_items oi
+JOIN products p
+    ON oi.product_id = p.product_id
+JOIN categories c
+    ON p.category_id = c.category_id
+GROUP BY p.category_id, c.category_name
+ORDER BY total_sales DESC
+LIMIT 1;</code></pre>
+              <p>This combines joins, grouping, ordering, and limiting.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">46. Find the customer who placed the most orders</h5>
+              <pre><code class="language-sql">SELECT c.customer_id,
+       c.customer_name,
+       COUNT(o.order_id) AS order_count
+FROM customers c
+LEFT JOIN orders o
+    ON c.customer_id = o.customer_id
+GROUP BY c.customer_id, c.customer_name
+ORDER BY order_count DESC
+LIMIT 1;</code></pre>
+              <p><code>LEFT JOIN</code> keeps customers even if they have zero orders, but the top result will usually have orders.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">47. Find the month with the highest number of employees hired</h5>
+              <pre><code class="language-sql">SELECT DATE_FORMAT(hire_date, '%Y-%m') AS hire_month,
+       COUNT(*) AS hire_count
+FROM employees
+GROUP BY DATE_FORMAT(hire_date, '%Y-%m')
+ORDER BY hire_count DESC
+LIMIT 1;</code></pre>
+              <p>This is useful for hiring trend analytics.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">48. Find total employees in each department including departments with no employees</h5>
+              <pre><code class="language-sql">SELECT d.department_id,
+       d.department_name,
+       COUNT(e.employee_id) AS employee_count
+FROM departments d
+LEFT JOIN employees e
+    ON d.department_id = e.department_id
+GROUP BY d.department_id, d.department_name
+ORDER BY d.department_name;</code></pre>
+              <p>Count a nullable child column like <code>e.employee_id</code> so empty departments return <code>0</code>.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">49. List top 5 customers who spent the most</h5>
+              <pre><code class="language-sql">SELECT c.customer_id,
+       c.customer_name,
+       SUM(o.total_amount) AS total_spent
+FROM customers c
+JOIN orders o
+    ON c.customer_id = o.customer_id
+GROUP BY c.customer_id, c.customer_name
+ORDER BY total_spent DESC
+LIMIT 5;</code></pre>
+              <p>This is a common high-value customer report.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">50. Find departments with more than 5 employees and average salary above 60000</h5>
+              <pre><code class="language-sql">SELECT d.department_id,
+       d.department_name,
+       COUNT(e.employee_id) AS employee_count,
+       AVG(e.salary) AS avg_salary
+FROM departments d
+JOIN employees e
+    ON d.department_id = e.department_id
+GROUP BY d.department_id, d.department_name
+HAVING COUNT(e.employee_id) &gt; 5
+   AND AVG(e.salary) &gt; 60000
+ORDER BY avg_salary DESC;</code></pre>
+              <p>This combines multiple aggregate conditions in <code>HAVING</code>.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">51. Find the second highest order amount</h5>
+              <pre><code class="language-sql">SELECT MAX(order_amount) AS second_highest_amount
+FROM orders
+WHERE order_amount &lt; (
+    SELECT MAX(order_amount)
+    FROM orders
+);</code></pre>
+              <p>This returns the second distinct highest order amount.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">52. Find customers who have not placed any orders yet</h5>
+              <pre><code class="language-sql">SELECT c.customer_id,
+       c.customer_name
+FROM customers c
+LEFT JOIN orders o
+    ON c.customer_id = o.customer_id
+WHERE o.order_id IS NULL;</code></pre>
+              <p>Same pattern as inactive relationship lookup: <code>LEFT JOIN</code> plus <code>IS NULL</code>.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">53. Find lifetime value of each customer including zero-spend customers</h5>
+              <pre><code class="language-sql">SELECT c.customer_id,
+       c.customer_name,
+       COALESCE(SUM(o.total_amount), 0) AS lifetime_value
+FROM customers c
+LEFT JOIN orders o
+    ON c.customer_id = o.customer_id
+GROUP BY c.customer_id, c.customer_name
+ORDER BY lifetime_value DESC;</code></pre>
+              <p><code>COALESCE</code> converts null totals into <code>0</code> for customers with no orders.</p>
+            </div>
+
+            <h5 class="text-info">Extra real-world SQL interview cases</h5>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">54. Delete duplicate customers but keep the latest record</h5>
+              <pre><code class="language-sql">DELETE c1
+FROM customers c1
+JOIN customers c2
+    ON c1.email = c2.email
+   AND c1.customer_id &lt; c2.customer_id;</code></pre>
+              <p>This keeps the row with the greater <code>customer_id</code>. In production, first run a <code>SELECT</code> preview.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">55. Find running total revenue by order date</h5>
+              <pre><code class="language-sql">SELECT order_date,
+       order_amount,
+       SUM(order_amount) OVER (
+           ORDER BY order_date
+       ) AS running_revenue
+FROM orders
+ORDER BY order_date;</code></pre>
+              <p>Window functions calculate analytics without collapsing rows like <code>GROUP BY</code>.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">56. Find customers inactive for the last 90 days</h5>
+              <pre><code class="language-sql">SELECT c.customer_id,
+       c.customer_name,
+       MAX(o.order_date) AS last_order_date
+FROM customers c
+LEFT JOIN orders o
+    ON c.customer_id = o.customer_id
+GROUP BY c.customer_id, c.customer_name
+HAVING MAX(o.order_date) &lt; CURRENT_DATE - INTERVAL 90 DAY
+    OR MAX(o.order_date) IS NULL;</code></pre>
+              <p>This is useful for churn, retention, and reactivation campaigns.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">57. Find each customer's first order</h5>
+              <pre><code class="language-sql">SELECT *
+FROM (
+    SELECT o.*,
+           ROW_NUMBER() OVER (
+               PARTITION BY customer_id
+               ORDER BY order_date
+           ) AS rn
+    FROM orders o
+) t
+WHERE rn = 1;</code></pre>
+              <p><code>ROW_NUMBER</code> is best when you want exactly one first row per group.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">58. Find products whose stock is below reorder level</h5>
+              <pre><code class="language-sql">SELECT product_id,
+       product_name,
+       stock_quantity,
+       reorder_level
+FROM products
+WHERE stock_quantity &lt;= reorder_level;</code></pre>
+              <p>This is a common inventory alert query.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">59. Find month-over-month revenue growth</h5>
+              <pre><code class="language-sql">WITH monthly_revenue AS (
+    SELECT DATE_FORMAT(order_date, '%Y-%m') AS order_month,
+           SUM(order_amount) AS revenue
+    FROM orders
+    GROUP BY DATE_FORMAT(order_date, '%Y-%m')
+)
+SELECT order_month,
+       revenue,
+       LAG(revenue) OVER (ORDER BY order_month) AS previous_month_revenue,
+       revenue - LAG(revenue) OVER (ORDER BY order_month) AS revenue_growth
+FROM monthly_revenue
+ORDER BY order_month;</code></pre>
+              <p><code>LAG</code> compares current row values with previous row values.</p>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+              <h5 class="text-warning">60. Find employees whose salary is in the top 10 percent</h5>
+              <pre><code class="language-sql">SELECT employee_id,
+       first_name,
+       salary
+FROM (
+    SELECT e.*,
+           PERCENT_RANK() OVER (ORDER BY salary) AS salary_percent_rank
+    FROM employees e
+) t
+WHERE salary_percent_rank &gt;= 0.90
+ORDER BY salary DESC;</code></pre>
+              <p>This is useful for compensation analytics and advanced window-function interviews.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Q1A -->
       <div class="accordion-item">
         <h2 class="accordion-header" id="q1a">
@@ -29958,6 +30878,16 @@ public class OrderController {
         .catch((err) => {
           console.error("Failed to copy:", err);
         });
+    }
+
+    function openSqlSection() {
+      const sqlSection = document.getElementById("c1ai");
+      const sqlHeader = document.getElementById("q1ai");
+
+      if (!sqlSection || !sqlHeader) return;
+
+      bootstrap.Collapse.getOrCreateInstance(sqlSection).show();
+      sqlHeader.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   </script>
 </body>

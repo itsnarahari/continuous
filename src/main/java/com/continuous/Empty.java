@@ -58,7 +58,7 @@ public class Empty {
         List<Integer> l = null;
         List<Integer> l2=null;
 
-        l.addAll(l2);
+//        l.addAll(l2);
     }
 
     public static DoubleStream doubles(int dimension, double minValue, double maxValue )

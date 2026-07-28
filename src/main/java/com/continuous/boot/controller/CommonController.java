@@ -26,8 +26,8 @@ import java.util.stream.Collectors;
 @RestController
 public class CommonController {
 
-    @Autowired
-    EventsRunner eventsRunner;
+//    @Autowired
+//    EventsRunner eventsRunner;
 
     @Autowired
     RestTemplate restTemplate;
@@ -78,12 +78,12 @@ public class CommonController {
         return ResponseEntity.ok(planet1);
     }
 
-    @GetMapping
-    @Transactional(timeout = 2)
-    public ResponseEntity notification() {
-        List evn = eventsRunner.findEvents("2", "vin");
-        return new ResponseEntity(evn, HttpStatus.OK);
-    }
+//    @GetMapping
+//    @Transactional(timeout = 2)
+//    public ResponseEntity notification() {
+//        List evn = eventsRunner.findEvents("2", "vin");
+//        return new ResponseEntity(evn, HttpStatus.OK);
+//    }
 
     @GetMapping("endpoints")
     public ResponseEntity<List<String>> getEndpoints() {
@@ -125,6 +125,12 @@ public class CommonController {
     @RequestMapping(value = "/async", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> save() {
         commonServices.process();
+        return ResponseEntity.ok("success");
+    }
+
+    @PostMapping(value = "/empTest", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> employee(@Valid @RequestBody Employee employee) {
+
         return ResponseEntity.ok("success");
     }
 }

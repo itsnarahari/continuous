@@ -5,9 +5,9 @@ import lombok.Setter;
 
 @Setter
 @Getter
-public class Employee {
+public class EmployeeDto {
 
-    public Employee() {
+    public EmployeeDto() {
         System.out.println("Employee called");
     }
 
