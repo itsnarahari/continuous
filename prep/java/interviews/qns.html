@@ -86,6 +86,35 @@
       color: #aaa;
     }
 
+    .tech-filter-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+
+    .tech-filter-btn {
+      border: 1px solid #4db8ff;
+      background: transparent;
+      color: #bfe8ff;
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 14px;
+      transition: all 0.2s ease;
+    }
+
+    .tech-filter-btn:hover {
+      background: rgba(77, 184, 255, 0.12);
+      color: #fff;
+    }
+
+    .tech-filter-btn.active {
+      background: #007bff;
+      border-color: #007bff;
+      color: #fff;
+    }
+
     /* Prevent underline and fix code block styling */
     code,
     pre,
@@ -103,6 +132,18 @@
   <div class="container">
     <div class="header fw-bold text-center mb-4">Interview questions</div>
     <p id="questionCount" class="text-center">0 Questions</p>
+
+    <div class="tech-filter-container" id="techFilterBar">
+      <button class="tech-filter-btn active" type="button" data-category="all">All</button>
+      <button class="tech-filter-btn" type="button" data-category="java">Java</button>
+      <button class="tech-filter-btn" type="button" data-category="springboot">Spring Boot</button>
+      <button class="tech-filter-btn" type="button" data-category="hibernate">Hibernate</button>
+      <button class="tech-filter-btn" type="button" data-category="microservices">Microservices</button>
+      <button class="tech-filter-btn" type="button" data-category="sql">SQL</button>
+      <button class="tech-filter-btn" type="button" data-category="devops">DevOps</button>
+      <button class="tech-filter-btn" type="button" data-category="frontend">Frontend</button>
+      <button class="tech-filter-btn" type="button" data-category="other">Other</button>
+    </div>
 
     <!-- Search Box in a Bootstrap Container -->
     <div class="search-container">
@@ -12596,6 +12637,250 @@ try {
 
   <hr>
 
+  <h5 class="text-warning">ReentrantLock vs ReadWriteLock</h5>
+
+  <p>
+    This is a very common senior Java interview topic. Both are explicit locking mechanisms from
+    <code>java.util.concurrent.locks</code>, but they solve different concurrency problems.
+  </p>
+
+  <table class="table table-dark table-bordered table-sm">
+    <thead>
+      <tr>
+        <th>Lock</th>
+        <th>Best for</th>
+        <th>Key idea</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>ReentrantLock</code></td>
+        <td>General exclusive locking</td>
+        <td>Only one thread enters critical section at a time</td>
+      </tr>
+      <tr>
+        <td><code>ReadWriteLock</code></td>
+        <td>Read-heavy shared data</td>
+        <td>Many readers allowed together, but writers need exclusive access</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h5 class="text-warning">What is ReentrantLock?</h5>
+
+  <p>
+    <code>ReentrantLock</code> is an explicit mutual exclusion lock. It works like a stronger and more flexible
+    alternative to <code>synchronized</code>.
+  </p>
+
+  <p>
+    Reentrant means the same thread can acquire the same lock again without deadlocking itself.
+  </p>
+
+  <pre><code class="language-java">private final ReentrantLock lock = new ReentrantLock();
+
+public void updateBalance() {
+    lock.lock();
+    try {
+        // critical section
+    } finally {
+        lock.unlock();
+    }
+}</code></pre>
+
+  <h5 class="text-warning">Why use ReentrantLock instead of synchronized?</h5>
+
+  <ul>
+    <li>Supports <code>tryLock()</code> so thread can avoid waiting forever.</li>
+    <li>Supports timed lock attempts.</li>
+    <li>Supports interruptible lock waiting.</li>
+    <li>Supports fairness mode.</li>
+    <li>Works well when advanced lock control is needed.</li>
+  </ul>
+
+  <pre><code class="language-java">if (lock.tryLock()) {
+    try {
+        processPayment();
+    } finally {
+        lock.unlock();
+    }
+} else {
+    // skip, retry, or return busy response
+}</code></pre>
+
+  <p>
+    Real-world example: In a payment service, if one thread is already updating the same wallet, another thread may use
+    <code>tryLock()</code> and return "please retry" instead of waiting too long.
+  </p>
+
+  <h5 class="text-warning">What is ReadWriteLock?</h5>
+
+  <p>
+    <code>ReadWriteLock</code> gives two different locks:
+  </p>
+
+  <ul>
+    <li><strong>Read lock:</strong> multiple threads can hold it together.</li>
+    <li><strong>Write lock:</strong> only one writer at a time, and no readers during write.</li>
+  </ul>
+
+  <pre><code class="language-java">private final ReadWriteLock rwLock = new ReentrantReadWriteLock();
+
+public String getConfig(String key) {
+    rwLock.readLock().lock();
+    try {
+        return configMap.get(key);
+    } finally {
+        rwLock.readLock().unlock();
+    }
+}
+
+public void updateConfig(String key, String value) {
+    rwLock.writeLock().lock();
+    try {
+        configMap.put(key, value);
+    } finally {
+        rwLock.writeLock().unlock();
+    }
+}</code></pre>
+
+  <p>
+    Real-world example: If thousands of requests read application configuration but only admins update it occasionally,
+    <code>ReadWriteLock</code> can improve concurrency.
+  </p>
+
+  <h5 class="text-warning">Main behavioral difference</h5>
+
+  <pre><code class="language-text">ReentrantLock
+->
+1 reader at a time
+1 writer at a time
+
+ReadWriteLock
+->
+many readers together
+but only 1 writer, exclusively</code></pre>
+
+  <h5 class="text-warning">When ReadWriteLock helps</h5>
+
+  <ul>
+    <li>Shared data is read very frequently.</li>
+    <li>Writes are much less frequent than reads.</li>
+    <li>Read operation is not trivial enough to ignore contention.</li>
+  </ul>
+
+  <p>
+    Good example:
+  </p>
+
+  <pre><code class="language-text">95% reads
+5% writes
+
+Example:
+- configuration cache
+- product catalog lookup
+- in-memory metadata registry</code></pre>
+
+  <h5 class="text-warning">When ReadWriteLock is not a good fit</h5>
+
+  <ul>
+    <li>Write frequency is high.</li>
+    <li>Critical section is very small.</li>
+    <li>Underlying data structure already has better concurrent implementation.</li>
+  </ul>
+
+  <p>
+    Real-world example: For counters or high-update maps, <code>ConcurrentHashMap</code> or atomic classes are often better than manually managing <code>ReadWriteLock</code>.
+  </p>
+
+  <h5 class="text-warning">Feature comparison</h5>
+
+  <table class="table table-dark table-bordered table-sm">
+    <thead>
+      <tr>
+        <th>Feature</th>
+        <th>ReentrantLock</th>
+        <th>ReadWriteLock</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Exclusive access</td>
+        <td>Yes</td>
+        <td>Write lock only</td>
+      </tr>
+      <tr>
+        <td>Concurrent reads</td>
+        <td>No</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td>Reentrancy</td>
+        <td>Yes</td>
+        <td>Yes, via read/write lock implementations like <code>ReentrantReadWriteLock</code></td>
+      </tr>
+      <tr>
+        <td><code>tryLock()</code> support</td>
+        <td>Yes</td>
+        <td>Available through underlying read/write locks</td>
+      </tr>
+      <tr>
+        <td>Best use case</td>
+        <td>General mutual exclusion</td>
+        <td>Read-heavy shared state</td>
+      </tr>
+      <tr>
+        <td>Complexity</td>
+        <td>Lower</td>
+        <td>Higher</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h5 class="text-warning">Reentrancy example</h5>
+
+  <pre><code class="language-java">private final ReentrantLock lock = new ReentrantLock();
+
+public void outer() {
+    lock.lock();
+    try {
+        inner();
+    } finally {
+        lock.unlock();
+    }
+}
+
+private void inner() {
+    lock.lock();
+    try {
+        // same thread re-enters safely
+    } finally {
+        lock.unlock();
+    }
+}</code></pre>
+
+  <p>
+    Same thread can acquire the lock again. That is why it is called reentrant.
+  </p>
+
+  <h5 class="text-warning">Important caution</h5>
+
+  <ul>
+    <li>Always unlock in <code>finally</code>.</li>
+    <li>Do not hold locks while calling slow external APIs unless necessary.</li>
+    <li>Prefer higher-level concurrent collections if they solve the problem directly.</li>
+  </ul>
+
+  <h5 class="text-warning">ReentrantLock vs ReadWriteLock interview answer</h5>
+
+  <p>
+    I use <code>ReentrantLock</code> when I need one-at-a-time exclusive access with extra features like
+    <code>tryLock</code>, fairness, or interruptible waiting. I use <code>ReadWriteLock</code> when shared data is
+    read much more often than it is written, because it allows multiple readers concurrently while still protecting writes.
+  </p>
+
+  <hr>
+
   <h5 class="text-warning">Important modern Java nuance about pinning</h5>
 
   <p>
@@ -20948,6 +21233,187 @@ public @interface Good {
       </div>
 
       <div class="accordion-item">
+        <h2 class="accordion-header" id="qCloudDeploymentWhy">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#cCloudDeploymentWhy">
+            Why should we use cloud for deployment? Benefits over our own network/on-prem, disadvantages, and when to choose what
+          </button>
+        </h2>
+        <div id="cCloudDeploymentWhy" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Cloud deployment means running applications on platforms like AWS, Azure, or GCP instead of only using
+              our own office data center, local servers, or private network. In interviews, the best answer is not
+              "cloud is always better", but <strong>cloud gives faster scaling, managed services, and global reach,
+                while on-prem gives more direct control</strong>.
+            </p>
+
+            <h5 class="text-warning">What is the main difference?</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Area</th>
+                  <th>Cloud</th>
+                  <th>Own network / on-prem</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Infrastructure setup</td>
+                  <td>Provision in minutes</td>
+                  <td>Need to buy, rack, configure servers</td>
+                </tr>
+                <tr>
+                  <td>Scaling</td>
+                  <td>Fast autoscaling</td>
+                  <td>Capacity expansion is slower and manual</td>
+                </tr>
+                <tr>
+                  <td>Cost model</td>
+                  <td>Pay as you use</td>
+                  <td>High upfront capital expense</td>
+                </tr>
+                <tr>
+                  <td>Managed services</td>
+                  <td>DB, cache, storage, queue, monitoring managed by provider</td>
+                  <td>Team must manage most things directly</td>
+                </tr>
+                <tr>
+                  <td>Availability</td>
+                  <td>Multi-AZ / multi-region options</td>
+                  <td>Need to build HA and DR yourself</td>
+                </tr>
+                <tr>
+                  <td>Operations effort</td>
+                  <td>Less hardware work</td>
+                  <td>More hardware, patching, network, backup work</td>
+                </tr>
+                <tr>
+                  <td>Control</td>
+                  <td>Less low-level control</td>
+                  <td>More direct control over infra and network</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Why should we use cloud for deployment?</h5>
+            <ul>
+              <li><strong>Faster provisioning:</strong> create servers, databases, load balancers, and storage quickly.</li>
+              <li><strong>Easy scaling:</strong> scale up during high traffic and scale down later.</li>
+              <li><strong>Managed services:</strong> use RDS, S3, Redis, Kafka, secret stores, monitoring, CDN, etc.</li>
+              <li><strong>High availability:</strong> deploy across zones/regions with lower effort.</li>
+              <li><strong>Disaster recovery:</strong> snapshots, backups, cross-region replication, and automated restore options.</li>
+              <li><strong>Global access:</strong> serve users closer to their region using CDN and regional deployment.</li>
+              <li><strong>Automation:</strong> infra-as-code, auto-healing, autoscaling, CI/CD integration.</li>
+              <li><strong>Faster team productivity:</strong> developers focus more on application work than hardware setup.</li>
+            </ul>
+
+            <h5 class="text-warning">Real-world example</h5>
+            <p>
+              Suppose an e-commerce app has normal traffic on regular days but 10x traffic during a sale. In cloud, we
+              can autoscale app pods, use managed database replicas, store images in object storage, and use CDN for
+              static assets. On our own network, we would need to buy extra servers in advance even if they stay idle
+              most of the year.
+            </p>
+
+            <h5 class="text-warning">Benefits over our own network / on-premises</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Benefit</th>
+                  <th>Why it matters</th>
+                  <th>Example</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Elastic scaling</td>
+                  <td>Match traffic without permanent over-provisioning</td>
+                  <td>Scale API from 3 pods to 20 pods during campaign traffic</td>
+                </tr>
+                <tr>
+                  <td>Lower initial cost</td>
+                  <td>No need to buy hardware at day one</td>
+                  <td>Startup deploys with small monthly bill</td>
+                </tr>
+                <tr>
+                  <td>Managed DB/cache/storage</td>
+                  <td>Less ops burden and faster delivery</td>
+                  <td>Use RDS + Redis + S3 instead of self-managing all servers</td>
+                </tr>
+                <tr>
+                  <td>Better release speed</td>
+                  <td>CI/CD, container registry, infra APIs are easier to automate</td>
+                  <td>Deploy using Jenkins/GitHub Actions to EKS/AKS/GKE</td>
+                </tr>
+                <tr>
+                  <td>Better reliability options</td>
+                  <td>Built-in HA patterns reduce downtime risk</td>
+                  <td>Run app in multiple availability zones</td>
+                </tr>
+                <tr>
+                  <td>Observability</td>
+                  <td>Cloud monitoring/logging tools are easy to integrate</td>
+                  <td>CloudWatch, Azure Monitor, GCP Monitoring</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Disadvantages of cloud</h5>
+            <ul>
+              <li><strong>Recurring cost:</strong> pay every month; bad architecture can make bills high.</li>
+              <li><strong>Vendor lock-in:</strong> deep use of one cloud provider can make migration harder.</li>
+              <li><strong>Internet dependency:</strong> public access and remote operations depend on good connectivity.</li>
+              <li><strong>Less low-level control:</strong> some infra/network behavior is abstracted by provider.</li>
+              <li><strong>Security misconfiguration risk:</strong> wrong IAM, security groups, or public buckets can expose data.</li>
+              <li><strong>Cost surprises:</strong> autoscaling, data transfer, and managed services can increase cost unexpectedly.</li>
+              <li><strong>Compliance limits:</strong> some industries or clients require strict local/private hosting.</li>
+            </ul>
+
+            <h5 class="text-warning">Disadvantages of only using our own network / on-prem</h5>
+            <ul>
+              <li>Need large upfront hardware investment.</li>
+              <li>Scaling is slow because hardware procurement takes time.</li>
+              <li>Ops team must manage servers, patching, power, cooling, network, firewall, backups, and DR.</li>
+              <li>Multi-region or high availability setup is harder and more expensive.</li>
+              <li>Idle infrastructure wastes money when traffic is low.</li>
+            </ul>
+
+            <h5 class="text-warning">When cloud is the better choice</h5>
+            <ul>
+              <li>Traffic is variable or growing.</li>
+              <li>We want faster release cycles and easier automation.</li>
+              <li>We need CDN, object storage, managed DB, queue, cache, monitoring, and autoscaling.</li>
+              <li>We are building SaaS, APIs, mobile backends, or microservices.</li>
+              <li>We want lower time-to-market.</li>
+            </ul>
+
+            <h5 class="text-warning">When on-prem / private network may be better</h5>
+            <ul>
+              <li>Strict compliance or data residency requires private hosting.</li>
+              <li>Very stable long-term workload where owned infra may be cheaper.</li>
+              <li>Low-latency dependency on internal systems inside the same private network.</li>
+              <li>Organization already has strong internal data center investment and ops team.</li>
+            </ul>
+
+            <h5 class="text-warning">Hybrid approach</h5>
+            <p>
+              Many enterprises use hybrid architecture. Sensitive systems may stay on-prem, while public APIs, web
+              apps, analytics, batch jobs, backups, and disaster recovery move to cloud.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              We use cloud for deployment because it gives faster provisioning, easier autoscaling, managed services,
+              better availability options, and quicker delivery than running everything only on our own network. On-prem
+              gives more control, but cloud usually reduces operational overhead and improves agility. The right choice
+              depends on traffic pattern, compliance, latency, and cost model.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
         <h2 class="accordion-header" id="qScalingApplication">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
             data-bs-target="#cScalingApplication">
@@ -21388,6 +21854,207 @@ public ResponseEntity&lt;Set&lt;Integer&gt;&gt; uploadedChunks(@PathVariable Str
             <p>
               Interview one-liner: I choose RDBMS for relational consistency and transactions; I choose NoSQL when access
               patterns, scale, flexibility, or low latency matter more than complex joins.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="qSpringBootPerformance">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#cSpringBootPerformance">
+            How do we improve performance of a Spring Boot application?
+          </button>
+        </h2>
+        <div id="cSpringBootPerformance" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Improving Spring Boot performance is not one single change. We improve it by finding the bottleneck first
+              and then tuning the correct layer: database, API design, caching, thread pools, JVM, logging,
+              serialization, external calls, and infrastructure.
+            </p>
+
+            <h5 class="text-warning">1. First identify the bottleneck</h5>
+            <ul>
+              <li>Check response time, throughput, CPU, memory, GC, DB query time, and external API latency.</li>
+              <li>Use APM and metrics before changing code randomly.</li>
+              <li>Measure p95/p99 latency, not only average latency.</li>
+            </ul>
+            <p>
+              Real-world example: Sometimes the app looks slow, but the real issue is a slow SQL query or external API.
+            </p>
+
+            <h5 class="text-warning">2. Database optimization gives the biggest win in many projects</h5>
+            <ul>
+              <li>Write efficient queries and avoid unnecessary joins.</li>
+              <li>Add correct indexes for frequently filtered and joined columns.</li>
+              <li>Avoid N+1 query issues in Hibernate/JPA.</li>
+              <li>Use pagination instead of loading huge result sets.</li>
+              <li>Use projections/DTO queries when full entity is not needed.</li>
+              <li>Tune connection pool size properly.</li>
+            </ul>
+            <pre><code class="language-java">@Query("""
+select new com.example.dto.UserSummary(u.id, u.name, u.email)
+from User u
+where u.status = :status
+""")
+Page&lt;UserSummary&gt; findActiveUsers(@Param("status") String status, Pageable pageable);</code></pre>
+            <p>
+              Real-world example: Instead of loading full user entity with relationships, return only fields needed for list screen.
+            </p>
+
+            <h5 class="text-warning">3. Use caching for repeated reads</h5>
+            <ul>
+              <li>Cache frequently used, rarely changing data.</li>
+              <li>Use Redis or local cache depending on deployment model.</li>
+              <li>Choose proper TTL and invalidation strategy.</li>
+            </ul>
+            <pre><code class="language-java">@Cacheable(value = "products", key = "#productId")
+public ProductDto getProduct(Long productId) {
+    return productRepository.findById(productId)
+            .map(ProductDto::from)
+            .orElseThrow();
+}</code></pre>
+            <p>
+              Real-world example: Product details or configuration tables are good cache candidates.
+            </p>
+
+            <h5 class="text-warning">4. Keep APIs efficient</h5>
+            <ul>
+              <li>Avoid very large request/response payloads.</li>
+              <li>Use compression when useful.</li>
+              <li>Return DTOs instead of large nested object graphs.</li>
+              <li>Use streaming for large file download/upload.</li>
+            </ul>
+            <p>
+              Real-world example: Returning 10,000 records in one response increases memory, serialization time, and network latency.
+            </p>
+
+            <h5 class="text-warning">5. Reduce blocking and use async where it makes sense</h5>
+            <ul>
+              <li>Do not block request thread for email, audit, report generation, or slow external work.</li>
+              <li>Use async processing, queues, or background workers for non-immediate tasks.</li>
+              <li>Use timeouts for external API calls.</li>
+            </ul>
+            <pre><code class="language-java">@Async
+public CompletableFuture&lt;Void&gt; sendWelcomeMail(String email) {
+    emailService.send(email);
+    return CompletableFuture.completedFuture(null);
+}</code></pre>
+            <p>
+              Real-world example: Order placement should not wait for promotional email sending.
+            </p>
+
+            <h5 class="text-warning">6. Tune thread pools and server settings</h5>
+            <ul>
+              <li>Use proper Tomcat/Jetty/Undertow thread configuration.</li>
+              <li>Use dedicated executor pools for async jobs instead of one shared default pool.</li>
+              <li>Avoid too many threads because context switching also hurts performance.</li>
+            </ul>
+            <pre><code class="language-properties">server.tomcat.threads.max=200
+server.tomcat.accept-count=100
+server.compression.enabled=true
+server.compression.mime-types=application/json,text/html,text/plain</code></pre>
+            <p>
+              Real-world example: If external calls are slow, a badly sized thread pool can cause request queue buildup.
+            </p>
+
+            <h5 class="text-warning">7. Tune connection pools</h5>
+            <p>
+              HikariCP is the default in Spring Boot and usually performs very well, but wrong pool sizes can still hurt.
+            </p>
+            <pre><code class="language-properties">spring.datasource.hikari.maximum-pool-size=20
+spring.datasource.hikari.minimum-idle=5
+spring.datasource.hikari.connection-timeout=30000
+spring.datasource.hikari.idle-timeout=600000</code></pre>
+            <ul>
+              <li>Too small pool causes waiting.</li>
+              <li>Too large pool can overload database.</li>
+            </ul>
+
+            <h5 class="text-warning">8. JVM and garbage collection tuning</h5>
+            <ul>
+              <li>Set proper heap size for workload.</li>
+              <li>Choose a suitable GC like G1 for general workloads.</li>
+              <li>Watch GC pause time, allocation rate, and memory leaks.</li>
+            </ul>
+            <pre><code class="language-bash">java -Xms1g -Xmx1g -XX:+UseG1GC -jar app.jar</code></pre>
+            <p>
+              Real-world example: High latency spikes may come from GC pauses, not from business logic.
+            </p>
+
+            <h5 class="text-warning">9. Avoid unnecessary object creation and heavy serialization</h5>
+            <ul>
+              <li>Do not create large temporary objects in hot paths.</li>
+              <li>Prefer lightweight DTOs.</li>
+              <li>Be careful with deep JSON nesting and very large collections.</li>
+            </ul>
+            <p>
+              Real-world example: Huge nested response payloads increase CPU time in Jackson serialization.
+            </p>
+
+            <h5 class="text-warning">10. Improve external API interaction</h5>
+            <ul>
+              <li>Use connection pooling HTTP clients.</li>
+              <li>Set connect/read timeouts.</li>
+              <li>Use retry carefully, only for retry-safe flows.</li>
+              <li>Use circuit breaker for failing downstream services.</li>
+            </ul>
+            <pre><code class="language-java">@Bean
+RestTemplate restTemplate(RestTemplateBuilder builder) {
+    return builder
+            .setConnectTimeout(Duration.ofSeconds(2))
+            .setReadTimeout(Duration.ofSeconds(3))
+            .build();
+}</code></pre>
+            <p>
+              Real-world example: One slow payment gateway can make the whole API look slow if timeout is not configured.
+            </p>
+
+            <h5 class="text-warning">11. Logging should be useful, not expensive</h5>
+            <ul>
+              <li>Avoid excessive debug logs in hot code paths in production.</li>
+              <li>Avoid logging huge objects and full payloads repeatedly.</li>
+              <li>Use async logging if needed in high-throughput systems.</li>
+            </ul>
+            <p>
+              Real-world example: Logging every DB record or full request body can increase CPU and I/O cost significantly.
+            </p>
+
+            <h5 class="text-warning">12. Use proper architecture patterns</h5>
+            <ul>
+              <li>Make service stateless for easier scaling.</li>
+              <li>Offload heavy jobs to Kafka/RabbitMQ/workers.</li>
+              <li>Use CDN/object storage for static files instead of serving everything from app server.</li>
+            </ul>
+            <p>
+              Real-world example: Large file uploads should go to S3 using pre-signed URLs instead of always going through Spring Boot server.
+            </p>
+
+            <h5 class="text-warning">13. Monitor continuously</h5>
+            <ul>
+              <li>Use Actuator, Micrometer, Prometheus, Grafana, ELK, or APM tools.</li>
+              <li>Track CPU, memory, GC, thread count, DB pool usage, API latency, error rate, and cache hit ratio.</li>
+            </ul>
+            <p>
+              Interview point: Performance tuning without observability is mostly guessing.
+            </p>
+
+            <h5 class="text-warning">14. Common interview answer structure</h5>
+            <pre><code class="language-text">1. Find bottleneck first
+2. Optimize DB queries and indexes
+3. Add caching where repeated reads happen
+4. Use async/queue for slow non-critical work
+5. Tune thread pools, connection pools, and JVM
+6. Reduce payload size and serialization cost
+7. Monitor and load test again</code></pre>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              To improve a Spring Boot application's performance, I first identify the actual bottleneck using metrics
+              and profiling. Then I optimize database queries and indexes, add caching for repeated reads, reduce
+              unnecessary payload and object creation, tune thread pools, connection pools, and JVM settings, move
+              non-critical work to async/background processing, and monitor the system again after load testing.
             </p>
           </div>
         </div>
@@ -23496,11 +24163,522 @@ Map&lt;String, Integer&gt; totalQty = orders.stream()
             <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c10">🔟
               Explain Distributed Transactions (2PC vs Saga Pattern)</button>
           </h2>
-          <div id="c10" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
-            <div class="accordion-body bg-dark text-light">
+        <div id="c10" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
               2PC → strong consistency; slow, blocking.
               Saga → sequence of local transactions + compensating transactions.
               Used in payments, booking systems.
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="qJvmInternals">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#cJvmInternals">
+              What are JVM Internals? Explain all parts in a simple and interview-friendly way
+            </button>
+          </h2>
+          <div id="cJvmInternals" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              <p>
+                JVM internals means understanding <strong>how Java code is loaded, stored in memory, executed, and cleaned up</strong>.
+                In interviews, a strong answer usually covers: class loading, runtime memory areas, execution engine,
+                garbage collection, JIT compilation, JNI, and the full execution flow.
+              </p>
+
+              <h5 class="text-warning">1. Big picture flow</h5>
+              <pre><code class="language-text">.java source
+   ↓
+javac compiler
+   ↓
+.class bytecode
+   ↓
+Class Loader Subsystem
+   ↓
+Runtime Data Areas (Heap, Stack, Metaspace, PC Register, Native Stack)
+   ↓
+Execution Engine (Interpreter + JIT)
+   ↓
+Native Method Interface / Native Libraries if needed
+   ↓
+Program runs
+   ↓
+Garbage Collector cleans unused objects</code></pre>
+
+              <h5 class="text-warning">2. What is JVM?</h5>
+              <p>
+                JVM stands for <code>Java Virtual Machine</code>. It is the runtime engine that executes Java bytecode.
+                Because JVM exists on many operating systems, Java gets its “write once, run anywhere” behavior.
+              </p>
+              <p>
+                Real-world analogy: JVM is like a universal machine that understands Java bytecode and runs it correctly
+                on Windows, Linux, or Mac.
+              </p>
+
+              <h5 class="text-warning">3. Class Loader Subsystem</h5>
+              <p>
+                Class Loader loads <code>.class</code> files into memory when they are needed.
+              </p>
+              <pre><code class="language-text">Main steps:
+1. Loading
+2. Linking
+   - Verification
+   - Preparation
+   - Resolution
+3. Initialization</code></pre>
+              <ul>
+                <li><strong>Loading:</strong> reads class bytecode into memory.</li>
+                <li><strong>Verification:</strong> checks bytecode safety and format.</li>
+                <li><strong>Preparation:</strong> allocates memory for static fields and default values.</li>
+                <li><strong>Resolution:</strong> converts symbolic references into direct references.</li>
+                <li><strong>Initialization:</strong> runs static blocks and assigns actual static values.</li>
+              </ul>
+              <p>
+                Real-world example: When Spring Boot starts, JVM loads your main class, controllers, services, entities,
+                and framework classes as needed.
+              </p>
+
+              <h5 class="text-warning">4. Types of class loaders</h5>
+              <ul>
+                <li><strong>Bootstrap ClassLoader:</strong> loads core Java classes like <code>java.lang</code>, <code>java.util</code>.</li>
+                <li><strong>Platform / Extension ClassLoader:</strong> loads platform-level libraries.</li>
+                <li><strong>Application ClassLoader:</strong> loads your application classes from classpath.</li>
+              </ul>
+              <p>
+                Real-world analogy: Bootstrap is like the main foundation team, and Application ClassLoader loads your project code on top of that.
+              </p>
+
+              <h5 class="text-warning">5. Runtime Data Areas inside JVM</h5>
+              <p>
+                JVM uses different memory areas for different responsibilities.
+              </p>
+
+              <h5 class="text-warning">6. Heap Memory</h5>
+              <p>
+                Heap stores <strong>objects and instance data</strong>. It is shared by all threads.
+              </p>
+              <ul>
+                <li>Most objects created with <code>new</code> go to heap.</li>
+                <li>Garbage Collector mainly works here.</li>
+                <li>It is generally divided into Young Generation and Old Generation.</li>
+              </ul>
+              <pre><code class="language-java">User user = new User(); // object typically goes into heap</code></pre>
+              <p>
+                Real-world analogy: Heap is like a common warehouse where application objects are stored.
+              </p>
+
+              <h5 class="text-warning">7. Stack Memory</h5>
+              <p>
+                Each thread has its own JVM stack. It stores <strong>method call frames, local variables, partial results, and references</strong>.
+              </p>
+              <pre><code class="language-java">public int add(int a, int b) {
+    int sum = a + b;
+    return sum;
+}</code></pre>
+              <p>
+                Here <code>a</code>, <code>b</code>, and <code>sum</code> are inside the current stack frame. If recursion is too deep,
+                it can cause <code>StackOverflowError</code>.
+              </p>
+
+              <h5 class="text-warning">8. Method Area / Metaspace</h5>
+              <p>
+                This area stores <strong>class metadata</strong> like class structure, method metadata, field metadata,
+                static variable information, and runtime constant pool details.
+              </p>
+              <ul>
+                <li>In older JVM explanations, people say <strong>Method Area</strong>.</li>
+                <li>In modern HotSpot JVM, class metadata is mainly stored in <strong>Metaspace</strong>.</li>
+              </ul>
+              <p>
+                Real-world analogy: If heap is a warehouse for objects, Metaspace is the blueprint room that stores class designs.
+              </p>
+
+              <h5 class="text-warning">9. Program Counter (PC) Register</h5>
+              <p>
+                Each thread has its own PC Register. It stores the address of the current JVM instruction being executed.
+              </p>
+              <p>
+                Simple meaning: It tells the JVM which instruction to execute next for that thread.
+              </p>
+
+              <h5 class="text-warning">10. Native Method Stack</h5>
+              <p>
+                This is used when Java code calls native methods written in C/C++ or platform code.
+              </p>
+              <p>
+                Example: Some low-level JVM or OS interaction uses native code.
+              </p>
+
+              <h5 class="text-warning">11. Execution Engine</h5>
+              <p>
+                After bytecode is loaded, the Execution Engine runs it.
+              </p>
+              <ul>
+                <li><strong>Interpreter:</strong> reads bytecode line by line and executes it.</li>
+                <li><strong>JIT Compiler:</strong> converts frequently used bytecode into native machine code for speed.</li>
+                <li><strong>Garbage Collector:</strong> frees unused heap memory.</li>
+              </ul>
+
+              <h5 class="text-warning">12. Interpreter vs JIT</h5>
+              <table class="table table-dark table-bordered table-sm">
+                <thead>
+                  <tr>
+                    <th>Part</th>
+                    <th>How it works</th>
+                    <th>Benefit</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Interpreter</td>
+                    <td>Executes bytecode instruction by instruction</td>
+                    <td>Fast startup</td>
+                  </tr>
+                  <tr>
+                    <td>JIT Compiler</td>
+                    <td>Compiles hot code into native machine code</td>
+                    <td>Better runtime performance</td>
+                  </tr>
+                </tbody>
+              </table>
+              <p>
+                Real-world example: A method called thousands of times in a payment API becomes “hot”, so JIT compiles it for faster execution.
+              </p>
+
+              <h5 class="text-warning">13. Runtime Constant Pool</h5>
+              <p>
+                This is a per-class runtime structure that stores constants, string literals, symbolic references, and method/field references.
+              </p>
+              <p>
+                Simple meaning: It helps JVM resolve class, method, and field references while executing code.
+              </p>
+
+              <h5 class="text-warning">14. Garbage Collector role</h5>
+              <p>
+                GC removes objects from heap when they are no longer reachable.
+              </p>
+              <ul>
+                <li>Young generation collections are usually fast.</li>
+                <li>Old generation collection is heavier.</li>
+                <li>Collectors like G1, ZGC, Shenandoah handle memory differently.</li>
+              </ul>
+              <p>
+                Real-world example: In a Spring Boot API, request DTOs, response objects, and temporary lists are created continuously and later cleaned by GC.
+              </p>
+
+              <h5 class="text-warning">15. JNI and Native Libraries</h5>
+              <p>
+                JNI means <code>Java Native Interface</code>. It allows Java code to talk to native libraries written in C/C++.
+              </p>
+              <p>
+                Real-world example: Some high-performance drivers, OS integrations, or image processing libraries may use native code.
+              </p>
+
+              <h5 class="text-warning">16. How method execution actually happens</h5>
+              <pre><code class="language-java">public class Demo {
+    public static void main(String[] args) {
+        int result = add(10, 20);
+        System.out.println(result);
+    }
+
+    static int add(int a, int b) {
+        return a + b;
+    }
+}</code></pre>
+              <pre><code class="language-text">Flow:
+1. JVM starts and loads Demo class
+2. main method is called
+3. main frame is created in stack
+4. add() is called, so a new stack frame is created
+5. values a and b are used, result is computed
+6. frame returns result to main
+7. object creation, if any, would happen in heap
+8. unused objects later become GC candidates</code></pre>
+
+              <h5 class="text-warning">17. Common JVM errors connected to internals</h5>
+              <table class="table table-dark table-bordered table-sm">
+                <thead>
+                  <tr>
+                    <th>Error</th>
+                    <th>Reason</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>OutOfMemoryError: Java heap space</td>
+                    <td>Heap is full</td>
+                  </tr>
+                  <tr>
+                    <td>StackOverflowError</td>
+                    <td>Too many nested method calls / recursion</td>
+                  </tr>
+                  <tr>
+                    <td>OutOfMemoryError: Metaspace</td>
+                    <td>Too much class metadata loaded</td>
+                  </tr>
+                  <tr>
+                    <td>NoClassDefFoundError / ClassNotFoundException</td>
+                    <td>Class loading issue</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <h5 class="text-warning">18. JVM Internals one simple diagram</h5>
+              <pre><code class="language-text">                +----------------------+
+                |   Class Loaders      |
+                +----------+-----------+
+                           |
+                           v
+                +----------------------+
+                |  Runtime Data Areas  |
+                |  Heap                |
+                |  Stack               |
+                |  Metaspace           |
+                |  PC Register         |
+                |  Native Method Stack |
+                +----------+-----------+
+                           |
+                           v
+                +----------------------+
+                |   Execution Engine   |
+                | Interpreter + JIT    |
+                | GC                   |
+                +----------+-----------+
+                           |
+                           v
+                +----------------------+
+                | JNI / Native Libs    |
+                +----------------------+</code></pre>
+
+              <h5 class="text-warning">19. Real-world interview answer</h5>
+              <p>
+                JVM first loads class bytecode using class loaders, stores class metadata in Metaspace, creates objects
+                in heap, uses per-thread stacks for method execution, tracks current instruction using PC Register, and
+                executes bytecode through interpreter and JIT compiler. Garbage Collector cleans unreachable heap objects,
+                and JNI is used when Java interacts with native code.
+              </p>
+
+              <h5 class="text-warning">20. Short one-liner</h5>
+              <p>
+                JVM Internals means understanding how Java classes are loaded, how memory is organized, how bytecode is
+                executed, and how memory is cleaned automatically.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="qClassLoaderSubsystem">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#cClassLoaderSubsystem">
+              Explain the Class Loader Subsystem, its types, and what gets loaded first to kick-start Java
+            </button>
+          </h2>
+          <div id="cClassLoaderSubsystem" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              <p>
+                The <strong>Class Loader Subsystem</strong> is the JVM part responsible for loading <code>.class</code>
+                files into memory. It loads classes only when needed, verifies them, prepares them, resolves references,
+                and initializes them before execution.
+              </p>
+
+              <h5 class="text-warning">1. Why do we need Class Loaders?</h5>
+              <ul>
+                <li>Java code is compiled into bytecode, not native machine code.</li>
+                <li>JVM must bring class definitions into memory before methods can run.</li>
+                <li>Classes are loaded lazily, so startup can stay efficient.</li>
+              </ul>
+              <p>
+                Real-world analogy: Class Loader is like a librarian who brings the required books only when someone asks for them.
+              </p>
+
+              <h5 class="text-warning">2. Main responsibilities of Class Loader Subsystem</h5>
+              <pre><code class="language-text">1. Loading
+2. Linking
+   - Verification
+   - Preparation
+   - Resolution
+3. Initialization</code></pre>
+
+              <h5 class="text-warning">3. Loading phase</h5>
+              <p>
+                JVM finds the class bytecode and creates an internal runtime representation of that class.
+              </p>
+              <p>
+                Example: When your application uses <code>UserService</code> for the first time, JVM loads <code>UserService.class</code>.
+              </p>
+
+              <h5 class="text-warning">4. Linking phase</h5>
+              <ul>
+                <li><strong>Verification:</strong> checks whether bytecode is valid and safe.</li>
+                <li><strong>Preparation:</strong> allocates memory for static fields and gives default values.</li>
+                <li><strong>Resolution:</strong> converts symbolic references into direct references.</li>
+              </ul>
+
+              <h5 class="text-warning">5. Initialization phase</h5>
+              <p>
+                JVM runs static blocks and assigns actual values to static variables.
+              </p>
+              <pre><code class="language-java">class Demo {
+    static int x = 100;
+
+    static {
+        System.out.println("Class initialized");
+    }
+}</code></pre>
+              <p>
+                When this class is initialized, JVM assigns <code>x = 100</code> and runs the static block.
+              </p>
+
+              <h5 class="text-warning">6. Types of Class Loaders</h5>
+              <table class="table table-dark table-bordered table-sm">
+                <thead>
+                  <tr>
+                    <th>Class Loader</th>
+                    <th>What it loads</th>
+                    <th>Example</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Bootstrap ClassLoader</td>
+                    <td>Core Java classes from JDK runtime</td>
+                    <td><code>java.lang.String</code>, <code>java.lang.Object</code>, <code>java.util.*</code></td>
+                  </tr>
+                  <tr>
+                    <td>Platform ClassLoader</td>
+                    <td>Platform/JDK library classes above core base modules</td>
+                    <td>SQL, XML, management, and other platform modules</td>
+                  </tr>
+                  <tr>
+                    <td>Application ClassLoader</td>
+                    <td>Application classes from classpath/module path</td>
+                    <td>Your Spring Boot controllers, services, entities</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <h5 class="text-warning">7. Bootstrap ClassLoader</h5>
+              <p>
+                This is the root loader. It loads the most fundamental Java classes needed for Java execution to even begin.
+              </p>
+              <ul>
+                <li><code>java.lang.Object</code></li>
+                <li><code>java.lang.Class</code></li>
+                <li><code>java.lang.String</code></li>
+                <li><code>java.lang.System</code></li>
+                <li><code>java.lang.Thread</code></li>
+                <li>other core runtime classes</li>
+              </ul>
+              <p>
+                Important point: The OS/JVM launcher starts the JVM process first, and then Bootstrap ClassLoader loads the core Java runtime classes needed to kick-start Java-side execution.
+              </p>
+
+              <h5 class="text-warning">8. Platform ClassLoader</h5>
+              <p>
+                It loads standard platform libraries that are not part of the minimal bootstrap base.
+              </p>
+              <p>
+                Example: JDBC, XML processing, management-related JDK modules may be loaded here depending on module usage.
+              </p>
+
+              <h5 class="text-warning">9. Application ClassLoader</h5>
+              <p>
+                This loads your own project classes from classpath or module path.
+              </p>
+              <p>
+                Real-world example: In a Spring Boot app, your main class, controllers, services, repositories, and DTOs are loaded by the Application ClassLoader.
+              </p>
+
+              <h5 class="text-warning">10. Which classes get loaded first to kick-start Java?</h5>
+              <pre><code class="language-text">OS/Java launcher starts JVM process
+   ↓
+Bootstrap ClassLoader loads core runtime classes
+   ↓
+JVM finds and loads your main application class
+   ↓
+Application ClassLoader loads your app classes
+   ↓
+Program execution starts from main()</code></pre>
+              <p>
+                Interview-safe answer: <strong>Bootstrap ClassLoader first loads essential core classes, and then the Application ClassLoader loads the user application's main class and other project classes.</strong>
+              </p>
+
+              <h5 class="text-warning">11. Parent Delegation Model</h5>
+              <p>
+                Class loaders usually follow <strong>parent delegation</strong>. A child loader first asks its parent to load the class. If parent cannot load it, then the child tries.
+              </p>
+              <pre><code class="language-text">Application ClassLoader
+   asks Platform ClassLoader
+       asks Bootstrap ClassLoader</code></pre>
+              <p>
+                Why useful:
+              </p>
+              <ul>
+                <li>Prevents duplicate loading of core classes</li>
+                <li>Improves security</li>
+                <li>Makes sure app cannot easily replace trusted core Java classes</li>
+              </ul>
+
+              <h5 class="text-warning">12. Why can’t my app override java.lang.String?</h5>
+              <p>
+                Because parent delegation ensures core classes are loaded by Bootstrap ClassLoader first, so your custom fake <code>java.lang.String</code> will not replace the real one.
+              </p>
+
+              <h5 class="text-warning">13. How class loading happens in Spring Boot</h5>
+              <p>
+                In a Spring Boot fat jar, JVM loads the main application class, then Spring starts scanning configuration,
+                controllers, services, repositories, and framework classes as they are needed.
+              </p>
+              <p>
+                Real-world example: When app starts, classes like <code>SpringApplication</code>, your <code>@SpringBootApplication</code> class,
+                and auto-configuration classes begin loading first.
+              </p>
+
+              <h5 class="text-warning">14. Lazy class loading</h5>
+              <p>
+                JVM does not load every class at once. It usually loads classes when they are first actively used.
+              </p>
+              <p>
+                Real-world example: A report generation class may not load until report API is actually called.
+              </p>
+
+              <h5 class="text-warning">15. Common errors related to class loading</h5>
+              <table class="table table-dark table-bordered table-sm">
+                <thead>
+                  <tr>
+                    <th>Error</th>
+                    <th>Meaning</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>ClassNotFoundException</code></td>
+                    <td>JVM cannot find class at runtime when explicitly asked to load it</td>
+                  </tr>
+                  <tr>
+                    <td><code>NoClassDefFoundError</code></td>
+                    <td>Class was available at compile time but missing/failed during runtime loading</td>
+                  </tr>
+                  <tr>
+                    <td><code>UnsupportedClassVersionError</code></td>
+                    <td>Class compiled with newer Java version than current JVM supports</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <h5 class="text-warning">16. Real-world interview answer</h5>
+              <p>
+                The Class Loader Subsystem loads Java classes into memory in three broad stages: loading, linking, and
+                initialization. The main loaders are Bootstrap, Platform, and Application ClassLoader. Bootstrap loads
+                core JDK classes first to kick-start Java runtime, and then the Application ClassLoader loads our main
+                class and project classes. Parent delegation ensures core Java classes are loaded safely and consistently.
+              </p>
+
+              <h5 class="text-warning">17. Short one-liner</h5>
+              <p>
+                Class Loader Subsystem is the JVM part that loads core Java classes first, then application classes, and
+                prepares them for execution using loading, linking, and initialization.
+              </p>
             </div>
           </div>
         </div>
@@ -30709,30 +31887,182 @@ public class OrderController {
   <!-- Bootstrap & Search Script -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
+    let currentUtterance = null;
+    let activeCategory = "all";
+
+    const categoryRules = [
+      {
+        category: "sql",
+        keywords: [
+          "sql",
+          "mysql",
+          "postgres",
+          "oracle",
+          "query",
+          "join",
+          "index",
+          "normalization",
+          "denormalization",
+          "rdbms",
+          "database",
+          "stored procedure",
+          "view in sql"
+        ]
+      },
+      {
+        category: "hibernate",
+        keywords: [
+          "hibernate",
+          "jpa",
+          "@entity",
+          "entitymanager",
+          "lazy loading",
+          "dirty checking",
+          "fetchtype",
+          "n+1",
+          "hikari",
+          "manytomany",
+          "onetomany",
+          "many-to-many",
+          "fetch strategy"
+        ]
+      },
+      {
+        category: "springboot",
+        keywords: [
+          "spring boot",
+          "spring framework",
+          "@transactional",
+          "@restcontroller",
+          "@controller",
+          "@service",
+          "@repository",
+          "@autowired",
+          "@bean",
+          "actuator",
+          "spring security",
+          "aop",
+          "bean lifecycle",
+          "applicationcontext",
+          "onceperrequestfilter",
+          "multipartfile"
+        ]
+      },
+      {
+        category: "microservices",
+        keywords: [
+          "microservice",
+          "microservices",
+          "service discovery",
+          "api gateway",
+          "circuit breaker",
+          "resilience4j",
+          "saga",
+          "cqrs",
+          "sidecar",
+          "strangler",
+          "distributed",
+          "event-driven",
+          "kafka",
+          "rabbitmq",
+          "idempotency",
+          "bulkhead"
+        ]
+      },
+      {
+        category: "devops",
+        keywords: [
+          "docker",
+          "kubernetes",
+          "jenkins",
+          "pipeline",
+          "deployment",
+          "deploy",
+          "cloud",
+          "aws",
+          "azure",
+          "gcp",
+          "helm",
+          "terraform",
+          "devops",
+          "autoscaling",
+          "hpa",
+          "vpa",
+          "cluster",
+          "pod",
+          "node",
+          "ingress",
+          "nexus",
+          "s3",
+          "ci/cd",
+          "blue-green",
+          "canary"
+        ]
+      },
+      {
+        category: "frontend",
+        keywords: [
+          "javascript",
+          "typescript",
+          "react",
+          "angular",
+          "vue",
+          "html",
+          "css",
+          "let and global",
+          "js class",
+          "interface in javascript"
+        ]
+      },
+      {
+        category: "java",
+        keywords: [
+          "java",
+          "jvm",
+          "garbage collector",
+          "reflection",
+          "multithreading",
+          "thread",
+          "collection",
+          "stream api",
+          "optional",
+          "exception",
+          "immutable",
+          "singleton",
+          "constructor",
+          "records",
+          "classloader",
+          "concurrenthashmap"
+        ]
+      }
+    ];
+
     document.addEventListener("DOMContentLoaded", function () {
-      let questionCount = document.querySelectorAll(".accordion-item").length;
-      document.getElementById(
-        "questionCount"
-      ).innerHTML = `<strong>Total Questions: ${questionCount}</strong>`;
-    });
-    document.addEventListener("DOMContentLoaded", function () {
-      let items = document.querySelectorAll(".accordion-item");
+      const items = document.querySelectorAll(".accordion-item");
 
       items.forEach((item, index) => {
-        let button = item.querySelector(".accordion-button");
-        if (button) {
+        const button = item.querySelector(".accordion-button");
+        const body = item.querySelector(".accordion-body");
+
+        if (button && !button.dataset.numbered) {
           button.innerHTML =
             `<span class="fw-bold me-2">${index + 1}.</span> ` +
             button.innerHTML;
+          button.dataset.numbered = "true";
         }
-      });
-    });
 
-    // Loop through all accordion bodies and add a Play button
-    document.addEventListener("DOMContentLoaded", function () {
-      // Loop through all accordion bodies
+        const combinedText = [
+          button?.textContent || "",
+          body?.textContent || ""
+        ]
+          .join(" ")
+          .toLowerCase();
+
+        item.dataset.searchText = combinedText;
+        item.dataset.category = detectCategory(combinedText);
+      });
+
       document.querySelectorAll(".accordion-body").forEach((body) => {
-        // Create Play button
         const playBtn = document.createElement("button");
         playBtn.className = "btn btn-sm btn-outline-primary me-2 mb-2";
         playBtn.innerText = "🔊 Play Voice Over";
@@ -30740,7 +32070,6 @@ public class OrderController {
           speakAccordionText(this);
         };
 
-        // Create Stop button
         const stopBtn = document.createElement("button");
         stopBtn.className = "btn btn-sm btn-outline-danger mb-2";
         stopBtn.innerText = "⏹ Stop";
@@ -30748,16 +32077,77 @@ public class OrderController {
           window.speechSynthesis.cancel();
         };
 
-        // Insert buttons
         const spacer = document.createElement("div");
         spacer.className = "mb-2";
         body.prepend(spacer);
         body.prepend(stopBtn);
         body.prepend(playBtn);
       });
+
+      document.querySelectorAll(".tech-filter-btn").forEach((button) => {
+        button.addEventListener("click", function () {
+          setActiveCategory(this.dataset.category);
+        });
+      });
+
+      updateVisibleQuestions();
     });
 
-    let currentUtterance = null;
+    function detectCategory(text) {
+      for (const rule of categoryRules) {
+        if (rule.keywords.some((keyword) => text.includes(keyword))) {
+          return rule.category;
+        }
+      }
+
+      return "other";
+    }
+
+    function setActiveCategory(category) {
+      activeCategory = category;
+
+      document.querySelectorAll(".tech-filter-btn").forEach((button) => {
+        button.classList.toggle("active", button.dataset.category === category);
+      });
+
+      updateVisibleQuestions();
+    }
+
+    function updateQuestionCount(count) {
+      document.getElementById(
+        "questionCount"
+      ).innerHTML = `<strong>Visible Questions: ${count}</strong>`;
+    }
+
+    function updateVisibleQuestions() {
+      const input = document.getElementById("searchBox")?.value.toLowerCase() || "";
+      const items = document.querySelectorAll(".accordion-item");
+      let visibleCount = 0;
+
+      items.forEach((item) => {
+        const itemCategory = item.dataset.category || "other";
+        const searchText = item.dataset.searchText || "";
+
+        const categoryMatches =
+          activeCategory === "all" || itemCategory === activeCategory;
+        const searchMatches = searchText.includes(input);
+        const shouldShow = categoryMatches && searchMatches;
+
+        item.style.display = shouldShow ? "" : "none";
+
+        if (!shouldShow) {
+          item.querySelectorAll(".accordion-collapse.show").forEach((collapseEl) => {
+            bootstrap.Collapse.getOrCreateInstance(collapseEl).hide();
+          });
+        }
+
+        if (shouldShow) {
+          visibleCount += 1;
+        }
+      });
+
+      updateQuestionCount(visibleCount);
+    }
 
     function speakAccordionText(button) {
       // Cancel any current speech
@@ -30847,26 +32237,7 @@ public class OrderController {
     }
 
     function searchQuestions() {
-      const input = document.getElementById("searchBox").value.toLowerCase();
-      const items = document.querySelectorAll(".accordion-item");
-
-      items.forEach((item) => {
-        const buttonText =
-          item
-            .querySelector(".accordion-button")
-            ?.textContent.toLowerCase() || "";
-        const bodyText =
-          item.querySelector(".accordion-body")?.textContent.toLowerCase() ||
-          "";
-
-        const combinedText = buttonText + " " + bodyText;
-
-        if (combinedText.includes(input)) {
-          item.style.display = "";
-        } else {
-          item.style.display = "none";
-        }
-      });
+      updateVisibleQuestions();
     }
 
     function copyToClipboard(text) {
@@ -30881,6 +32252,8 @@ public class OrderController {
     }
 
     function openSqlSection() {
+      setActiveCategory("sql");
+
       const sqlSection = document.getElementById("c1ai");
       const sqlHeader = document.getElementById("q1ai");
 
