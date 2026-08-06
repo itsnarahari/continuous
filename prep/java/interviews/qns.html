@@ -153,7 +153,7 @@
     <div class="accordion" id="accordionSeniorJava">
 
       <!-- SQL Top Shortcut -->
-      <div class="accordion-item">
+      <div class="accordion-item" data-manual-category="java">
         <h2 class="accordion-header" id="sqlShortcut">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#sqlShortcutBody">
             SQL - Scenario Based Interview Questions
@@ -25156,6 +25156,306 @@ public class OrderEventConsumer {
         </div>
       </div>
 
+        <!-- Q28AA -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q28aa">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c28aa">
+              What is ZooKeeper, why do we use it, where is it used, does it scale, and how does it help in microservices?
+            </button>
+          </h2>
+          <div id="c28aa" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              <p>
+                Apache ZooKeeper is a <strong>distributed coordination service</strong>. It is not mainly used to store
+                business data like orders or users. Instead, it helps distributed systems coordinate around shared state
+                such as configuration, service membership, leader election, locks, and naming.
+              </p>
+
+              <h5 class="text-warning">What problem does ZooKeeper solve?</h5>
+              <p>
+                In distributed systems, many nodes run in parallel. They need a trusted way to answer questions like:
+              </p>
+              <ul>
+                <li>Which node is the leader?</li>
+                <li>Which services are alive right now?</li>
+                <li>What is the current shared configuration?</li>
+                <li>How do we ensure only one node performs a critical task?</li>
+              </ul>
+              <p>
+                Doing this manually is hard and error-prone because distributed systems can suffer from race conditions,
+                split-brain issues, and partial failures.
+              </p>
+
+              <h5 class="text-warning">Simple definition</h5>
+              <p>
+                ZooKeeper is a centralized but replicated coordination system used by distributed applications for
+                <strong>naming, configuration management, synchronization, and group services</strong>.
+              </p>
+
+              <h5 class="text-warning">Real-world analogy</h5>
+              <p>
+                Think of ZooKeeper like a control room in a large office building. It does not do the employees' work,
+                but it keeps track of which teams are active, who is the shift lead, and what the current building-wide
+                rules/configuration are.
+              </p>
+
+              <h5 class="text-warning">Core concepts</h5>
+              <table class="table table-dark table-bordered table-sm">
+                <thead>
+                  <tr>
+                    <th>Concept</th>
+                    <th>Meaning</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>ZNode</td>
+                    <td>Data node in ZooKeeper namespace, similar to a file-system node</td>
+                  </tr>
+                  <tr>
+                    <td>Persistent ZNode</td>
+                    <td>Stays until explicitly deleted</td>
+                  </tr>
+                  <tr>
+                    <td>Ephemeral ZNode</td>
+                    <td>Removed automatically when client session ends</td>
+                  </tr>
+                  <tr>
+                    <td>Watch</td>
+                    <td>Notification mechanism when data/node changes</td>
+                  </tr>
+                  <tr>
+                    <td>Ensemble</td>
+                    <td>Group of ZooKeeper servers working together</td>
+                  </tr>
+                  <tr>
+                    <td>Quorum</td>
+                    <td>Majority needed for consistency and leader decisions</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <h5 class="text-warning">Why do we use ZooKeeper?</h5>
+              <ul>
+                <li><strong>Leader election:</strong> decide one active leader among many nodes.</li>
+                <li><strong>Service discovery:</strong> know which instances are alive.</li>
+                <li><strong>Configuration management:</strong> share config centrally.</li>
+                <li><strong>Distributed locking:</strong> allow only one node to perform a critical task.</li>
+                <li><strong>Cluster membership:</strong> track which nodes joined or left.</li>
+                <li><strong>Coordination:</strong> keep distributed components consistent.</li>
+              </ul>
+
+              <h5 class="text-warning">Where is ZooKeeper used?</h5>
+              <ul>
+                <li>Historically with <strong>Kafka</strong> for broker metadata, controller election, and partition leadership.</li>
+                <li>In distributed systems like Hadoop/HBase ecosystems.</li>
+                <li>In microservices for leader election, distributed locks, service registration, and config coordination.</li>
+              </ul>
+              <p>
+                Important modern point: In <strong>new Kafka deployments</strong>, ZooKeeper is generally not recommended
+                anymore because Kafka's newer <strong>KRaft</strong> mode handles metadata without ZooKeeper. ZooKeeper
+                is still important historically and can still exist in older Kafka clusters or migration scenarios.
+              </p>
+
+              <h5 class="text-warning">Example 1: Leader election</h5>
+              <p>
+                Suppose three scheduler instances are running, but only one should generate month-end invoices.
+              </p>
+              <pre><code class="language-text">Instance A creates ephemeral znode /leader
+Instance B tries -> fails
+Instance C tries -> fails
+
+Result:
+Instance A becomes leader
+
+If Instance A crashes:
+/leader disappears
+Another instance becomes leader</code></pre>
+              <p>
+                Real-world use: only one node should run a critical batch job to avoid duplicate processing.
+              </p>
+
+              <h5 class="text-warning">Example 2: Service discovery</h5>
+              <pre><code class="language-text">/services/payment-service/instance-1
+/services/payment-service/instance-2
+/services/payment-service/instance-3</code></pre>
+              <p>
+                Each service instance registers itself as an ephemeral node. If an instance dies, its node disappears,
+                so clients know it is no longer available.
+              </p>
+
+              <h5 class="text-warning">Example 3: Shared configuration</h5>
+              <pre><code class="language-text">/config/payment-service/retry-count = 3
+/config/payment-service/timeout-ms = 2000</code></pre>
+              <p>
+                Services can watch these nodes and react when config changes.
+              </p>
+
+              <h5 class="text-warning">How does ZooKeeper help in microservices?</h5>
+              <p>
+                Microservices are distributed by nature, so coordination problems appear often. ZooKeeper can help with:
+              </p>
+              <ul>
+                <li>choosing one leader among many service instances</li>
+                <li>keeping track of active nodes</li>
+                <li>sharing dynamic config</li>
+                <li>coordinating distributed jobs</li>
+                <li>implementing distributed locks</li>
+              </ul>
+              <p>
+                Real-world example: If five notification-service instances are running, only one instance may need to
+                refresh global templates from an external system. ZooKeeper can coordinate that leader selection.
+              </p>
+
+              <h5 class="text-warning">How ZooKeeper stores data</h5>
+              <p>
+                ZooKeeper stores small coordination data in a hierarchical namespace, like a lightweight in-memory file
+                tree with persistence and replication.
+              </p>
+              <pre><code class="language-text">/
+  config
+    payment-service
+  services
+    order-service
+    payment-service
+  leader
+  locks</code></pre>
+
+              <h5 class="text-warning">Does ZooKeeper scale?</h5>
+              <p>
+                <strong>Yes, but with an important limitation.</strong> ZooKeeper is designed to scale for coordination,
+                not for storing large application data or running heavy write workloads like a database.
+              </p>
+              <ul>
+                <li><strong>Reads:</strong> scale relatively well.</li>
+                <li><strong>Writes:</strong> require coordination/quorum, so they do not scale like a distributed database.</li>
+                <li>It is best for <strong>small metadata and coordination workloads</strong>.</li>
+              </ul>
+              <p>
+                Interview-safe answer: ZooKeeper scales for distributed coordination, but it is not meant to be a
+                general-purpose high-write data store.
+              </p>
+
+              <h5 class="text-warning">How is ZooKeeper deployed?</h5>
+              <p>
+                ZooKeeper usually runs as an <strong>ensemble</strong> of 3 or 5 servers.
+              </p>
+              <ul>
+                <li>3 nodes -> can survive 1 node failure</li>
+                <li>5 nodes -> can survive 2 node failures</li>
+              </ul>
+              <p>
+                Because it uses quorum, you should use an odd number of nodes.
+              </p>
+
+              <h5 class="text-warning">Basic ZooKeeper configuration</h5>
+              <pre><code class="language-properties">tickTime=2000
+dataDir=/var/lib/zookeeper
+clientPort=2181
+initLimit=10
+syncLimit=5
+
+server.1=zk1:2888:3888
+server.2=zk2:2888:3888
+server.3=zk3:2888:3888</code></pre>
+              <ul>
+                <li><code>clientPort</code> -> port for applications/clients</li>
+                <li><code>dataDir</code> -> data storage location</li>
+                <li><code>server.1</code>, <code>server.2</code>, <code>server.3</code> -> ensemble members</li>
+              </ul>
+
+              <h5 class="text-warning">How do applications connect?</h5>
+              <pre><code class="language-java">ZooKeeper zooKeeper = new ZooKeeper(
+        "zk1:2181,zk2:2181,zk3:2181",
+        3000,
+        event -> System.out.println("Watcher event: " + event)
+);</code></pre>
+              <p>
+                In production Java apps, teams often use <strong>Apache Curator</strong> because it gives easier APIs
+                for leader election, distributed locks, and retries.
+              </p>
+
+              <h5 class="text-warning">Curator example for leader election</h5>
+              <pre><code class="language-java">CuratorFramework client = CuratorFrameworkFactory.newClient(
+        "zk1:2181,zk2:2181,zk3:2181",
+        new ExponentialBackoffRetry(1000, 3)
+);
+client.start();
+
+LeaderSelector leaderSelector = new LeaderSelector(
+        client,
+        "/leaders/payment-job",
+        new LeaderSelectorListenerAdapter() {
+            @Override
+            public void takeLeadership(CuratorFramework client) throws Exception {
+                System.out.println("This instance is now the leader");
+                Thread.sleep(10000);
+            }
+        }
+);
+
+leaderSelector.autoRequeue();
+leaderSelector.start();</code></pre>
+
+              <h5 class="text-warning">How it historically helped Kafka</h5>
+              <p>
+                In older Kafka architecture, ZooKeeper was used to coordinate broker metadata, cluster membership,
+                controller election, and partition leader information.
+              </p>
+              <pre><code class="language-text">Kafka Broker starts
+  ->
+Registers in ZooKeeper
+  ->
+ZooKeeper tracks active brokers
+  ->
+One broker becomes controller
+  ->
+Partition leader/follower metadata coordinated</code></pre>
+              <p>
+                Modern note: Kafka's newer KRaft mode replaces this metadata dependency for new clusters.
+              </p>
+
+              <h5 class="text-warning">Advantages of ZooKeeper</h5>
+              <ul>
+                <li>Very strong coordination model</li>
+                <li>Reliable for leader election and service membership</li>
+                <li>Ordered updates</li>
+                <li>Watches make coordination reactive</li>
+                <li>Battle-tested in distributed systems</li>
+              </ul>
+
+              <h5 class="text-warning">Limitations of ZooKeeper</h5>
+              <ul>
+                <li>Not for large business data storage</li>
+                <li>Write-heavy workloads are not its strength</li>
+                <li>Operational complexity if you do not actually need strong coordination</li>
+                <li>Many modern platforms now prefer built-in alternatives depending on architecture</li>
+              </ul>
+
+              <h5 class="text-warning">When would I use ZooKeeper in microservices?</h5>
+              <ul>
+                <li>Need robust leader election</li>
+                <li>Need distributed locks</li>
+                <li>Need shared coordination state</li>
+                <li>Working with older Kafka/Hadoop ecosystems</li>
+              </ul>
+              <p>
+                But if you are on Kubernetes, Eureka, Consul, or a managed cloud setup, some discovery/coordination use
+                cases may be handled by those systems instead.
+              </p>
+
+              <h5 class="text-warning">Interview-ready answer</h5>
+              <p>
+                ZooKeeper is a distributed coordination service used for leader election, configuration management,
+                service discovery, distributed locking, and cluster membership. It is not a general business database.
+                It scales well for coordination reads and metadata, but not like a large write-heavy data store. It was
+                historically important in Kafka and still appears in older clusters, while in microservices it helps
+                coordinate shared distributed behavior such as leader election and locks.
+              </p>
+            </div>
+          </div>
+        </div>
+
         <!-- Q28B -->
         <div class="accordion-item">
           <h2 class="accordion-header" id="q28b">
@@ -31614,6 +31914,1283 @@ docker compose down -v</code></pre>
         </div>
       </div>
 
+      <!-- UUID Internals And Usage -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="uuidInternalsUsage">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#uuidInternalsUsageBody">
+            What is UUID, how is it generated internally, is it unique across instances of the same service, when should we use it, and how do we generate it in a Spring application?
+          </button>
+        </h2>
+        <div id="uuidInternalsUsageBody" class="accordion-collapse collapse"
+          data-bs-parent="#accordionEmployeePrograms">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>UUID</strong> stands for <strong>Universally Unique Identifier</strong>. It is a 128-bit value
+              used to create ids that are practically unique without asking a central database or sequence generator.
+            </p>
+
+            <h5 class="text-warning">Simple format</h5>
+            <p>
+              A UUID usually looks like <code>550e8400-e29b-41d4-a716-446655440000</code>. It is shown in
+              hexadecimal and internally uses <strong>16 bytes = 128 bits</strong>.
+            </p>
+
+            <h5 class="text-warning">Why do we use UUID?</h5>
+            <ul>
+              <li>We need unique ids across multiple servers or service instances.</li>
+              <li>We do not want to depend on one centralized id generator for every request.</li>
+              <li>We want ids to be generated directly inside application code.</li>
+              <li>It is useful for order ids, correlation ids, event ids, public reference ids, and file names.</li>
+            </ul>
+
+            <p>
+              Real-world example: If 20 instances of order-service are running behind a load balancer, each instance
+              can still generate unique order reference ids locally without waiting for one shared counter service.
+            </p>
+
+            <h5 class="text-warning">How UUID is generated internally</h5>
+            <p>
+              UUID has multiple versions. In Java projects, the most commonly used one is
+              <code>UUID.randomUUID()</code>, which generates a <strong>version 4 UUID</strong>.
+            </p>
+
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Version</th>
+                  <th>How it is generated</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>v1</td>
+                  <td>Uses timestamp + machine/network information + sequence bits</td>
+                </tr>
+                <tr>
+                  <td>v3</td>
+                  <td>Uses namespace + name with MD5 hash</td>
+                </tr>
+                <tr>
+                  <td>v4</td>
+                  <td>Uses random or pseudo-random bits, most common in Java apps</td>
+                </tr>
+                <tr>
+                  <td>v5</td>
+                  <td>Uses namespace + name with SHA-1 hash</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <p>
+              For <strong>v4</strong>, most bits are random. A few bits are reserved to store the UUID
+              <strong>version</strong> and <strong>variant</strong>, and the rest are random bits generated by the
+              runtime.
+            </p>
+
+            <pre><code class="language-text">128 bits total
+  ->
+Some bits mark version and variant
+  ->
+Remaining bits are random
+  ->
+Very high uniqueness probability</code></pre>
+
+            <h5 class="text-warning">Is UUID unique across instances of the same service?</h5>
+            <p>
+              <strong>Yes, practically yes.</strong> Two instances of the same service can generate UUIDs independently,
+              and collision probability is extremely low, especially for version 4 UUIDs.
+            </p>
+
+            <p>
+              Important point: UUID does not guarantee mathematical impossibility of collision, but in real-world
+              enterprise systems the probability is so tiny that we treat it as unique for practical purposes.
+            </p>
+
+            <p>
+              Real-world analogy: Imagine every service instance is picking one grain of sand from an almost infinite
+              beach. Two instances choosing the exact same grain is theoretically possible, but practically negligible.
+            </p>
+
+            <h5 class="text-warning">Why UUID works well in distributed systems</h5>
+            <ul>
+              <li>No database round trip is needed just to create an id.</li>
+              <li>No single point of failure like one central sequence service.</li>
+              <li>Works well across pods, containers, VMs, and multiple regions.</li>
+              <li>Useful in microservices where many services create records independently.</li>
+            </ul>
+
+            <h5 class="text-warning">How do we generate UUID in Java?</h5>
+            <pre><code class="language-java">import java.util.UUID;
+
+UUID id = UUID.randomUUID();
+String value = id.toString();</code></pre>
+
+            <p>
+              This is the most common way. In Java, <code>UUID.randomUUID()</code> usually gives a version 4 UUID.
+            </p>
+
+            <h5 class="text-warning">How do we use UUID in a Spring application?</h5>
+            <p>
+              We commonly use UUID in Spring applications for entity ids, request ids, file names, token references,
+              and event ids.
+            </p>
+
+            <h5 class="text-warning">Example 1: Generate UUID in service layer</h5>
+            <pre><code class="language-java">@Service
+public class OrderService {
+
+    public String createOrderReference() {
+        return UUID.randomUUID().toString();
+    }
+}</code></pre>
+
+            <h5 class="text-warning">Example 2: Use UUID as request correlation id</h5>
+            <pre><code class="language-java">import java.io.IOException;
+import java.util.Optional;
+import java.util.UUID;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
+import org.slf4j.MDC;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+@Component
+public class RequestIdFilter extends OncePerRequestFilter {
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain) throws ServletException, IOException {
+
+        String requestId = Optional.ofNullable(request.getHeader("X-Request-Id"))
+                .orElse(UUID.randomUUID().toString());
+
+        response.setHeader("X-Request-Id", requestId);
+        MDC.put("requestId", requestId);
+
+        try {
+            filterChain.doFilter(request, response);
+        } finally {
+            MDC.remove("requestId");
+        }
+    }
+}</code></pre>
+
+            <p>
+              Real-world use: if the client does not send a request id, the application creates one and uses it across
+              logs so the full request can be searched later.
+            </p>
+
+            <h5 class="text-warning">Example 3: Use UUID as entity primary key</h5>
+            <pre><code class="language-java">@Entity
+public class Customer {
+
+    @Id
+    private UUID id;
+
+    private String name;
+}</code></pre>
+
+            <p>
+              In many projects, UUID is stored directly as a UUID type if the database supports it, or as a
+              <code>CHAR(36)</code>/<code>VARCHAR</code> value otherwise.
+            </p>
+
+            <h5 class="text-warning">When should we use UUID?</h5>
+            <ul>
+              <li>When multiple service instances generate ids in parallel.</li>
+              <li>When we need globally unique public-facing reference ids.</li>
+              <li>When we generate event ids in Kafka or messaging systems.</li>
+              <li>When we need correlation ids for tracing logs and requests.</li>
+              <li>When offline generation is needed without DB dependency.</li>
+            </ul>
+
+            <h5 class="text-warning">When should we avoid UUID?</h5>
+            <ul>
+              <li>When strictly increasing numeric ids are required for readability.</li>
+              <li>When index size and random insert fragmentation matter a lot in high-write databases.</li>
+              <li>When the business wants short human-friendly ids like <code>ORD-10001</code>.</li>
+            </ul>
+
+            <p>
+              Real-world example: Internal database row ids may use numeric sequences for compact indexing, while
+              public order references use UUID so they can be safely generated across distributed services.
+            </p>
+
+            <h5 class="text-warning">UUID vs auto-increment id</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Point</th>
+                  <th>UUID</th>
+                  <th>Auto-increment</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Generation</td>
+                  <td>Application side</td>
+                  <td>Database side</td>
+                </tr>
+                <tr>
+                  <td>Distributed systems</td>
+                  <td>Very good</td>
+                  <td>Harder across multiple nodes</td>
+                </tr>
+                <tr>
+                  <td>Readability</td>
+                  <td>Low</td>
+                  <td>High</td>
+                </tr>
+                <tr>
+                  <td>Index friendliness</td>
+                  <td>Lower for random UUIDs</td>
+                  <td>Better for sequential inserts</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              UUID is a 128-bit globally unique identifier used heavily in distributed systems. In Java, we usually
+              generate it using <code>UUID.randomUUID()</code>, which commonly creates a version 4 UUID based mostly on
+              random bits. It is practically unique across multiple instances of the same service, so it works well for
+              order ids, event ids, request ids, and public references in Spring applications. We should use it when we
+              want decentralized id generation, but avoid it when short sequential ids or index-friendly inserts are
+              more important.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Micrometer In Spring Boot -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="micrometerSpringBoot">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#micrometerSpringBootBody">
+            What is Micrometer, how does it help, and how do we configure it in Spring Boot?
+          </button>
+        </h2>
+        <div id="micrometerSpringBootBody" class="accordion-collapse collapse"
+          data-bs-parent="#accordionEmployeePrograms">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>Micrometer</strong> is the metrics facade used in Spring Boot to collect application metrics in a
+              standard way and export them to monitoring tools like <strong>Prometheus, Datadog, CloudWatch, New
+                Relic, and Grafana backends</strong>. A common interview line is: <strong>Micrometer is like SLF4J for
+                metrics</strong>.
+            </p>
+
+            <h5 class="text-warning">Why do we use Micrometer?</h5>
+            <ul>
+              <li>It gives one common API for metrics collection.</li>
+              <li>It integrates directly with Spring Boot Actuator.</li>
+              <li>It exposes JVM, memory, GC, thread, HTTP, datasource, and cache metrics automatically.</li>
+              <li>It lets us create custom business metrics like order count, payment failures, or retry count.</li>
+              <li>It avoids vendor lock-in because the same code can publish to different monitoring systems.</li>
+            </ul>
+
+            <p>
+              Real-world example: In an e-commerce app, when customers say checkout is slow, Micrometer can show
+              request latency, JVM pressure, DB pool usage, and payment failure counters in one monitoring pipeline.
+            </p>
+
+            <h5 class="text-warning">How Micrometer helps in Spring Boot</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Area</th>
+                  <th>How it helps</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>HTTP monitoring</td>
+                  <td>Tracks request count, latency, status codes, and error rate</td>
+                </tr>
+                <tr>
+                  <td>JVM monitoring</td>
+                  <td>Tracks heap, non-heap, GC pause, thread count, class loading</td>
+                </tr>
+                <tr>
+                  <td>Datasource monitoring</td>
+                  <td>Tracks active, idle, pending DB connections</td>
+                </tr>
+                <tr>
+                  <td>Business monitoring</td>
+                  <td>Tracks custom counters like orders placed or payments failed</td>
+                </tr>
+                <tr>
+                  <td>Alerting</td>
+                  <td>Supports dashboards and alerts in Prometheus/Grafana or other APM tools</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Basic dependencies</h5>
+            <pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-boot-starter-actuator&lt;/artifactId&gt;
+&lt;/dependency&gt;
+
+&lt;dependency&gt;
+    &lt;groupId&gt;io.micrometer&lt;/groupId&gt;
+    &lt;artifactId&gt;micrometer-registry-prometheus&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+
+            <h5 class="text-warning">Basic Spring Boot configuration</h5>
+            <pre><code class="language-yaml">spring:
+  application:
+    name: order-service
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  metrics:
+    tags:
+      application: ${spring.application.name}</code></pre>
+
+            <p>
+              After this, Spring Boot exposes endpoints like <code>/actuator/metrics</code> and
+              <code>/actuator/prometheus</code>.
+            </p>
+
+            <h5 class="text-warning">Common Micrometer meter types</h5>
+            <ul>
+              <li><code>Counter</code> for how many times something happened</li>
+              <li><code>Timer</code> for how long something took</li>
+              <li><code>Gauge</code> for current value like queue size or active users</li>
+              <li><code>DistributionSummary</code> for payload size or amount distributions</li>
+            </ul>
+
+            <h5 class="text-warning">Custom metric example</h5>
+            <pre><code class="language-java">@Service
+public class PaymentService {
+
+    private final Counter paymentFailureCounter;
+
+    public PaymentService(MeterRegistry meterRegistry) {
+        this.paymentFailureCounter = Counter.builder("payment_failures_total")
+                .description("Total number of payment failures")
+                .tag("service", "payment-service")
+                .register(meterRegistry);
+    }
+
+    public void processPayment(boolean failed) {
+        if (failed) {
+            paymentFailureCounter.increment();
+        }
+    }
+}</code></pre>
+
+            <p>
+              Real-world meaning: if the graph of <code>payment_failures_total</code> rises suddenly, we know users are
+              impacted even if CPU and memory still look normal.
+            </p>
+
+            <h5 class="text-warning">How metrics flow end to end</h5>
+            <pre><code class="language-text">Spring Boot app
+  ->
+Micrometer collects metrics
+  ->
+Actuator exposes /actuator/prometheus
+  ->
+Prometheus scrapes metrics
+  ->
+Grafana shows dashboards and alerts</code></pre>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              Micrometer is the metrics library used in Spring Boot to collect JVM, system, HTTP, datasource, and
+              custom business metrics in a backend-neutral way. We usually combine it with Actuator, expose metrics to
+              Prometheus, and visualize them in Grafana for dashboards and alerting.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Monitoring Services In Microservices -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="monitoringMicroservices">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#monitoringMicroservicesBody">
+            How do we monitor our services in a microservices world end to end, and how do we configure it?
+          </button>
+        </h2>
+        <div id="monitoringMicroservicesBody" class="accordion-collapse collapse"
+          data-bs-parent="#accordionEmployeePrograms">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              In microservices, monitoring means knowing whether services are <strong>healthy, fast, available, and
+              working correctly</strong> across the full request journey. End-to-end monitoring is not only one graph or
+              one tool. It usually combines <strong>metrics, logs, traces, health checks, alerts, dashboards, and
+              infrastructure monitoring</strong>.
+            </p>
+
+            <h5 class="text-warning">Why monitoring is more important in microservices</h5>
+            <ul>
+              <li>One user request may pass through many services.</li>
+              <li>A problem in one small service can slow or break the full business flow.</li>
+              <li>Instances scale up/down dynamically, so manual server checking does not work well.</li>
+              <li>Failures may happen in app code, database, queue, cache, network, or Kubernetes platform.</li>
+            </ul>
+
+            <p>
+              Real-world example: User says “payment failed.” The real issue may be gateway timeout, payment-service
+              CPU spike, Redis outage, Kafka lag, or DB connection pool exhaustion. Monitoring helps us find the real
+              bottleneck quickly.
+            </p>
+
+            <h5 class="text-warning">What should we monitor end to end?</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Layer</th>
+                  <th>What to monitor</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Application</td>
+                  <td>Request rate, response time, error rate, thread usage, JVM memory, GC, exceptions</td>
+                </tr>
+                <tr>
+                  <td>Business</td>
+                  <td>Orders created, payments failed, signup success rate, inventory reserve failures</td>
+                </tr>
+                <tr>
+                  <td>Database</td>
+                  <td>Slow queries, connections, locks, CPU, replication lag, storage</td>
+                </tr>
+                <tr>
+                  <td>Cache</td>
+                  <td>Hit ratio, memory usage, evictions, latency</td>
+                </tr>
+                <tr>
+                  <td>Messaging</td>
+                  <td>Kafka lag, queue depth, consumer failure, retry/DLT counts</td>
+                </tr>
+                <tr>
+                  <td>Infrastructure</td>
+                  <td>CPU, memory, disk, network, pod restarts, node health</td>
+                </tr>
+                <tr>
+                  <td>Network/API</td>
+                  <td>Timeouts, retries, downstream latency, DNS/service discovery issues</td>
+                </tr>
+                <tr>
+                  <td>User journey</td>
+                  <td>Trace path across services, where request slowed or failed</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Three core observability pillars</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Pillar</th>
+                  <th>Used for</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Metrics</td>
+                  <td>CPU, latency, throughput, error rate, dashboards, alerts</td>
+                </tr>
+                <tr>
+                  <td>Logs</td>
+                  <td>Detailed event history and debugging</td>
+                </tr>
+                <tr>
+                  <td>Traces</td>
+                  <td>End-to-end request flow across services</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Typical microservices monitoring architecture</h5>
+            <pre><code class="language-text">Spring Boot services
+  ->
+Actuator + Micrometer expose metrics
+  ->
+Prometheus scrapes metrics
+  ->
+Grafana dashboards
+
+Spring Boot logs
+  ->
+Fluent Bit / Filebeat
+  ->
+ELK / Loki / CloudWatch
+
+Tracing instrumentation
+  ->
+OpenTelemetry / Micrometer Tracing
+  ->
+Jaeger / Tempo / Zipkin</code></pre>
+
+            <h5 class="text-warning">End-to-end real-world monitoring flow</h5>
+            <pre><code class="language-text">User calls /api/orders
+  ->
+API Gateway
+  ->
+Order Service
+  ->
+Payment Service
+  ->
+Inventory Service
+
+What we watch:
+- traceId across services
+- p95 latency
+- 5xx error spikes
+- payment failure count
+- DB pool usage
+- Kafka lag if async event is involved</code></pre>
+
+            <h5 class="text-warning">How do we monitor Spring Boot services?</h5>
+            <p>
+              The most common starting point is <code>Spring Boot Actuator</code> + <code>Micrometer</code>.
+            </p>
+
+            <h5 class="text-warning">1. Add dependencies</h5>
+            <pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-boot-starter-actuator&lt;/artifactId&gt;
+&lt;/dependency&gt;
+
+&lt;dependency&gt;
+    &lt;groupId&gt;io.micrometer&lt;/groupId&gt;
+    &lt;artifactId&gt;micrometer-registry-prometheus&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+
+            <h5 class="text-warning">2. Basic application.yml</h5>
+            <pre><code class="language-yaml">spring:
+  application:
+    name: order-service
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: always
+  metrics:
+    tags:
+      application: ${spring.application.name}</code></pre>
+
+            <h5 class="text-warning">3. Important Actuator endpoints</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Endpoint</th>
+                  <th>Use</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>/actuator/health</code></td>
+                  <td>Overall app health</td>
+                </tr>
+                <tr>
+                  <td><code>/actuator/health/liveness</code></td>
+                  <td>Is process alive?</td>
+                </tr>
+                <tr>
+                  <td><code>/actuator/health/readiness</code></td>
+                  <td>Can service receive traffic?</td>
+                </tr>
+                <tr>
+                  <td><code>/actuator/metrics</code></td>
+                  <td>All available metrics</td>
+                </tr>
+                <tr>
+                  <td><code>/actuator/prometheus</code></td>
+                  <td>Prometheus scrape endpoint</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">4. Prometheus scrape config example</h5>
+            <pre><code class="language-yaml">scrape_configs:
+  - job_name: 'order-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['order-service:8080']</code></pre>
+
+            <h5 class="text-warning">5. What metrics do we usually track?</h5>
+            <ul>
+              <li><strong>Latency:</strong> p50, p95, p99 response time</li>
+              <li><strong>Traffic:</strong> requests per second</li>
+              <li><strong>Errors:</strong> 4xx, 5xx, business failures</li>
+              <li><strong>JVM:</strong> heap, non-heap, GC pause, thread count</li>
+              <li><strong>Connection pools:</strong> active, idle, pending DB connections</li>
+              <li><strong>HTTP clients:</strong> downstream call latency, retry count, timeout count</li>
+              <li><strong>Kafka/queue:</strong> consumer lag, DLT count, retry count</li>
+            </ul>
+
+            <h5 class="text-warning">6. Business metrics are also important</h5>
+            <p>
+              Infra metrics are not enough. We should also track business outcomes.
+            </p>
+            <pre><code class="language-java">Counter paymentFailures = Counter.builder("payment_failures_total")
+        .tag("service", "payment-service")
+        .register(meterRegistry);
+
+paymentFailures.increment();</code></pre>
+            <p>
+              Real-world example: Even if CPU and memory look normal, a spike in <code>payment_failures_total</code>
+              tells us customers are affected.
+            </p>
+
+            <h5 class="text-warning">7. Distributed tracing configuration idea</h5>
+            <p>
+              To monitor one request across many services, we use tracing.
+            </p>
+            <pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-boot-starter-actuator&lt;/artifactId&gt;
+&lt;/dependency&gt;
+
+&lt;dependency&gt;
+    &lt;groupId&gt;io.micrometer&lt;/groupId&gt;
+    &lt;artifactId&gt;micrometer-tracing-bridge-otel&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+            <pre><code class="language-yaml">management:
+  tracing:
+    sampling:
+      probability: 1.0</code></pre>
+            <p>
+              Traces are then exported to tools like <strong>Jaeger</strong>, <strong>Tempo</strong>, or <strong>Zipkin</strong>.
+            </p>
+
+            <h5 class="text-warning">8. Logs must be part of monitoring too</h5>
+            <p>
+              Metrics tell us “something is wrong,” traces tell us “where it happened,” and logs tell us “what exactly happened.”
+            </p>
+            <p>
+              That is why centralized logs, correlation ids, and structured JSON logs are part of end-to-end monitoring.
+            </p>
+
+            <h5 class="text-warning">9. Kubernetes monitoring</h5>
+            <ul>
+              <li>Monitor pod restarts</li>
+              <li>Monitor readiness/liveness failures</li>
+              <li>Monitor CPU/memory requests vs actual usage</li>
+              <li>Monitor node pressure and unscheduled pods</li>
+              <li>Monitor ingress/API gateway latency and 5xx</li>
+            </ul>
+            <pre><code class="language-yaml">livenessProbe:
+  httpGet:
+    path: /actuator/health/liveness
+    port: 8080
+
+readinessProbe:
+  httpGet:
+    path: /actuator/health/readiness
+    port: 8080</code></pre>
+
+            <h5 class="text-warning">10. Database and queue monitoring</h5>
+            <ul>
+              <li>DB slow queries, connection pool exhaustion, locks, deadlocks</li>
+              <li>Redis latency, hit ratio, memory, evictions</li>
+              <li>Kafka lag, under-replicated partitions, broker health, consumer errors</li>
+            </ul>
+            <p>
+              Real-world example: Order-service looks healthy, but Prometheus shows Kafka lag rising sharply in
+              notification-service consumer group. That means async processing is falling behind.
+            </p>
+
+            <h5 class="text-warning">11. Alerting is part of monitoring</h5>
+            <p>
+              Monitoring is incomplete without alerts.
+            </p>
+            <ul>
+              <li>High 5xx rate</li>
+              <li>p95 latency crossing SLA</li>
+              <li>DB pool almost exhausted</li>
+              <li>Kafka lag too high</li>
+              <li>Too many pod restarts</li>
+              <li>Disk/memory nearing limit</li>
+            </ul>
+            <p>
+              Common tools: <strong>Prometheus Alertmanager</strong>, Grafana alerts, CloudWatch alarms, Datadog monitors, Splunk alerts.
+            </p>
+
+            <h5 class="text-warning">12. Dashboards we usually create</h5>
+            <ul>
+              <li>Service health dashboard</li>
+              <li>Latency and throughput dashboard</li>
+              <li>Error dashboard</li>
+              <li>JVM dashboard</li>
+              <li>Database pool dashboard</li>
+              <li>Kafka lag / queue depth dashboard</li>
+              <li>Business KPI dashboard</li>
+            </ul>
+
+            <h5 class="text-warning">13. End-to-end troubleshooting example</h5>
+            <pre><code class="language-text">Alert: p95 latency of /api/orders increased
+  ->
+Open Grafana dashboard
+  ->
+See order-service latency spike
+  ->
+Open trace in Jaeger/Tempo
+  ->
+Find payment-service span is slow
+  ->
+Open centralized logs using traceId
+  ->
+See payment gateway timeout
+  ->
+Root cause found</code></pre>
+
+            <h5 class="text-warning">14. Best practices</h5>
+            <ul>
+              <li>Use common tags like <code>serviceName</code>, <code>env</code>, <code>instanceId</code>, <code>traceId</code>.</li>
+              <li>Define SLI/SLO/SLA for important APIs.</li>
+              <li>Monitor both technical and business metrics.</li>
+              <li>Use health probes for Kubernetes.</li>
+              <li>Use centralized logs and distributed tracing together.</li>
+              <li>Alert on symptoms that matter to users, not only on low-level metrics.</li>
+              <li>Keep dashboards simple and actionable.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              In a microservices system, I monitor services end to end using metrics, logs, traces, health checks, and
+              alerts together. In Spring Boot, I usually enable Actuator and Micrometer, expose Prometheus metrics,
+              visualize them in Grafana, centralize logs in ELK/Loki/CloudWatch, and enable tracing with OpenTelemetry
+              or Micrometer Tracing to Jaeger/Tempo/Zipkin. I also configure Kubernetes readiness and liveness probes,
+              monitor DB pools, Kafka lag, JVM metrics, and business KPIs, then create alerts for latency, errors, and
+              failure spikes so production issues can be found quickly.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Log Aggregator In Microservices -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="logAggregatorMicroservices">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#logAggregatorMicroservicesBody">
+            What is a Log Aggregator in microservices, why do we need it, and how do we implement it end to end?
+          </button>
+        </h2>
+        <div id="logAggregatorMicroservicesBody" class="accordion-collapse collapse"
+          data-bs-parent="#accordionEmployeePrograms">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              In microservices, logs are generated by many services, many pods, many servers, and many environments. A
+              <strong>log aggregator</strong> collects logs from all these places into one centralized searchable system.
+            </p>
+
+            <h5 class="text-warning">Why do we need a log aggregator in microservices?</h5>
+            <ul>
+              <li>One user request may travel through API Gateway, auth-service, order-service, payment-service, and notification-service.</li>
+              <li>If each service keeps logs locally, troubleshooting becomes very hard.</li>
+              <li>Pods/containers can restart, so local log files may disappear.</li>
+              <li>Centralized logs make search, debugging, alerting, auditing, and troubleshooting much easier.</li>
+            </ul>
+
+            <p>
+              Real-world example: A payment failed in production. Without centralized logs, you must check logs in 5
+              different services manually. With a log aggregator, you search by <code>requestId</code> or
+              <code>orderId</code> and trace the full flow in one place.
+            </p>
+
+            <h5 class="text-warning">Simple definition</h5>
+            <p>
+              A log aggregator is a centralized logging solution that <strong>collects, stores, indexes, and makes logs
+                searchable</strong> across multiple services and machines.
+            </p>
+
+            <h5 class="text-warning">Common tools</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Tool</th>
+                  <th>Purpose</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>ELK / Elastic Stack</td>
+                  <td>Elasticsearch + Logstash + Kibana for centralized logging</td>
+                </tr>
+                <tr>
+                  <td>EFK</td>
+                  <td>Elasticsearch + Fluent Bit/Fluentd + Kibana, common in Kubernetes</td>
+                </tr>
+                <tr>
+                  <td>Grafana Loki</td>
+                  <td>Label-based log storage integrated with Grafana</td>
+                </tr>
+                <tr>
+                  <td>Splunk</td>
+                  <td>Enterprise log analytics and search</td>
+                </tr>
+                <tr>
+                  <td>CloudWatch</td>
+                  <td>AWS-native centralized logging</td>
+                </tr>
+                <tr>
+                  <td>Azure Monitor / Log Analytics</td>
+                  <td>Azure-native centralized logging</td>
+                </tr>
+                <tr>
+                  <td>GCP Logging</td>
+                  <td>Google Cloud-native centralized logging</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Typical logging architecture in microservices</h5>
+            <pre><code class="language-text">Microservice logs
+  ->
+stdout / log file
+  ->
+log collector agent (Fluent Bit / Fluentd / Filebeat / Vector)
+  ->
+log processor or pipeline (optional)
+  ->
+central log store (Elasticsearch / Loki / Splunk / CloudWatch)
+  ->
+search / dashboard / alerting</code></pre>
+
+            <h5 class="text-warning">End-to-end example flow</h5>
+            <pre><code class="language-text">User places order
+  ->
+API Gateway logs request
+  ->
+Order Service logs order creation
+  ->
+Payment Service logs payment failure
+  ->
+Notification Service logs retry event
+  ->
+All logs shipped to ELK
+  ->
+Search by requestId = 12345
+  ->
+See full distributed flow in one place</code></pre>
+
+            <h5 class="text-warning">How do we achieve log aggregation?</h5>
+            <ul>
+              <li>Print structured logs, usually JSON.</li>
+              <li>Include correlation fields like <code>requestId</code>, <code>traceId</code>, <code>serviceName</code>, <code>instanceId</code>.</li>
+              <li>Ship logs using collector agents such as Fluent Bit, Fluentd, Filebeat, or cloud-native log agents.</li>
+              <li>Store logs in a central searchable system like Elasticsearch, Loki, Splunk, or CloudWatch.</li>
+              <li>Create dashboards and alerts on errors, exceptions, latency, and business failures.</li>
+            </ul>
+
+            <h5 class="text-warning">Most important logging fields in microservices</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Field</th>
+                  <th>Why it matters</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>@timestamp</code></td>
+                  <td>When the event happened</td>
+                </tr>
+                <tr>
+                  <td><code>level</code></td>
+                  <td>INFO, WARN, ERROR, DEBUG</td>
+                </tr>
+                <tr>
+                  <td><code>serviceName</code></td>
+                  <td>Which microservice logged it</td>
+                </tr>
+                <tr>
+                  <td><code>instanceId</code></td>
+                  <td>Which pod/container/node produced it</td>
+                </tr>
+                <tr>
+                  <td><code>requestId</code> / <code>traceId</code></td>
+                  <td>Trace same request across services</td>
+                </tr>
+                <tr>
+                  <td><code>path</code> / <code>method</code></td>
+                  <td>Which API was called</td>
+                </tr>
+                <tr>
+                  <td><code>status</code></td>
+                  <td>HTTP result or business state</td>
+                </tr>
+                <tr>
+                  <td><code>durationMs</code></td>
+                  <td>Performance insight</td>
+                </tr>
+                <tr>
+                  <td><code>errorCode</code> / exception</td>
+                  <td>Failure analysis</td>
+                </tr>
+                <tr>
+                  <td><code>businessId</code></td>
+                  <td>Order id, user id, payment id, etc.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">How do we find which microservice generated a log?</h5>
+            <p>
+              We usually identify the source microservice using fields like <code>serviceName</code>,
+              <code>applicationName</code>, <code>instanceId</code>, <code>podName</code>, <code>containerName</code>,
+              and sometimes <code>logger_name</code>.
+            </p>
+            <pre><code class="language-json">{
+  "@timestamp": "2026-08-06T11:12:13.456+05:30",
+  "serviceName": "payment-service",
+  "applicationName": "payment-service",
+  "instanceId": "payment-service-7d87f",
+  "podName": "payment-service-7d87f-abc12",
+  "containerName": "payment-service",
+  "requestId": "req-12345",
+  "message": "payment_failed"
+}</code></pre>
+            <p>
+              From this log, we immediately know the log came from <code>payment-service</code>, and even which exact
+              instance or pod produced it.
+            </p>
+
+            <h5 class="text-warning">What is app id / application name / service name?</h5>
+            <p>
+              This is the identity of the microservice that produced the log.
+            </p>
+            <ul>
+              <li><code>applicationName</code> or <code>serviceName</code> usually means the microservice itself, such as <code>order-service</code> or <code>payment-service</code>.</li>
+              <li><code>instanceId</code> usually means the specific running instance or pod of that service.</li>
+            </ul>
+            <p>
+              Real-world example:
+            </p>
+            <pre><code class="language-text">serviceName = payment-service
+instanceId  = payment-service-7d87f-abc12</code></pre>
+            <p>
+              Meaning: the log came from the <code>payment-service</code> microservice, specifically from one running pod/container instance.
+            </p>
+
+            <h5 class="text-warning">What is traceId?</h5>
+            <p>
+              <code>traceId</code> represents the <strong>entire end-to-end request journey</strong> across multiple
+              services.
+            </p>
+            <p>
+              If one user request goes through 5 services, all those logs should ideally share the same
+              <code>traceId</code>.
+            </p>
+            <pre><code class="language-text">Client request
+  ->
+API Gateway
+  ->
+Order Service
+  ->
+Payment Service
+  ->
+Inventory Service
+
+Same traceId in all logs</code></pre>
+            <p>
+              Real-world example: If an order creation request fails in payment-service, we search by
+              <code>traceId</code> and see the full path from gateway to payment.
+            </p>
+
+            <h5 class="text-warning">What is spanId?</h5>
+            <p>
+              <code>spanId</code> represents a <strong>single step or single operation</strong> inside the larger trace.
+            </p>
+            <p>
+              One trace has multiple spans.
+            </p>
+            <pre><code class="language-text">traceId = whole request
+
+span 1 = API Gateway receives request
+span 2 = Order Service validates order
+span 3 = Payment Service charges payment
+span 4 = Inventory Service reserves stock</code></pre>
+            <p>
+              So:
+            </p>
+            <ul>
+              <li><strong>traceId:</strong> full journey</li>
+              <li><strong>spanId:</strong> one step in that journey</li>
+            </ul>
+
+            <h5 class="text-warning">Simple analogy for trace and span</h5>
+            <p>
+              Think of <code>traceId</code> like a full courier shipment tracking number, and each
+              <code>spanId</code> like one stop in the shipment journey: pickup, sorting center, transit hub, delivery.
+            </p>
+
+            <h5 class="text-warning">How traceId and spanId look in logs</h5>
+            <pre><code class="language-json">{
+  "@timestamp": "2026-08-06T11:12:13.456+05:30",
+  "serviceName": "payment-service",
+  "instanceId": "payment-service-7d87f",
+  "traceId": "8b7f2d13c44a9e1d9ac42c010f100111",
+  "spanId": "39af1200bb9911aa",
+  "requestId": "req-12345",
+  "message": "payment_failed"
+}</code></pre>
+
+            <h5 class="text-warning">requestId vs traceId</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Field</th>
+                  <th>Meaning</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>requestId</code></td>
+                  <td>Custom request correlation id, often generated by API gateway or app</td>
+                </tr>
+                <tr>
+                  <td><code>traceId</code></td>
+                  <td>Distributed tracing id for full request flow across services</td>
+                </tr>
+                <tr>
+                  <td><code>spanId</code></td>
+                  <td>One operation inside that trace</td>
+                </tr>
+              </tbody>
+            </table>
+            <p>
+              In many systems, <code>requestId</code> and <code>traceId</code> may be mapped together or one may be reused,
+              but conceptually they are not exactly the same.
+            </p>
+
+            <h5 class="text-warning">How do we search logs in practice?</h5>
+            <ul>
+              <li>Search by <code>traceId</code> to see the whole cross-service journey.</li>
+              <li>Search by <code>serviceName</code> to see only one microservice's logs.</li>
+              <li>Search by <code>instanceId</code> if one specific pod is misbehaving.</li>
+              <li>Search by <code>orderId</code>, <code>userId</code>, or <code>paymentId</code> for business debugging.</li>
+            </ul>
+
+            <h5 class="text-warning">Structured JSON logs are strongly preferred</h5>
+            <p>
+              Plain text logs are hard to search reliably in distributed systems. JSON logs let log aggregation tools
+              index and query fields directly.
+            </p>
+            <pre><code class="language-json">{
+  "@timestamp": "2026-08-06T11:12:13.456+05:30",
+  "level": "ERROR",
+  "serviceName": "payment-service",
+  "instanceId": "payment-service-7d87f",
+  "requestId": "req-12345",
+  "orderId": "ORD-1001",
+  "path": "/api/payments",
+  "status": 500,
+  "durationMs": 92,
+  "message": "payment_failed",
+  "exception": "TimeoutException"
+}</code></pre>
+
+            <h5 class="text-warning">Spring Boot logging configuration idea</h5>
+            <p>
+              In Spring Boot, we usually use Logback with JSON encoder and MDC.
+            </p>
+            <pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;net.logstash.logback&lt;/groupId&gt;
+    &lt;artifactId&gt;logstash-logback-encoder&lt;/artifactId&gt;
+    &lt;version&gt;7.4&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+            <pre><code class="language-xml">&lt;configuration&gt;
+    &lt;appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender"&gt;
+        &lt;encoder class="net.logstash.logback.encoder.LogstashEncoder"/&gt;
+    &lt;/appender&gt;
+
+    &lt;root level="INFO"&gt;
+        &lt;appender-ref ref="JSON_CONSOLE"/&gt;
+    &lt;/root&gt;
+&lt;/configuration&gt;</code></pre>
+            <p>
+              In containers and Kubernetes, printing JSON to <code>stdout</code> is often the cleanest approach. The platform
+              log collector then ships those logs centrally.
+            </p>
+
+            <h5 class="text-warning">Use correlation ID / trace ID</h5>
+            <p>
+              This is one of the most important parts in microservices logging. Every service should log the same
+              request id or trace id for the same business flow.
+            </p>
+            <pre><code class="language-text">Gateway adds X-Request-Id
+  ->
+Order Service logs it
+  ->
+Payment Service logs same id
+  ->
+Inventory Service logs same id
+  ->
+Search one id in Kibana / Splunk / Loki</code></pre>
+
+            <h5 class="text-warning">Spring Boot MDC example</h5>
+            <pre><code class="language-java">MDC.put("requestId", requestId);
+MDC.put("serviceName", "order-service");
+MDC.put("orderId", orderId);
+
+log.info("order_created");
+
+MDC.clear();</code></pre>
+
+            <h5 class="text-warning">Log collectors commonly used</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Collector</th>
+                  <th>Where used</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Fluent Bit</td>
+                  <td>Kubernetes / containers</td>
+                  <td>Lightweight, very common</td>
+                </tr>
+                <tr>
+                  <td>Fluentd</td>
+                  <td>Kubernetes / VMs</td>
+                  <td>Flexible routing and parsing</td>
+                </tr>
+                <tr>
+                  <td>Filebeat</td>
+                  <td>VMs / containers</td>
+                  <td>Common with Elastic stack</td>
+                </tr>
+                <tr>
+                  <td>Vector</td>
+                  <td>Modern log pipelines</td>
+                  <td>Fast and efficient</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">ELK / EFK example architecture</h5>
+            <pre><code class="language-text">Spring Boot services
+  ->
+JSON logs to stdout
+  ->
+Fluent Bit DaemonSet on Kubernetes
+  ->
+Elasticsearch
+  ->
+Kibana dashboard and search</code></pre>
+
+            <h5 class="text-warning">Loki example architecture</h5>
+            <pre><code class="language-text">Spring Boot services
+  ->
+stdout logs
+  ->
+Promtail / Fluent Bit
+  ->
+Grafana Loki
+  ->
+Grafana dashboards</code></pre>
+
+            <h5 class="text-warning">Cloud-native example</h5>
+            <pre><code class="language-text">Spring Boot services on EKS/ECS
+  ->
+stdout logs
+  ->
+CloudWatch Agent / Fluent Bit
+  ->
+CloudWatch Logs
+  ->
+Metric filters / alarms / dashboards</code></pre>
+
+            <h5 class="text-warning">How to configure in Kubernetes</h5>
+            <ul>
+              <li>Print application logs to <code>stdout</code> instead of maintaining local log files inside container.</li>
+              <li>Deploy Fluent Bit / Fluentd / Promtail as DaemonSet or sidecar depending on architecture.</li>
+              <li>Tag logs with namespace, pod name, container name, and app labels.</li>
+              <li>Send to Elasticsearch, Loki, or cloud log service.</li>
+            </ul>
+            <p>
+              Real-world example: Each node in the cluster runs a Fluent Bit agent that reads pod container logs and
+              ships them centrally.
+            </p>
+
+            <h5 class="text-warning">Best practices</h5>
+            <ul>
+              <li>Use structured JSON logs.</li>
+              <li>Always include request/correlation id.</li>
+              <li>Include service name and instance id.</li>
+              <li>Do not log passwords, tokens, OTPs, card numbers, or sensitive PII.</li>
+              <li>Use INFO for business milestones, WARN for recoverable issues, ERROR for failures.</li>
+              <li>Mask sensitive fields before shipping logs.</li>
+              <li>Set retention policy because logs can become expensive.</li>
+              <li>Use alerts on repeated exceptions, 5xx spikes, and unusual patterns.</li>
+              <li>Combine logs with metrics and tracing for full observability.</li>
+            </ul>
+
+            <h5 class="text-warning">Challenges in log aggregation</h5>
+            <ul>
+              <li>Huge log volume can increase storage cost.</li>
+              <li>Noisy logs make troubleshooting harder.</li>
+              <li>Missing correlation id breaks request tracing.</li>
+              <li>Sensitive data leakage is a serious risk.</li>
+              <li>Clock/timezone mismatch can confuse investigations if timestamps are inconsistent.</li>
+            </ul>
+
+            <h5 class="text-warning">Logs vs Metrics vs Traces</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Signal</th>
+                  <th>Used for</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Logs</td>
+                  <td>Detailed events and debugging</td>
+                </tr>
+                <tr>
+                  <td>Metrics</td>
+                  <td>CPU, latency, throughput, error rate, dashboards</td>
+                </tr>
+                <tr>
+                  <td>Traces</td>
+                  <td>Request path across microservices</td>
+                </tr>
+              </tbody>
+            </table>
+            <p>
+              Interview point: A log aggregator solves centralized log collection, but true observability usually needs
+              logs + metrics + distributed tracing together.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              In microservices, a log aggregator is a centralized logging system that collects logs from multiple
+              services and instances into one searchable place such as ELK, Loki, Splunk, or CloudWatch. We achieve it
+              by printing structured JSON logs, adding correlation ids with MDC, shipping logs through agents like
+              Fluent Bit or Filebeat, and storing them in a central index or log store. This helps us trace requests
+              across services, debug failures faster, and build alerts and dashboards for production support.
+            </p>
+          </div>
+        </div>
+      </div>
+
       <!-- Spring Boot Production JSON Logging -->
       <div class="accordion-item">
         <h2 class="accordion-header" id="springBootJsonLogging">
@@ -32059,7 +33636,8 @@ public class OrderController {
           .toLowerCase();
 
         item.dataset.searchText = combinedText;
-        item.dataset.category = detectCategory(combinedText);
+        item.dataset.category =
+          item.dataset.manualCategory || detectCategory(combinedText);
       });
 
       document.querySelectorAll(".accordion-body").forEach((body) => {
