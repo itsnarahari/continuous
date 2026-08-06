@@ -27,6 +27,7 @@ public class LRUCache<K, V> {
             return null;
         }
         remove(currentNode);
+        return currentNode.value;
     }
 
     private void remove(Node<K,V> currentNode){
@@ -35,6 +36,6 @@ public class LRUCache<K, V> {
     }
 
     private void insertAtFront(Node<K, V> currentNode){
-        Node
+
     }
 }
