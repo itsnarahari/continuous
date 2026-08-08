@@ -152,8 +152,2249 @@
     </div>
     <div class="accordion" id="accordionSeniorJava">
 
-      <!-- SQL Top Shortcut -->
+      <!-- Full API Cycle End To End -->
+      <div class="accordion-item" data-manual-category="springboot">
+        <h2 class="accordion-header" id="fullApiCycle">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#fullApiCycleBody">
+            Full API Cycle End to End - What happens when a client calls a Spring Boot REST API?
+          </button>
+        </h2>
+        <div id="fullApiCycleBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Consider a food-delivery app calling <code>POST /api/orders</code>. The API cycle is the journey from a
+              mobile or web request to a persisted order and the final HTTP response.
+            </p>
+
+            <h5 class="text-warning">End-to-end request flow</h5>
+            <pre><code>Mobile/Web client
+  -&gt; DNS resolves api.company.com
+  -&gt; HTTPS/TLS and Load Balancer / API Gateway
+  -&gt; Spring Boot embedded server (Tomcat/Netty)
+  -&gt; Filters: request ID, CORS, logging, Spring Security
+  -&gt; DispatcherServlet -&gt; Controller -&gt; validation
+  -&gt; Service -&gt; transaction -&gt; Repository/Hibernate
+  -&gt; HikariCP connection pool -&gt; database
+  -&gt; Response DTO -&gt; JSON response, logs, metrics, trace</code></pre>
+
+            <h5 class="text-warning">1. Client, DNS, gateway, and HTTPS</h5>
+            <p>
+              The client sends JSON, an access token, and optionally an idempotency key. DNS maps the domain to an
+              endpoint. A load balancer distributes requests across healthy instances; an API gateway can route,
+              rate-limit, validate tokens, and terminate TLS. HTTPS encrypts data while it travels.
+            </p>
+            <pre><code class="language-http">POST /api/orders HTTP/1.1
+Authorization: Bearer &lt;JWT&gt;
+Idempotency-Key: 9350f611-7ffc-4f79-9fd3-58b8e95a8dc5
+Content-Type: application/json
+
+{"customerId":42,"restaurantId":9,"items":[{"productId":7,"quantity":2}]}</code></pre>
+
+            <h5 class="text-warning">2. Server, filters, and security</h5>
+            <p>
+              Spring Boot starts embedded Tomcat by default. Filters can add a correlation ID to MDC, log the request,
+              and apply CORS. Spring Security validates the JWT and stores the authenticated user and roles in
+              <code>SecurityContext</code>. An invalid token returns <code>401</code>; a valid user without the
+              required role returns <code>403</code>, before business logic runs.
+            </p>
+
+            <h5 class="text-warning">3. DispatcherServlet, controller, and validation</h5>
+            <p>
+              <code>DispatcherServlet</code> is Spring MVC's front controller. It finds the controller, uses Jackson
+              to map JSON into a DTO, and runs Bean Validation. Invalid JSON or required fields should fail with
+              <code>400 Bad Request</code> before calling the database.
+            </p>
+            <pre><code class="language-java">@RestController
+@RequestMapping("/api/orders")
+class OrderController {
+  private final OrderService orderService;
+
+  @PostMapping
+  ResponseEntity&lt;OrderResponse&gt; create(@Valid @RequestBody CreateOrderRequest request,
+      @AuthenticationPrincipal Jwt jwt, @RequestHeader("Idempotency-Key") String key) {
+    return ResponseEntity.status(HttpStatus.CREATED).body(orderService.create(request, jwt.getSubject(), key));
+  }
+}</code></pre>
+
+            <h5 class="text-warning">4. Service layer and transaction</h5>
+            <p>
+              The service owns business rules: confirm the customer, calculate the amount, reserve stock, and create
+              the order. <code>@Transactional</code> makes related database updates atomic: all commit together or
+              roll back together. Keep it on a public service method, not normally in the controller.
+            </p>
+            <pre><code class="language-java">@Service
+class OrderService {
+  @Transactional
+  public OrderResponse create(CreateOrderRequest request, String userId, String key) {
+    Order existing = orderRepository.findByIdempotencyKey(key).orElse(null);
+    if (existing != null) return OrderResponse.from(existing); // safe retry
+    inventoryService.reserve(request.items());
+    return OrderResponse.from(orderRepository.save(Order.create(request, userId, key)));
+  }
+}</code></pre>
+
+            <h5 class="text-warning">5. Repository, database, and response</h5>
+            <p>
+              Spring Data calls Hibernate/JPA, which produces SQL. HikariCP borrows an existing JDBC connection rather
+              than opening one per request. The database validates constraints and commits the transaction. The
+              controller returns a response DTO, not a JPA entity, and Jackson serializes it to JSON.
+            </p>
+            <p>
+              <code>@RestControllerAdvice</code> maps expected failures to a consistent error body: use
+              <code>201</code> for a created order, <code>400</code> for bad input, <code>404</code> for a missing
+              resource, <code>409</code> for stock conflict, and <code>500</code> only for unexpected failures.
+            </p>
+
+            <h5 class="text-warning">6. Logs, metrics, tracing, and microservice calls</h5>
+            <p>
+              Put a request or trace ID in every log. Micrometer exposes latency, error-rate, JVM, and connection-pool
+              metrics to Prometheus and Grafana. OpenTelemetry creates spans through the gateway, order service,
+              database, and payment service. Do not keep a database transaction open while waiting for slow payment or
+              notification calls; use an event/outbox pattern when reliable asynchronous processing is needed.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "A request reaches the gateway over HTTPS, then Spring Boot's server. Filters handle request IDs,
+              logging, CORS, and security. DispatcherServlet routes to a controller, Jackson maps and validates the
+              DTO, and the service applies business rules in a transaction. Hibernate uses a pooled connection to
+              persist data. A response DTO becomes JSON, while controller advice, logs, metrics, and traces make both
+              errors and performance observable end to end."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Spring Security Position In Request Flow -->
+      <div class="accordion-item" data-manual-category="springboot">
+        <h2 class="accordion-header" id="springSecurityFlow">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#springSecurityFlowBody">
+            Where does Spring Security run in the API flow: before or after DispatcherServlet?
+          </button>
+        </h2>
+        <div id="springSecurityFlowBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              In a normal Spring MVC / Spring Boot application, Spring Security runs <strong>before
+              <code>DispatcherServlet</code></strong>. It is part of the servlet filter chain, so it can reject an
+              unauthenticated or unauthorized request before a controller method is selected or executed.
+            </p>
+
+            <h5 class="text-warning">Actual request order</h5>
+            <pre><code>Client request
+  -&gt; Tomcat / servlet container filter chain
+  -&gt; DelegatingFilterProxy
+  -&gt; Spring Security FilterChainProxy
+  -&gt; SecurityFilterChain
+       -&gt; CORS / CSRF checks (when enabled)
+       -&gt; JWT, session, or API-key authentication
+       -&gt; SecurityContext is populated
+       -&gt; URL/role authorization
+  -&gt; DispatcherServlet
+  -&gt; Controller
+  -&gt; Service
+  -&gt; Response travels back through filters</code></pre>
+
+            <h5 class="text-warning">Real-world JWT example</h5>
+            <p>
+              For <code>POST /api/orders</code>, a JWT authentication filter reads the
+              <code>Authorization: Bearer &lt;token&gt;</code> header. If the signature, expiry, or issuer is invalid,
+              Spring Security returns <code>401 Unauthorized</code>; the controller is never called. If the token is
+              valid but the user lacks the required role, it returns <code>403 Forbidden</code> before the controller.
+            </p>
+
+            <h5 class="text-warning">Important exception: method security</h5>
+            <p>
+              <code>@PreAuthorize</code>, <code>@PostAuthorize</code>, and <code>@Secured</code> are method-level
+              security. They execute later, when Spring calls the protected controller or service method through a
+              proxy. Therefore, URL authentication is before <code>DispatcherServlet</code>, while
+              <code>@PreAuthorize</code> runs immediately before the annotated method body.
+            </p>
+            <pre><code class="language-java">@RestController
+class OrderController {
+  @PostMapping("/api/orders")
+  @PreAuthorize("hasRole('CUSTOMER')")
+  OrderResponse createOrder(@RequestBody CreateOrderRequest request) {
+    return orderService.create(request);
+  }
+}
+
+@Service
+class RefundService {
+  @PreAuthorize("hasRole('ADMIN')")
+  public void approveRefund(Long orderId) { /* only an admin reaches this body */ }
+}</code></pre>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Spring Security is a filter-chain concern, so authentication and request-level authorization run before
+              DispatcherServlet and before the controller. It validates the token and places the authenticated user in
+              SecurityContext. Method-level checks such as @PreAuthorize are different: they run through a Spring AOP
+              proxy just before the secured controller or service method executes."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controller Method Selection -->
+      <div class="accordion-item" data-manual-category="springboot">
+        <h2 class="accordion-header" id="controllerMethodSelection">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#controllerMethodSelectionBody">
+            How does Spring decide which Controller method to call for an API request?
+          </button>
+        </h2>
+        <div id="controllerMethodSelectionBody" class="accordion-collapse collapse"
+          data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Spring MVC uses <code>DispatcherServlet</code> as its front controller. At application startup, component
+              scanning finds classes annotated with <code>@Controller</code> or <code>@RestController</code>.
+              <code>RequestMappingHandlerMapping</code> scans their <code>@RequestMapping</code>,
+              <code>@GetMapping</code>, <code>@PostMapping</code>, and similar annotations and builds an in-memory
+              mapping registry from request conditions to Java methods.
+            </p>
+
+            <h5 class="text-warning">What Spring matches</h5>
+            <pre><code>Incoming request: POST /api/orders/42?includeItems=true
+
+Spring matches using:
+  1. HTTP method       - POST
+  2. URL path          - /api/orders/{id}
+  3. params            - e.g. version=v2 or includeItems=true (if declared)
+  4. headers           - e.g. X-API-Version: 2 (if declared)
+  5. consumes          - request Content-Type, such as application/json
+  6. produces          - requested Accept type, such as application/json</code></pre>
+
+            <h5 class="text-warning">Example</h5>
+            <pre><code class="language-java">@RestController
+@RequestMapping("/api/orders")
+class OrderController {
+
+  @GetMapping("/{id}")
+  OrderResponse get(@PathVariable Long id,
+      @RequestParam(defaultValue = "false") boolean includeItems) {
+    return orderService.get(id, includeItems);
+  }
+
+  @PostMapping(consumes = "application/json", produces = "application/json")
+  ResponseEntity&lt;OrderResponse&gt; create(@Valid @RequestBody CreateOrderRequest request) {
+    return ResponseEntity.status(HttpStatus.CREATED).body(orderService.create(request));
+  }
+}</code></pre>
+            <p>
+              <code>GET /api/orders/42?includeItems=true</code> selects <code>get(...)</code> because its path and
+              HTTP method match. <code>POST /api/orders</code> with JSON selects <code>create(...)</code>. Once the
+              method is selected, a <code>HandlerAdapter</code> resolves its arguments: <code>@PathVariable</code>
+              from the path, <code>@RequestParam</code> from the query string, <code>@RequestBody</code> through
+              Jackson, and <code>@AuthenticationPrincipal</code> from Spring Security.
+            </p>
+
+            <h5 class="text-warning">What if no or multiple methods match?</h5>
+            <p>
+              If no path matches, Spring returns <code>404 Not Found</code>. A matching path with the wrong HTTP method
+              returns <code>405 Method Not Allowed</code>. A wrong request content type returns <code>415 Unsupported
+              Media Type</code>; an unacceptable response type can return <code>406 Not Acceptable</code>. Two exactly
+              identical mappings normally fail application startup with an ambiguous mapping error. Spring prefers the
+              more specific path, such as <code>/orders/special</code>, over a variable path such as
+              <code>/orders/{id}</code>.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "At startup, RequestMappingHandlerMapping scans controller annotations and registers each endpoint in a
+              mapping table. For every request, DispatcherServlet asks that mapping to find the best handler using the
+              URL, HTTP verb, headers, parameters, consumes, and produces conditions. HandlerAdapter then builds the
+              method arguments and invokes the selected controller method."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Servlet Filters Request And Response Flow -->
+      <div class="accordion-item" data-manual-category="springboot">
+        <h2 class="accordion-header" id="servletFilterFlow">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#servletFilterFlowBody">
+            Where do Filters run in the API flow, and does the response pass through Filters after the Controller?
+          </button>
+        </h2>
+        <div id="servletFilterFlowBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              A servlet filter wraps everything downstream of it. On the incoming path it runs <strong>before</strong>
+              <code>DispatcherServlet</code> and the controller. After it calls <code>chain.doFilter(...)</code>, it
+              pauses while the rest of the chain and the controller run. When they finish, it resumes on the outgoing
+              path. So yes: the response passes through filters in reverse order before it is sent to the client.
+            </p>
+
+            <h5 class="text-warning">Two-way filter picture</h5>
+            <pre><code>Incoming request: Client -&gt; Filter A -&gt; Filter B -&gt; Spring Security
+                  -&gt; DispatcherServlet -&gt; Controller -&gt; Service
+
+Outgoing response: Service -&gt; Controller -&gt; DispatcherServlet -&gt; Spring Security
+                  -&gt; Filter B -&gt; Filter A -&gt; Client</code></pre>
+
+            <h5 class="text-warning">The key is chain.doFilter()</h5>
+            <pre><code class="language-java">@Component
+class RequestLoggingFilter extends OncePerRequestFilter {
+  @Override
+  protected void doFilterInternal(HttpServletRequest request,
+      HttpServletResponse response, FilterChain chain)
+      throws ServletException, IOException {
+    long start = System.currentTimeMillis();
+    log.info("Before controller: {} {}", request.getMethod(), request.getRequestURI());
+
+    try {
+      chain.doFilter(request, response); // next filter, then DispatcherServlet/controller
+    } finally {
+      log.info("After controller: status={}, time={}ms", response.getStatus(),
+          System.currentTimeMillis() - start);
+    }
+  }
+}</code></pre>
+            <p>
+              Code before <code>chain.doFilter</code> handles the incoming request; code after it handles the outgoing
+              response. The <code>finally</code> block also runs if a later filter or controller throws an exception.
+            </p>
+
+            <h5 class="text-warning">Can a filter stop the request?</h5>
+            <p>
+              Yes. A filter can write a response and not call <code>chain.doFilter</code>. A JWT filter may return
+              <code>401</code>, a rate-limit filter <code>429</code>, or a maintenance filter <code>503</code>. Then
+              DispatcherServlet and the controller are never reached. Earlier filters still resume as the chain
+              unwinds and can log the final response.
+            </p>
+
+            <h5 class="text-warning">Filter order matters</h5>
+            <p>
+              Filters execute in ascending order on the request and descending order on the response. Configure an
+              application filter with <code>@Order</code> or <code>FilterRegistrationBean</code>. Spring Security is a
+              filter chain too, so place a custom filter after authentication when it needs the authenticated user.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Filters surround the controller call. Before chain.doFilter they process the request; after it they
+              process the response in reverse order. A filter can short-circuit by not calling the chain, returning
+              errors such as 401 or 429 before the controller executes."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter Versus Interceptor -->
+      <div class="accordion-item" data-manual-category="springboot">
+        <h2 class="accordion-header" id="filterVsInterceptor">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#filterVsInterceptorBody">
+            Filter vs HandlerInterceptor in Spring Boot - what is the difference and when should we use each?
+          </button>
+        </h2>
+        <div id="filterVsInterceptorBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Both can run before and after an API call, but they belong to different layers. A
+              <strong>Filter</strong> is a Servlet API component and runs before <code>DispatcherServlet</code>. A
+              Spring MVC <strong>HandlerInterceptor</strong> runs after Spring has selected the controller handler but
+              before the controller method executes.
+            </p>
+
+            <h5 class="text-warning">Position in the flow</h5>
+            <pre><code>Client
+  -&gt; Servlet Filter (works at HTTP/Servlet level)
+  -&gt; Spring Security filters
+  -&gt; DispatcherServlet
+  -&gt; HandlerMapping chooses controller method
+  -&gt; HandlerInterceptor.preHandle (knows the selected handler)
+  -&gt; Controller method
+  -&gt; HandlerInterceptor.postHandle / afterCompletion
+  -&gt; Servlet Filter resumes after chain.doFilter
+  -&gt; Client</code></pre>
+
+            <h5 class="text-warning">Use a Filter when</h5>
+            <p>
+              You need low-level HTTP behavior for every request, including requests that do not reach a controller:
+              CORS, request/response wrapping, correlation IDs, raw request logging, compression, security filter
+              integration, rate limiting, or handling static files. A filter receives
+              <code>HttpServletRequest</code>, <code>HttpServletResponse</code>, and <code>FilterChain</code>; it can
+              alter headers/body wrappers or stop processing by not calling <code>chain.doFilter</code>.
+            </p>
+            <pre><code class="language-java">@Component
+class TraceIdFilter extends OncePerRequestFilter {
+  @Override
+  protected void doFilterInternal(HttpServletRequest request,
+      HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
+    String traceId = UUID.randomUUID().toString();
+    MDC.put("traceId", traceId);
+    response.setHeader("X-Trace-Id", traceId);
+    try {
+      chain.doFilter(request, response);
+    } finally {
+      MDC.remove("traceId");
+    }
+  }
+}</code></pre>
+
+            <h5 class="text-warning">Use an Interceptor when</h5>
+            <p>
+              You need Spring MVC knowledge, especially the chosen controller and method. Common examples are audit
+              logging with the controller name, tenant checks, API version checks, or applying rules only to selected
+              URL patterns. In <code>preHandle</code>, return <code>false</code> to stop the controller call.
+              <code>afterCompletion</code> is best for cleanup and final exception-aware logging.
+            </p>
+            <pre><code class="language-java">@Component
+class TenantInterceptor implements HandlerInterceptor {
+  @Override
+  public boolean preHandle(HttpServletRequest request, HttpServletResponse response,
+      Object handler) throws IOException {
+    if (handler instanceof HandlerMethod method && request.getHeader("X-Tenant-Id") == null) {
+      response.sendError(HttpServletResponse.SC_BAD_REQUEST, "X-Tenant-Id is required");
+      return false;
+    }
+    return true;
+  }
+}
+
+@Configuration
+class WebConfig implements WebMvcConfigurer {
+  private final TenantInterceptor tenantInterceptor;
+
+  WebConfig(TenantInterceptor tenantInterceptor) {
+    this.tenantInterceptor = tenantInterceptor;
+  }
+
+  public void addInterceptors(InterceptorRegistry registry) {
+    registry.addInterceptor(tenantInterceptor).addPathPatterns("/api/**");
+  }
+}</code></pre>
+
+            <h5 class="text-warning">Key differences and caution</h5>
+            <p>
+              Filters are servlet-container components and can run even when there is no mapped controller.
+              Interceptors are Spring MVC components and normally apply only after a handler mapping succeeds.
+              Interceptors can inspect the <code>HandlerMethod</code>; filters cannot. Prefer Spring Security's
+              <code>SecurityFilterChain</code> for authentication and authorization rather than writing equivalent
+              security logic in an interceptor. Also do not rely on <code>postHandle</code> to modify a final REST JSON
+              body; use a filter or <code>ResponseBodyAdvice</code> if response-body transformation is required.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Use a filter for generic HTTP or servlet-level concerns that must wrap all traffic, such as CORS,
+              trace IDs, and security filters. Use a HandlerInterceptor for Spring MVC concerns that need the selected
+              controller method, such as tenant validation or controller audit logging. Filters are before
+              DispatcherServlet; interceptors are between handler mapping and controller execution."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Transient Keyword -->
       <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="transientKeyword">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#transientKeywordBody">
+            What does the transient keyword do, and what value will the field have after deserialization?
+          </button>
+        </h2>
+        <div id="transientKeywordBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <code>transient</code> tells Java serialization to <strong>skip that field</strong> when the object is
+              written to a stream. The field is not serialized. After deserialization, the field is restored to its
+              default value for that type.
+            </p>
+
+            <h5 class="text-warning">Default values after deserialization</h5>
+            <ul>
+              <li><code>int</code>, <code>long</code>, <code>double</code>, etc. become <code>0</code> / <code>0.0</code>.</li>
+              <li><code>boolean</code> becomes <code>false</code>.</li>
+              <li>Object references become <code>null</code>.</li>
+            </ul>
+
+            <h5 class="text-warning">Example</h5>
+            <pre><code class="language-java">class User implements Serializable {
+  private String username;
+  private transient String password;
+  private transient int loginCount;
+
+  User(String username, String password, int loginCount) {
+    this.username = username;
+    this.password = password;
+    this.loginCount = loginCount;
+  }
+}</code></pre>
+            <p>
+              If you serialize and then deserialize this object, <code>username</code> is restored, but
+              <code>password</code> becomes <code>null</code> and <code>loginCount</code> becomes <code>0</code>.
+            </p>
+
+            <h5 class="text-warning">When to use it</h5>
+            <p>
+              Use <code>transient</code> for sensitive data like passwords, derived fields that can be recomputed, or
+              temporary caches that should not be stored in the serialized form.
+            </p>
+
+            <h5 class="text-warning">Important note</h5>
+            <p>
+              <code>transient</code> only affects Java object serialization. It does not automatically hide the field in
+              JSON unless the JSON library is configured to respect it. For example, Jackson can be configured to
+              include or ignore transient fields depending on its settings.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Transient fields are skipped during Java serialization. They are not serialized at all, and after
+              deserialization they get default values like null, 0, or false depending on the type."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Serialization And Deserialization In Spring MVC -->
+      <div class="accordion-item" data-manual-category="springboot">
+        <h2 class="accordion-header" id="serializationDeserializationFlow">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#serializationDeserializationFlowBody">
+            When do serialization and deserialization happen in a Spring Boot REST API?
+          </button>
+        </h2>
+        <div id="serializationDeserializationFlowBody" class="accordion-collapse collapse"
+          data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>Deserialization</strong> happens on the incoming request, before the controller method runs:
+              Spring converts JSON bytes into a Java DTO. <strong>Serialization</strong> happens on the outgoing
+              response, after the controller returns: Spring converts a Java object into JSON bytes for the client.
+              In Spring Boot, Jackson is normally the JSON library that performs both conversions.
+            </p>
+
+            <h5 class="text-warning">Exact REST request flow</h5>
+            <pre><code>POST /api/orders
+Content-Type: application/json
+Body: {"customerId":42,"quantity":2}
+
+Filters -&gt; Spring Security -&gt; DispatcherServlet
+  -&gt; HandlerMapping selects the controller method
+  -&gt; HttpMessageConverter (MappingJackson2HttpMessageConverter)
+  -&gt; DESERIALIZATION: JSON request body -&gt; CreateOrderRequest Java object
+  -&gt; @Valid validation
+  -&gt; Controller method and service run
+  -&gt; Controller returns OrderResponse Java object
+  -&gt; HttpMessageConverter
+  -&gt; SERIALIZATION: OrderResponse Java object -&gt; JSON response body
+  -&gt; Filters resume -&gt; client receives response</code></pre>
+
+            <h5 class="text-warning">Example</h5>
+            <pre><code class="language-java">record CreateOrderRequest(Long customerId, Integer quantity) {}
+record OrderResponse(Long orderId, String status) {}
+
+@RestController
+class OrderController {
+  @PostMapping(value = "/api/orders", consumes = "application/json",
+      produces = "application/json")
+  OrderResponse create(@Valid @RequestBody CreateOrderRequest request) {
+    // request is already a Java object here: deserialization is complete.
+    return new OrderResponse(101L, "CREATED");
+    // Spring serializes this returned object to JSON after the method returns.
+  }
+}</code></pre>
+            <p>
+              For the request above, Jackson creates <code>CreateOrderRequest(42L, 2)</code>. The response object
+              becomes <code>{"orderId":101,"status":"CREATED"}</code> and is written to the HTTP response.
+              The chosen converter depends on <code>Content-Type</code> for input and <code>Accept</code> /
+              <code>produces</code> for output. JSON typically uses <code>MappingJackson2HttpMessageConverter</code>.
+            </p>
+
+            <h5 class="text-warning">What does not use JSON deserialization?</h5>
+            <p>
+              <code>@PathVariable</code> and <code>@RequestParam</code> are strings from the URL and are converted by
+              Spring's conversion service, for example <code>"42"</code> to <code>Long</code>. HTML form fields often
+              bind with <code>@ModelAttribute</code>. Neither is the same as Jackson reading a JSON request body.
+            </p>
+
+            <h5 class="text-warning">Errors and customization</h5>
+            <p>
+              Invalid JSON, a wrong field type, or an unknown required format fails during deserialization, so the
+              controller method is not called and Spring normally returns <code>400 Bad Request</code>. Customize JSON
+              field names, dates, ignored fields, and formatting with Jackson annotations such as
+              <code>@JsonProperty</code>, <code>@JsonFormat</code>, and <code>@JsonIgnore</code>, or configure the
+              shared <code>ObjectMapper</code>. Never serialize sensitive fields such as passwords or tokens.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "For @RequestBody, deserialization happens before the controller method: Spring's HTTP message converter
+              uses Jackson to turn JSON into a DTO. For @RestController or @ResponseBody, serialization happens after
+              the method returns: the converter turns the returned Java object into JSON. Filters wrap the whole flow,
+              so their after-chain code runs after serialization has written the response."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Spring Stereotype Annotations -->
+      <div class="accordion-item" data-manual-category="springboot">
+        <h2 class="accordion-header" id="springStereotypeAnnotations">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#springStereotypeAnnotationsBody">
+            What are Spring stereotype annotations, and does @Repository provide any extra functionality?
+          </button>
+        </h2>
+        <div id="springStereotypeAnnotationsBody" class="accordion-collapse collapse"
+          data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              A stereotype annotation tells Spring what role a class plays. During component scanning, Spring finds
+              these annotations and registers the class as a bean. The core stereotype is <code>@Component</code>; the
+              common layer-specific stereotypes are specializations of it.
+            </p>
+
+            <h5 class="text-warning">Core stereotypes</h5>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Annotation</th><th>Typical layer</th><th>Purpose / extra behavior</th></tr></thead>
+              <tbody>
+                <tr><td><code>@Component</code></td><td>Generic</td><td>Any Spring-managed bean with no more specific role.</td></tr>
+                <tr><td><code>@Service</code></td><td>Business logic</td><td>Communicates service-layer intent; functionally behaves like <code>@Component</code>.</td></tr>
+                <tr><td><code>@Repository</code></td><td>Persistence / DAO</td><td>Communicates data-access intent and enables persistence exception translation.</td></tr>
+                <tr><td><code>@Controller</code></td><td>Spring MVC web</td><td>Handles web requests, normally returning a view name.</td></tr>
+                <tr><td><code>@RestController</code></td><td>REST API web</td><td><code>@Controller</code> + <code>@ResponseBody</code>; returned objects become HTTP response bodies, usually JSON.</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Related component annotations</h5>
+            <p>
+              <code>@Configuration</code> is also a component and declares <code>@Bean</code> methods. For global web
+              error handling, use <code>@ControllerAdvice</code>; <code>@RestControllerAdvice</code> adds
+              <code>@ResponseBody</code>. These are component-style annotations, but the five annotations above are
+              the standard layer stereotypes usually expected in interviews.
+            </p>
+
+            <h5 class="text-warning">What @Repository adds</h5>
+            <p>
+              Yes. <code>@Repository</code> is not only a naming convention. In addition to being detected as a bean,
+              it marks a data-access class for <strong>persistence exception translation</strong>. Spring can convert
+              technology-specific exceptions such as Hibernate's <code>ConstraintViolationException</code> or a JDBC
+              <code>SQLException</code> into Spring's consistent unchecked <code>DataAccessException</code> hierarchy,
+              for example <code>DuplicateKeyException</code> or <code>DataIntegrityViolationException</code>.
+            </p>
+            <pre><code class="language-java">@Repository
+class CustomerRepository {
+  // JPA/JDBC/Hibernate work happens here.
+  // A database duplicate-key error can be exposed as DataIntegrityViolationException.
+}
+
+@Service
+class CustomerService {
+  void register(Customer customer) {
+    try {
+      customerRepository.save(customer);
+    } catch (DataIntegrityViolationException ex) {
+      throw new EmailAlreadyRegisteredException(customer.email());
+    }
+  }
+}</code></pre>
+            <p>
+              The translator is supplied by Spring's persistence exception translation infrastructure. Spring Boot's
+              JPA/JDBC auto-configuration normally provides the required setup. With Spring Data JPA, repository
+              interfaces such as <code>interface CustomerRepository extends JpaRepository&lt;Customer, Long&gt;</code>
+              are already discovered and proxied by Spring Data, so adding <code>@Repository</code> is usually not
+              necessary.
+            </p>
+
+            <h5 class="text-warning">Practical rule</h5>
+            <p>
+              Use the most specific annotation: <code>@RestController</code> for REST endpoints,
+              <code>@Service</code> for use cases/business rules, <code>@Repository</code> for manual DAO classes,
+              and <code>@Component</code> for supporting beans such as validators, mappers, schedulers, or listeners.
+              The names also make architecture easier to read and allow framework tooling to understand intent.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "@Component is the generic Spring bean stereotype. @Service, @Repository, @Controller, and
+              @RestController are specialized roles. Most behave like @Component for bean discovery, but @Repository
+              additionally participates in persistence exception translation, converting database-vendor exceptions
+              into Spring DataAccessException types."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dependency Injection And Constructor Injection -->
+      <div class="accordion-item" data-manual-category="springboot">
+        <h2 class="accordion-header" id="dependencyInjectionConstructor">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#dependencyInjectionConstructorBody">
+            What is Dependency Injection, why is constructor injection better, and when do we use it?
+          </button>
+        </h2>
+        <div id="dependencyInjectionConstructorBody" class="accordion-collapse collapse"
+          data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Dependency Injection (DI) means an object receives the collaborators it needs from outside instead of
+              creating them with <code>new</code>. It is one result of Inversion of Control (IoC): Spring owns bean
+              creation, finds dependencies, builds the object graph, and injects the required beans.
+            </p>
+
+            <h5 class="text-warning">Without DI vs with DI</h5>
+            <pre><code class="language-java">// Tightly coupled: difficult to replace or test.
+class OrderService {
+  private final PaymentClient paymentClient = new PaymentClient();
+}
+
+// Dependency is supplied by Spring (or directly by a unit test).
+@Service
+class OrderService {
+  private final PaymentClient paymentClient;
+
+  OrderService(PaymentClient paymentClient) {
+    this.paymentClient = paymentClient;
+  }
+}</code></pre>
+
+            <h5 class="text-warning">Three injection styles</h5>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Style</th><th>Best for</th><th>Recommendation</th></tr></thead>
+              <tbody>
+                <tr><td>Constructor injection</td><td>Required dependencies</td><td>Preferred default.</td></tr>
+                <tr><td>Setter injection</td><td>Optional or changeable dependencies</td><td>Use sparingly and validate when needed.</td></tr>
+                <tr><td>Field injection</td><td>Very short demos only</td><td>Avoid in production code.</td></tr>
+              </tbody>
+            </table>
+            <p>
+              Since Spring 4.3, when a class has exactly one constructor, <code>@Autowired</code> is optional. Spring
+              automatically uses that constructor. With multiple constructors, mark the intended one with
+              <code>@Autowired</code>.
+            </p>
+
+            <h5 class="text-warning">Why constructor injection is better</h5>
+            <p>
+              It makes required dependencies explicit in the class API and lets them be <code>final</code>, so a bean
+              cannot exist in a partially initialized state. Missing dependencies fail immediately during application
+              startup. It is easy to unit-test without Spring because a test can pass a fake or mock directly. It also
+              exposes circular dependencies early: <code>A -&gt; B -&gt; A</code> cannot be constructed and Spring reports
+              the design problem instead of hiding it.
+            </p>
+            <pre><code class="language-java">@Service
+class OrderService {
+  private final OrderRepository orderRepository;
+  private final PaymentClient paymentClient;
+
+  OrderService(OrderRepository orderRepository, PaymentClient paymentClient) {
+    this.orderRepository = orderRepository;
+    this.paymentClient = paymentClient;
+  }
+
+  Order place(CreateOrderRequest request) {
+    paymentClient.charge(request.total());
+    return orderRepository.save(Order.from(request));
+  }
+}
+
+// No Spring context is needed for this unit test.
+OrderService service = new OrderService(fakeRepository, fakePaymentClient);</code></pre>
+
+            <h5 class="text-warning">Why field injection is discouraged</h5>
+            <p>
+              A field-injected class can be created with <code>new</code> but its dependencies stay null. Its required
+              collaborators are hidden, fields cannot naturally be final, and unit tests often need reflection to set
+              them. This is why constructor injection is clearer and safer.
+            </p>
+
+            <h5 class="text-warning">When setter injection is useful</h5>
+            <p>
+              Use setter injection only when a dependency is truly optional or can change after construction, such as
+              an optional notification integration. For lazy/optional resolution, Spring also provides
+              <code>ObjectProvider&lt;T&gt;</code>. Do not use setter injection merely to avoid a circular dependency;
+              redesign the responsibilities first.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Dependency Injection means Spring creates an object's dependencies and supplies them rather than the
+              object creating them itself. Constructor injection is preferred for required dependencies because it
+              makes the class immutable, explicit, fail-fast, and easy to unit-test. Setter injection suits real
+              optional dependencies; field injection is generally avoided in production code."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Spring Boot Starter -->
+      <div class="accordion-item" data-manual-category="springboot">
+        <h2 class="accordion-header" id="springBootStarter">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#springBootStarterBody">
+            What is the use of a Spring Boot starter, why does it exist, and how does it help?
+          </button>
+        </h2>
+        <div id="springBootStarterBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              A Spring Boot starter is a curated dependency bundle that pulls in the libraries usually needed for one
+              feature area. For example, <code>spring-boot-starter-web</code> brings Spring MVC, embedded server support,
+              validation, and Jackson-based JSON handling together in one dependency.
+            </p>
+
+            <h5 class="text-warning">Why it exists</h5>
+            <p>
+              Without starters, we would manually pick and version many Spring jars and their transitive dependencies.
+              Starters solve the "which dependencies do I need?" problem by giving a sensible default stack that works
+              together.
+            </p>
+
+            <h5 class="text-warning">How it helps</h5>
+            <ul>
+              <li>Reduces dependency setup time and version mismatch problems.</li>
+              <li>Gives a consistent, opinionated default for common use cases.</li>
+              <li>Works well with auto-configuration, so Spring Boot can wire beans based on what is on the classpath.</li>
+              <li>Makes project setup simpler for web, data, messaging, testing, security, and observability features.</li>
+            </ul>
+
+            <h5 class="text-warning">Example</h5>
+            <pre><code class="language-xml">&lt;dependency&gt;
+  &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+  &lt;artifactId&gt;spring-boot-starter-web&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+            <p>
+              This single dependency is enough for a typical REST API. It is much easier than assembling MVC, Jackson,
+              validation, and embedded server dependencies by hand.
+            </p>
+
+            <h5 class="text-warning">Real-world analogy</h5>
+            <p>
+              Think of a starter like a pre-packed toolkit. Instead of buying a hammer, nails, screwdriver, and screws
+              one by one for every project, you get the common set ready to use.
+            </p>
+
+            <h5 class="text-warning">Important note</h5>
+            <p>
+              A starter does not mean "magic". It mainly adds dependencies and lets Boot auto-configure defaults. You
+              can still override the defaults or exclude parts you do not need.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "A Spring Boot starter is an opinionated dependency bundle for a specific feature area. It exists to
+              reduce dependency management, avoid version conflicts, and work with Boot auto-configuration so we can
+              start building faster with sensible defaults."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Spring Boot Startup Performance -->
+      <div class="accordion-item" data-manual-category="springboot">
+        <h2 class="accordion-header" id="springBootStartupPerformance">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#springBootStartupPerformanceBody">
+            If Spring Boot takes too much time to start, how do you analyze and fix it?
+          </button>
+        </h2>
+        <div id="springBootStartupPerformanceBody" class="accordion-collapse collapse"
+          data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              I first find <strong>what part of startup is slow</strong>, then I remove or defer the expensive work.
+              In Spring Boot, the delay usually comes from auto-configuration, component scanning, bean creation,
+              database connections, remote calls in initialization code, or heavy startup logic in <code>@PostConstruct</code>
+              and <code>ApplicationRunner</code>.
+            </p>
+
+            <h5 class="text-warning">How to analyze it</h5>
+            <ul>
+              <li>Enable startup timing logs with <code>ApplicationStartup</code> or Spring Boot startup metrics.</li>
+              <li>Check logs around auto-configuration, bean creation, Flyway/Liquibase, JPA schema creation, and cache warm-up.</li>
+              <li>Use Actuator and metrics to see slow initialization paths and slow DB or HTTP dependencies.</li>
+              <li>Profile the JVM if needed to see which methods dominate startup time.</li>
+            </ul>
+
+            <h5 class="text-warning">Typical root causes</h5>
+            <ul>
+              <li>Too many scanned packages or unnecessary auto-configurations.</li>
+              <li>Large object graphs created eagerly at startup.</li>
+              <li>JPA entity scanning, schema validation, and repository initialization.</li>
+              <li>Network calls, file reads, or cache loading during bean construction.</li>
+              <li>Heavy logging, secret fetching, or cloud config calls before the app becomes ready.</li>
+            </ul>
+
+            <h5 class="text-warning">How to fix it</h5>
+            <ul>
+              <li>Reduce component scan scope and exclude unused auto-configurations.</li>
+              <li>Make non-essential beans lazy with <code>@Lazy</code>.</li>
+              <li>Move slow work out of constructors and <code>@PostConstruct</code>.</li>
+              <li>Defer cache warm-up or remote calls until after startup, or run them asynchronously.</li>
+              <li>Trim dependencies and avoid loading starters you do not need.</li>
+            </ul>
+
+            <h5 class="text-warning">Example</h5>
+            <pre><code class="language-java">@Lazy
+@Service
+class ReportService {
+  ReportService() {
+    // Avoid heavy work here
+  }
+}</code></pre>
+            <p>
+              If a startup task is necessary, keep it small and measurable. For example, use a health check or
+              background warm-up instead of blocking the application from becoming ready.
+            </p>
+
+            <h5 class="text-warning">Real-world example</h5>
+            <p>
+              In an order service, startup becomes slow when it connects to multiple databases, loads reference data,
+              warms caches, and fetches remote configuration synchronously. A better approach is to keep the app
+              booting fast, then load optional data asynchronously after it becomes healthy.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "I analyze Spring Boot startup by identifying slow auto-config, bean creation, database initialization,
+              and any work done in constructors or startup hooks. Then I reduce scanning, exclude unused configs, make
+              beans lazy, and move expensive work out of startup so the app becomes ready faster."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- OpenFeign Client -->
+      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="openFeignClient">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#openFeignClientBody">
+            What is a Feign Client, why do we use it, and how do we configure it in Spring Boot?
+          </button>
+        </h2>
+        <div id="openFeignClientBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Spring Cloud OpenFeign is a <strong>declarative HTTP client</strong>. Instead of manually building HTTP
+              requests with URLs, headers, JSON mapping, and response parsing, we declare a Java interface. Spring
+              creates a proxy for it; calling an interface method makes the remote HTTP call.
+            </p>
+
+            <h5 class="text-warning">Why use Feign?</h5>
+            <p>
+              In an order service, we may need the inventory service before accepting an order. With a low-level HTTP
+              client, every service repeats boilerplate. Feign keeps the remote contract close to a Spring MVC
+              controller signature, integrates with service discovery and load balancing, and centralizes timeouts,
+              authentication headers, error decoding, logging, and resilience configuration. It improves readability,
+              but the call is still a slow, fallible network call, not a local Java method call.
+            </p>
+
+            <h5 class="text-warning">How to enable it</h5>
+            <pre><code class="language-xml">&lt;dependency&gt;
+  &lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;
+  &lt;artifactId&gt;spring-cloud-starter-openfeign&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+            <pre><code class="language-java">@SpringBootApplication
+@EnableFeignClients
+class OrderApplication {}</code></pre>
+            <p>
+              Keep the Spring Cloud BOM compatible with the application's Spring Boot version. In a multi-module
+              project, <code>@EnableFeignClients(basePackages = "...")</code> can explicitly point to client packages.
+            </p>
+
+            <h5 class="text-warning">Real-world client example</h5>
+            <pre><code class="language-java">@FeignClient(name = "inventory-service", path = "/api/inventory")
+interface InventoryClient {
+  @PostMapping("/reservations")
+  ReservationResponse reserve(@RequestBody ReserveStockRequest request);
+
+  @GetMapping("/{productId}")
+  InventoryResponse get(@PathVariable Long productId);
+}
+
+@Service
+class OrderService {
+  private final InventoryClient inventoryClient;
+
+  OrderService(InventoryClient inventoryClient) {
+    this.inventoryClient = inventoryClient;
+  }
+
+  @Transactional
+  OrderResponse create(CreateOrderRequest request) {
+    inventoryClient.reserve(new ReserveStockRequest(request.productId(), request.quantity()));
+    return OrderResponse.from(orderRepository.save(Order.from(request)));
+  }
+}</code></pre>
+            <p>
+              If <code>inventory-service</code> is registered in Eureka, Consul, or another discovery source, the
+              <code>name</code> is resolved to its available instances. Spring Cloud LoadBalancer chooses one instance
+              for the request. For a fixed external API instead, configure <code>url = "https://partner.example.com"</code>
+              on <code>@FeignClient</code>; then service discovery is not used.
+            </p>
+
+            <h5 class="text-warning">How it works internally</h5>
+            <pre><code>OrderService calls inventoryClient.reserve(...)
+  -&gt; Spring-created Feign dynamic proxy intercepts the interface call
+  -&gt; Spring MVC annotations become HTTP method, path, headers, and body
+  -&gt; LoadBalancer resolves inventory-service to one instance (if discovery is used)
+  -&gt; Underlying HTTP client sends the request
+  -&gt; Response decoder/Jackson converts JSON to ReservationResponse
+  -&gt; Method returns the Java response object or throws an error</code></pre>
+
+            <h5 class="text-warning">Timeouts, headers, and errors</h5>
+            <pre><code class="language-yaml">spring:
+  cloud:
+    openfeign:
+      client:
+        config:
+          inventory-service:
+            connectTimeout: 1000
+            readTimeout: 2000
+            loggerLevel: basic</code></pre>
+            <p>
+              Always set short, business-appropriate connect and read timeouts. Use a <code>RequestInterceptor</code>
+              to add headers such as a correlation ID or service token. Non-2xx responses normally become
+              <code>FeignException</code>; use a custom <code>ErrorDecoder</code> to convert a <code>404</code> or
+              <code>409</code> into a meaningful domain exception.
+            </p>
+            <pre><code class="language-java">@Bean
+RequestInterceptor correlationId() {
+  return template -&gt; template.header("X-Trace-Id", MDC.get("traceId"));
+}</code></pre>
+
+            <h5 class="text-warning">Production cautions</h5>
+            <p>
+              Do not make long chains of synchronous Feign calls; one slow downstream service can exhaust request
+              threads across the system. Use timeouts, bulkheads/circuit breakers where appropriate, and fallback only
+              when a safe degraded response exists. Retry only idempotent operations or requests protected by an
+              idempotency key. For important order/payment events, asynchronous messaging may be safer than a
+              synchronous Feign call. Never keep a database transaction open while waiting on an unreliable remote
+              service unless the trade-off is explicitly understood.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Feign is Spring Cloud's declarative HTTP client. We define an interface with Spring MVC annotations,
+              and Spring creates a proxy that converts method calls into HTTP requests. We use it for readable
+              service-to-service communication with discovery, load balancing, headers, timeouts, and error handling,
+              while still treating every call as a remote failure point."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Avoiding NullPointerException -->
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="avoidNullPointerException">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#avoidNullPointerExceptionBody">
+            How can we avoid null values and NullPointerException in Java and Spring Boot?
+          </button>
+        </h2>
+        <div id="avoidNullPointerExceptionBody" class="accordion-collapse collapse"
+          data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              A <code>NullPointerException</code> happens when code dereferences a null reference, such as calling
+              <code>customer.getName()</code> when <code>customer</code> is null. There is no single solution: design
+              null out of normal flows, validate required input, and make genuinely optional values explicit.
+            </p>
+
+            <h5 class="text-warning">Main techniques</h5>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Technique</th><th>Use it for</th><th>Example</th></tr></thead>
+              <tbody>
+                <tr><td>Empty collections</td><td>A result with zero items</td><td>Return <code>List.of()</code>, never null.</td></tr>
+                <tr><td>Constructor validation</td><td>Required dependency/value</td><td><code>Objects.requireNonNull(value)</code>.</td></tr>
+                <tr><td>Guard clause</td><td>Nullable external input</td><td>Reject/return before dereferencing.</td></tr>
+                <tr><td><code>Optional</code></td><td>Genuinely optional method result</td><td><code>findById()</code> returns <code>Optional&lt;User&gt;</code>.</td></tr>
+                <tr><td>Safe utility methods</td><td>Equality and collections</td><td><code>Objects.equals(a, b)</code>, <code>CollectionUtils.isEmpty(list)</code>.</td></tr>
+                <tr><td>Bean Validation</td><td>API/message input</td><td><code>@NotNull</code>, <code>@NotBlank</code>, <code>@Valid</code>.</td></tr>
+                <tr><td>Null Object/default</td><td>A valid no-op behavior</td><td><code>NoOpNotifier</code> instead of a null notifier.</td></tr>
+                <tr><td>Static analysis</td><td>Before runtime</td><td>IDE inspections and nullability annotations.</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Required values: constructor injection and fail-fast validation</h5>
+            <pre><code class="language-java">class PaymentService {
+  private final PaymentGateway gateway;
+
+  PaymentService(PaymentGateway gateway) {
+    this.gateway = Objects.requireNonNull(gateway, "gateway is required");
+  }
+}</code></pre>
+            <p>
+              <code>requireNonNull</code> does not eliminate an error; it fails immediately with a useful message,
+              instead of letting an unclear NPE occur later. Constructor injection also ensures required Spring beans
+              are present when the application starts.
+            </p>
+
+            <h5 class="text-warning">Optional values: Optional, defaults, and safe equality</h5>
+            <pre><code class="language-java">String name = customerRepository.findById(id)
+    .map(Customer::getName)
+    .orElse("Guest");
+
+boolean sameEmail = Objects.equals(left.email(), right.email());
+boolean paid = "PAID".equals(order.status());
+List&lt;Order&gt; orders = List.of(); // safe to iterate even when empty</code></pre>
+            <p>
+              Prefer <code>Optional</code> as a return type, not normally for entity/DTO fields or method parameters.
+              Do not call <code>optional.get()</code> without checking. Use <code>orElseThrow</code> when the value is
+              required for the next business step.
+            </p>
+
+            <h5 class="text-warning">Validate at a Spring Boot boundary</h5>
+            <pre><code class="language-java">record CreateOrderRequest(@NotNull Long productId,
+    @NotNull @Positive Integer quantity, @NotBlank String deliveryAddress) {}
+
+@PostMapping("/api/orders")
+OrderResponse create(@Valid @RequestBody CreateOrderRequest request) {
+  return orderService.create(request); // required fields have already been checked
+}</code></pre>
+            <p>
+              Invalid API input returns <code>400 Bad Request</code> before business logic runs. Use database
+              <code>NOT NULL</code> constraints too for required persisted data. Apply this validation at all trust
+              boundaries: HTTP APIs, message consumers, file imports, and configuration.
+            </p>
+
+            <h5 class="text-warning">What not to do</h5>
+            <p>
+              Do not catch <code>NullPointerException</code> as normal control flow or silently default a value that is
+              actually required. Decide the rule: required means reject/fail fast; optional means model it with
+              <code>Optional</code> or a safe default; a no-result collection means return an empty collection. Modern
+              Java has helpful NPE messages, but they help diagnosis rather than prevention.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "I avoid NPE by not using null as a normal result: return empty collections, use constructor injection
+              and requireNonNull for mandatory values, model optional return values with Optional, and validate DTOs
+              at API boundaries. For comparisons I use Objects.equals or a constant on the left. The goal is to make
+              nullability explicit rather than catch NPE later."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Java 8 Date Time API -->
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="java8DateTimeApi">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#java8DateTimeApiBody">
+            What improved in Java 8 Date and Time API, which classes and methods were introduced, and how does it help multi-threaded applications?
+          </button>
+        </h2>
+        <div id="java8DateTimeApiBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Java 8 introduced the <code>java.time</code> API, inspired by Joda-Time. It replaces the difficult parts
+              of legacy <code>java.util.Date</code>, <code>Calendar</code>, and <code>SimpleDateFormat</code> with
+              immutable, thread-safe, clear types that separate a date, time, instant, offset, and time zone.
+            </p>
+
+            <h5 class="text-warning">Legacy API vs Java 8 API</h5>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Old API problem</th><th>Java 8 improvement</th></tr></thead>
+              <tbody>
+                <tr><td><code>Date</code> is mutable and represents an instant despite its name.</td><td><code>LocalDate</code>, <code>LocalTime</code>, <code>LocalDateTime</code>, and <code>Instant</code> have explicit meanings.</td></tr>
+                <tr><td><code>Calendar</code> is mutable, verbose, and has zero-based months.</td><td>Readable factories such as <code>LocalDate.of(2026, 8, 8)</code>; months use <code>Month.AUGUST</code> or 1-12.</td></tr>
+                <tr><td><code>SimpleDateFormat</code> is not thread-safe.</td><td><code>DateTimeFormatter</code> is immutable and thread-safe.</td></tr>
+                <tr><td>Time zones are easy to miss or mix up.</td><td><code>ZoneId</code>, <code>ZoneOffset</code>, <code>ZonedDateTime</code>, and <code>OffsetDateTime</code> make zone/offset explicit.</td></tr>
+                <tr><td>Date arithmetic is error-prone.</td><td>Fluent <code>plus</code>, <code>minus</code>, <code>with</code>, <code>Period</code>, and <code>Duration</code> operations.</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Main classes</h5>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Class</th><th>Use</th><th>Example</th></tr></thead>
+              <tbody>
+                <tr><td><code>LocalDate</code></td><td>Date without time/zone</td><td>Birthday, invoice due date.</td></tr>
+                <tr><td><code>LocalTime</code></td><td>Time without date/zone</td><td>Shop opens at 09:00.</td></tr>
+                <tr><td><code>LocalDateTime</code></td><td>Date and time without zone</td><td>Local appointment input; not ideal for a global event timestamp.</td></tr>
+                <tr><td><code>Instant</code></td><td>One point on the UTC timeline</td><td>Audit timestamps, event time, database storage.</td></tr>
+                <tr><td><code>ZonedDateTime</code></td><td>Date/time plus region rules</td><td>Meeting at 09:00 in Asia/Kolkata, including daylight-saving rules where relevant.</td></tr>
+                <tr><td><code>OffsetDateTime</code></td><td>Date/time plus numeric offset</td><td>REST timestamp such as <code>2026-08-08T10:00:00+05:30</code>.</td></tr>
+                <tr><td><code>Duration</code></td><td>Time-based amount</td><td>30 seconds, 2 hours.</td></tr>
+                <tr><td><code>Period</code></td><td>Date-based amount</td><td>2 years, 3 months, 5 days.</td></tr>
+                <tr><td><code>DateTimeFormatter</code></td><td>Parse and format</td><td>API or display format.</td></tr>
+                <tr><td><code>ZoneId</code> / <code>Clock</code></td><td>Zone rules / controllable current time</td><td>Timezone conversion and deterministic tests.</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Most useful methods</h5>
+            <pre><code class="language-java">LocalDate today = LocalDate.now();
+LocalDate dueDate = LocalDate.of(2026, Month.AUGUST, 8);
+LocalDate parsed = LocalDate.parse("2026-08-08");
+
+LocalDate nextWeek = today.plusWeeks(1);
+LocalDate previousMonth = today.minusMonths(1);
+LocalDate monthEnd = today.with(TemporalAdjusters.lastDayOfMonth());
+boolean overdue = dueDate.isBefore(today);
+long days = ChronoUnit.DAYS.between(today, dueDate);
+
+Instant createdAt = Instant.now();
+ZonedDateTime indiaTime = createdAt.atZone(ZoneId.of("Asia/Kolkata"));
+Instant sameMoment = indiaTime.toInstant();
+
+Duration timeout = Duration.ofSeconds(30);
+Period subscription = Period.ofMonths(1);
+DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-uuuu HH:mm");
+String display = indiaTime.format(formatter);</code></pre>
+            <p>
+              Common static factories are <code>now()</code>, <code>of(...)</code>, <code>parse(...)</code>, and
+              <code>from(...)</code>. Common instance operations are <code>plus...</code>, <code>minus...</code>,
+              <code>with(...)</code>, <code>atZone(...)</code>, <code>toInstant()</code>, <code>format(...)</code>,
+              <code>isBefore(...)</code>, <code>isAfter(...)</code>, and <code>until(...)</code>. Each operation
+              returns a new value; it never changes the original object.
+            </p>
+
+            <h5 class="text-warning">Why it is safe in multi-threaded applications</h5>
+            <p>
+              Most <code>java.time</code> value types, including <code>LocalDate</code>, <code>Instant</code>,
+              <code>ZonedDateTime</code>, and <code>DateTimeFormatter</code>, are immutable. Two threads can safely
+              share one formatter or date-time instance because no method changes its internal state. The old
+              <code>SimpleDateFormat</code> mutates internal calendar/parse state, so sharing one instance between
+              request threads can produce wrong dates or parsing exceptions.
+            </p>
+            <pre><code class="language-java">// Safe as a shared static field: DateTimeFormatter is immutable.
+private static final DateTimeFormatter API_FORMAT =
+    DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss");
+
+String value = LocalDateTime.now().format(API_FORMAT);</code></pre>
+
+            <h5 class="text-warning">Practical rules</h5>
+            <p>
+              Store an <code>Instant</code> (or UTC timestamp) for events that occur at one global moment, then convert
+              to a user's <code>ZoneId</code> for display. Use <code>LocalDate</code> for date-only business rules such
+              as birthdays. Avoid using <code>LocalDateTime</code> for a globally meaningful timestamp unless the zone
+              is separately known. Inject a <code>Clock</code> into business services so tests can use a fixed time.
+            </p>
+            <pre><code class="language-java">class SubscriptionService {
+  private final Clock clock;
+  SubscriptionService(Clock clock) { this.clock = clock; }
+  boolean expired(LocalDate expiryDate) { return expiryDate.isBefore(LocalDate.now(clock)); }
+}</code></pre>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Java 8 introduced java.time to replace mutable, confusing legacy date APIs. It provides clear types for
+              date, time, instant, zones, durations, and formatting, plus fluent immutable arithmetic. Its key
+              concurrency benefit is that java.time classes and DateTimeFormatter are immutable and thread-safe, unlike
+              Calendar and SimpleDateFormat."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- SQL Versus NoSQL Decision -->
+      <div class="accordion-item" data-manual-category="sql">
+        <h2 class="accordion-header" id="sqlVsNoSqlDecision">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#sqlVsNoSqlDecisionBody">
+            SQL vs NoSQL - how do we decide, what are NoSQL types and advantages, and how do we implement it?
+          </button>
+        </h2>
+        <div id="sqlVsNoSqlDecisionBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              SQL databases model related data in tables and use SQL, joins, constraints, and transactions. NoSQL is a
+              family of non-relational databases optimized for specific access patterns such as flexible documents,
+              ultra-fast key lookups, distributed writes, or graph traversal. The right choice comes from data shape,
+              consistency rules, queries, scale, and operational needs, not from which database is more popular.
+            </p>
+
+            <h5 class="text-warning">How to decide</h5>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Question</th><th>Prefer SQL</th><th>Prefer NoSQL</th></tr></thead>
+              <tbody>
+                <tr><td>Data relationship</td><td>Many related entities and joins: order, payment, invoice, customer.</td><td>Aggregate/document-shaped data, graph relationships, or simple key lookups.</td></tr>
+                <tr><td>Consistency</td><td>Strict multi-row transactional correctness and constraints are central.</td><td>Per-record/document consistency or eventual consistency is acceptable for the chosen use case.</td></tr>
+                <tr><td>Schema</td><td>Stable, structured schema with governance and reporting.</td><td>Rapidly changing or heterogeneous attributes, such as product specifications.</td></tr>
+                <tr><td>Query pattern</td><td>Ad hoc reports, joins, aggregates, relational filters.</td><td>Known high-volume access patterns designed around keys, partitions, documents, or graph edges.</td></tr>
+                <tr><td>Scale</td><td>Vertical scale plus replicas/partitioning is enough.</td><td>Very high write/read throughput or natural horizontal partitioning is required.</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Four main NoSQL types</h5>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Type</th><th>Examples</th><th>Best fit</th></tr></thead>
+              <tbody>
+                <tr><td>Document</td><td>MongoDB, Couchbase</td><td>JSON-like aggregates: product catalog, content, user profiles.</td></tr>
+                <tr><td>Key-value</td><td>Redis, DynamoDB</td><td>Cache, sessions, rate limits, feature flags, simple high-speed lookup.</td></tr>
+                <tr><td>Wide-column</td><td>Cassandra, HBase</td><td>Huge write-heavy, time-series/event data with known partition-key queries.</td></tr>
+                <tr><td>Graph</td><td>Neo4j, Amazon Neptune</td><td>Relationship traversal: fraud rings, social connections, recommendations.</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Real e-commerce example: use both</h5>
+            <pre><code>Checkout and payments       -&gt; PostgreSQL/MySQL
+  Reason: ACID transaction, foreign keys, audit, stock/order/payment consistency
+
+Product catalog             -&gt; MongoDB
+  Reason: each product has different JSON attributes (size, RAM, color, warranty)
+
+Login sessions and cart cache -&gt; Redis
+  Reason: millisecond key lookup, TTL, atomic counters/rate limits
+
+Clickstream / IoT events    -&gt; Cassandra or a streaming store
+  Reason: very high append rate and time/partition-based queries
+
+Customer recommendation graph -&gt; Neo4j
+  Reason: efficiently traverse customer -&gt; viewed -&gt; product relationships</code></pre>
+            <p>
+              This is called <strong>polyglot persistence</strong>. The checkout system should not move to a document
+              database merely because the catalog uses one. A product's flexible description and an order's payment
+              integrity have different requirements.
+            </p>
+
+            <h5 class="text-warning">Advantages of NoSQL</h5>
+            <p>
+              NoSQL can give flexible schema evolution, natural storage for nested JSON, low-latency key access,
+              horizontal scale-out, high write throughput, and models tailored to the query. It can reduce costly joins
+              by storing an aggregate together. The trade-off is that denormalization can duplicate data and shifts
+              consistency, integrity, and query design responsibility to the application and database-specific model.
+              NoSQL does not automatically mean "no transactions" or "eventual consistency": capabilities differ by
+              product; for example, many document databases support transactions, but with different trade-offs.
+            </p>
+
+            <h5 class="text-warning">Spring Boot implementation: MongoDB catalog</h5>
+            <pre><code class="language-xml">&lt;dependency&gt;
+  &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+  &lt;artifactId&gt;spring-boot-starter-data-mongodb&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+            <pre><code class="language-yaml">spring:
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/catalog</code></pre>
+            <pre><code class="language-java">@Document("products")
+record Product(@Id String id, String name, BigDecimal price,
+    Map&lt;String, Object&gt; attributes) {}
+
+interface ProductRepository extends MongoRepository&lt;Product, String&gt; {
+  List&lt;Product&gt; findByNameContainingIgnoreCase(String name);
+}
+
+@Service
+class CatalogService {
+  private final ProductRepository products;
+  CatalogService(ProductRepository products) { this.products = products; }
+  Product save(Product product) { return products.save(product); }
+}</code></pre>
+            <p>
+              Mongo stores a product as one document, so a laptop can have RAM and CPU fields while a shirt has size
+              and fabric fields. Index the exact fields your application queries, such as
+              <code>category</code>, <code>brand</code>, or <code>attributes.ram</code>; a flexible schema without
+              indexes will still be slow.
+            </p>
+
+            <h5 class="text-warning">Implementation cautions</h5>
+            <p>
+              Start from access patterns and design keys, partitions, and indexes before choosing a NoSQL database.
+              Avoid unbounded documents, hot partition keys, and cross-service distributed transactions. Keep a clear
+              source of truth, design idempotent writes, back up and monitor the database, and use SQL for reporting
+              and relational integrity when those are primary needs. Redis is usually a cache/session store, not a
+              replacement for an order system of record.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "I choose SQL when relationships, joins, constraints, and strong transactional consistency drive the
+              use case, such as payments and orders. I choose a NoSQL type based on the access pattern: MongoDB for
+              flexible documents, Redis for cache/session lookup, Cassandra for high-volume partitioned writes, and
+              Neo4j for graph traversal. In real systems we commonly use both, with each database owning the data it
+              is best suited to manage."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Normalization And Denormalization -->
+      <div class="accordion-item" data-manual-category="sql">
+        <h2 class="accordion-header" id="normalizationDenormalization">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#normalizationDenormalizationBody">
+            What are normalization and denormalization, what are the normal forms, and when should we use denormalization?
+          </button>
+        </h2>
+        <div id="normalizationDenormalizationBody" class="accordion-collapse collapse"
+          data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>Normalization</strong> organizes relational data into related tables to reduce duplicate data and
+              avoid insert, update, and delete anomalies. <strong>Denormalization</strong> deliberately adds selected
+              duplicate or precomputed data to make important reads faster and simpler. Normalize first for correctness;
+              denormalize later only for a measured read/performance need.
+            </p>
+
+            <h5 class="text-warning">Why normalization matters</h5>
+            <pre><code>Bad single table
+order_id | customer_name | customer_email | product_name | product_price | quantity
+101      | Ravi          | ravi@mail.com  | Laptop       | 70000         | 1
+102      | Ravi          | ravi@mail.com  | Mouse        | 1000          | 2
+
+If Ravi changes email, every past and future order row must be updated.
+Missing one row creates inconsistent data: this is an update anomaly.</code></pre>
+            <p>
+              A normalized design separates this into <code>customers</code>, <code>orders</code>,
+              <code>products</code>, and <code>order_items</code>, linked with primary and foreign keys.
+            </p>
+
+            <h5 class="text-warning">Normal forms in simple terms</h5>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Form</th><th>Simple rule</th><th>Example fix</th></tr></thead>
+              <tbody>
+                <tr><td>1NF</td><td>Each column has one atomic value; no repeating groups.</td><td>Do not store <code>"Laptop, Mouse"</code> in one order column. Store each item as a separate <code>order_items</code> row.</td></tr>
+                <tr><td>2NF</td><td>Be in 1NF, and every non-key column depends on the whole primary key.</td><td>In <code>order_items(order_id, product_id)</code>, product name depends only on <code>product_id</code>, so move it to <code>products</code>.</td></tr>
+                <tr><td>3NF</td><td>Be in 2NF, and non-key columns must not depend on another non-key column.</td><td>Move <code>customer_zip -&gt; city</code> out if city is determined by zip, not directly by customer ID.</td></tr>
+                <tr><td>BCNF</td><td>Every determinant must be a candidate key.</td><td>Use when 3NF still allows a dependency that can cause redundancy in special multi-candidate-key cases.</td></tr>
+                <tr><td>4NF</td><td>Remove independent multi-valued facts.</td><td>A student with many hobbies and languages needs separate tables; otherwise combinations multiply unnecessarily.</td></tr>
+                <tr><td>5NF</td><td>Remove rare join dependencies that cannot be reconstructed safely from smaller tables.</td><td>Mainly used in complex relationship models; uncommon in normal application tables.</td></tr>
+              </tbody>
+            </table>
+            <p>
+              In most application interviews and day-to-day schemas, understanding <strong>1NF, 2NF, and 3NF</strong>
+              well is enough. BCNF and higher forms are more specialized refinements.
+            </p>
+
+            <h5 class="text-warning">Normalized order schema</h5>
+            <pre><code class="language-sql">CREATE TABLE customers (
+  customer_id BIGINT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  email VARCHAR(150) NOT NULL UNIQUE
+);
+
+CREATE TABLE orders (
+  order_id BIGINT PRIMARY KEY,
+  customer_id BIGINT NOT NULL REFERENCES customers(customer_id),
+  created_at TIMESTAMP NOT NULL
+);
+
+CREATE TABLE order_items (
+  order_id BIGINT NOT NULL REFERENCES orders(order_id),
+  product_id BIGINT NOT NULL REFERENCES products(product_id),
+  quantity INT NOT NULL,
+  PRIMARY KEY (order_id, product_id)
+);</code></pre>
+
+            <h5 class="text-warning">What is denormalization?</h5>
+            <p>
+              Denormalization intentionally copies a value or stores an aggregate so a frequent read avoids expensive
+              joins or calculations. Examples include <code>order_total</code> in <code>orders</code>,
+              <code>customer_name_snapshot</code> on an invoice, a precomputed daily-sales table, a search index, a
+              materialized view, or a read model built from events.
+            </p>
+            <pre><code class="language-sql">-- Deliberately duplicated read/snapshot fields
+ALTER TABLE orders ADD COLUMN customer_name_snapshot VARCHAR(100);
+ALTER TABLE orders ADD COLUMN order_total DECIMAL(12,2);
+
+-- Reads the order history page without joining and summing every item each time.
+SELECT order_id, customer_name_snapshot, order_total, created_at
+FROM orders
+WHERE customer_id = :customerId
+ORDER BY created_at DESC;</code></pre>
+            <p>
+              The snapshot is often correct for invoices: if Ravi later changes his profile name, historical invoices
+              should still show the name at the time of purchase. This is a valid business reason for duplication, not
+              an accidental design flaw.
+            </p>
+
+            <h5 class="text-warning">When denormalization is used most</h5>
+            <p>
+              Use it most often in <strong>read-heavy systems</strong>: dashboards, reporting, analytics/data
+              warehouses, catalog/search pages, feeds, and high-traffic APIs where profiling shows joins or aggregates
+              are the bottleneck. It is also common for historical snapshots and CQRS read models. Keep the normalized
+              transactional schema as the source of truth, then refresh denormalized data with application logic,
+              database triggers only when carefully controlled, batch jobs, materialized-view refreshes, or events.
+            </p>
+
+            <h5 class="text-warning">Trade-offs and rule of thumb</h5>
+            <p>
+              Denormalization improves read speed but increases storage, write cost, and the risk of stale or
+              inconsistent copies. Every duplicate field needs a clear ownership and update strategy. Do not
+              denormalize only to avoid learning joins; first add the correct indexes, inspect the query plan, and
+              measure. For write-heavy payment/inventory data, favor normalization and integrity. For a slow,
+              repeatedly-read dashboard, a denormalized summary is often the right solution.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Normalization reduces redundancy and anomalies by splitting data into correctly related tables. 1NF
+              makes values atomic, 2NF removes partial dependency, and 3NF removes transitive dependency. I use
+              denormalization selectively for measured read-heavy needs such as dashboards, reports, search, and
+              historical snapshots, while keeping a normalized source of truth and a clear synchronization strategy."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Truncate Rollback Behavior -->
+      <div class="accordion-item" data-manual-category="sql">
+        <h2 class="accordion-header" id="truncateRollback">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#truncateRollbackBody">
+            Can TRUNCATE be rolled back? How is it different from DELETE?
+          </button>
+        </h2>
+        <div id="truncateRollbackBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              The correct answer is: <strong>it depends on the database</strong>. <code>TRUNCATE</code> removes all rows
+              very quickly while keeping the table structure, but databases implement its transaction behavior
+              differently. Never assume it is reversible without checking the database you are using.
+            </p>
+
+            <h5 class="text-warning">Rollback behavior by database</h5>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Database</th><th>Can TRUNCATE roll back?</th><th>Why</th></tr></thead>
+              <tbody>
+                <tr><td>PostgreSQL</td><td>Yes, inside an uncommitted transaction.</td><td><code>TRUNCATE</code> is transactional DDL in PostgreSQL.</td></tr>
+                <tr><td>SQL Server</td><td>Yes, inside an explicit transaction.</td><td>The operation is logged sufficiently for transaction rollback.</td></tr>
+                <tr><td>MySQL</td><td>Usually no.</td><td><code>TRUNCATE</code> is DDL and causes an implicit commit; it cannot be undone with <code>ROLLBACK</code>.</td></tr>
+                <tr><td>Oracle</td><td>No.</td><td><code>TRUNCATE</code> is DDL and commits implicitly, so rollback cannot restore rows.</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Examples</h5>
+            <pre><code class="language-sql">-- PostgreSQL: rows return because the transaction was not committed.
+BEGIN;
+TRUNCATE TABLE audit_logs;
+ROLLBACK;
+
+-- MySQL/Oracle: TRUNCATE performs implicit DDL commit.
+START TRANSACTION;
+TRUNCATE TABLE audit_logs;
+ROLLBACK; -- does not restore the rows</code></pre>
+
+            <h5 class="text-warning">TRUNCATE vs DELETE</h5>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Point</th><th>DELETE</th><th>TRUNCATE</th></tr></thead>
+              <tbody>
+                <tr><td>Rows</td><td>Can remove selected rows with <code>WHERE</code>.</td><td>Removes all rows; no <code>WHERE</code>.</td></tr>
+                <tr><td>Logging/performance</td><td>Typically logs row-level deletes; slower for huge tables.</td><td>Usually deallocates data pages; much faster for clearing a table.</td></tr>
+                <tr><td>Rollback</td><td>Normally rolls back in a transaction.</td><td>Database-specific: check the table above.</td></tr>
+                <tr><td>Identity/sequence</td><td>Usually does not reset identity.</td><td>Often resets identity/auto-increment, but exact behavior is database-specific.</td></tr>
+                <tr><td>DELETE triggers</td><td>Usually fires row-level delete triggers.</td><td>Typically does not fire delete triggers.</td></tr>
+                <tr><td>Constraints</td><td>Works subject to normal foreign-key rules.</td><td>May be blocked when other tables reference the table through foreign keys.</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">When to use which</h5>
+            <p>
+              Use <code>DELETE ... WHERE ...</code> when removing specific data, when delete triggers/audit behavior is
+              required, or when you need predictable transaction rollback across databases. Use <code>TRUNCATE</code>
+              only when intentionally clearing a whole staging, temporary, test, or archive table and the database's
+              rollback, identity, trigger, and foreign-key behavior has been confirmed. Production use should be
+              protected by backup, approval, and an explicit operational procedure.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "TRUNCATE rollback is database-dependent. PostgreSQL and SQL Server can roll it back inside an open
+              transaction, while MySQL and Oracle treat it as implicitly committed DDL, so rollback cannot restore the
+              rows. DELETE is row-based, supports WHERE, and is the safer choice when selective removal or portable
+              transaction behavior is needed."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- End To End Microservices Observability -->
+      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="endToEndObservability">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#endToEndObservabilityBody">
+            Micrometer, Prometheus, Grafana, log aggregation, and tracing - how do we monitor Spring Boot microservices end to end?
+          </button>
+        </h2>
+        <div id="endToEndObservabilityBody" class="accordion-collapse collapse"
+          data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              End-to-end observability combines <strong>metrics</strong>, <strong>logs</strong>, and
+              <strong>traces</strong>. Metrics answer "is the service unhealthy?"; logs answer "what happened?"; a
+              trace answers "which request path was slow or failed across services?". Health checks and alerts complete
+              the picture.
+            </p>
+
+            <h5 class="text-warning">Roles of the main tools</h5>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Tool</th><th>Role</th><th>Example question it answers</th></tr></thead>
+              <tbody>
+                <tr><td>Spring Boot Actuator</td><td>Exposes health, metrics, Prometheus scrape endpoint, and management endpoints.</td><td>Is this instance alive, ready, or using too many DB connections?</td></tr>
+                <tr><td>Micrometer</td><td>Metrics/observation facade; records JVM, HTTP, datasource, and custom meters.</td><td>What is order API p95 latency and payment failure count?</td></tr>
+                <tr><td>Prometheus</td><td>Pulls, stores, and queries time-series metrics; evaluates alert rules.</td><td>Did 5xx rate rise in the last five minutes?</td></tr>
+                <tr><td>Grafana</td><td>Dashboards, alert visualization, and correlation across data sources.</td><td>Can I see latency, logs, and traces for order-service together?</td></tr>
+                <tr><td>Loki / ELK / Splunk</td><td>Central log aggregation, indexing, retention, and search.</td><td>What did this exact order request log in each service?</td></tr>
+                <tr><td>Tempo / Jaeger / Zipkin</td><td>Stores and displays distributed traces.</td><td>Which downstream service made checkout take 4 seconds?</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">One request across microservices</h5>
+            <pre><code>Client request
+  -&gt; API Gateway (traceId: 4bf92f...)
+  -&gt; order-service
+  -&gt; payment-service
+  -&gt; inventory-service
+
+Every service writes structured logs containing traceId and spanId.
+Each service emits metrics through Micrometer.
+Trace context travels in the HTTP traceparent header.
+
+Metrics: service -&gt; /actuator/prometheus -&gt; Prometheus -&gt; Grafana
+Logs:    stdout JSON -&gt; Fluent Bit/Promtail -&gt; Loki or Elasticsearch -&gt; Grafana/Kibana
+Traces:  Micrometer Tracing -&gt; OpenTelemetry OTLP -&gt; Tempo/Jaeger -&gt; Grafana</code></pre>
+
+            <h5 class="text-warning">1. Add Spring Boot dependencies</h5>
+            <pre><code class="language-xml">&lt;dependency&gt;
+  &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+  &lt;artifactId&gt;spring-boot-starter-actuator&lt;/artifactId&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+  &lt;groupId&gt;io.micrometer&lt;/groupId&gt;
+  &lt;artifactId&gt;micrometer-registry-prometheus&lt;/artifactId&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+  &lt;groupId&gt;io.micrometer&lt;/groupId&gt;
+  &lt;artifactId&gt;micrometer-tracing-bridge-otel&lt;/artifactId&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+  &lt;groupId&gt;io.opentelemetry&lt;/groupId&gt;
+  &lt;artifactId&gt;opentelemetry-exporter-otlp&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+
+            <h5 class="text-warning">2. Configure Actuator, metrics, tracing, and JSON logs</h5>
+            <pre><code class="language-yaml">spring:
+  application:
+    name: order-service
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  tracing:
+    sampling:
+      probability: 1.0 # use a lower, deliberate sampling rate in high-volume production
+  otlp:
+    tracing:
+      endpoint: http://otel-collector:4318/v1/traces
+
+logging:
+  structured:
+    format:
+      console: logstash</code></pre>
+            <p>
+              Actuator exposes <code>/actuator/health</code>, <code>/actuator/metrics</code>, and
+              <code>/actuator/prometheus</code>. Keep management endpoints private or protected; never expose sensitive
+              endpoints publicly just to make monitoring convenient. Containerized services should usually write JSON
+              logs to standard output, not manage local log files.
+            </p>
+
+            <h5 class="text-warning">3. Add business metrics with Micrometer</h5>
+            <pre><code class="language-java">@Service
+class OrderService {
+  private final Counter ordersCreated;
+
+  OrderService(MeterRegistry registry) {
+    this.ordersCreated = Counter.builder("orders.created")
+        .description("Number of successfully created orders")
+        .register(registry);
+  }
+
+  OrderResponse create(CreateOrderRequest request) {
+    OrderResponse response = createOrder(request);
+    ordersCreated.increment();
+    return response;
+  }
+}</code></pre>
+            <p>
+Use low-cardinality metric tags such as <code>service</code>, <code>endpoint</code>, <code>method</code>, and outcome.
+Do not use user ID, order ID, email, request ID, or trace ID as metric tags: each unique value creates a costly new
+time series. Put those identifiers in logs and traces instead.
+            </p>
+
+            <h5 class="text-warning">4. Configure Prometheus and Grafana</h5>
+            <pre><code class="language-yaml"># prometheus.yml
+scrape_configs:
+  - job_name: order-service
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["order-service:8080"]</code></pre>
+            <p>
+In Kubernetes, prefer Prometheus service discovery or a <code>ServiceMonitor</code> rather than static targets.
+Configure Prometheus as a Grafana data source, import/build dashboards for request rate, error rate, p50/p95/p99
+latency, JVM heap/GC, CPU, thread count, Hikari connection pool, Kafka lag, and business counters. Alert on user
+symptoms: sustained error rate, high p95 latency, unavailable readiness, or exhausted DB connections.
+            </p>
+
+            <h5 class="text-warning">5. Configure centralized log aggregation</h5>
+            <p>
+              A log aggregator collects each container's standard output. In Kubernetes, deploy Fluent Bit, Promtail,
+              or Filebeat as a DaemonSet; it enriches every log with pod, namespace, node, and container metadata, then
+              sends it to Loki, Elasticsearch, Splunk, or a cloud logging platform. Grafana reads Loki; Kibana commonly
+              reads Elasticsearch. Applications should emit structured JSON and must never log passwords, tokens, or
+              full sensitive personal data.
+            </p>
+            <pre><code class="language-json">{
+  "timestamp": "2026-08-08T10:15:00Z",
+  "service": "order-service",
+  "level": "INFO",
+  "traceId": "4bf92f3577b34da6a3ce929d0e0e4736",
+  "spanId": "00f067aa0ba902b7",
+  "orderId": "ORD-101",
+  "message": "Order created"
+}</code></pre>
+
+            <h5 class="text-warning">6. Distributed tracing and finding one request</h5>
+            <p>
+              A <code>traceId</code> identifies one end-to-end business request. A <code>spanId</code> identifies one
+              operation inside it, such as the order controller, SQL query, or payment HTTP call. Parent/child spans
+              form a waterfall timeline. Micrometer Tracing creates and propagates context; OpenTelemetry exports it
+              through OTLP to Tempo, Jaeger, or Zipkin. The standard <code>traceparent</code> HTTP header carries the
+              context to downstream services.
+            </p>
+            <pre><code>Slow checkout investigation
+  1. Grafana alert shows p95 POST /orders latency is high.
+  2. Open the Tempo/Jaeger trace from the affected request or traceId.
+  3. Waterfall shows payment-service span consumed 3.5 seconds.
+  4. Click the payment-service logs filtered by the same traceId.
+  5. Find a payment-provider timeout and correlate its error count metric.
+  6. Fix/scale/timeout-tune the dependency, then confirm metrics recover.</code></pre>
+
+            <h5 class="text-warning">Production checklist</h5>
+            <p>
+              Set service name and environment consistently; propagate trace context through HTTP, messaging, and
+              Feign clients; protect Actuator; define log retention and PII masking; sample traces deliberately;
+              avoid high-cardinality metric labels; create SLO-based alerts; and test dashboards during an incident
+              simulation. Logs, metrics, and traces are complementary: do not try to use one as a replacement for the
+              others.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "In Spring Boot I enable Actuator and Micrometer, expose Prometheus metrics, scrape them with Prometheus,
+              and use Grafana for dashboards and alerts. Services write JSON logs to stdout, and a Fluent Bit/Promtail
+              agent ships them to Loki or ELK. For a request across services, Micrometer Tracing propagates traceId and
+              spanId and exports spans through OpenTelemetry to Tempo or Jaeger. During an incident I start with a
+              metric alert, open the trace to locate the slow service, and use the shared traceId to see its exact logs."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lambda Exceptions -->
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="lambdaExceptions">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#lambdaExceptionsBody">
+            Can a lambda expression throw checked or unchecked exceptions, and how do we handle them?
+          </button>
+        </h2>
+        <div id="lambdaExceptionsBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              A lambda can throw an exception, but what it may throw is controlled by the abstract method of its
+              <strong>target functional interface</strong>. An unchecked exception such as
+              <code>IllegalArgumentException</code> or <code>NullPointerException</code> is always allowed. A checked
+              exception such as <code>IOException</code> is allowed only when that functional-interface method declares
+              it with <code>throws</code>.
+            </p>
+
+            <h5 class="text-warning">Unchecked exceptions: allowed</h5>
+            <pre><code class="language-java">List&lt;String&gt; names = List.of("Ravi", "", "Anu");
+
+names.forEach(name -&gt; {
+  if (name.isBlank()) {
+    throw new IllegalArgumentException("Name cannot be blank");
+  }
+  System.out.println(name);
+});</code></pre>
+            <p>
+              <code>Consumer.accept(...)</code> does not declare checked exceptions, but unchecked exceptions extend
+              <code>RuntimeException</code>, so Java permits them. The stream/loop stops and the exception propagates
+              to the caller unless it is caught.
+            </p>
+
+            <h5 class="text-warning">Checked exceptions: why this does not compile</h5>
+            <pre><code class="language-java">List&lt;Path&gt; files = List.of(Path.of("a.txt"));
+
+files.forEach(path -&gt; Files.readString(path));
+// Compile error: Files.readString throws checked IOException,
+// but Consumer&lt;Path&gt;.accept does not declare throws IOException.</code></pre>
+
+            <h5 class="text-warning">Option 1: handle it inside the lambda</h5>
+            <pre><code class="language-java">files.forEach(path -&gt; {
+  try {
+    String content = Files.readString(path);
+    process(content);
+  } catch (IOException ex) {
+    log.warn("Could not read {}", path, ex);
+    // Decide deliberately: skip, collect an error, or stop.
+  }
+});</code></pre>
+            <p>
+              Use this when one bad item can be skipped or recorded while the remaining items should continue. Do not
+              silently swallow the error; log, return a result containing failures, or send it to a retry/dead-letter
+              flow according to the business requirement.
+            </p>
+
+            <h5 class="text-warning">Option 2: wrap a checked exception</h5>
+            <pre><code class="language-java">files.forEach(path -&gt; {
+  try {
+    process(Files.readString(path));
+  } catch (IOException ex) {
+    throw new UncheckedIOException("Failed to read " + path, ex);
+  }
+});</code></pre>
+            <p>
+              This keeps the stream API clean and fails the whole operation. At a higher application boundary, catch
+              <code>UncheckedIOException</code> and map it to an API error or retry decision. Preserve the original
+              exception as the cause; never discard it.
+            </p>
+
+            <h5 class="text-warning">Option 3: use a custom throwing functional interface</h5>
+            <pre><code class="language-java">@FunctionalInterface
+interface ThrowingFunction&lt;T, R&gt; {
+  R apply(T value) throws Exception;
+}
+
+static String readFile(Path path) throws IOException {
+  return Files.readString(path);
+}
+
+ThrowingFunction&lt;Path, String&gt; reader = MyFiles::readFile;
+String content = reader.apply(Path.of("a.txt")); // caller must handle Exception</code></pre>
+            <p>
+              This is useful in your own APIs when checked failure is part of the contract. Standard Java streams use
+              <code>Function</code>, <code>Consumer</code>, and <code>Supplier</code>, which do not declare checked
+              exceptions, so a small adapter is still needed before using this directly in a stream.
+            </p>
+
+            <h5 class="text-warning">Method references follow the same rule</h5>
+            <p>
+              A method reference such as <code>Files::readString</code> is allowed only when the receiving functional
+              interface permits its checked exception. It works with a custom <code>ThrowingFunction</code> but not with
+              <code>Function&lt;Path, String&gt;</code>. This is not a lambda limitation; it is Java's checked-exception type
+              checking.
+            </p>
+
+            <h5 class="text-warning">Spring Boot advice</h5>
+            <p>
+              In a service, convert infrastructure exceptions to meaningful domain/application exceptions at the right
+              layer and handle them with <code>@RestControllerAdvice</code>. For parallel streams, avoid assuming all
+              errors are easy to handle per item; exceptions can be wrapped and processing is not a replacement for a
+              managed executor or resilient message workflow.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "A lambda can always throw unchecked exceptions. It can throw a checked exception only if the target
+              functional interface method declares that exception. Since standard stream interfaces do not declare
+              checked exceptions, I either handle it inside the lambda, wrap it in an appropriate unchecked exception
+              such as UncheckedIOException, or use a custom throwing functional interface when checked failure is part
+              of my own API contract."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Constructor Modifiers -->
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="constructorModifiers">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#constructorModifiersBody">
+            Can a constructor be static, final, or abstract?
+          </button>
+        </h2>
+        <div id="constructorModifiersBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              No. A constructor cannot be <code>static</code>, <code>final</code>, or <code>abstract</code>.
+              A constructor is used to create an object, so it belongs to an instance-creation flow, not to a class
+              behavior that can be inherited or overridden.
+            </p>
+
+            <h5 class="text-warning">Why not static?</h5>
+            <p>
+              <code>static</code> means class-level and callable without creating an object first. A constructor exists
+              specifically to create the object, so making it static would defeat its purpose.
+            </p>
+
+            <h5 class="text-warning">Why not final?</h5>
+            <p>
+              <code>final</code> prevents overriding, but constructors are never inherited or overridden in the first
+              place. So <code>final</code> is meaningless on a constructor.
+            </p>
+
+            <h5 class="text-warning">Why not abstract?</h5>
+            <p>
+              <code>abstract</code> means "must be implemented by a subclass." A constructor is not inherited and cannot
+              be called polymorphically, so an abstract constructor does not make sense.
+            </p>
+
+            <h5 class="text-warning">Invalid example</h5>
+            <pre><code class="language-java">class User {
+  static User() { }   // compile error
+  final User(int id) { } // compile error
+  abstract User();    // compile error
+}</code></pre>
+
+            <h5 class="text-warning">What you can do instead</h5>
+            <p>
+              Use a <code>private</code> constructor for utility classes or factory methods, and use static factory
+              methods like <code>of()</code> or <code>getInstance()</code> when you want controlled object creation.
+            </p>
+            <pre><code class="language-java">class UserFactory {
+  private UserFactory() { }
+
+  static User create() {
+    return new User();
+  }
+}</code></pre>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "No, a constructor cannot be static, final, or abstract. It is only for object creation. Static is for
+              class members, final is for preventing overriding, and abstract is for methods that subclasses must
+              implement."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Private Constructor -->
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="privateConstructor">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#privateConstructorBody">
+            What happens if we make a constructor private?
+          </button>
+        </h2>
+        <div id="privateConstructorBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              A <code>private</code> constructor cannot be called from outside the class. That means other classes
+              cannot directly create objects with <code>new</code>. It is usually used for singleton classes, utility
+              classes, or factory-based creation.
+            </p>
+
+            <h5 class="text-warning">What it changes</h5>
+            <ul>
+              <li>External code cannot instantiate the class directly.</li>
+              <li>The class can still create objects from inside its own methods.</li>
+              <li>Subclasses cannot call that constructor, so inheritance is restricted unless another accessible constructor exists.</li>
+            </ul>
+
+            <h5 class="text-warning">Example: utility class</h5>
+            <pre><code class="language-java">public final class MathUtils {
+  private MathUtils() {
+    // no instances allowed
+  }
+
+  public static int add(int a, int b) {
+    return a + b;
+  }
+}</code></pre>
+            <p>
+              Here the private constructor prevents someone from writing <code>new MathUtils()</code>. The class is
+              meant to be used only through static methods.
+            </p>
+
+            <h5 class="text-warning">Example: singleton / factory</h5>
+            <pre><code class="language-java">public class AppConfig {
+  private static final AppConfig INSTANCE = new AppConfig();
+
+  private AppConfig() { }
+
+  public static AppConfig getInstance() {
+    return INSTANCE;
+  }
+}</code></pre>
+            <p>
+              This gives controlled object creation. The constructor is private, but the class exposes a public
+              method to return the one allowed instance.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "A private constructor blocks direct object creation from outside the class. It is used when we want to
+              control instantiation, like in utility classes, singleton patterns, or factory methods."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Finally Block -->
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="finallyExecution">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#finallyExecutionBody">
+            What are the scenarios when finally does not execute?
+          </button>
+        </h2>
+        <div id="finallyExecutionBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              In normal Java control flow, <code>finally</code> runs after <code>try</code> or <code>catch</code>,
+              even when an exception happens. But there are a few rare cases where it may not execute.
+            </p>
+
+            <h5 class="text-warning">Common cases where it may not run</h5>
+            <ul>
+              <li>The JVM process exits abruptly, such as <code>System.exit()</code> or <code>Runtime.halt()</code>.</li>
+              <li>The JVM crashes, is forcibly terminated, or the machine loses power.</li>
+              <li>The thread is killed in an unsafe external way before the block can complete.</li>
+              <li>A daemon thread may be stopped when the JVM shuts down, so its <code>finally</code> block is not guaranteed to finish.</li>
+            </ul>
+
+            <h5 class="text-warning">Example</h5>
+            <pre><code class="language-java">try {
+  System.out.println("Inside try");
+  System.exit(0);
+} finally {
+  System.out.println("This will not print");
+}</code></pre>
+            <p>
+              <code>System.exit(0)</code> terminates the JVM before <code>finally</code> can run. That is why shutdown
+              hooks or explicit cleanup are needed for critical resources.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Usually finally always runs, but it may not execute if the JVM exits abruptly, crashes, or is forcibly
+              stopped. In normal exception flow it does execute, so I use it for cleanup like closing resources or
+              releasing locks."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Java Streams Lazy vs Eager -->
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="streamsLazyEager">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#streamsLazyEagerBody">
+            Are Java streams lazy or eager?
+          </button>
+        </h2>
+        <div id="streamsLazyEagerBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Java streams are mostly <strong>lazy</strong>. Intermediate operations such as
+              <code>map()</code>, <code>filter()</code>, and <code>sorted()</code> do not run immediately. They build a
+              pipeline and wait until a terminal operation like <code>collect()</code>, <code>forEach()</code>, or
+              <code>reduce()</code> starts the execution.
+            </p>
+
+            <h5 class="text-warning">Lazy behavior</h5>
+            <pre><code class="language-java">Stream&lt;String&gt; stream = List.of("a", "bb", "ccc").stream()
+    .filter(s -&gt; {
+      System.out.println("filtering " + s);
+      return s.length() &gt; 1;
+    })
+    .map(String::toUpperCase);
+
+System.out.println("Pipeline built");
+List&lt;String&gt; result = stream.collect(Collectors.toList());</code></pre>
+            <p>
+              Nothing runs when the pipeline is created. The work happens only when the terminal operation executes.
+              This is why streams can short-circuit efficiently with <code>findFirst()</code> or <code>anyMatch()</code>.
+            </p>
+
+            <h5 class="text-warning">What is eager?</h5>
+            <p>
+              The terminal operation is effectively eager because it consumes the stream and triggers the whole
+              pipeline. Some operations such as <code>sorted()</code> or <code>distinct()</code> may also need to
+              buffer data internally before they can produce results, but the stream API still executes them only when
+              the pipeline is consumed.
+            </p>
+
+            <h5 class="text-warning">Real-world example</h5>
+            <p>
+              Think of an online order filter: you can keep adding conditions on paper lazily, but the real work starts
+              only when you press <em>Search</em>. In code, that means the pipeline is prepared first and executed only
+              at the terminal step.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Java streams are lazy for intermediate operations and eager at the terminal operation. The pipeline is
+              assembled first, and execution starts only when a terminal operation consumes it."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Java Streams Peek -->
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="streamPeek">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#streamPeekBody">
+            What is the use of the peek() method in streams?
+          </button>
+        </h2>
+        <div id="streamPeekBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <code>peek()</code> is mainly used for <strong>debugging or observing</strong> elements as they flow
+              through a stream pipeline. It lets you look at intermediate values without changing them.
+            </p>
+
+            <h5 class="text-warning">Example</h5>
+            <pre><code class="language-java">List&lt;String&gt; names = List.of("ravi", "anu", "kiran");
+
+List&lt;String&gt; result = names.stream()
+    .filter(name -&gt; name.length() &gt; 3)
+    .peek(name -&gt; System.out.println("After filter: " + name))
+    .map(String::toUpperCase)
+    .peek(name -&gt; System.out.println("After map: " + name))
+    .collect(Collectors.toList());</code></pre>
+            <p>
+              In this example, <code>peek()</code> prints the values passing through each stage, but it does not
+              transform the stream. The actual data change happens only in <code>map()</code>.
+            </p>
+
+            <h5 class="text-warning">When to use</h5>
+            <p>
+              Use it for logging, debugging, or tracing a pipeline during development. In production code, avoid using
+              it for business logic because it is meant to be a side-effect helper, not a transformation step.
+            </p>
+
+            <h5 class="text-warning">Important caution</h5>
+            <p>
+              <code>peek()</code> runs only when the stream is consumed by a terminal operation. If there is no terminal
+              operation, nothing happens. Also, do not rely on it for critical side effects in parallel streams because
+              execution order may be surprising.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "peek() is a debugging and inspection method in streams. It helps us observe intermediate values without
+              modifying them, and it should not be used for business logic."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- HashMap Concurrent Modification -->
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="hashMapConcurrentModification">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#hashMapConcurrentModificationBody">
+            What happens if two threads modify the HashMap?
+          </button>
+        </h2>
+        <div id="hashMapConcurrentModificationBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <code>HashMap</code> is <strong>not thread-safe</strong>. If two threads modify it at the same time, you
+              can get lost updates, inconsistent reads, corrupted internal state, or even an infinite loop in older JVM
+              scenarios while resizing or rehashing.
+            </p>
+
+            <h5 class="text-warning">What can go wrong</h5>
+            <ul>
+              <li>One thread overwrites the other thread's put/update, so data is lost.</li>
+              <li>A reader may see partially updated or stale data.</li>
+              <li>During resize, concurrent structural changes can corrupt bucket links.</li>
+              <li>Iteration may throw <code>ConcurrentModificationException</code> if the map is structurally changed while iterating.</li>
+            </ul>
+
+            <h5 class="text-warning">Example</h5>
+            <pre><code class="language-java">Map&lt;String, Integer&gt; map = new HashMap&lt;&gt;();
+
+Runnable task = () -&gt; {
+  for (int i = 0; i &lt; 1000; i++) {
+    map.put("count", map.getOrDefault("count", 0) + 1);
+  }
+};
+
+new Thread(task).start();
+new Thread(task).start();</code></pre>
+            <p>
+              This code is unsafe because the read-modify-write sequence is not atomic. The final value can be smaller
+              than expected, and the map itself is not protected from concurrent structural updates.
+            </p>
+
+            <h5 class="text-warning">How to fix it</h5>
+            <p>
+              Use <code>ConcurrentHashMap</code> for shared access, or synchronize access with a lock if the entire
+              update sequence must be atomic. For counters, prefer <code>AtomicInteger</code> or
+              <code>LongAdder</code> instead of manual <code>get</code> plus <code>put</code>.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "If two threads modify a HashMap concurrently, the result is undefined because HashMap is not thread-safe.
+              You can lose updates, see inconsistent data, or corrupt the map. For shared concurrent access, use
+              ConcurrentHashMap or proper synchronization."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Private Fields And Threads -->
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="privateFieldsThreadVisibility">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#privateFieldsThreadVisibilityBody">
+            Why can multithreaded values be inconsistent even if the fields are private?
+          </button>
+        </h2>
+        <div id="privateFieldsThreadVisibilityBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <code>private</code> controls <strong>access from other classes</strong>, not thread safety. Two threads can
+              still read and write the same private field through the same object, and without synchronization there is no
+              guarantee that one thread will immediately see another thread's update.
+            </p>
+
+            <h5 class="text-warning">Why this happens</h5>
+            <ul>
+              <li><strong>Visibility:</strong> one thread may keep a cached value and not see the latest write.</li>
+              <li><strong>Atomicity:</strong> operations like <code>count++</code> are read, modify, then write, not a single step.</li>
+              <li><strong>Ordering:</strong> the JVM and CPU may reorder instructions unless you create a happens-before relationship.</li>
+            </ul>
+
+            <h5 class="text-warning">Example</h5>
+            <pre><code class="language-java">class Counter {
+  private int count = 0;
+
+  void increment() {
+    count++; // not atomic
+  }
+
+  int getCount() {
+    return count;
+  }
+}</code></pre>
+            <p>
+              Even though <code>count</code> is private, two threads calling <code>increment()</code> can still lose
+              updates because both may read the same old value before either write completes.
+            </p>
+
+            <h5 class="text-warning">How to make it safe</h5>
+            <p>
+              Use <code>synchronized</code>, <code>volatile</code> for visibility only, locks, or atomic classes such as
+              <code>AtomicInteger</code> depending on the problem. For compound updates, <code>volatile</code> alone is not
+              enough because it does not make the operation atomic.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Private does not mean thread-safe. A private field can still be accessed by multiple threads through the same
+              object, and without synchronization they may see stale values or lose updates because of visibility and
+              atomicity issues."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- SQL Top Shortcut -->
+      <div class="accordion-item">
         <h2 class="accordion-header" id="sqlShortcut">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#sqlShortcutBody">
             SQL - Scenario Based Interview Questions
@@ -16412,6 +18653,110 @@ public class OrderService {
         </div>
       </div>
 
+      <!-- Microservices Challenges -->
+      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="microservicesChallenges">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#microservicesChallengesBody">
+            What are the main challenges in microservices?
+          </button>
+        </h2>
+        <div id="microservicesChallengesBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Microservices solve scale and deployment problems, but they introduce distributed-system complexity.
+              The biggest challenges are communication, data consistency, observability, failure handling, deployment,
+              and operational overhead.
+            </p>
+
+            <h5 class="text-warning">Common challenges</h5>
+            <ul>
+              <li><strong>Service-to-service communication:</strong> network calls are slower and less reliable than in-process calls.</li>
+              <li><strong>Data consistency:</strong> each service owns its data, so distributed transactions are hard.</li>
+              <li><strong>Failure handling:</strong> one slow or failing service can affect others if timeouts and circuit breakers are missing.</li>
+              <li><strong>Observability:</strong> logs, metrics, and traces must be correlated across services.</li>
+              <li><strong>Deployment and versioning:</strong> backward compatibility and coordinated releases become important.</li>
+              <li><strong>Security:</strong> service-to-service authentication and authorization are more complex.</li>
+              <li><strong>Testing:</strong> integration, contract, and end-to-end tests are harder than in a monolith.</li>
+              <li><strong>Operations:</strong> more services mean more config, more infrastructure, and more monitoring.</li>
+            </ul>
+
+            <h5 class="text-warning">Real-world example</h5>
+            <p>
+              In an order flow, the API Gateway calls Order Service, which calls Payment Service and Inventory Service.
+              If Payment Service is slow, the whole checkout can fail unless we use timeouts, retries, circuit breakers,
+              correlation IDs, and fallback behavior carefully.
+            </p>
+
+            <h5 class="text-warning">How we reduce the pain</h5>
+            <p>
+              Use service discovery, API gateway, resilience patterns, centralized logging, tracing, metrics, database
+              per service, contract testing, and strong CI/CD. Keep each service small and align it to a business
+              capability.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Microservices introduce distributed-system problems: network latency, data consistency, failures,
+              observability, deployment complexity, testing complexity, and security. We manage them with
+              timeouts, circuit breakers, tracing, centralized logs, database-per-service, and strong automation."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Microservices Data Consistency -->
+      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="microservicesDataConsistency">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#microservicesDataConsistencyBody">
+            How do we achieve data consistency in microservices?
+          </button>
+        </h2>
+        <div id="microservicesDataConsistencyBody" class="accordion-collapse collapse"
+          data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              In microservices, each service usually owns its own database, so we cannot rely on one big ACID
+              transaction across the whole system. The usual goal is <strong>eventual consistency</strong> with safe
+              business workflows.
+            </p>
+
+            <h5 class="text-warning">Common approaches</h5>
+            <ul>
+              <li><strong>Saga pattern:</strong> each service completes a local transaction and, if needed, runs a compensating action on failure.</li>
+              <li><strong>Transactional Outbox:</strong> save the business data and the event in the same local transaction, then publish it reliably.</li>
+              <li><strong>Idempotent consumers:</strong> handle duplicate messages safely so repeated delivery does not corrupt state.</li>
+              <li><strong>Event-driven updates:</strong> let other services react to events and build their own read models.</li>
+              <li><strong>Optimistic locking / versioning:</strong> prevent lost updates inside a service-owned aggregate.</li>
+            </ul>
+
+            <h5 class="text-warning">Real-world example</h5>
+            <p>
+              In an order flow, the Order Service creates the order, the Payment Service charges the card, and the
+              Inventory Service reserves stock. If payment fails after order creation, a Saga can cancel the order.
+              If the service publishes <code>OrderCreated</code> through an outbox table, the event is not lost even if
+              the app crashes after the database commit.
+            </p>
+
+            <h5 class="text-warning">What we avoid</h5>
+            <p>
+              We usually avoid a distributed transaction across all services because it is slow, tightly coupled, and
+              harder to operate at scale. That is why microservices prefer consistency patterns that keep each service
+              independent but coordinate the business process safely.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "In microservices, we usually achieve consistency with eventual consistency patterns such as Saga,
+              Outbox, idempotent consumers, and versioning. Each service commits its own local transaction, and the
+              overall business process is coordinated through events and compensating actions rather than one global
+              transaction."
+            </p>
+          </div>
+        </div>
+      </div>
+
       <!-- Q1AG -->
       <div class="accordion-item">
         <h2 class="accordion-header" id="q1ag">
@@ -22602,6 +24947,59 @@ spec:
         </div>
       </div>
 
+      <!-- Deployment Env Var Failure -->
+      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="deploymentEnvVarFailure">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#deploymentEnvVarFailureBody">
+            We deployed a new microservice version and it fails because of an environment variable. What will you do?
+          </button>
+        </h2>
+        <div id="deploymentEnvVarFailureBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              First I would <strong>stop the bad rollout</strong>, identify the missing or incorrect environment
+              variable, and compare the running config with the expected config from the deployment manifest, Helm
+              values, ConfigMap, Secret, or pipeline variables. Then I would either fix the variable and redeploy or
+              roll back immediately if production is impacted.
+            </p>
+
+            <h5 class="text-warning">Immediate steps</h5>
+            <ul>
+              <li>Check pod logs and startup failure messages for the exact missing variable name.</li>
+              <li>Inspect the deployed ConfigMap, Secret, Helm values, or CI/CD environment settings.</li>
+              <li>Confirm whether the issue is a missing value, wrong spelling, wrong profile, or wrong secret reference.</li>
+              <li>Rollback the deployment if the new version is already serving bad traffic.</li>
+              <li>Redeploy only after the corrected config is validated in lower environments.</li>
+            </ul>
+
+            <h5 class="text-warning">How to prevent this next time</h5>
+            <ul>
+              <li>Fail fast on startup with clear validation for required properties.</li>
+              <li>Use <code>@ConfigurationProperties</code> with validation annotations for required config.</li>
+              <li>Keep environment-specific config in ConfigMaps/Secrets and validate it in CI/CD.</li>
+              <li>Use canary or blue-green deployment so a bad config affects fewer users.</li>
+            </ul>
+
+            <h5 class="text-warning">Real-world example</h5>
+            <p>
+              If <code>PAYMENT_URL</code> is missing in production, the service may start failing before it becomes
+              ready. In that case, I would check the Kubernetes manifest or Helm chart, fix the value in the secret or
+              values file, and then redeploy. If the release is already live, I would roll back first to restore
+              service, then ship the corrected config.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "If a new microservice version fails because of an environment variable, I verify the deployed config,
+              identify the bad or missing value, and either fix and redeploy or roll back immediately if production is
+              affected. I would also add startup validation and deployment checks so required variables fail fast
+              before traffic reaches the service."
+            </p>
+          </div>
+        </div>
+      </div>
+
       <!-- Q1M - HTTP 3xx Redirection -->
       <div class="accordion-item">
         <h2 class="accordion-header" id="q1m">
@@ -23800,6 +26198,48 @@ try {
         </div>
       </div>
 
+      <!-- ConcurrentHashMap Nulls -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q1xNulls">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c1xNulls">
+            Does ConcurrentHashMap allow null keys and null values? Why not?
+          </button>
+        </h2>
+        <div id="c1xNulls" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              No. <code>ConcurrentHashMap</code> does <strong>not allow null keys or null values</strong>. If you try
+              to put one, it throws <code>NullPointerException</code>.
+            </p>
+
+            <h5 class="text-warning">Why null is not allowed</h5>
+            <ul>
+              <li><code>null</code> would make <code>get()</code> ambiguous: is the key missing, or is the stored value actually null?</li>
+              <li>Concurrent APIs like <code>computeIfAbsent()</code> and <code>merge()</code> need a clear "present vs absent" signal.</li>
+              <li>Allowing nulls would complicate atomic operations and race handling under concurrent updates.</li>
+            </ul>
+
+            <h5 class="text-warning">Example</h5>
+            <pre><code class="language-java">Map&lt;String, String&gt; map = new ConcurrentHashMap&lt;&gt;();
+
+map.put(null, "A");      // NullPointerException
+map.put("key", null);    // NullPointerException</code></pre>
+            <p>
+              With <code>HashMap</code>, <code>get()</code> can return <code>null</code> for both "missing key" and
+              "present but null value." In a concurrent map, that ambiguity is dangerous because the result can change
+              while another thread is updating the map.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "ConcurrentHashMap does not allow null keys or null values. Null would make it impossible to distinguish
+              between 'not present' and 'present with null value', which breaks the clarity needed for safe concurrent
+              operations."
+            </p>
+          </div>
+        </div>
+      </div>
+
       <!-- Q1X - Tricky Map computeIfAbsent -->
       <div class="accordion-item">
         <h2 class="accordion-header" id="q1x">
@@ -23969,6 +26409,76 @@ System.out.println(idMap.size());      // 2 — different object identity</code>
             <p>
               Real-time: Deduplicating webhook events by DTO without proper <code>hashCode</code> causes duplicate
               processing in HashSet-based idempotency checks.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Double Equals Operator -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q1aa0">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c1aa0">
+            How does == work for literals vs objects?
+          </button>
+        </h2>
+        <div id="c1aa0" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <code>==</code> checks <strong>reference equality</strong> for objects and <strong>value equality</strong>
+              for primitives. So for object references, it answers "are these two variables pointing to the same object?"
+              For primitives and literals, it compares the actual stored value.
+            </p>
+
+            <h5 class="text-warning">Primitive vs object reference</h5>
+            <pre><code class="language-java">int a = 10;
+int b = 10;
+System.out.println(a == b); // true — primitive value comparison
+
+String s1 = new String("Java");
+String s2 = new String("Java");
+System.out.println(s1 == s2); // false — different objects
+System.out.println(s1.equals(s2)); // true — same content</code></pre>
+
+            <h5 class="text-warning">Literal vs literal</h5>
+            <pre><code class="language-java">String x = "Java";
+String y = "Java";
+System.out.println(x == y); // true — both point to the same string pool object</code></pre>
+            <p>
+              String literals are usually interned in the string pool, so two identical literals often refer to the same
+              object. That is why <code>==</code> may return <code>true</code> for two string literals, but that is about
+              object identity, not content comparison.
+            </p>
+
+            <h5 class="text-warning">Object vs Object</h5>
+            <pre><code class="language-java">Object o1 = new Object();
+Object o2 = new Object();
+Object o3 = o1;
+
+System.out.println(o1 == o2); // false
+System.out.println(o1 == o3); // true</code></pre>
+            <p>
+              Two separate <code>new Object()</code> calls create different objects, so <code>==</code> is false. If two
+              references point to the same object, <code>==</code> is true.
+            </p>
+
+            <h5 class="text-warning">Wrapper caution</h5>
+            <pre><code class="language-java">Integer p = 100;
+Integer q = 100;
+Integer r = 200;
+Integer s = 200;
+
+System.out.println(p == q); // true — cached range
+System.out.println(r == s); // false — different wrapper objects</code></pre>
+            <p>
+              Wrapper caching can make <code>==</code> look "correct" sometimes, but it is still unsafe for value
+              comparison. Use <code>equals()</code> for objects when you care about content.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "== compares primitive values directly, but for objects it compares references. Two string literals may
+              be equal with == because of string pooling, while two separately created objects are usually not equal by
+              == even if their contents match. For content comparison, use equals()."
             </p>
           </div>
         </div>
@@ -31915,7 +34425,7 @@ docker compose down -v</code></pre>
       </div>
 
       <!-- UUID Internals And Usage -->
-      <div class="accordion-item">
+      <div class="accordion-item" data-manual-category="java">
         <h2 class="accordion-header" id="uuidInternalsUsage">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
             data-bs-target="#uuidInternalsUsageBody">
