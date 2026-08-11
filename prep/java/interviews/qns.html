@@ -1062,6 +1062,194 @@ class ReportService {
         </div>
       </div>
 
+      <!-- SonarQube -->
+      <div class="accordion-item" data-manual-category="springboot">
+        <h2 class="accordion-header" id="sonarQubeQualityGate">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#sonarQubeQualityGateBody">
+            What is SonarQube, what is a quality gate, why do we use Sonar, and how do we configure it in Jenkins?
+          </button>
+        </h2>
+        <div id="sonarQubeQualityGateBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              SonarQube is a code quality and static analysis platform. It scans source code, tests, and build reports
+              to find bugs, code smells, vulnerabilities, duplication, and coverage gaps. We use it because it catches
+              quality problems early and gives teams a repeatable standard before code reaches production.
+            </p>
+
+            <h5 class="text-warning">What is a quality gate?</h5>
+            <p>
+              A quality gate is a pass/fail rule set applied to the analysis result. For example, the gate may require
+              no new critical issues, no new security vulnerabilities, and a minimum coverage threshold on new code.
+              If the gate fails, the build should fail or at least block the merge/release.
+            </p>
+
+            <h5 class="text-warning">Why SonarQube?</h5>
+            <ul>
+              <li>Finds bugs and smells before release.</li>
+              <li>Enforces consistent coding standards across teams.</li>
+              <li>Shows coverage, duplication, maintainability, reliability, and security trends.</li>
+              <li>Helps reviewers focus on important issues instead of style-only noise.</li>
+            </ul>
+
+            <h5 class="text-warning">How it works internally</h5>
+            <pre><code>Developer commits code
+  -&gt; Jenkins builds and runs tests
+  -&gt; JaCoCo generates coverage report
+  -&gt; SonarScanner sends source code + test + coverage data to SonarQube server
+  -&gt; SonarQube computes analysis and applies the quality gate
+  -&gt; Jenkins waits for the result and fails the pipeline if the gate fails</code></pre>
+
+            <h5 class="text-warning">Jenkins setup</h5>
+            <ol>
+              <li>Install the SonarQube server or use SonarCloud.</li>
+              <li>Install the SonarScanner plugin in Jenkins.</li>
+              <li>Configure SonarQube server URL and token in Jenkins credentials/global tools.</li>
+              <li>Run tests and generate JaCoCo reports before analysis.</li>
+              <li>Invoke the scanner in the Jenkins pipeline.</li>
+              <li>Wait for the quality gate result and stop the pipeline if it fails.</li>
+            </ol>
+
+            <pre><code class="language-groovy">stage("SonarQube Analysis") {
+    steps {
+        withSonarQubeEnv("sonarqube-server") {
+            sh "mvn clean verify sonar:sonar"
+        }
+    }
+}
+
+stage("Quality Gate") {
+    steps {
+        timeout(time: 10, unit: "MINUTES") {
+            waitForQualityGate abortPipeline: true
+        }
+    }
+}</code></pre>
+
+            <h5 class="text-warning">JaCoCo and SonarQube</h5>
+            <p>
+              JaCoCo produces test coverage data. SonarQube reads that report and displays line, branch, and method
+              coverage. This helps the quality gate enforce coverage on new code and gives developers a visible report
+              inside SonarQube.
+            </p>
+            <p>
+              In Maven, the usual flow is to run <code>mvn test</code> or <code>mvn verify</code> with the JaCoCo
+              plugin, then run <code>sonar:sonar</code> so SonarQube can import the coverage report.
+            </p>
+
+            <h5 class="text-warning">Can we customize the rules?</h5>
+            <p>
+              Yes. We can use built-in rule sets, create custom quality profiles, activate or deactivate specific rules,
+              and set different thresholds for different projects or branches. For example, one team may require stricter
+              coverage or security rules on new code than another team.
+            </p>
+            <ul>
+              <li>Create or clone a Quality Profile for Java.</li>
+              <li>Enable or disable rules in that profile.</li>
+              <li>Adjust quality gate thresholds such as coverage or duplicated lines on new code.</li>
+              <li>Use project-level settings if a specific service needs a different policy.</li>
+            </ul>
+
+            <h5 class="text-warning">Typical Sonar interview questions</h5>
+            <ul>
+              <li><strong>SonarQube vs SonarCloud:</strong> SonarQube is usually self-hosted; SonarCloud is hosted.</li>
+              <li><strong>Bug vs vulnerability vs code smell:</strong> bug is likely wrong behavior, vulnerability is a security risk, smell is maintainability debt.</li>
+              <li><strong>New code vs overall code:</strong> quality gates often focus on new code so legacy issues do not block all delivery.</li>
+              <li><strong>Does Sonar replace tests?</strong> No. It complements tests, it does not validate business behavior by itself.</li>
+              <li><strong>What does the scanner do?</strong> It sends analysis metadata to the SonarQube server for computation and reporting.</li>
+            </ul>
+
+            <h5 class="text-warning">Real-world example</h5>
+            <p>
+              In a Spring Boot payment service, SonarQube can flag an unhandled null check, duplicated logic in two
+              controllers, a low-coverage exception branch, or a risky SQL string. The quality gate stops the release
+              until the team fixes the issue or consciously adjusts the rule.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "SonarQube is a static analysis platform that checks bugs, smells, security issues, and coverage. A
+              quality gate is the pass/fail rule set applied to the analysis. In Jenkins, we run tests, generate JaCoCo
+              coverage, run sonar analysis, wait for the quality gate, and fail the pipeline if it does not pass.
+              Rules can be customized through quality profiles and project-specific settings."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Code Coverage In Spring Boot -->
+      <div class="accordion-item" data-manual-category="springboot">
+        <h2 class="accordion-header" id="codeCoverageSpringBoot">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#codeCoverageSpringBootBody">
+            What is code coverage in a Spring Boot app, and how do we use it?
+          </button>
+        </h2>
+        <div id="codeCoverageSpringBootBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Code coverage tells us how much of the application code is exercised by our tests. In a Spring Boot app,
+              it helps us spot untested service logic, controller paths, exception branches, and edge cases. The most
+              common tool is <strong>JaCoCo</strong>.
+            </p>
+
+            <h5 class="text-warning">Why it matters</h5>
+            <ul>
+              <li>Shows which code paths are not touched by tests.</li>
+              <li>Helps prevent regressions in business logic.</li>
+              <li>Gives a quick signal in CI/CD about test quality.</li>
+              <li>Works well with unit tests and integration tests together.</li>
+            </ul>
+
+            <h5 class="text-warning">How to use it</h5>
+            <pre><code class="language-xml">&lt;plugin&gt;
+  &lt;groupId&gt;org.jacoco&lt;/groupId&gt;
+  &lt;artifactId&gt;jacoco-maven-plugin&lt;/artifactId&gt;
+  &lt;version&gt;0.8.12&lt;/version&gt;
+  &lt;executions&gt;
+    &lt;execution&gt;
+      &lt;goals&gt;
+        &lt;goal&gt;prepare-agent&lt;/goal&gt;
+      &lt;/goals&gt;
+    &lt;/execution&gt;
+    &lt;execution&gt;
+      &lt;id&gt;report&lt;/id&gt;
+      &lt;phase&gt;test&lt;/phase&gt;
+      &lt;goals&gt;
+        &lt;goal&gt;report&lt;/goal&gt;
+      &lt;/goals&gt;
+    &lt;/execution&gt;
+  &lt;/executions&gt;
+&lt;/plugin&gt;</code></pre>
+            <p>
+              Run <code>mvn test</code> or <code>mvn verify</code>, then open the JaCoCo report to see covered and
+              uncovered lines, branches, and methods.
+            </p>
+
+            <h5 class="text-warning">Example focus areas</h5>
+            <p>
+              For a Spring Boot service, pay special attention to controller validations, service-layer business rules,
+              exception handlers, repository interactions, and edge conditions like null input or empty responses.
+            </p>
+
+            <h5 class="text-warning">Important caution</h5>
+            <p>
+              High coverage does not automatically mean good tests. A test can hit code without asserting behavior. We
+              should use coverage as a metric, but still write meaningful assertions, boundary tests, and integration
+              tests.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Code coverage shows how much of the Spring Boot code is exercised by tests. We usually measure it with
+              JaCoCo in Maven or Gradle, review the report in CI, and use it to find untested paths. But coverage alone
+              is not enough; the tests must also verify the correct behavior."
+            </p>
+          </div>
+        </div>
+      </div>
+
       <!-- OpenFeign Client -->
       <div class="accordion-item" data-manual-category="microservices">
         <h2 class="accordion-header" id="openFeignClient">
@@ -1139,6 +1327,44 @@ class OrderService {
   -&gt; Underlying HTTP client sends the request
   -&gt; Response decoder/Jackson converts JSON to ReservationResponse
   -&gt; Method returns the Java response object or throws an error</code></pre>
+
+            <h5 class="text-warning">Does Feign do load balancing?</h5>
+            <p>
+              Yes, when you use a service name such as <code>@FeignClient(name = "inventory-service")</code> with
+              Spring Cloud discovery and LoadBalancer on the classpath, Spring resolves the service name to one of the
+              available instances and chooses a target instance for the call. If you use a fixed
+              <code>url = "https://partner.example.com"</code>, then discovery-based load balancing is not involved.
+            </p>
+
+            <h5 class="text-warning">Can we customize Feign?</h5>
+            <p>
+              Yes. We can customize request headers, timeouts, retries, logging, encoding, decoding, and error
+              handling. We can also switch the underlying HTTP client depending on what the project needs.
+            </p>
+            <pre><code class="language-java">@Configuration
+class InventoryFeignConfig {
+
+  @Bean
+  RequestInterceptor requestInterceptor() {
+    return template -&gt; template.header("X-Client-Id", "order-service");
+  }
+
+  @Bean
+  ErrorDecoder errorDecoder() {
+    return new InventoryErrorDecoder();
+  }
+
+  @Bean
+  Logger.Level feignLoggerLevel() {
+    return Logger.Level.FULL;
+  }
+}</code></pre>
+            <p>
+              Common customizations include <code>RequestInterceptor</code> for auth/correlation headers,
+              <code>ErrorDecoder</code> for mapping HTTP errors to domain exceptions, <code>Retryer</code> for retry
+              policy, custom <code>Encoder</code>/<code>Decoder</code> for payload conversion, and per-client config
+              for timeouts.
+            </p>
 
             <h5 class="text-warning">Timeouts, headers, and errors</h5>
             <pre><code class="language-yaml">spring:
@@ -1692,6 +1918,339 @@ ROLLBACK; -- does not restore the rows</code></pre>
               transaction, while MySQL and Oracle treat it as implicitly committed DDL, so rollback cannot restore the
               rows. DELETE is row-based, supports WHERE, and is the safer choice when selective removal or portable
               transaction behavior is needed."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Zipkin And Sleuth -->
+      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="zipkinSleuth">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#zipkinSleuthBody">
+            What is the use of Zipkin and Sleuth?
+          </button>
+        </h2>
+        <div id="zipkinSleuthBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>Zipkin</strong> is a distributed tracing backend and UI. It stores spans, shows the timeline of
+              one request across services, and helps us find where latency or failure happened.
+            </p>
+            <p>
+              <strong>Spring Cloud Sleuth</strong> was the Spring Boot auto-configuration and instrumentation layer for
+              distributed tracing. It automatically created and propagated trace/span context, correlated logs, and
+              sent tracing data to systems like Zipkin.
+            </p>
+
+            <h5 class="text-warning">Why they were used</h5>
+            <ul>
+              <li>Track one request across gateway, services, database, and downstream calls.</li>
+              <li>Correlate logs with trace IDs for faster debugging.</li>
+              <li>Visualize which hop caused the delay or failure.</li>
+              <li>Reduce manual tracing code by auto-instrumenting common Spring components.</li>
+            </ul>
+
+            <h5 class="text-warning">Important modern note</h5>
+            <p>
+              Spring Cloud Sleuth does not work with Spring Boot 3.x onward. Its core moved to Micrometer Tracing, so
+              in new Boot 3+ applications we use Micrometer Tracing plus an exporter/backend such as Zipkin, Jaeger,
+              or Tempo.
+            </p>
+
+            <h5 class="text-warning">Real-world example</h5>
+            <p>
+              If a checkout request is slow, Sleuth-style tracing would show spans for API Gateway, Order Service,
+              Payment Service, and Inventory Service. Zipkin would display the waterfall timeline so we can see which
+              service consumed the most time.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Zipkin is the tracing backend/UI that stores and displays request traces. Sleuth was the Spring
+              auto-instrumentation layer that created trace IDs, span IDs, and log correlation and sent that data to
+              Zipkin. In Spring Boot 3, Sleuth has been replaced by Micrometer Tracing."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Best Log Format For Tracing -->
+      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="bestLogFormatTracing">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#bestLogFormatTracingBody">
+            What is the best log format to support tracing, spans, and correlation across microservices?
+          </button>
+        </h2>
+        <div id="bestLogFormatTracingBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              The best choice is <strong>structured JSON logging</strong>. It makes logs easy to search, parse,
+              filter, and correlate with <code>traceId</code>, <code>spanId</code>, service name, environment, and
+              instance id. In Spring Boot, a common default choice is the <strong>Logstash JSON format</strong>; if
+              your log platform expects ECS, you can use that instead.
+            </p>
+
+            <h5 class="text-warning">Why JSON is best</h5>
+            <ul>
+              <li>Works well with ELK, Loki, Splunk, CloudWatch, and most log pipelines.</li>
+              <li>Preserves key/value fields without brittle text parsing.</li>
+              <li>Lets you search by <code>traceId</code> or <code>spanId</code> across services.</li>
+              <li>Makes dashboards and alerts easier to build from logs.</li>
+            </ul>
+
+            <h5 class="text-warning">Recommended fields</h5>
+            <ul>
+              <li><code>timestamp</code></li>
+              <li><code>level</code></li>
+              <li><code>service</code> or <code>application</code></li>
+              <li><code>env</code></li>
+              <li><code>instanceId</code></li>
+              <li><code>traceId</code></li>
+              <li><code>spanId</code></li>
+              <li>business ids such as <code>orderId</code> or <code>userId</code> when safe</li>
+            </ul>
+
+            <h5 class="text-warning">Spring Boot example</h5>
+            <pre><code class="language-yaml">spring:
+  application:
+    name: order-service
+
+logging:
+  structured:
+    format:
+      console: logstash</code></pre>
+            <p>
+              With Micrometer Tracing enabled, Spring Boot automatically puts <code>traceId</code> and
+              <code>spanId</code> into the logging context, so they appear in structured logs without manual string
+              concatenation.
+            </p>
+
+            <h5 class="text-warning">Example log line</h5>
+            <pre><code class="language-json">{
+  "@timestamp": "2026-08-09T10:15:00.111+05:30",
+  "service": "order-service",
+  "env": "prod",
+  "instanceId": "order-service-7d87f",
+  "traceId": "4bf92f3577b34da6a3ce929d0e0e4736",
+  "spanId": "00f067aa0ba902b7",
+  "level": "INFO",
+  "message": "Order created"
+}</code></pre>
+
+            <h5 class="text-warning">When plain text is okay</h5>
+            <p>
+              Plain text logs are fine for local development, but they are harder to query and correlate in production.
+              For microservices, JSON is the safer interview answer because it works much better with distributed
+              tracing and centralized log aggregation.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "The best log format for tracing in microservices is structured JSON, usually Logstash JSON or ECS in
+              Spring Boot. It lets us include traceId, spanId, service name, and environment as searchable fields, so
+              logs can be correlated with distributed traces and centralized logging tools."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Distributed Tracing -->
+      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="distributedTracingMS">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#distributedTracingMSBody">
+            What is distributed tracing in microservices?
+          </button>
+        </h2>
+        <div id="distributedTracingMSBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Distributed tracing tracks one user request as it moves across multiple services. It shows the full path,
+              timing, and parent-child relationship of each operation so we can find where time was spent or where the
+              request failed.
+            </p>
+
+            <h5 class="text-warning">Core ideas</h5>
+            <ul>
+              <li><code>traceId</code> identifies the whole end-to-end request.</li>
+              <li><code>spanId</code> identifies one operation inside that request.</li>
+              <li>Parent and child spans form a timeline across gateway, service, database, and downstream calls.</li>
+            </ul>
+
+            <h5 class="text-warning">Why we need it</h5>
+            <p>
+              In a monolith, one log file may be enough. In microservices, the request can cross gateway, order,
+              payment, inventory, and notification services. Without tracing, it is hard to tell which hop was slow or
+              which service caused the failure.
+            </p>
+
+            <h5 class="text-warning">How it works</h5>
+            <pre><code>Client request
+  -&gt; API Gateway
+  -&gt; order-service
+  -&gt; payment-service
+  -&gt; inventory-service
+
+traceId stays the same across the request
+spanId changes for each hop or operation</code></pre>
+            <p>
+              The trace context is propagated through headers such as <code>traceparent</code>. In Spring Boot, we
+              usually use Micrometer Tracing with OpenTelemetry so the trace context moves automatically across HTTP
+              and supported clients.
+            </p>
+
+            <h5 class="text-warning">What we configure</h5>
+            <ul>
+              <li>Spring Boot Actuator for exposure and management endpoints.</li>
+              <li>Micrometer Tracing or OpenTelemetry instrumentation.</li>
+              <li>Exporter such as OTLP to send traces to Tempo, Jaeger, or Zipkin.</li>
+              <li>Structured logs that include the same <code>traceId</code> and <code>spanId</code>.</li>
+              <li>Feign/HTTP client propagation so downstream calls keep the same trace.</li>
+            </ul>
+
+            <h5 class="text-warning">Real-world example</h5>
+            <p>
+              If checkout is slow, tracing can show that the payment-service span took 3 seconds, while the order
+              service and inventory service were fast. Then we can open the same <code>traceId</code> in logs and see
+              the exact timeout or dependency error.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Distributed tracing follows one request across multiple microservices using traceId and spanId. It helps
+              us find where latency or failure occurred. In Spring Boot, we implement it with Actuator, Micrometer
+              Tracing, OpenTelemetry, and a backend like Jaeger, Zipkin, or Tempo."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- OpenTelemetry -->
+      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="openTelemetryIntro">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#openTelemetryIntroBody">
+            What is OpenTelemetry, why is it used, and what problems does it solve?
+          </button>
+        </h2>
+        <div id="openTelemetryIntroBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              OpenTelemetry is an open standard and toolkit for collecting <strong>traces</strong>, <strong>metrics</strong>,
+              and <strong>logs</strong> in a vendor-neutral way. It gives us a common API, SDK, and data model so we
+              can instrument the application once and export telemetry to different backends.
+            </p>
+
+            <h5 class="text-warning">Why it is used</h5>
+            <ul>
+              <li>One instrumentation standard for many observability backends.</li>
+              <li>Avoids being locked into a single vendor's tracing library.</li>
+              <li>Propagates context across HTTP, messaging, and service boundaries.</li>
+              <li>Makes it easier to switch or add backends like Jaeger, Tempo, Zipkin, Prometheus, or cloud tools.</li>
+            </ul>
+
+            <h5 class="text-warning">What it overcomes from older approaches</h5>
+            <ul>
+              <li>Older tracing often used different agents or APIs per tool, so migration was painful.</li>
+              <li>Logs, metrics, and traces were often disconnected instead of using a shared model.</li>
+              <li>Propagation of trace context was not standardized across frameworks and clients.</li>
+              <li>Teams had to rewrite instrumentation when changing observability vendors.</li>
+            </ul>
+
+            <h5 class="text-warning">Real-world example</h5>
+            <p>
+              In a Spring Boot microservice, OpenTelemetry can capture an incoming HTTP request, create child spans for
+              DB and downstream service calls, and export the data through OTLP to Jaeger or Tempo. If the company
+              later changes the backend, the app instrumentation usually stays the same.
+            </p>
+
+            <h5 class="text-warning">How it fits with Spring Boot</h5>
+            <p>
+              Spring Boot commonly uses Micrometer Tracing or OpenTelemetry instrumentation underneath. Actuator exposes
+              management endpoints, OpenTelemetry carries the trace context, and an exporter sends the data to the
+              chosen backend.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "OpenTelemetry is a vendor-neutral standard for traces, metrics, and logs. We use it to instrument once
+              and export to different observability tools. It solves the older problem of tool-specific agents and
+              inconsistent trace propagation across services."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Observability Vs Monitoring -->
+      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="observabilityVsMonitoring">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#observabilityVsMonitoringBody">
+            What is observability, how is it different from monitoring, and how do we implement it?
+          </button>
+        </h2>
+        <div id="observabilityVsMonitoringBody" class="accordion-collapse collapse"
+          data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Observability is the ability to understand what is happening inside a system from the data it emits.
+              In practice, it means using <strong>metrics</strong>, <strong>logs</strong>, and <strong>traces</strong>
+              together so we can ask new questions during an incident and still find the answer.
+            </p>
+
+            <h5 class="text-warning">Observability vs monitoring</h5>
+            <table class="table table-dark table-bordered">
+              <thead>
+                <tr>
+                  <th>Monitoring</th>
+                  <th>Observability</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Checks known metrics and alerts, such as CPU, error rate, and latency.</td>
+                  <td>Lets us explore unknown root causes using logs, metrics, and traces together.</td>
+                </tr>
+                <tr>
+                  <td>Answers "Is something wrong?"</td>
+                  <td>Answers "What happened and why?"</td>
+                </tr>
+                <tr>
+                  <td>Usually rule-based alerting and dashboards.</td>
+                  <td>Correlated data for debugging a request across services.</td>
+                </tr>
+              </tbody>
+            </table>
+            <p>
+              A simple way to remember it: monitoring tells you a symptom exists, while observability helps you
+              investigate the cause.
+            </p>
+
+            <h5 class="text-warning">How we implement it</h5>
+            <ul>
+              <li>Expose health and metrics from Spring Boot Actuator.</li>
+              <li>Collect metrics with Micrometer and export them to Prometheus.</li>
+              <li>Visualize and alert with Grafana.</li>
+              <li>Write structured logs with shared correlation fields like <code>traceId</code> and <code>spanId</code>.</li>
+              <li>Ship logs to a central system such as Loki or ELK.</li>
+              <li>Propagate distributed traces with Micrometer Tracing and OpenTelemetry.</li>
+            </ul>
+
+            <h5 class="text-warning">Real-world example</h5>
+            <p>
+              If checkout latency rises, monitoring tells us p95 is high. Observability lets us open the trace,
+              identify the slow payment call, and then search the payment-service logs using the same
+              <code>traceId</code> to see the exact error.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Monitoring checks known health signals and raises alerts. Observability goes further and helps us ask
+              new questions about the system by correlating logs, metrics, and traces. In Spring Boot, we implement it
+              with Actuator, Micrometer, Prometheus, Grafana, centralized logs, and distributed tracing with
+              Micrometer Tracing/OpenTelemetry."
             </p>
           </div>
         </div>
@@ -6763,6 +7322,56 @@ v
 
   <p>
     For HTTP/1.1 or HTTP/2 over TCP, a TCP connection is established.
+  </p>
+
+  <hr>
+
+  <h5 class="text-warning">What is CyclicBarrier?</h5>
+
+  <p>
+    <code>CyclicBarrier</code> is a synchronization aid that makes a group of threads wait until all of them reach
+    the same point. Once the last thread arrives, the barrier opens and all waiting threads continue together.
+    It is called <em>cyclic</em> because the same barrier can be reused after it trips.
+  </p>
+
+  <h5 class="text-warning">Why use it?</h5>
+  <p>
+    Use it when multiple worker threads must finish one phase before any of them can move to the next phase, such as
+    parallel data loading, multi-step computation, or test setup where every worker must start together.
+  </p>
+
+  <h5 class="text-warning">Example</h5>
+  <pre><code class="language-java">int parties = 3;
+CyclicBarrier barrier = new CyclicBarrier(parties, () -&gt;
+    System.out.println("All workers reached the barrier"));
+
+Runnable task = () -&gt; {
+  try {
+    System.out.println(Thread.currentThread().getName() + " loading data");
+    barrier.await(); // wait for the other threads
+    System.out.println(Thread.currentThread().getName() + " starts next phase");
+  } catch (InterruptedException | BrokenBarrierException e) {
+    Thread.currentThread().interrupt();
+    throw new RuntimeException(e);
+  }
+};</code></pre>
+
+  <p>
+    In this example, each thread finishes the first phase and waits. Only after all 3 threads arrive does the
+    barrier trip, run the optional barrier action, and let everyone continue.
+  </p>
+
+  <h5 class="text-warning">CyclicBarrier vs CountDownLatch</h5>
+  <ul>
+    <li><strong>CyclicBarrier:</strong> reusable; threads wait for each other at a phase boundary.</li>
+    <li><strong>CountDownLatch:</strong> one-time; one or more threads wait until a count reaches zero.</li>
+  </ul>
+
+  <h5 class="text-warning">Interview-ready answer</h5>
+  <p>
+    "CyclicBarrier is used when a fixed number of threads need to meet at a checkpoint before continuing. It is
+    reusable after it trips, which makes it useful for phased parallel processing. If I only need a one-time wait,
+    I would use CountDownLatch instead."
   </p>
 
   <p>
@@ -15414,6 +16023,79 @@ Only 100 payment calls concurrently</code></pre>
 
   <hr>
 
+  <h5 class="text-warning">Why are wait, notify, and notifyAll in Object?</h5>
+
+  <p>
+    They belong to <code>Object</code> because every Java object can act as a monitor lock. These methods are not
+    about thread identity; they are about coordinating threads that are waiting on the same shared object.
+  </p>
+
+  <p>
+    In Java, a thread calls <code>wait()</code> on the <em>shared condition object</em>, not on the thread itself.
+    That is why the methods live on <code>Object</code>: any object can be the monitor that threads synchronize on.
+  </p>
+
+  <h5 class="text-warning">How they work</h5>
+  <ul>
+    <li><code>wait()</code> makes the current thread release the object's monitor and sleep until it is notified.</li>
+    <li><code>notify()</code> wakes one waiting thread on that same monitor.</li>
+    <li><code>notifyAll()</code> wakes all waiting threads on that same monitor.</li>
+  </ul>
+
+  <p>
+    These methods must be called while holding the object's monitor, usually inside a <code>synchronized</code> block
+    or method. Otherwise Java throws <code>IllegalMonitorStateException</code>.
+  </p>
+
+  <h5 class="text-warning">Example</h5>
+  <pre><code class="language-java">class MessageBox {
+  private String message;
+  private boolean hasMessage = false;
+
+  public synchronized void put(String msg) throws InterruptedException {
+    while (hasMessage) {
+      wait();
+    }
+    message = msg;
+    hasMessage = true;
+    notifyAll();
+  }
+
+  public synchronized String take() throws InterruptedException {
+    while (!hasMessage) {
+      wait();
+    }
+    hasMessage = false;
+    notifyAll();
+    return message;
+  }
+}</code></pre>
+  <p>
+    Here, the producer waits when the box is full, and the consumer waits when it is empty. The same object is used
+    as the condition and the lock.
+  </p>
+
+  <h5 class="text-warning">notify vs notifyAll</h5>
+  <ul>
+    <li><strong>notify()</strong> is faster, but wakes only one waiting thread and can be risky if multiple conditions share the same monitor.</li>
+    <li><strong>notifyAll()</strong> wakes all waiters so they can re-check the condition; it is safer in most real-world code.</li>
+  </ul>
+
+  <h5 class="text-warning">Why not on Thread?</h5>
+  <p>
+    A thread is not the shared condition. The shared object is. The object owns the monitor, and threads coordinate by
+    waiting on or notifying that monitor.
+  </p>
+
+  <h5 class="text-warning">Interview-ready answer</h5>
+  <p>
+    "wait, notify, and notifyAll are in Object because any object can be used as a monitor for thread coordination.
+    A thread waits on a shared object and another thread signals the same object. They must be called inside a
+    synchronized block, and notifyAll is usually safer than notify in real systems."
+  </p>
+
+  <hr>
+
   <h5 class="text-warning">Virtual Threads and ThreadLocal</h5>
 
   <p>
@@ -18700,6 +19382,67 @@ public class OrderService {
               "Microservices introduce distributed-system problems: network latency, data consistency, failures,
               observability, deployment complexity, testing complexity, and security. We manage them with
               timeouts, circuit breakers, tracing, centralized logs, database-per-service, and strong automation."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- CAP Theorem -->
+      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="capTheorem">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#capTheoremBody">
+            What is the CAP theorem, and when do we use it?
+          </button>
+        </h2>
+        <div id="capTheoremBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              CAP theorem says that in a distributed system, when a network partition happens, we must choose between
+              <strong>Consistency</strong> and <strong>Availability</strong> while still keeping <strong>Partition
+                Tolerance</strong>. In real systems, partitions can happen, so partition tolerance is not optional.
+            </p>
+
+            <h5 class="text-warning">What the letters mean</h5>
+            <ul>
+              <li><strong>C - Consistency:</strong> all nodes see the same latest data.</li>
+              <li><strong>A - Availability:</strong> every request gets a response, even if some data may be stale.</li>
+              <li><strong>P - Partition tolerance:</strong> the system continues operating when nodes cannot communicate perfectly.</li>
+            </ul>
+
+            <h5 class="text-warning">When do we use CAP theorem?</h5>
+            <p>
+              We use it while designing distributed databases, caches, and microservice-backed data stores, especially
+              when deciding what should happen during a network split or node failure. The real question is not
+              "whether CAP exists" but "which tradeoff is acceptable for this business case?"
+            </p>
+
+            <h5 class="text-warning">Typical choices</h5>
+            <ul>
+              <li><strong>CP:</strong> prefer correctness over always responding. Good for banking, inventory, and order state.</li>
+              <li><strong>AP:</strong> prefer availability over immediate freshness. Good for feeds, caches, and some shopping experiences.</li>
+            </ul>
+
+            <h5 class="text-warning">Real-world example</h5>
+            <p>
+              For a payment ledger, I would usually prefer consistency, even if the system temporarily rejects writes
+              during a partition. For a product recommendation feed, I may prefer availability so users still get a
+              response even if the data is slightly stale.
+            </p>
+
+            <h5 class="text-warning">Important interview point</h5>
+            <p>
+              CAP is mainly about what happens <em>during a partition</em>. In normal healthy operation, systems can
+              often provide both strong consistency and availability, but once communication breaks, the tradeoff
+              becomes real.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "CAP theorem is used when designing distributed systems to decide what to do during a network partition.
+              Since partitions are unavoidable, we must choose between consistency and availability for the business
+              case. I use CP for correctness-critical flows like payments and AP when availability matters more, such
+              as feeds or caches."
             </p>
           </div>
         </div>
@@ -24507,6 +25250,62 @@ mvn clean deploy</code></pre>
             <pre><code class="language-bash">docker build -t nexus.company.com:5000/user-service:1.0 .
 docker login nexus.company.com:5000
 docker push nexus.company.com:5000/user-service:1.0</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="qJfrog">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#cJfrog">
+            What is JFrog, and how is it different from Nexus?
+          </button>
+        </h2>
+        <div id="cJfrog" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              JFrog is a company/platform, and its best-known product is <strong>Artifactory</strong>. Like Nexus,
+              Artifactory is an artifact repository used to store, proxy, and distribute build artifacts and packages.
+            </p>
+            <h5 class="text-warning">What it is used for</h5>
+            <ul>
+              <li>Host Maven, Gradle, npm, Docker, PyPI, and other artifacts.</li>
+              <li>Proxy external repositories and cache dependencies.</li>
+              <li>Store release, snapshot, and internal build outputs.</li>
+              <li>Support enterprise artifact promotion and release flows.</li>
+            </ul>
+            <h5 class="text-warning">Nexus vs JFrog Artifactory</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Nexus</th>
+                  <th>JFrog Artifactory</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Sonatype product focused on artifact repository and repository proxying.</td>
+                  <td>JFrog product with artifact repository plus a broader platform around releases and DevOps tooling.</td>
+                </tr>
+                <tr>
+                  <td>Often used to store Maven, Docker, npm, and other build artifacts.</td>
+                  <td>Also stores Maven, Docker, npm, and more, with strong enterprise workflow support.</td>
+                </tr>
+                <tr>
+                  <td>Common choice for dependency caching and internal artifact hosting.</td>
+                  <td>Common choice for enterprise artifact management and release pipelines.</td>
+                </tr>
+              </tbody>
+            </table>
+            <p>
+              In interview terms, both solve the same core problem: a controlled internal place to store and fetch
+              artifacts instead of downloading everything directly from public repositories each time.
+            </p>
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Nexus and JFrog Artifactory are both artifact repositories. Nexus is Sonatype's product, and JFrog's
+              main artifact repository product is Artifactory. We use both to proxy external repos, cache dependencies,
+              and host internal build artifacts like jars, Docker images, and npm packages."
+            </p>
           </div>
         </div>
       </div>
