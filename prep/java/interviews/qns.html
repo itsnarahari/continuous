@@ -152,6 +152,1700 @@
     </div>
     <div class="accordion" id="accordionSeniorJava">
 
+             <!-- Q8B -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q8b">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c8b">
+              What is cache eviction, and what are the different eviction policies?
+            </button>
+          </h2>
+          <div id="c8b" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              <p>
+                Cache eviction is the process of removing entries from cache when memory is limited, data becomes
+                stale, or the cache needs space for hotter items. Without eviction, the cache can grow forever and
+                hurt performance or even cause outages.
+              </p>
+
+              <h5 class="text-warning">Why eviction is needed</h5>
+              <ul>
+                <li>Cache memory is finite.</li>
+                <li>Older data may no longer be useful.</li>
+                <li>We want the cache to keep the most valuable keys.</li>
+                <li>Eviction prevents stale or low-value entries from wasting space.</li>
+              </ul>
+
+              <h5 class="text-warning">Common eviction policies</h5>
+              <table class="table table-dark table-bordered table-sm">
+                <thead>
+                  <tr>
+                    <th>Policy</th>
+                    <th>How it works</th>
+                    <th>Best use case</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>LRU</td>
+                    <td>Least Recently Used entries are removed first.</td>
+                    <td>General-purpose caches where recent data is likely to be reused.</td>
+                  </tr>
+                  <tr>
+                    <td>LFU</td>
+                    <td>Least Frequently Used entries are removed first.</td>
+                    <td>Hot-key workloads where frequently accessed data should stay longer.</td>
+                  </tr>
+                  <tr>
+                    <td>FIFO</td>
+                    <td>First In, First Out removes the oldest inserted entry.</td>
+                    <td>Simple caches where recency or frequency is not very important.</td>
+                  </tr>
+                  <tr>
+                    <td>MRU</td>
+                    <td>Most Recently Used entries are removed first.</td>
+                    <td>Rare cases where the newest items are least likely to be reused.</td>
+                  </tr>
+                  <tr>
+                    <td>TTL / time-based expiry</td>
+                    <td>Entries expire after a fixed time.</td>
+                    <td>Rates, tokens, sessions, config data, or any data that must refresh periodically.</td>
+                  </tr>
+                  <tr>
+                    <td>Size-based eviction</td>
+                    <td>Evict when cache reaches max item count or memory limit.</td>
+                    <td>Protect memory in local caches like Caffeine or in-memory maps.</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <h5 class="text-warning">Real-world examples</h5>
+              <ul>
+                <li><strong>Product detail cache:</strong> LRU is a good fit because the most recently viewed products are often requested again.</li>
+                <li><strong>API rate-limit counters:</strong> TTL expiry works well because the count should reset after the window.</li>
+                <li><strong>Currency exchange rates:</strong> short TTL or refresh-ahead prevents stale values.</li>
+                <li><strong>Session cache:</strong> TTL is essential because sessions must expire naturally.</li>
+                <li><strong>Hot analytics dashboard:</strong> LFU can help keep the most frequently queried metrics in cache.</li>
+              </ul>
+
+              <h5 class="text-warning">Spring / Caffeine example</h5>
+              <pre><code class="language-java">@Bean
+public Cache&lt;String, ProductDto&gt; productCache() {
+    return Caffeine.newBuilder()
+            .maximumSize(10_000)
+            .expireAfterWrite(Duration.ofMinutes(10))
+            .recordStats()
+            .build();
+}</code></pre>
+              <p>
+                In Redis, a similar idea is usually implemented with TTL plus a maxmemory policy such as
+                <code>allkeys-lru</code> or <code>volatile-ttl</code>. That way Redis decides which keys to evict when
+                memory pressure rises.
+              </p>
+
+              <h5 class="text-warning">Practical rule of thumb</h5>
+              <p>
+                If you want a simple and effective default, use LRU with TTL. If access frequency matters a lot, use
+                LFU. If freshness is the main concern, use TTL-based expiry. For local application caches in Spring
+                Boot, Caffeine is often a strong choice; for distributed shared caches, Redis eviction policies matter
+                more.
+              </p>
+
+              <h5 class="text-warning">Interview-ready answer</h5>
+              <p>
+                "Cache eviction is how we remove entries when the cache is full or data becomes stale. The common
+                policies are LRU, LFU, FIFO, MRU, TTL-based expiry, and size-based eviction. I usually pick LRU plus
+                TTL for general use, LFU for hot-key workloads, and short TTL for session or rate-limit data."
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Q9 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q9">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c9">9️⃣ What
+              is Deadlock? How to avoid it?</button>
+          </h2>
+        <div id="c9" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Deadlock happens when two threads wait on each other forever. A classic case is Thread-1 holding
+              <code>lockA</code> and waiting for <code>lockB</code>, while Thread-2 holds <code>lockB</code> and waits
+              for <code>lockA</code>.
+            </p>
+
+            <h5 class="text-warning">How to identify it from a thread dump</h5>
+            <p>
+              Take a thread dump with <code>jstack &lt;pid&gt;</code> or by capturing a JVM dump from your tooling.
+              In the dump, look for:
+            </p>
+            <ul>
+              <li>Threads stuck in <code>BLOCKED</code> state.</li>
+              <li>Lines saying <code>waiting to lock</code> or <code>parking to wait for</code>.</li>
+              <li>A cycle where Thread-1 owns one monitor and waits for another, while Thread-2 owns the second and waits for the first.</li>
+            </ul>
+            <pre><code class="language-text">"Thread-1" BLOCKED
+  waiting to lock monitor 0x00000001 (object A)
+  owned by "Thread-2"
+
+"Thread-2" BLOCKED
+  waiting to lock monitor 0x00000002 (object B)
+  owned by "Thread-1"</code></pre>
+            <p>
+              That lock cycle is the root cause. The important interview move is not just "there is deadlock", but
+              "which locks are involved and in what order are they acquired?".
+            </p>
+
+            <h5 class="text-warning">Example of the bug</h5>
+            <pre><code class="language-java">class TransferService {
+    private final Object lockA = new Object();
+    private final Object lockB = new Object();
+
+    void transferAB() {
+        synchronized (lockA) {
+            synchronized (lockB) {
+                // do work
+            }
+        }
+    }
+
+    void transferBA() {
+        synchronized (lockB) {
+            synchronized (lockA) {
+                // do work
+            }
+        }
+    }
+}</code></pre>
+            <p>
+              If one thread enters <code>transferAB()</code> and another enters <code>transferBA()</code>, they can
+              deadlock because the lock order is inconsistent.
+            </p>
+
+            <h5 class="text-warning">How to rewrite it</h5>
+            <p>
+              Use one of these fixes:
+            </p>
+            <ul>
+              <li>Always acquire locks in the same global order.</li>
+              <li>Use <code>tryLock()</code> with timeout and back off if the second lock is not available.</li>
+              <li>Reduce nested locking by using a single lock or a higher-level concurrent structure.</li>
+              <li>Prefer immutable data or lock-free/atomic designs where possible.</li>
+            </ul>
+            <pre><code class="language-java">class TransferService {
+    private final Object lockA = new Object();
+    private final Object lockB = new Object();
+
+    void transfer(Object first, Object second) {
+        Object lock1 = first == lockA ? lockA : lockB;
+        Object lock2 = first == lockA ? lockB : lockA;
+
+        synchronized (lock1) {
+            synchronized (lock2) {
+                // do work with consistent lock ordering
+            }
+        }
+    }
+}</code></pre>
+            <p>
+              A better production fix is often to avoid nested locks entirely or move the update into a single atomic
+              operation if the data structure supports it.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "I would confirm the deadlock from a thread dump using jstack or a similar dump tool, find the two
+              threads and the two monitors they are waiting on, and then fix the code by enforcing a single lock
+              ordering, using tryLock with timeout, or removing the nested locking altogether."
+            </p>
+          </div>
+        </div>
+      </div>
+
+        <!-- Q10 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q10">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c10">🔟
+              Explain Distributed Transactions (2PC vs Saga Pattern)</button>
+          </h2>
+        <div id="c10" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+              2PC → strong consistency; slow, blocking.
+              Saga → sequence of local transactions + compensating transactions.
+              Used in payments, booking systems.
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="qJvmInternals">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#cJvmInternals">
+              What are JVM Internals? Explain all parts in a simple and interview-friendly way
+            </button>
+          </h2>
+          <div id="cJvmInternals" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              <p>
+                JVM internals means understanding <strong>how Java code is loaded, stored in memory, executed, and cleaned up</strong>.
+                In interviews, a strong answer usually covers: class loading, runtime memory areas, execution engine,
+                garbage collection, JIT compilation, JNI, and the full execution flow.
+              </p>
+
+              <h5 class="text-warning">1. Big picture flow</h5>
+              <pre><code class="language-text">.java source
+   ↓
+javac compiler
+   ↓
+.class bytecode
+   ↓
+Class Loader Subsystem
+   ↓
+Runtime Data Areas (Heap, Stack, Metaspace, PC Register, Native Stack)
+   ↓
+Execution Engine (Interpreter + JIT)
+   ↓
+Native Method Interface / Native Libraries if needed
+   ↓
+Program runs
+   ↓
+Garbage Collector cleans unused objects</code></pre>
+
+              <h5 class="text-warning">2. What is JVM?</h5>
+              <p>
+                JVM stands for <code>Java Virtual Machine</code>. It is the runtime engine that executes Java bytecode.
+                Because JVM exists on many operating systems, Java gets its “write once, run anywhere” behavior.
+              </p>
+              <p>
+                Real-world analogy: JVM is like a universal machine that understands Java bytecode and runs it correctly
+                on Windows, Linux, or Mac.
+              </p>
+
+              <h5 class="text-warning">3. Class Loader Subsystem</h5>
+              <p>
+                Class Loader loads <code>.class</code> files into memory when they are needed.
+              </p>
+              <pre><code class="language-text">Main steps:
+1. Loading
+2. Linking
+   - Verification
+   - Preparation
+   - Resolution
+3. Initialization</code></pre>
+              <ul>
+                <li><strong>Loading:</strong> reads class bytecode into memory.</li>
+                <li><strong>Verification:</strong> checks bytecode safety and format.</li>
+                <li><strong>Preparation:</strong> allocates memory for static fields and default values.</li>
+                <li><strong>Resolution:</strong> converts symbolic references into direct references.</li>
+                <li><strong>Initialization:</strong> runs static blocks and assigns actual static values.</li>
+              </ul>
+              <p>
+                Real-world example: When Spring Boot starts, JVM loads your main class, controllers, services, entities,
+                and framework classes as needed.
+              </p>
+
+              <h5 class="text-warning">4. Types of class loaders</h5>
+              <ul>
+                <li><strong>Bootstrap ClassLoader:</strong> loads core Java classes like <code>java.lang</code>, <code>java.util</code>.</li>
+                <li><strong>Platform / Extension ClassLoader:</strong> loads platform-level libraries.</li>
+                <li><strong>Application ClassLoader:</strong> loads your application classes from classpath.</li>
+              </ul>
+              <p>
+                Real-world analogy: Bootstrap is like the main foundation team, and Application ClassLoader loads your project code on top of that.
+              </p>
+
+              <h5 class="text-warning">5. Runtime Data Areas inside JVM</h5>
+              <p>
+                JVM uses different memory areas for different responsibilities.
+              </p>
+
+              <h5 class="text-warning">6. Heap Memory</h5>
+              <p>
+                Heap stores <strong>objects and instance data</strong>. It is shared by all threads.
+              </p>
+              <ul>
+                <li>Most objects created with <code>new</code> go to heap.</li>
+                <li>Garbage Collector mainly works here.</li>
+                <li>It is generally divided into Young Generation and Old Generation.</li>
+              </ul>
+              <pre><code class="language-java">User user = new User(); // object typically goes into heap</code></pre>
+              <p>
+                Real-world analogy: Heap is like a common warehouse where application objects are stored.
+              </p>
+
+              <h5 class="text-warning">7. Stack Memory</h5>
+              <p>
+                Each thread has its own JVM stack. It stores <strong>method call frames, local variables, partial results, and references</strong>.
+              </p>
+              <pre><code class="language-java">public int add(int a, int b) {
+    int sum = a + b;
+    return sum;
+}</code></pre>
+              <p>
+                Here <code>a</code>, <code>b</code>, and <code>sum</code> are inside the current stack frame. If recursion is too deep,
+                it can cause <code>StackOverflowError</code>.
+              </p>
+
+              <h5 class="text-warning">8. Method Area / Metaspace</h5>
+              <p>
+                This area stores <strong>class metadata</strong> like class structure, method metadata, field metadata,
+                static variable information, and runtime constant pool details.
+              </p>
+              <ul>
+                <li>In older JVM explanations, people say <strong>Method Area</strong>.</li>
+                <li>In modern HotSpot JVM, class metadata is mainly stored in <strong>Metaspace</strong>.</li>
+              </ul>
+              <p>
+                Real-world analogy: If heap is a warehouse for objects, Metaspace is the blueprint room that stores class designs.
+              </p>
+
+              <h5 class="text-warning">9. Program Counter (PC) Register</h5>
+              <p>
+                Each thread has its own PC Register. It stores the address of the current JVM instruction being executed.
+              </p>
+              <p>
+                Simple meaning: It tells the JVM which instruction to execute next for that thread.
+              </p>
+
+              <h5 class="text-warning">10. Native Method Stack</h5>
+              <p>
+                This is used when Java code calls native methods written in C/C++ or platform code.
+              </p>
+              <p>
+                Example: Some low-level JVM or OS interaction uses native code.
+              </p>
+
+              <h5 class="text-warning">11. Execution Engine</h5>
+              <p>
+                After bytecode is loaded, the Execution Engine runs it.
+              </p>
+              <ul>
+                <li><strong>Interpreter:</strong> reads bytecode line by line and executes it.</li>
+                <li><strong>JIT Compiler:</strong> converts frequently used bytecode into native machine code for speed.</li>
+                <li><strong>Garbage Collector:</strong> frees unused heap memory.</li>
+              </ul>
+
+              <h5 class="text-warning">12. Interpreter vs JIT</h5>
+              <table class="table table-dark table-bordered table-sm">
+                <thead>
+                  <tr>
+                    <th>Part</th>
+                    <th>How it works</th>
+                    <th>Benefit</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Interpreter</td>
+                    <td>Executes bytecode instruction by instruction</td>
+                    <td>Fast startup</td>
+                  </tr>
+                  <tr>
+                    <td>JIT Compiler</td>
+                    <td>Compiles hot code into native machine code</td>
+                    <td>Better runtime performance</td>
+                  </tr>
+                </tbody>
+              </table>
+              <p>
+                Real-world example: A method called thousands of times in a payment API becomes “hot”, so JIT compiles it for faster execution.
+              </p>
+
+              <h5 class="text-warning">13. Runtime Constant Pool</h5>
+              <p>
+                This is a per-class runtime structure that stores constants, string literals, symbolic references, and method/field references.
+              </p>
+              <p>
+                Simple meaning: It helps JVM resolve class, method, and field references while executing code.
+              </p>
+
+              <h5 class="text-warning">14. Garbage Collector role</h5>
+              <p>
+                GC removes objects from heap when they are no longer reachable.
+              </p>
+              <ul>
+                <li>Young generation collections are usually fast.</li>
+                <li>Old generation collection is heavier.</li>
+                <li>Collectors like G1, ZGC, Shenandoah handle memory differently.</li>
+              </ul>
+              <p>
+                Real-world example: In a Spring Boot API, request DTOs, response objects, and temporary lists are created continuously and later cleaned by GC.
+              </p>
+
+              <h5 class="text-warning">15. JNI and Native Libraries</h5>
+              <p>
+                JNI means <code>Java Native Interface</code>. It allows Java code to talk to native libraries written in C/C++.
+              </p>
+              <p>
+                Real-world example: Some high-performance drivers, OS integrations, or image processing libraries may use native code.
+              </p>
+
+              <h5 class="text-warning">16. How method execution actually happens</h5>
+              <pre><code class="language-java">public class Demo {
+    public static void main(String[] args) {
+        int result = add(10, 20);
+        System.out.println(result);
+    }
+
+    static int add(int a, int b) {
+        return a + b;
+    }
+}</code></pre>
+              <pre><code class="language-text">Flow:
+1. JVM starts and loads Demo class
+2. main method is called
+3. main frame is created in stack
+4. add() is called, so a new stack frame is created
+5. values a and b are used, result is computed
+6. frame returns result to main
+7. object creation, if any, would happen in heap
+8. unused objects later become GC candidates</code></pre>
+
+              <h5 class="text-warning">17. Common JVM errors connected to internals</h5>
+              <table class="table table-dark table-bordered table-sm">
+                <thead>
+                  <tr>
+                    <th>Error</th>
+                    <th>Reason</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>OutOfMemoryError: Java heap space</td>
+                    <td>Heap is full</td>
+                  </tr>
+                  <tr>
+                    <td>StackOverflowError</td>
+                    <td>Too many nested method calls / recursion</td>
+                  </tr>
+                  <tr>
+                    <td>OutOfMemoryError: Metaspace</td>
+                    <td>Too much class metadata loaded</td>
+                  </tr>
+                  <tr>
+                    <td>NoClassDefFoundError / ClassNotFoundException</td>
+                    <td>Class loading issue</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <h5 class="text-warning">18. JVM Internals one simple diagram</h5>
+              <pre><code class="language-text">                +----------------------+
+                |   Class Loaders      |
+                +----------+-----------+
+                           |
+                           v
+                +----------------------+
+                |  Runtime Data Areas  |
+                |  Heap                |
+                |  Stack               |
+                |  Metaspace           |
+                |  PC Register         |
+                |  Native Method Stack |
+                +----------+-----------+
+                           |
+                           v
+                +----------------------+
+                |   Execution Engine   |
+                | Interpreter + JIT    |
+                | GC                   |
+                +----------+-----------+
+                           |
+                           v
+                +----------------------+
+                | JNI / Native Libs    |
+                +----------------------+</code></pre>
+
+              <h5 class="text-warning">19. Real-world interview answer</h5>
+              <p>
+                JVM first loads class bytecode using class loaders, stores class metadata in Metaspace, creates objects
+                in heap, uses per-thread stacks for method execution, tracks current instruction using PC Register, and
+                executes bytecode through interpreter and JIT compiler. Garbage Collector cleans unreachable heap objects,
+                and JNI is used when Java interacts with native code.
+              </p>
+
+              <h5 class="text-warning">20. Short one-liner</h5>
+              <p>
+                JVM Internals means understanding how Java classes are loaded, how memory is organized, how bytecode is
+                executed, and how memory is cleaned automatically.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- QJvm1 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="qJvmLeakTroubleshooting">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+              data-bs-target="#cJvmLeakTroubleshooting">
+              How do you analyze heap dumps to find memory leaks from static collections or unremoved ThreadLocal references?
+            </button>
+          </h2>
+          <div id="cJvmLeakTroubleshooting" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              <p>
+                When a Java app becomes slow and memory grows over time, I first confirm whether the problem is a real
+                leak or just high temporary allocation. Then I capture a heap dump and inspect what is retaining the
+                objects.
+              </p>
+
+              <h5 class="text-warning">How I analyze the heap dump</h5>
+              <ul>
+                <li>Take a heap dump with <code>jmap</code>, JDK tools, or your APM when memory is high.</li>
+                <li>Open it in Eclipse MAT, VisualVM, YourKit, or similar tooling.</li>
+                <li>Sort by <strong>retained size</strong> to find the objects holding the most memory alive.</li>
+                <li>Use the <strong>Dominator Tree</strong> to find the root object that keeps a large object graph reachable.</li>
+                <li>Check <strong>Path to GC Roots</strong> to understand why the objects cannot be collected.</li>
+              </ul>
+
+              <h5 class="text-warning">Static collection leak pattern</h5>
+              <pre><code class="language-java">public class CacheHolder {
+    private static final Map&lt;String, byte[]&gt; CACHE = new HashMap&lt;&gt;();
+
+    public static void put(String key, byte[] data) {
+        CACHE.put(key, data);
+    }
+}</code></pre>
+              <p>
+                Because the collection is static, it lives as long as the class loader lives. If entries are never
+                removed, the heap keeps growing. In a heap dump, MAT will often show the static map as the dominator
+                retaining many large arrays or domain objects.
+              </p>
+
+              <h5 class="text-warning">ThreadLocal leak pattern</h5>
+              <pre><code class="language-java">private static final ThreadLocal&lt;byte[]&gt; BUFFER = new ThreadLocal&lt;&gt;();
+
+public void handleRequest() {
+    BUFFER.set(new byte[10 * 1024 * 1024]);
+    try {
+        // work
+    } finally {
+        BUFFER.remove();
+    }
+}</code></pre>
+              <p>
+                If <code>remove()</code> is forgotten in thread pools, the worker thread keeps the ThreadLocal value
+                attached to the thread for a long time. The value may stay reachable even after the request is done.
+              </p>
+
+              <h5 class="text-warning">What I look for in the dump</h5>
+              <ul>
+                <li>Large collections retained by a static field.</li>
+                <li>ThreadLocalMap entries whose keys are cleared but values remain reachable through pooled threads.</li>
+                <li>Repeated class-loader related retention if the app is redeployed often.</li>
+                <li>Large retained graphs from caches, listeners, or session maps that never evict data.</li>
+              </ul>
+
+              <h5 class="text-warning">How I fix it</h5>
+              <ul>
+                <li>Add proper eviction, TTL, or size limits to caches.</li>
+                <li>Call <code>ThreadLocal.remove()</code> in a <code>finally</code> block or use request filters/interceptors to clean up.</li>
+                <li>Replace static accumulation with bounded caches or weak references when appropriate.</li>
+                <li>Verify the fix by repeating the same workload and comparing heap usage and retained size.</li>
+              </ul>
+
+              <h5 class="text-warning">Interview-ready answer</h5>
+              <p>
+                "I would take a heap dump, use MAT to sort by retained size, inspect the dominator tree and GC roots,
+                and then trace the retention path. Static collections usually appear as long-lived roots, while
+                ThreadLocal leaks show up when pooled threads keep values because remove() was not called."
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- QJvm2 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="qGcG1Zgc">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+              data-bs-target="#cGcG1Zgc">
+              When would you choose G1 GC versus ZGC, and what happens during a Stop-the-World phase?
+            </button>
+          </h2>
+        <div id="cGcG1Zgc" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+              <p>
+                I choose <strong>G1 GC</strong> for most enterprise applications because it gives a good balance of
+                throughput and predictable pauses. I choose <strong>ZGC</strong> when ultra-low pause times matter more
+                than raw throughput, especially for large heaps and latency-sensitive services.
+              </p>
+
+              <h5 class="text-warning">When to choose G1</h5>
+              <ul>
+                <li>General Spring Boot and enterprise services.</li>
+                <li>Need predictable but not extreme pause times.</li>
+                <li>Want a mature default collector with strong tuning support.</li>
+              </ul>
+
+              <h5 class="text-warning">When to choose ZGC</h5>
+              <ul>
+                <li>Very large heaps.</li>
+                <li>Latency-sensitive services where long pauses are unacceptable.</li>
+                <li>Systems that care more about very short pauses than maximum throughput.</li>
+              </ul>
+
+              <h5 class="text-warning">What happens during Stop-the-World</h5>
+              <p>
+                A <strong>Stop-the-World</strong> pause means the JVM temporarily pauses application threads so the GC
+                can perform certain work safely. During this pause, worker threads stop running Java code while the GC
+                marks, scans, updates references, or compacts memory depending on the collector and phase.
+              </p>
+              <ul>
+                <li>Threads are suspended at a safepoint.</li>
+                <li>GC may scan roots, mark live objects, and update references.</li>
+                <li>Some collectors also compact or evacuate objects to reduce fragmentation.</li>
+              </ul>
+
+              <h5 class="text-warning">Practical difference</h5>
+              <p>
+                G1 still has small Stop-the-World phases, but it tries to keep them predictable. ZGC is designed to
+                keep those pauses extremely short by doing much of the work concurrently with application threads.
+              </p>
+
+              <h5 class="text-warning">Real-world example</h5>
+              <p>
+                For an order-management Spring Boot API with normal traffic, G1 is usually the safe default. For a
+                trading or low-latency service where a long GC pause can break SLAs, ZGC is often the better choice if
+                the JDK version and support fit the environment.
+              </p>
+
+              <h5 class="text-warning">Interview-ready answer</h5>
+              <p>
+                "I choose G1 for balanced general-purpose enterprise workloads and ZGC when ultra-low pause times are
+                the priority. Stop-the-World means the JVM pauses application threads at a safepoint so GC can safely
+                mark, scan, and sometimes compact memory."
+              </p>
+            </div>
+          </div>
+        </div>
+
+
+            <!-- P15 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="p15">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#pc15">
+            💻 1️⃣5️⃣ Implement Simple Token Bucket Rate Limiter
+          </button>
+        </h2>
+        <div id="pc15" class="accordion-collapse collapse" data-bs-parent="#accordionCodingRound">
+          <div class="accordion-body bg-dark text-light">
+
+            <h5>📌 Problem</h5>
+            Implement a simple in-memory rate limiter for N requests per second.
+
+            <h5>💡 Approach</h5>
+            <ul>
+              <li>Token bucket: refill tokens at fixed rate, consume per request</li>
+            </ul>
+
+            <pre><code class="language-java">
+public class TokenBucket {
+
+    private final int capacity;
+    private final int refillPerSecond;
+    private double tokens;
+    private long lastRefillTimestamp;
+
+    public TokenBucket(int capacity, int refillPerSecond) {
+        this.capacity = capacity;
+        this.refillPerSecond = refillPerSecond;
+        this.tokens = capacity;
+        this.lastRefillTimestamp = System.nanoTime();
+    }
+
+    public synchronized boolean allowRequest() {
+        refill();
+        if (tokens &gt;= 1) {
+            tokens -= 1;
+            return true;
+        }
+        return false;
+    }
+
+    private void refill() {
+        long now = System.nanoTime();
+        double seconds = (now - lastRefillTimestamp) / 1_000_000_000.0;
+        double add = seconds * refillPerSecond;
+        if (add &gt; 0) {
+            tokens = Math.min(capacity, tokens + add);
+            lastRefillTimestamp = now;
+        }
+    }
+}
+</code></pre>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- P16 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="p16">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#pc16">
+            💻 1️⃣6️⃣ Producer–Consumer Using Bounded LinkedBlockingQueue
+          </button>
+        </h2>
+        <div id="pc16" class="accordion-collapse collapse" data-bs-parent="#accordionCodingRound">
+          <div class="accordion-body bg-dark text-light">
+
+            <h5>📌 Problem</h5>
+            Implement producer-consumer using a bounded <code>LinkedBlockingQueue</code>.
+
+            <pre><code class="language-java">import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+
+public class ProducerConsumerDemo {
+
+    private final BlockingQueue&lt;Integer&gt; queue = new LinkedBlockingQueue&lt;&gt;(10);
+
+    class Producer implements Runnable {
+        @Override
+        public void run() {
+            int i = 0;
+            try {
+                while (!Thread.currentThread().isInterrupted()) {
+                    queue.put(i); // blocks when queue is full
+                    System.out.println("Produced " + i);
+                    i++;
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
+    class Consumer implements Runnable {
+        @Override
+        public void run() {
+            try {
+                while (!Thread.currentThread().isInterrupted()) {
+                    Integer val = queue.take(); // blocks when queue is empty
+                    System.out.println("Consumed " + val);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+}</code></pre>
+
+            <p>
+              This is the preferred production solution because the queue handles locking, waiting, signaling, and
+              capacity control for us. The bounded size prevents unbounded memory growth.
+            </p>
+
+            <h5>🔁 Follow-up: low-level wait/notifyAll version</h5>
+            <pre><code class="language-java">import java.util.LinkedList;
+import java.util.Queue;
+
+public class ProducerConsumerWaitNotify {
+
+    private final Queue&lt;Integer&gt; queue = new LinkedList&lt;&gt;();
+    private final int capacity = 10;
+
+    public void produce(int value) throws InterruptedException {
+        synchronized (queue) {
+            while (queue.size() == capacity) {
+                queue.wait();
+            }
+            queue.offer(value);
+            System.out.println("Produced " + value);
+            queue.notifyAll();
+        }
+    }
+
+    public int consume() throws InterruptedException {
+        synchronized (queue) {
+            while (queue.isEmpty()) {
+                queue.wait();
+            }
+            int value = queue.poll();
+            System.out.println("Consumed " + value);
+            queue.notifyAll();
+            return value;
+        }
+    }
+}</code></pre>
+
+            <p>
+              In the low-level version, the shared queue object acts as the monitor. Producers wait when the queue is
+              full, consumers wait when it is empty, and <code>notifyAll()</code> wakes waiting threads after every
+              state change.
+            </p>
+
+          </div>
+        </div>
+      </div>
+
+
+
+        <!-- Q33 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q33">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c33">3️⃣3️⃣
+              Explain Java Memory Model (JMM)?</button>
+          </h2>
+          <div id="c33" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              JMM defines how threads interact with memory:
+              ✔ Happens-before relationships
+              ✔ Visibility rules
+              ✔ volatile guarantees
+              ✔ atomicity vs non-atomic operations
+            </div>
+          </div>
+        </div>
+
+        <!-- Q34 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="q34">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c34">3️⃣4️⃣
+              What is volatile? Does it make operations atomic?</button>
+          </h2>
+        <div id="c34" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            volatile → guarantees visibility & ordering, NOT atomicity.
+            i++ is not atomic even if variable is volatile.
+            Use AtomicInteger for atomic operations.
+          </div>
+        </div>
+      </div>
+
+      <!-- Q34A -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q34a">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c34a">
+            Write a thread-safe Singleton using double-checked locking and explain why volatile is important
+          </button>
+        </h2>
+        <div id="c34a" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Double-checked locking reduces synchronization overhead by checking the instance twice: once before
+              locking and once after locking. The instance field must be <code>volatile</code> so all threads see the
+              correctly initialized object and not a partially constructed one.
+            </p>
+
+            <h5 class="text-warning">Thread-safe Singleton</h5>
+            <pre><code class="language-java">public final class Singleton {
+    private static volatile Singleton instance;
+
+    private Singleton() {
+        // heavy initialization if needed
+    }
+
+    public static Singleton getInstance() {
+        if (instance == null) { // first check without locking
+            synchronized (Singleton.class) {
+                if (instance == null) { // second check with locking
+                    instance = new Singleton();
+                }
+            }
+        }
+        return instance;
+    }
+}</code></pre>
+
+            <h5 class="text-warning">Why volatile is important</h5>
+            <ul>
+              <li><strong>Visibility:</strong> once one thread assigns the instance, other threads immediately see it.</li>
+              <li><strong>Ordering:</strong> prevents instruction reordering from exposing a half-built object.</li>
+              <li><strong>Safe publication:</strong> ensures the fully constructed singleton is published to all threads.</li>
+            </ul>
+
+            <p>
+              Without <code>volatile</code>, the JVM could reorder steps so the reference is assigned before the object
+              is fully initialized. Another thread might then observe a non-null reference whose fields are still in an
+              invalid default state.
+            </p>
+
+            <h5 class="text-warning">Real-world example</h5>
+            <p>
+              A configuration manager or shared cache client is often created once and reused across the application.
+              Double-checked locking gives lazy initialization without synchronizing every access after startup.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "I use double-checked locking with a volatile instance field. The first null check avoids locking on
+              every call, the synchronized block ensures only one thread creates the object, and volatile guarantees
+              visibility and prevents publishing a partially constructed singleton."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Q34B -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q34b">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c34b">
+            Explain the happens-before relationship and Java memory visibility rules in the JMM
+          </button>
+        </h2>
+        <div id="c34b" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              The <strong>Java Memory Model (JMM)</strong> defines when one thread's writes become visible to another
+              thread. The key idea is <strong>happens-before</strong>: if action A happens-before action B, then all
+              memory writes done by A must be visible to B, and B must see them in the correct order.
+            </p>
+
+            <h5 class="text-warning">Why this matters</h5>
+            <p>
+              Without happens-before, one thread may keep seeing stale data from CPU cache or compiler/JIT reordering.
+              So even if a field is updated in one thread, another thread may not see the latest value unless there is
+              a proper synchronization edge between them.
+            </p>
+
+            <h5 class="text-warning">Common happens-before rules</h5>
+            <ul>
+              <li><strong>Program order:</strong> inside one thread, earlier actions happen-before later actions.</li>
+              <li><strong>Monitor lock:</strong> an unlock on a monitor happens-before a later lock on the same monitor.</li>
+              <li><strong>volatile:</strong> a write to a volatile field happens-before a subsequent read of that same field.</li>
+              <li><strong>Thread start:</strong> actions before <code>Thread.start()</code> happen-before the started thread runs.</li>
+              <li><strong>Thread join:</strong> all actions in a thread happen-before another thread successfully returns from <code>join()</code>.</li>
+              <li><strong>Final fields:</strong> safe publication gives stronger guarantees for properly constructed immutable objects.</li>
+              <li><strong>Transitivity:</strong> if A happens-before B and B happens-before C, then A happens-before C.</li>
+            </ul>
+
+            <h5 class="text-warning">Simple visibility example</h5>
+            <pre><code class="language-java">class SharedState {
+    private int data = 0;
+    private volatile boolean ready = false;
+
+    void writer() {
+        data = 42;     // 1
+        ready = true;  // 2 volatile write
+    }
+
+    void reader() {
+        if (ready) {   // 3 volatile read
+            System.out.println(data); // guaranteed to print 42
+        }
+    }
+}</code></pre>
+            <p>
+              Here, write <code>data = 42</code> happens before the volatile write <code>ready = true</code>. That
+              volatile write happens-before the reader's volatile read of <code>ready</code>. By transitivity, the
+              reader also sees the earlier write to <code>data</code>. This is a classic safe-publication pattern.
+            </p>
+
+            <h5 class="text-warning">Without happens-before</h5>
+            <pre><code class="language-java">class BrokenState {
+    private int data = 0;
+    private boolean ready = false;
+}</code></pre>
+            <p>
+              If <code>ready</code> is not volatile and there is no synchronization, the reader may see
+              <code>ready == true</code> but still observe an old value of <code>data</code>, or it may never see the
+              update at all. That is the visibility problem the JMM solves with happens-before rules.
+            </p>
+
+            <h5 class="text-warning">How synchronized helps</h5>
+            <p>
+              A <code>synchronized</code> block also creates a happens-before edge. Unlocking the monitor flushes
+              changes, and the next thread that locks the same monitor sees them. That is why synchronization solves
+              both mutual exclusion and visibility.
+            </p>
+
+            <h5 class="text-warning">Real-world example</h5>
+            <p>
+              Imagine a payment worker thread updates an in-memory status flag after calling a downstream service.
+              Another thread polling that flag must either read a volatile field, use synchronized access, or use an
+              atomic class; otherwise it may keep seeing stale status from its own cache.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Happens-before is the JMM rule that defines memory visibility and ordering between threads. If A
+              happens-before B, then B is guaranteed to see A's writes. We create happens-before edges through
+              synchronization, volatile, thread start/join, and transitivity. This is why volatile helps visibility
+              and synchronized helps both visibility and atomicity around a critical section."
+            </p>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- Latest Top -->
+      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="twoPhaseVsSagaTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#twoPhaseVsSagaTopBody">
+            Two-Phase Commit vs Saga Pattern - what is the difference?
+          </button>
+        </h2>
+        <div id="twoPhaseVsSagaTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>Two-Phase Commit (2PC)</strong> is a distributed transaction protocol that tries to make all
+              participating services commit or roll back together. It gives strong consistency but is slow, blocking,
+              and hard to operate at scale.
+            </p>
+            <p>
+              <strong>Saga</strong> breaks the work into local transactions. Each service commits its own change, and
+              if a later step fails, the system runs compensating actions to undo earlier steps.
+            </p>
+            <h5 class="text-warning">When to use</h5>
+            <ul>
+              <li><strong>2PC:</strong> rare in modern microservices; only when strong atomicity is absolutely required and the infrastructure supports it.</li>
+              <li><strong>Saga:</strong> common in microservices for orders, payments, booking, and onboarding workflows.</li>
+            </ul>
+            <p>
+              Real-world example: in checkout, Order Service creates the order, Payment Service charges the card, and
+              Inventory Service reserves stock. If payment fails, Saga can cancel the order and release stock.
+            </p>
+            <p>
+              Interview-ready answer: "2PC provides atomic commit across services but is heavy and fragile. Saga is
+              usually the better microservices choice because each service commits locally and failures are handled by
+              compensating actions."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="distributedTransactionsTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#distributedTransactionsTopBody">
+            How do you maintain data consistency across microservices?
+          </button>
+        </h2>
+        <div id="distributedTransactionsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              In microservices, we usually avoid one global database transaction because it tightly couples services
+              and becomes slow and fragile at scale. Instead, we usually choose between <strong>Two-Phase Commit
+              (2PC)</strong> and the <strong>Saga Pattern</strong>, depending on how much atomicity we need and how
+              much latency we can tolerate.
+            </p>
+
+            <h5 class="text-warning">Two-Phase Commit vs Saga</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Approach</th>
+                  <th>How it works</th>
+                  <th>Pros</th>
+                  <th>Cons</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>2PC</strong></td>
+                  <td>Coordinator asks every service to prepare, then commit only if all agree.</td>
+                  <td>Strong atomicity across participants.</td>
+                  <td>Slow, blocking, hard to scale, fragile when a participant is down.</td>
+                </tr>
+                <tr>
+                  <td><strong>Saga</strong></td>
+                  <td>Each service does a local transaction; failures are handled with compensating actions.</td>
+                  <td>Better scalability, loose coupling, fits microservices well.</td>
+                  <td>Only eventual consistency; compensation logic can be complex.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">When I would use each one</h5>
+            <ul>
+              <li><strong>2PC:</strong> only in rare systems where strict atomic commit across participants is mandatory and the platform supports it.</li>
+              <li><strong>Saga:</strong> the normal choice for order, payment, booking, onboarding, and workflow-based systems.</li>
+            </ul>
+
+            <h5 class="text-warning">How Saga usually works</h5>
+            <ul>
+              <li>Step 1: Service A commits its own local transaction.</li>
+              <li>Step 2: Service A publishes an event or calls Service B.</li>
+              <li>Step 3: Service B commits its local transaction.</li>
+              <li>Step 4: If a later step fails, earlier services run compensation.</li>
+            </ul>
+
+            <h5 class="text-warning">Real-world example</h5>
+            <p>
+              In an e-commerce checkout, the Order Service creates the order, the Payment Service charges the card,
+              and the Inventory Service reserves stock. If inventory reservation fails after payment succeeds, the
+              saga can trigger a compensating action to refund the payment and cancel the order.
+            </p>
+
+            <h5 class="text-warning">Example flow</h5>
+            <pre><code class="language-text">Order Service
+  - create order
+  - publish OrderCreated
+
+Payment Service
+  - charge card
+  - publish PaymentSucceeded
+
+Inventory Service
+  - reserve stock
+  - if fail -> publish InventoryFailed
+
+Compensation
+  - refund payment
+  - cancel order</code></pre>
+
+            <h5 class="text-warning">Spring style example</h5>
+            <pre><code class="language-java">@Service
+public class OrderSagaService {
+
+    @Transactional
+    public OrderResponse createOrder(CreateOrderRequest request) {
+        Order order = orderRepository.save(Order.createPending(request));
+        eventPublisher.publish(new OrderCreatedEvent(order.getId(), request.customerId()));
+        return OrderResponse.from(order);
+    }
+
+    @Transactional
+    public void handlePaymentFailed(PaymentFailedEvent event) {
+        orderRepository.updateStatus(event.orderId(), OrderStatus.CANCELLED);
+    }
+}</code></pre>
+
+            <h5 class="text-warning">Why 2PC is uncommon in microservices</h5>
+            <ul>
+              <li>It keeps locks and resources open while waiting for every participant.</li>
+              <li>A slow or failed service can block the whole transaction.</li>
+              <li>It does not fit well with independently deployable services.</li>
+              <li>Operationally, it is much harder to recover from coordinator or participant failures.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "For microservices, I usually avoid 2PC because it is blocking and tightly couples services. I prefer
+              Saga with local transactions and compensating actions, plus Outbox and idempotent consumers for
+              reliable event delivery. 2PC is only for rare cases where strong atomic commit is non-negotiable."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="advancedCachingTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#advancedCachingTopBody">
+            How do you use Redis or Memcached effectively, including cache invalidation, stampede, and penetration?
+          </button>
+        </h2>
+        <div id="advancedCachingTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Redis and Memcached are best for fast shared caching, but the hard part is not storing data, it is
+              keeping cache behavior correct under load.
+            </p>
+            <h5 class="text-warning">Key concerns</h5>
+            <ul>
+              <li><strong>Cache invalidation:</strong> remove or refresh stale entries after writes.</li>
+              <li><strong>Cache stampede:</strong> many threads miss the same hot key at once and overload the DB.</li>
+              <li><strong>Cache penetration:</strong> repeated requests for missing keys hammer the database.</li>
+            </ul>
+            <h5 class="text-warning">Typical fixes</h5>
+            <ul>
+              <li>Use TTL and explicit invalidation on updates.</li>
+              <li>Protect hot keys with locking, single-flight loading, or request coalescing.</li>
+              <li>Use negative caching for known-missing values.</li>
+              <li>Add rate limiting and fallback behavior for repeated misses.</li>
+            </ul>
+            <p>
+              Real-world example: product detail pages are cached in Redis, but if a popular product expires for
+              everyone at once, a stampede can hit the DB unless we add jittered TTLs or a cache loader lock.
+            </p>
+            <p>
+              Interview-ready answer: "Redis and Memcached are effective for hot reads and session-like data. I use
+              TTL, invalidation, single-flight loading, and negative caching to avoid stale data, stampedes, and
+              repeated misses."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="other">
+        <h2 class="accordion-header" id="starMethodTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#starMethodTopBody">
+            What is the STAR method?
+          </button>
+        </h2>
+        <div id="starMethodTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              STAR is a simple format for answering behavioral interview questions clearly.
+            </p>
+            <ul>
+              <li><strong>S - Situation:</strong> describe the context.</li>
+              <li><strong>T - Task:</strong> explain your responsibility.</li>
+              <li><strong>A - Action:</strong> describe what you did.</li>
+              <li><strong>R - Result:</strong> explain the outcome with numbers if possible.</li>
+            </ul>
+            <p>
+              Real-world example: "The payment API was timing out (Situation). I had to reduce checkout failures
+              (Task). I added timeouts, circuit breakers, and better logging (Action). Checkout latency dropped by
+              40% and failures fell sharply (Result)."
+            </p>
+            <p>
+              Interview-ready answer: "STAR is a structured way to answer behavioral questions with Situation, Task,
+              Action, and Result so the story stays focused and measurable."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="featureVsRefactorTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#featureVsRefactorTopBody">
+            How do you balance delivering business features quickly versus refactoring messy legacy Java code?
+          </button>
+        </h2>
+        <div id="featureVsRefactorTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              I balance it by protecting delivery speed while refactoring the parts that create the most risk or slow
+              future work. I prefer small, safe improvements over big rewrites.
+            </p>
+            <h5 class="text-warning">Practical approach</h5>
+            <ul>
+              <li>Deliver the feature behind tests and guardrails.</li>
+              <li>Refactor the hot spots that cause bugs, slow development, or deployment risk.</li>
+              <li>Use boy-scout changes: improve the code a little whenever touching it.</li>
+              <li>Reserve larger refactors for clear technical debt or high-value modules.</li>
+            </ul>
+            <p>
+              Real-world example: if a legacy payment class is hard to read, I would first add tests, extract helper
+              methods, and isolate the risky logic rather than rewriting the entire module.
+            </p>
+            <p>
+              Interview-ready answer: "I keep feature delivery moving, but I refactor incrementally around the
+              highest-risk or highest-change areas. That gives the business value now without letting the codebase
+              decay further."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="other">
+        <h2 class="accordion-header" id="productionOutageTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#productionOutageTopBody">
+            Describe a major production outage you caused or handled.
+          </button>
+        </h2>
+        <div id="productionOutageTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              A strong answer should be honest, calm, and focused on learning. I would explain what failed, how I
+              found it under pressure, and what permanent safeguards were added after the incident.
+            </p>
+            <h5 class="text-warning">Good structure</h5>
+            <ul>
+              <li>What was the outage and business impact?</li>
+              <li>How did you detect and debug it?</li>
+              <li>What was the root cause?</li>
+              <li>What did you change afterward to prevent a repeat?</li>
+            </ul>
+            <p>
+              Real-world example: a bad config rollout caused 500 errors. I checked logs, metrics, and traces, rolled
+              back quickly, then added validation, canary deploys, and an alert for the failing config path.
+            </p>
+            <p>
+              Interview-ready answer: "I would explain the outage honestly, show how I diagnosed it with logs and
+              metrics, describe the rollback or fix, and then focus on the prevention steps such as validation,
+              monitoring, and safer deployment gates."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="other">
+        <h2 class="accordion-header" id="designDisagreementTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#designDisagreementTopBody">
+            Tell me about a time you disagreed with a software architect or product manager on a technical design.
+          </button>
+        </h2>
+        <div id="designDisagreementTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              The best answer shows respectful disagreement, data-driven discussion, and commitment to the team
+              decision.
+            </p>
+            <h5 class="text-warning">How to answer</h5>
+            <ul>
+              <li>State the disagreement clearly and professionally.</li>
+              <li>Explain what tradeoffs you raised and why.</li>
+              <li>Show how you used data, prototypes, or benchmarks.</li>
+              <li>End with the result and what you learned.</li>
+            </ul>
+            <p>
+              Real-world example: I pushed back on a synchronous design that would have hurt latency. I showed a small
+              prototype, proposed an async event flow, and we agreed on a phased rollout.
+            </p>
+            <p>
+              Interview-ready answer: "I focus on the problem, not the person. I bring data, explain the tradeoffs,
+              propose options, and support the final team decision once we align."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Today Top -->
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="qJava8To17MigrationTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#cJava8To17MigrationTop">
+            What technical challenges arise when migrating a legacy platform from Java 8 to Java 17?
+          </button>
+        </h2>
+        <div id="cJava8To17MigrationTop" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              The biggest jump from Java 8 to Java 17 is not just language syntax. The real work is dealing with
+              strong encapsulation, dependency compatibility, removed APIs, and framework upgrades.
+            </p>
+
+            <h5 class="text-warning">Main migration challenges</h5>
+            <ul>
+              <li><strong>Strong encapsulation:</strong> reflective access to JDK internals can fail with <code>InaccessibleObjectException</code>.</li>
+              <li><strong>Internal API usage:</strong> old code may depend on <code>sun.*</code> or <code>jdk.internal.*</code> classes.</li>
+              <li><strong>Removed components:</strong> Java EE modules, CORBA, Nashorn, Pack200, and some legacy APIs are no longer available.</li>
+              <li><strong>Framework compatibility:</strong> Spring, Hibernate, Mockito, ByteBuddy, JAXB, and Jackson versions may need upgrades.</li>
+              <li><strong>Build/tooling changes:</strong> Maven/Gradle plugins, test runners, and bytecode libraries often need newer versions.</li>
+              <li><strong>GC and runtime behavior:</strong> defaults changed over time, so memory and startup behavior may differ from Java 8.</li>
+            </ul>
+
+            <h5 class="text-warning">Why failures happen</h5>
+            <p>
+              Java 9 introduced the module system and later releases tightened access to JDK internals. Code that used
+              reflection to touch private JDK fields or methods may work on Java 8 but break on Java 17 unless we
+              refactor it or temporarily open packages.
+            </p>
+            <pre><code class="language-java">Field valueField = String.class.getDeclaredField("value");
+valueField.setAccessible(true); // may fail on Java 17 without --add-opens</code></pre>
+
+            <h5 class="text-warning">How I approach the migration</h5>
+            <ul>
+              <li>Run <code>jdeps</code> to find deprecated or internal JDK dependencies.</li>
+              <li>Upgrade third-party libraries before changing the runtime in production.</li>
+              <li>Fix reflective access instead of relying only on <code>--add-opens</code> as a permanent solution.</li>
+              <li>Move from old APIs such as JAX-B bundled in the JDK to explicit dependencies where needed.</li>
+              <li>Test startup, unit tests, integration tests, and production-like workloads before rollout.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Java 8 to 17 migration usually breaks because of strong encapsulation, removed JDK modules, and
+              library incompatibilities. I first scan with jdeps, upgrade frameworks and plugins, fix reflection on
+              JDK internals, and use --add-opens only as a temporary bridge during the migration."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="microservicesResilienceTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#microservicesResilienceTopBody">
+            How do you design fault-tolerant service-to-service communication using circuit breakers?
+          </button>
+        </h2>
+        <div id="microservicesResilienceTopBody" class="accordion-collapse collapse"
+          data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              For resilient microservices, I combine timeouts, retries, circuit breakers, bulkheads, and fallback
+              logic. The goal is to stop one failing dependency from taking down the whole system.
+            </p>
+
+            <h5 class="text-warning">What the circuit breaker does</h5>
+            <ul>
+              <li><strong>Closed:</strong> calls flow normally while the dependency is healthy.</li>
+              <li><strong>Open:</strong> calls are rejected fast when failures cross the threshold.</li>
+              <li><strong>Half-open:</strong> a few trial requests are allowed to see if the dependency recovered.</li>
+            </ul>
+
+            <h5 class="text-warning">Spring Boot + Resilience4j example</h5>
+            <pre><code class="language-java">@Service
+public class PaymentClient {
+
+    @CircuitBreaker(name = "paymentService", fallbackMethod = "paymentFallback")
+    @Retry(name = "paymentService")
+    public PaymentResponse callPayment(OrderRequest request) {
+        return restTemplate.postForObject("/payments", request, PaymentResponse.class);
+    }
+
+    private PaymentResponse paymentFallback(OrderRequest request, Throwable ex) {
+        return new PaymentResponse("DEGRADED", "Payment service unavailable");
+    }
+}</code></pre>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "I design resilient service-to-service communication with timeouts, retries, circuit breakers, and
+              bulkheads. With Resilience4j in Spring Boot, I protect downstream calls using @CircuitBreaker and
+              fallback methods, so a slow dependency fails fast instead of causing cascading outages."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="distributedTelemetryIngestionTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#distributedTelemetryIngestionTopBody">
+            How would you design a high-throughput Spring Boot and Kafka API to ingest telemetry from millions of IoT devices?
+          </button>
+        </h2>
+        <div id="distributedTelemetryIngestionTopBody" class="accordion-collapse collapse"
+          data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              I would make the API stateless, accept data quickly, and push the heavy work to Kafka and downstream
+              consumers. That keeps latency low even when millions of devices send telemetry concurrently.
+            </p>
+
+            <h5 class="text-warning">High-level design</h5>
+            <ul>
+              <li>Devices call a Spring Boot ingestion API behind a load balancer or API gateway.</li>
+              <li>The API authenticates the device, validates the payload, and publishes the event to Kafka.</li>
+              <li>Partition Kafka topics by <code>deviceId</code> so ordering is preserved per device.</li>
+              <li>Consumer groups process events in parallel and persist them to time-series storage, object storage, or analytics systems.</li>
+            </ul>
+
+            <h5 class="text-warning">Spring Boot producer example</h5>
+            <pre><code class="language-java">@RestController
+@RequestMapping("/telemetry")
+public class TelemetryController {
+
+    private final KafkaTemplate&lt;String, TelemetryEvent&gt; kafkaTemplate;
+
+    public TelemetryController(KafkaTemplate&lt;String, TelemetryEvent&gt; kafkaTemplate) {
+        this.kafkaTemplate = kafkaTemplate;
+    }
+
+    @PostMapping
+    public ResponseEntity&lt;Void&gt; ingest(@RequestBody TelemetryEvent event) {
+        kafkaTemplate.send("telemetry-events", event.deviceId(), event);
+        return ResponseEntity.accepted().build();
+    }
+}</code></pre>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "For millions of IoT devices, I would use a stateless Spring Boot ingestion API, publish telemetry to
+              Kafka, partition by deviceId, and scale consumers independently. That gives low latency at the edge,
+              high throughput in the pipeline, and resilient asynchronous processing downstream."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q8Top">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c8Top">
+            What are the different cache strategies, and when should we use each one?
+          </button>
+        </h2>
+        <div id="c8Top" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              The best cache strategy depends on whether your system reads more than it writes, how fresh the data
+              must be, and whether the cache is local, distributed, or edge-based.
+            </p>
+            <h5 class="text-warning">Common cache strategies</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Strategy</th>
+                  <th>How it works</th>
+                  <th>Best use case</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Cache-aside</td>
+                  <td>App checks cache first, then loads from DB and puts value in cache.</td>
+                  <td>Most common pattern for Spring apps, product catalog, user profile, reference data.</td>
+                </tr>
+                <tr>
+                  <td>Read-through</td>
+                  <td>App asks cache, and cache loader fetches data from DB if missing.</td>
+                  <td>Simple lookup-heavy systems where cache library supports a loader.</td>
+                </tr>
+                <tr>
+                  <td>Write-through</td>
+                  <td>Writes go to cache and DB together before the call returns.</td>
+                  <td>When read freshness matters and you want cache and DB to stay in sync immediately.</td>
+                </tr>
+                <tr>
+                  <td>Write-behind / write-back</td>
+                  <td>Write lands in cache first, and DB is updated asynchronously later.</td>
+                  <td>High-write systems that can tolerate eventual consistency, like analytics or counters.</td>
+                </tr>
+                <tr>
+                  <td>Refresh-ahead</td>
+                  <td>Cache refreshes hot keys before they expire.</td>
+                  <td>Very hot data such as rates, configs, and dashboards that should stay warm.</td>
+                </tr>
+                <tr>
+                  <td>Near cache</td>
+                  <td>A small local cache sits in front of a distributed cache.</td>
+                  <td>Ultra-low latency reads in clustered systems.</td>
+                </tr>
+                <tr>
+                  <td>CDN / edge cache</td>
+                  <td>Content is cached near users at the network edge.</td>
+                  <td>Images, CSS, JS, static files, and public API responses.</td>
+                </tr>
+              </tbody>
+            </table>
+            <h5 class="text-warning">When I would use each one</h5>
+            <ul>
+              <li><strong>Cache-aside:</strong> best default for most business services because it is simple and flexible.</li>
+              <li><strong>Read-through:</strong> use when you want cache abstraction to hide DB loading logic.</li>
+              <li><strong>Write-through:</strong> use when stale reads are risky, such as user settings or inventory-like data.</li>
+              <li><strong>Write-behind:</strong> use when write speed matters more than immediate persistence.</li>
+              <li><strong>Refresh-ahead:</strong> use when popular keys must stay warm and latency spikes are unacceptable.</li>
+              <li><strong>Near cache:</strong> use in high-throughput clusters where network hops to Redis are still too expensive.</li>
+              <li><strong>CDN cache:</strong> use for frontend assets or publicly cacheable responses.</li>
+            </ul>
+            <h5 class="text-warning">Spring Cache-aside example</h5>
+            <pre><code class="language-java">@Service
+public class ProductService {
+
+    @Cacheable(cacheNames = "products", key = "#productId")
+    public ProductDto getProduct(Long productId) {
+        return repository.findById(productId)
+                .map(this::toDto)
+                .orElseThrow(() -&gt; new ProductNotFoundException(productId));
+    }
+
+    @CachePut(cacheNames = "products", key = "#result.id")
+    public ProductDto updateProduct(ProductDto request) {
+        Product saved = repository.save(toEntity(request));
+        return toDto(saved);
+    }
+
+    @CacheEvict(cacheNames = "products", key = "#productId")
+    public void deleteProduct(Long productId) {
+        repository.deleteById(productId);
+    }
+}</code></pre>
+            <h5 class="text-warning">Real-world examples</h5>
+            <ul>
+              <li><strong>Product catalog:</strong> cache-aside works well because reads are frequent and updates are less frequent.</li>
+              <li><strong>Currency exchange rates:</strong> refresh-ahead or short TTL avoids stale values.</li>
+              <li><strong>User session:</strong> Redis cache or session store works well because reads must be fast.</li>
+              <li><strong>Leaderboard or counters:</strong> write-behind can help if immediate persistence is not critical.</li>
+              <li><strong>Static assets:</strong> CDN cache gives the biggest win for global users.</li>
+            </ul>
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "The most common strategy is cache-aside, where the app checks cache first and loads from the DB on a
+              miss. I use write-through when freshness matters, write-behind when write throughput matters, and
+              refresh-ahead or near cache for very hot data. For static content, CDN caching is the best fit."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q8bTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c8bTop">
+            What is cache eviction, and what are the different eviction policies?
+          </button>
+        </h2>
+        <div id="c8bTop" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Cache eviction is the process of removing entries from cache when memory is limited, data becomes
+              stale, or the cache needs space for hotter items.
+            </p>
+            <h5 class="text-warning">Why eviction is needed</h5>
+            <ul>
+              <li>Cache memory is finite.</li>
+              <li>Older data may no longer be useful.</li>
+              <li>We want the cache to keep the most valuable keys.</li>
+              <li>Eviction prevents stale or low-value entries from wasting space.</li>
+            </ul>
+            <h5 class="text-warning">Common eviction policies</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Policy</th>
+                  <th>How it works</th>
+                  <th>Best use case</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>LRU</td>
+                  <td>Least Recently Used entries are removed first.</td>
+                  <td>General-purpose caches where recent data is likely to be reused.</td>
+                </tr>
+                <tr>
+                  <td>LFU</td>
+                  <td>Least Frequently Used entries are removed first.</td>
+                  <td>Hot-key workloads where frequently accessed data should stay longer.</td>
+                </tr>
+                <tr>
+                  <td>FIFO</td>
+                  <td>First In, First Out removes the oldest inserted entry.</td>
+                  <td>Simple caches where recency or frequency is not very important.</td>
+                </tr>
+                <tr>
+                  <td>MRU</td>
+                  <td>Most Recently Used entries are removed first.</td>
+                  <td>Rare cases where the newest items are least likely to be reused.</td>
+                </tr>
+                <tr>
+                  <td>TTL / time-based expiry</td>
+                  <td>Entries expire after a fixed time.</td>
+                  <td>Rates, tokens, sessions, config data, or any data that must refresh periodically.</td>
+                </tr>
+                <tr>
+                  <td>Size-based eviction</td>
+                  <td>Evict when cache reaches max item count or memory limit.</td>
+                  <td>Protect memory in local caches like Caffeine or in-memory maps.</td>
+                </tr>
+              </tbody>
+            </table>
+            <h5 class="text-warning">Real-world examples</h5>
+            <ul>
+              <li><strong>Product detail cache:</strong> LRU is a good fit because the most recently viewed products are often requested again.</li>
+              <li><strong>API rate-limit counters:</strong> TTL expiry works well because the count should reset after the window.</li>
+              <li><strong>Currency exchange rates:</strong> short TTL or refresh-ahead prevents stale values.</li>
+              <li><strong>Session cache:</strong> TTL is essential because sessions must expire naturally.</li>
+              <li><strong>Hot analytics dashboard:</strong> LFU can help keep the most frequently queried metrics in cache.</li>
+            </ul>
+            <h5 class="text-warning">Spring / Caffeine example</h5>
+            <pre><code class="language-java">@Bean
+public Cache&lt;String, ProductDto&gt; productCache() {
+    return Caffeine.newBuilder()
+            .maximumSize(10_000)
+            .expireAfterWrite(Duration.ofMinutes(10))
+            .recordStats()
+            .build();
+}</code></pre>
+            <p>
+              In Redis, a similar idea is usually implemented with TTL plus a maxmemory policy such as
+              <code>allkeys-lru</code> or <code>volatile-ttl</code>. That way Redis decides which keys to evict when
+              memory pressure rises.
+            </p>
+            <h5 class="text-warning">Practical rule of thumb</h5>
+            <p>
+              If you want a simple and effective default, use LRU with TTL. If access frequency matters a lot, use
+              LFU. If freshness is the main concern, use TTL-based expiry. For local application caches in Spring
+              Boot, Caffeine is often a strong choice; for distributed shared caches, Redis eviction policies matter
+              more.
+            </p>
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Cache eviction is how we remove entries when the cache is full or data becomes stale. The common
+              policies are LRU, LFU, FIFO, MRU, TTL-based expiry, and size-based eviction. I usually pick LRU plus
+              TTL for general use, LFU for hot-key workloads, and short TTL for session or rate-limit data."
+            </p>
+          </div>
+        </div>
+      </div>
+
       <!-- Full API Cycle End To End -->
       <div class="accordion-item" data-manual-category="springboot">
         <h2 class="accordion-header" id="fullApiCycle">
@@ -19387,6 +21081,156 @@ public class OrderService {
         </div>
       </div>
 
+      <!-- Microservices Resilience -->
+      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="microservicesResilience">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#microservicesResilienceBody">
+            How do you design fault-tolerant service-to-service communication using circuit breakers?
+          </button>
+        </h2>
+        <div id="microservicesResilienceBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              For resilient microservices, I combine timeouts, retries, circuit breakers, bulkheads, and fallback
+              logic. The goal is to stop one failing dependency from taking down the whole system.
+            </p>
+
+            <h5 class="text-warning">What the circuit breaker does</h5>
+            <ul>
+              <li><strong>Closed:</strong> calls flow normally while the dependency is healthy.</li>
+              <li><strong>Open:</strong> calls are rejected fast when failures cross the threshold.</li>
+              <li><strong>Half-open:</strong> a few trial requests are allowed to see if the dependency recovered.</li>
+            </ul>
+
+            <h5 class="text-warning">Why it helps</h5>
+            <p>
+              Without protection, a slow downstream service can create thread exhaustion, connection pool saturation,
+              and cascading failures. A circuit breaker gives the system time to recover instead of endlessly waiting.
+            </p>
+
+            <h5 class="text-warning">Spring Boot + Resilience4j example</h5>
+            <pre><code class="language-java">@Service
+public class PaymentClient {
+
+    @CircuitBreaker(name = "paymentService", fallbackMethod = "paymentFallback")
+    @Retry(name = "paymentService")
+    public PaymentResponse callPayment(OrderRequest request) {
+        return restTemplate.postForObject("/payments", request, PaymentResponse.class);
+    }
+
+    private PaymentResponse paymentFallback(OrderRequest request, Throwable ex) {
+        return new PaymentResponse("DEGRADED", "Payment service unavailable");
+    }
+}</code></pre>
+
+            <h5 class="text-warning">Real-world example</h5>
+            <p>
+              In checkout flow, if Payment Service is temporarily slow, the Order Service can fail fast, show a clean
+              message, or queue the request instead of letting every request block threads.
+            </p>
+
+            <h5 class="text-warning">Important design points</h5>
+            <ul>
+              <li>Set strict timeouts before retries.</li>
+              <li>Retry only idempotent operations.</li>
+              <li>Use bulkheads so one dependency does not consume all worker threads.</li>
+              <li>Track metrics for failure rate, slow calls, and open-state duration.</li>
+              <li>Keep fallbacks safe and business-friendly, not silent failures.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "I design resilient service-to-service communication with timeouts, retries, circuit breakers, and
+              bulkheads. With Resilience4j in Spring Boot, I protect downstream calls using @CircuitBreaker and
+              fallback methods, so a slow dependency fails fast instead of causing cascading outages."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Distributed Telemetry Ingestion -->
+      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="distributedTelemetryIngestion">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#distributedTelemetryIngestionBody">
+            How would you design a high-throughput Spring Boot and Kafka API to ingest telemetry from millions of IoT devices?
+          </button>
+        </h2>
+        <div id="distributedTelemetryIngestionBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              I would make the API stateless, accept data quickly, and push the heavy work to Kafka and downstream
+              consumers. That keeps latency low even when millions of devices send telemetry concurrently.
+            </p>
+
+            <h5 class="text-warning">High-level design</h5>
+            <ul>
+              <li>Devices call a Spring Boot ingestion API behind a load balancer or API gateway.</li>
+              <li>The API authenticates the device, validates the payload, and publishes the event to Kafka.</li>
+              <li>Partition Kafka topics by <code>deviceId</code> so ordering is preserved per device.</li>
+              <li>Consumer groups process events in parallel and persist them to time-series storage, object storage, or analytics systems.</li>
+            </ul>
+
+            <h5 class="text-warning">Why Kafka fits here</h5>
+            <p>
+              Kafka absorbs burst traffic, decouples ingestion from processing, and allows horizontal scaling through
+              partitions and consumer groups. It is a strong fit when telemetry arrives faster than the database can
+              process it directly.
+            </p>
+
+            <h5 class="text-warning">Spring Boot producer example</h5>
+            <pre><code class="language-java">@RestController
+@RequestMapping("/telemetry")
+public class TelemetryController {
+
+    private final KafkaTemplate&lt;String, TelemetryEvent&gt; kafkaTemplate;
+
+    public TelemetryController(KafkaTemplate&lt;String, TelemetryEvent&gt; kafkaTemplate) {
+        this.kafkaTemplate = kafkaTemplate;
+    }
+
+    @PostMapping
+    public ResponseEntity&lt;Void&gt; ingest(@RequestBody TelemetryEvent event) {
+        kafkaTemplate.send("telemetry-events", event.deviceId(), event);
+        return ResponseEntity.accepted().build();
+    }
+}</code></pre>
+
+            <h5 class="text-warning">How I keep it fast and safe</h5>
+            <ul>
+              <li>Use compression, batching, and idempotent producers for Kafka.</li>
+              <li>Return <code>202 Accepted</code> quickly instead of blocking on downstream storage.</li>
+              <li>Use rate limiting and backpressure for overloaded devices.</li>
+              <li>Add retries and a dead-letter topic for poison messages.</li>
+              <li>Use schema management such as Avro or Protobuf to keep message contracts stable.</li>
+            </ul>
+
+            <h5 class="text-warning">Scaling strategy</h5>
+            <ul>
+              <li>Scale the API horizontally because it is stateless.</li>
+              <li>Increase Kafka partitions as throughput grows.</li>
+              <li>Scale consumers independently based on lag.</li>
+              <li>Store aggregates in a read-optimized store for dashboards and alerts.</li>
+            </ul>
+
+            <h5 class="text-warning">Real-world example</h5>
+            <p>
+              If ten million smart meters send readings every minute, the API should only validate and enqueue the
+              event. Kafka fans the load out to consumers that calculate alerts, persist trends, and trigger alarms
+              without blocking device requests.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "For millions of IoT devices, I would use a stateless Spring Boot ingestion API, publish telemetry to
+              Kafka, partition by deviceId, and scale consumers independently. That gives low latency at the edge,
+              high throughput in the pipeline, and resilient asynchronous processing downstream."
+            </p>
+          </div>
+        </div>
+      </div>
+
       <!-- CAP Theorem -->
       <div class="accordion-item" data-manual-category="microservices">
         <h2 class="accordion-header" id="capTheorem">
@@ -26658,6 +28502,61 @@ System.out.println(sorted); // [10, 20, 30]</code></pre>
         </div>
       </div>
 
+      <!-- ArrayList Resizing -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="qArrayListResizing">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#cArrayListResizing">
+            How does ArrayList resize internally, and what happens when it becomes full?
+          </button>
+        </h2>
+        <div id="cArrayListResizing" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <code>ArrayList</code> is backed by a resizable array. When it reaches capacity, Java allocates a new
+              larger array, copies the old elements into it, and then continues writing into the new array.
+            </p>
+
+            <h5 class="text-warning">How growth works</h5>
+            <ul>
+              <li>On the first real addition, ArrayList allocates an internal array if needed.</li>
+              <li>When the array is full, it grows by roughly 1.5x in modern JDKs.</li>
+              <li>All existing elements are copied to the new array.</li>
+              <li>The old array becomes eligible for garbage collection if nothing else references it.</li>
+            </ul>
+
+            <h5 class="text-warning">Why this matters for performance</h5>
+            <p>
+              Most <code>add()</code> calls are fast, but resizing is expensive because it copies the whole array. That
+              is why repeated growth causes occasional O(n) spikes even though the average append cost is amortized O(1).
+            </p>
+
+            <h5 class="text-warning">Example</h5>
+            <pre><code class="language-java">List&lt;Integer&gt; list = new ArrayList&lt;&gt;();
+for (int i = 0; i &lt; 20; i++) {
+    list.add(i);
+}</code></pre>
+            <p>
+              As the list grows, it may resize several times. If you know the expected size in advance, use
+              <code>new ArrayList&lt;&gt;(expectedSize)</code> to reduce copying.
+            </p>
+
+            <h5 class="text-warning">Real-world example</h5>
+            <p>
+              If you are collecting thousands of log records or API results into a list, pre-sizing the list can save
+              time and memory churn because the JVM does fewer reallocations and array copies.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "ArrayList uses a backing array. When it becomes full, Java allocates a larger array and copies the old
+              elements over, which makes that particular add expensive. The average append cost is still amortized O(1),
+              but resizing causes temporary O(n) work, so pre-sizing helps when the final size is known."
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div class="accordion-item">
         <h2 class="accordion-header" id="q1s">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c1s">
@@ -27444,7 +29343,7 @@ Map&lt;String, Integer&gt; totalQty = orders.stream()
             <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c8">8️⃣ What
               is Caching? How to implement with @Cacheable?</button>
           </h2>
-          <div id="c8" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+        <div id="c8" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
             <div class="accordion-body bg-dark text-light">
               Use @Cacheable, @CachePut, @CacheEvict.
               Real-time: Product Catalogue, Currency Rates, User Profile caching.
@@ -27452,325 +29351,184 @@ Map&lt;String, Integer&gt; totalQty = orders.stream()
           </div>
         </div>
 
-        <!-- Q9 -->
+        <!-- Q8A -->
         <div class="accordion-item">
-          <h2 class="accordion-header" id="q9">
-            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c9">9️⃣ What
-              is Deadlock? How to avoid it?</button>
-          </h2>
-          <div id="c9" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
-            <div class="accordion-body bg-dark text-light">
-              Deadlock happens when two threads wait on each other forever.
-              Avoid: Lock ordering, tryLock(), timeout, immutable objects.
-            </div>
-          </div>
-        </div>
-
-        <!-- Q10 -->
-        <div class="accordion-item">
-          <h2 class="accordion-header" id="q10">
-            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c10">🔟
-              Explain Distributed Transactions (2PC vs Saga Pattern)</button>
-          </h2>
-        <div id="c10" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
-          <div class="accordion-body bg-dark text-light">
-              2PC → strong consistency; slow, blocking.
-              Saga → sequence of local transactions + compensating transactions.
-              Used in payments, booking systems.
-            </div>
-          </div>
-        </div>
-
-        <div class="accordion-item">
-          <h2 class="accordion-header" id="qJvmInternals">
-            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#cJvmInternals">
-              What are JVM Internals? Explain all parts in a simple and interview-friendly way
+          <h2 class="accordion-header" id="q8a">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c8a">
+              What are the different cache strategies, and when should we use each one?
             </button>
           </h2>
-          <div id="cJvmInternals" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+        <div id="c8a" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
             <div class="accordion-body bg-dark text-light">
               <p>
-                JVM internals means understanding <strong>how Java code is loaded, stored in memory, executed, and cleaned up</strong>.
-                In interviews, a strong answer usually covers: class loading, runtime memory areas, execution engine,
-                garbage collection, JIT compilation, JNI, and the full execution flow.
+                The best cache strategy depends on whether your system reads more than it writes, how fresh the data
+                must be, and whether the cache is local, distributed, or edge-based.
               </p>
 
-              <h5 class="text-warning">1. Big picture flow</h5>
-              <pre><code class="language-text">.java source
-   ↓
-javac compiler
-   ↓
-.class bytecode
-   ↓
-Class Loader Subsystem
-   ↓
-Runtime Data Areas (Heap, Stack, Metaspace, PC Register, Native Stack)
-   ↓
-Execution Engine (Interpreter + JIT)
-   ↓
-Native Method Interface / Native Libraries if needed
-   ↓
-Program runs
-   ↓
-Garbage Collector cleans unused objects</code></pre>
-
-              <h5 class="text-warning">2. What is JVM?</h5>
-              <p>
-                JVM stands for <code>Java Virtual Machine</code>. It is the runtime engine that executes Java bytecode.
-                Because JVM exists on many operating systems, Java gets its “write once, run anywhere” behavior.
-              </p>
-              <p>
-                Real-world analogy: JVM is like a universal machine that understands Java bytecode and runs it correctly
-                on Windows, Linux, or Mac.
-              </p>
-
-              <h5 class="text-warning">3. Class Loader Subsystem</h5>
-              <p>
-                Class Loader loads <code>.class</code> files into memory when they are needed.
-              </p>
-              <pre><code class="language-text">Main steps:
-1. Loading
-2. Linking
-   - Verification
-   - Preparation
-   - Resolution
-3. Initialization</code></pre>
-              <ul>
-                <li><strong>Loading:</strong> reads class bytecode into memory.</li>
-                <li><strong>Verification:</strong> checks bytecode safety and format.</li>
-                <li><strong>Preparation:</strong> allocates memory for static fields and default values.</li>
-                <li><strong>Resolution:</strong> converts symbolic references into direct references.</li>
-                <li><strong>Initialization:</strong> runs static blocks and assigns actual static values.</li>
-              </ul>
-              <p>
-                Real-world example: When Spring Boot starts, JVM loads your main class, controllers, services, entities,
-                and framework classes as needed.
-              </p>
-
-              <h5 class="text-warning">4. Types of class loaders</h5>
-              <ul>
-                <li><strong>Bootstrap ClassLoader:</strong> loads core Java classes like <code>java.lang</code>, <code>java.util</code>.</li>
-                <li><strong>Platform / Extension ClassLoader:</strong> loads platform-level libraries.</li>
-                <li><strong>Application ClassLoader:</strong> loads your application classes from classpath.</li>
-              </ul>
-              <p>
-                Real-world analogy: Bootstrap is like the main foundation team, and Application ClassLoader loads your project code on top of that.
-              </p>
-
-              <h5 class="text-warning">5. Runtime Data Areas inside JVM</h5>
-              <p>
-                JVM uses different memory areas for different responsibilities.
-              </p>
-
-              <h5 class="text-warning">6. Heap Memory</h5>
-              <p>
-                Heap stores <strong>objects and instance data</strong>. It is shared by all threads.
-              </p>
-              <ul>
-                <li>Most objects created with <code>new</code> go to heap.</li>
-                <li>Garbage Collector mainly works here.</li>
-                <li>It is generally divided into Young Generation and Old Generation.</li>
-              </ul>
-              <pre><code class="language-java">User user = new User(); // object typically goes into heap</code></pre>
-              <p>
-                Real-world analogy: Heap is like a common warehouse where application objects are stored.
-              </p>
-
-              <h5 class="text-warning">7. Stack Memory</h5>
-              <p>
-                Each thread has its own JVM stack. It stores <strong>method call frames, local variables, partial results, and references</strong>.
-              </p>
-              <pre><code class="language-java">public int add(int a, int b) {
-    int sum = a + b;
-    return sum;
-}</code></pre>
-              <p>
-                Here <code>a</code>, <code>b</code>, and <code>sum</code> are inside the current stack frame. If recursion is too deep,
-                it can cause <code>StackOverflowError</code>.
-              </p>
-
-              <h5 class="text-warning">8. Method Area / Metaspace</h5>
-              <p>
-                This area stores <strong>class metadata</strong> like class structure, method metadata, field metadata,
-                static variable information, and runtime constant pool details.
-              </p>
-              <ul>
-                <li>In older JVM explanations, people say <strong>Method Area</strong>.</li>
-                <li>In modern HotSpot JVM, class metadata is mainly stored in <strong>Metaspace</strong>.</li>
-              </ul>
-              <p>
-                Real-world analogy: If heap is a warehouse for objects, Metaspace is the blueprint room that stores class designs.
-              </p>
-
-              <h5 class="text-warning">9. Program Counter (PC) Register</h5>
-              <p>
-                Each thread has its own PC Register. It stores the address of the current JVM instruction being executed.
-              </p>
-              <p>
-                Simple meaning: It tells the JVM which instruction to execute next for that thread.
-              </p>
-
-              <h5 class="text-warning">10. Native Method Stack</h5>
-              <p>
-                This is used when Java code calls native methods written in C/C++ or platform code.
-              </p>
-              <p>
-                Example: Some low-level JVM or OS interaction uses native code.
-              </p>
-
-              <h5 class="text-warning">11. Execution Engine</h5>
-              <p>
-                After bytecode is loaded, the Execution Engine runs it.
-              </p>
-              <ul>
-                <li><strong>Interpreter:</strong> reads bytecode line by line and executes it.</li>
-                <li><strong>JIT Compiler:</strong> converts frequently used bytecode into native machine code for speed.</li>
-                <li><strong>Garbage Collector:</strong> frees unused heap memory.</li>
-              </ul>
-
-              <h5 class="text-warning">12. Interpreter vs JIT</h5>
+              <h5 class="text-warning">Common cache strategies</h5>
               <table class="table table-dark table-bordered table-sm">
                 <thead>
                   <tr>
-                    <th>Part</th>
+                    <th>Strategy</th>
                     <th>How it works</th>
-                    <th>Benefit</th>
+                    <th>Best use case</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
-                    <td>Interpreter</td>
-                    <td>Executes bytecode instruction by instruction</td>
-                    <td>Fast startup</td>
+                    <td>Cache-aside</td>
+                    <td>App checks cache first, then loads from DB and puts value in cache.</td>
+                    <td>Most common pattern for Spring apps, product catalog, user profile, reference data.</td>
                   </tr>
                   <tr>
-                    <td>JIT Compiler</td>
-                    <td>Compiles hot code into native machine code</td>
-                    <td>Better runtime performance</td>
+                    <td>Read-through</td>
+                    <td>App asks cache, and cache loader fetches data from DB if missing.</td>
+                    <td>Simple lookup-heavy systems where cache library supports a loader.</td>
+                  </tr>
+                  <tr>
+                    <td>Write-through</td>
+                    <td>Writes go to cache and DB together before the call returns.</td>
+                    <td>When read freshness matters and you want cache and DB to stay in sync immediately.</td>
+                  </tr>
+                  <tr>
+                    <td>Write-behind / write-back</td>
+                    <td>Write lands in cache first, and DB is updated asynchronously later.</td>
+                    <td>High-write systems that can tolerate eventual consistency, like analytics or counters.</td>
+                  </tr>
+                  <tr>
+                    <td>Refresh-ahead</td>
+                    <td>Cache refreshes hot keys before they expire.</td>
+                    <td>Very hot data such as rates, configs, and dashboards that should stay warm.</td>
+                  </tr>
+                  <tr>
+                    <td>Near cache</td>
+                    <td>A small local cache sits in front of a distributed cache.</td>
+                    <td>Ultra-low latency reads in clustered systems.</td>
+                  </tr>
+                  <tr>
+                    <td>CDN / edge cache</td>
+                    <td>Content is cached near users at the network edge.</td>
+                    <td>Images, CSS, JS, static files, and public API responses.</td>
                   </tr>
                 </tbody>
               </table>
-              <p>
-                Real-world example: A method called thousands of times in a payment API becomes “hot”, so JIT compiles it for faster execution.
-              </p>
 
-              <h5 class="text-warning">13. Runtime Constant Pool</h5>
-              <p>
-                This is a per-class runtime structure that stores constants, string literals, symbolic references, and method/field references.
-              </p>
-              <p>
-                Simple meaning: It helps JVM resolve class, method, and field references while executing code.
-              </p>
-
-              <h5 class="text-warning">14. Garbage Collector role</h5>
-              <p>
-                GC removes objects from heap when they are no longer reachable.
-              </p>
+              <h5 class="text-warning">When I would use each one</h5>
               <ul>
-                <li>Young generation collections are usually fast.</li>
-                <li>Old generation collection is heavier.</li>
-                <li>Collectors like G1, ZGC, Shenandoah handle memory differently.</li>
+                <li><strong>Cache-aside:</strong> best default for most business services because it is simple and flexible.</li>
+                <li><strong>Read-through:</strong> use when you want cache abstraction to hide DB loading logic.</li>
+                <li><strong>Write-through:</strong> use when stale reads are risky, such as user settings or inventory-like data.</li>
+                <li><strong>Write-behind:</strong> use when write speed matters more than immediate persistence.</li>
+                <li><strong>Refresh-ahead:</strong> use when popular keys must stay warm and latency spikes are unacceptable.</li>
+                <li><strong>Near cache:</strong> use in high-throughput clusters where network hops to Redis are still too expensive.</li>
+                <li><strong>CDN cache:</strong> use for frontend assets or publicly cacheable responses.</li>
               </ul>
-              <p>
-                Real-world example: In a Spring Boot API, request DTOs, response objects, and temporary lists are created continuously and later cleaned by GC.
-              </p>
 
-              <h5 class="text-warning">15. JNI and Native Libraries</h5>
-              <p>
-                JNI means <code>Java Native Interface</code>. It allows Java code to talk to native libraries written in C/C++.
-              </p>
-              <p>
-                Real-world example: Some high-performance drivers, OS integrations, or image processing libraries may use native code.
-              </p>
+              <h5 class="text-warning">Spring Cache-aside example</h5>
+              <pre><code class="language-java">@Service
+public class ProductService {
 
-              <h5 class="text-warning">16. How method execution actually happens</h5>
-              <pre><code class="language-java">public class Demo {
-    public static void main(String[] args) {
-        int result = add(10, 20);
-        System.out.println(result);
+    @Cacheable(cacheNames = "products", key = "#productId")
+    public ProductDto getProduct(Long productId) {
+        return repository.findById(productId)
+                .map(this::toDto)
+                .orElseThrow(() -&gt; new ProductNotFoundException(productId));
     }
 
-    static int add(int a, int b) {
-        return a + b;
+    @CachePut(cacheNames = "products", key = "#result.id")
+    public ProductDto updateProduct(ProductDto request) {
+        Product saved = repository.save(toEntity(request));
+        return toDto(saved);
+    }
+
+    @CacheEvict(cacheNames = "products", key = "#productId")
+    public void deleteProduct(Long productId) {
+        repository.deleteById(productId);
     }
 }</code></pre>
-              <pre><code class="language-text">Flow:
-1. JVM starts and loads Demo class
-2. main method is called
-3. main frame is created in stack
-4. add() is called, so a new stack frame is created
-5. values a and b are used, result is computed
-6. frame returns result to main
-7. object creation, if any, would happen in heap
-8. unused objects later become GC candidates</code></pre>
 
-              <h5 class="text-warning">17. Common JVM errors connected to internals</h5>
-              <table class="table table-dark table-bordered table-sm">
-                <thead>
-                  <tr>
-                    <th>Error</th>
-                    <th>Reason</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>OutOfMemoryError: Java heap space</td>
-                    <td>Heap is full</td>
-                  </tr>
-                  <tr>
-                    <td>StackOverflowError</td>
-                    <td>Too many nested method calls / recursion</td>
-                  </tr>
-                  <tr>
-                    <td>OutOfMemoryError: Metaspace</td>
-                    <td>Too much class metadata loaded</td>
-                  </tr>
-                  <tr>
-                    <td>NoClassDefFoundError / ClassNotFoundException</td>
-                    <td>Class loading issue</td>
-                  </tr>
-                </tbody>
-              </table>
+              <h5 class="text-warning">Real-world examples</h5>
+              <ul>
+                <li><strong>Product catalog:</strong> cache-aside works well because reads are frequent and updates are less frequent.</li>
+                <li><strong>Currency exchange rates:</strong> refresh-ahead or short TTL avoids stale values.</li>
+                <li><strong>User session:</strong> Redis cache or session store works well because reads must be fast.</li>
+                <li><strong>Leaderboard or counters:</strong> write-behind can help if immediate persistence is not critical.</li>
+                <li><strong>Static assets:</strong> CDN cache gives the biggest win for global users.</li>
+              </ul>
 
-              <h5 class="text-warning">18. JVM Internals one simple diagram</h5>
-              <pre><code class="language-text">                +----------------------+
-                |   Class Loaders      |
-                +----------+-----------+
-                           |
-                           v
-                +----------------------+
-                |  Runtime Data Areas  |
-                |  Heap                |
-                |  Stack               |
-                |  Metaspace           |
-                |  PC Register         |
-                |  Native Method Stack |
-                +----------+-----------+
-                           |
-                           v
-                +----------------------+
-                |   Execution Engine   |
-                | Interpreter + JIT    |
-                | GC                   |
-                +----------+-----------+
-                           |
-                           v
-                +----------------------+
-                | JNI / Native Libs    |
-                +----------------------+</code></pre>
-
-              <h5 class="text-warning">19. Real-world interview answer</h5>
+              <h5 class="text-warning">Practical rule of thumb</h5>
               <p>
-                JVM first loads class bytecode using class loaders, stores class metadata in Metaspace, creates objects
-                in heap, uses per-thread stacks for method execution, tracks current instruction using PC Register, and
-                executes bytecode through interpreter and JIT compiler. Garbage Collector cleans unreachable heap objects,
-                and JNI is used when Java interacts with native code.
+                If the data is read-heavy and can tolerate slightly stale values, use cache-aside with TTL. If fresh
+                reads are critical, use write-through. If writes are very heavy and eventual consistency is okay, use
+                write-behind. If latency is the top priority, add a near cache or CDN where appropriate.
               </p>
 
-              <h5 class="text-warning">20. Short one-liner</h5>
+              <h5 class="text-warning">Interview-ready answer</h5>
               <p>
-                JVM Internals means understanding how Java classes are loaded, how memory is organized, how bytecode is
-                executed, and how memory is cleaned automatically.
+                "The most common strategy is cache-aside, where the app checks cache first and loads from the DB on a
+                miss. I use write-through when freshness matters, write-behind when write throughput matters, and
+                refresh-ahead or near cache for very hot data. For static content, CDN caching is the best fit."
+              </p>
+            </div>
+          </div>
+        </div>
+
+ 
+        <!-- QJvm3 -->
+        <div class="accordion-item" data-manual-category="java">
+          <h2 class="accordion-header" id="qJava8To17Migration">
+            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+              data-bs-target="#cJava8To17Migration">
+              What technical challenges arise when migrating a legacy platform from Java 8 to Java 17?
+            </button>
+          </h2>
+          <div id="cJava8To17Migration" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+            <div class="accordion-body bg-dark text-light">
+              <p>
+                The biggest jump from Java 8 to Java 17 is not just language syntax. The real work is dealing with
+                strong encapsulation, dependency compatibility, removed APIs, and framework upgrades.
+              </p>
+
+              <h5 class="text-warning">Main migration challenges</h5>
+              <ul>
+                <li><strong>Strong encapsulation:</strong> reflective access to JDK internals can fail with <code>InaccessibleObjectException</code>.</li>
+                <li><strong>Internal API usage:</strong> old code may depend on <code>sun.*</code> or <code>jdk.internal.*</code> classes.</li>
+                <li><strong>Removed components:</strong> Java EE modules, CORBA, Nashorn, Pack200, and some legacy APIs are no longer available.</li>
+                <li><strong>Framework compatibility:</strong> Spring, Hibernate, Mockito, ByteBuddy, JAXB, and Jackson versions may need upgrades.</li>
+                <li><strong>Build/tooling changes:</strong> Maven/Gradle plugins, test runners, and bytecode libraries often need newer versions.</li>
+                <li><strong>GC and runtime behavior:</strong> defaults changed over time, so memory and startup behavior may differ from Java 8.</li>
+              </ul>
+
+              <h5 class="text-warning">Why failures happen</h5>
+              <p>
+                Java 9 introduced the module system and later releases tightened access to JDK internals. Code that used
+                reflection to touch private JDK fields or methods may work on Java 8 but break on Java 17 unless we
+                refactor it or temporarily open packages.
+              </p>
+              <pre><code class="language-java">Field valueField = String.class.getDeclaredField("value");
+valueField.setAccessible(true); // may fail on Java 17 without --add-opens</code></pre>
+
+              <h5 class="text-warning">How I approach the migration</h5>
+              <ul>
+                <li>Run <code>jdeps</code> to find deprecated or internal JDK dependencies.</li>
+                <li>Upgrade third-party libraries before changing the runtime in production.</li>
+                <li>Fix reflective access instead of relying only on <code>--add-opens</code> as a permanent solution.</li>
+                <li>Move from old APIs such as JAX-B bundled in the JDK to explicit dependencies where needed.</li>
+                <li>Test startup, unit tests, integration tests, and production-like workloads before rollout.</li>
+              </ul>
+
+              <h5 class="text-warning">Real-world example</h5>
+              <p>
+                A legacy Spring Boot 1.x app on Java 8 may use JAXB, old Hibernate, and reflective serializers. On
+                Java 17, that app can fail during startup until the framework and library versions are upgraded and the
+                illegal reflection paths are removed.
+              </p>
+
+              <h5 class="text-warning">Interview-ready answer</h5>
+              <p>
+                "Java 8 to 17 migration usually breaks because of strong encapsulation, removed JDK modules, and
+                library incompatibilities. I first scan with jdeps, upgrade frameworks and plugins, fix reflection on
+                JDK internals, and use --add-opens only as a temporary bridge during the migration."
               </p>
             </div>
           </div>
@@ -29604,38 +31362,6 @@ public DefaultErrorHandler errorHandler(KafkaTemplate&lt;String, Object&gt; kafk
           </div>
         </div>
 
-        <!-- Q33 -->
-        <div class="accordion-item">
-          <h2 class="accordion-header" id="q33">
-            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c33">3️⃣3️⃣
-              Explain Java Memory Model (JMM)?</button>
-          </h2>
-          <div id="c33" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
-            <div class="accordion-body bg-dark text-light">
-              JMM defines how threads interact with memory:
-              ✔ Happens-before relationships
-              ✔ Visibility rules
-              ✔ volatile guarantees
-              ✔ atomicity vs non-atomic operations
-            </div>
-          </div>
-        </div>
-
-        <!-- Q34 -->
-        <div class="accordion-item">
-          <h2 class="accordion-header" id="q34">
-            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c34">3️⃣4️⃣
-              What is volatile? Does it make operations atomic?</button>
-          </h2>
-          <div id="c34" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
-            <div class="accordion-body bg-dark text-light">
-              volatile → guarantees visibility & ordering, NOT atomicity.
-              i++ is not atomic even if variable is volatile.
-              Use AtomicInteger for atomic operations.
-            </div>
-          </div>
-        </div>
-
         <!-- Q35 -->
         <div class="accordion-item">
           <h2 class="accordion-header" id="q35">
@@ -29978,48 +31704,88 @@ public static Optional&lt;Character&gt; firstNonRepeatingChar(String s) {
       <div class="accordion-item">
         <h2 class="accordion-header" id="p3">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#pc3">
-            💻 3️⃣ Implement LRU Cache (get/put in O(1))
+            💻 3️⃣ Thread-Safe LRU Cache (get/put in O(1))
           </button>
         </h2>
         <div id="pc3" class="accordion-collapse collapse" data-bs-parent="#accordionCodingRound">
           <div class="accordion-body bg-dark text-light">
 
             <h5>📌 Problem</h5>
-            Design an LRU cache supporting <code>get(key)</code> and <code>put(key, value)</code> in O(1).
+            Design and implement a thread-safe LRU cache supporting <code>get(key)</code> and <code>put(key, value)</code> in O(1).
 
             <h5>🧠 Interviewer Checks</h5>
             <ul>
               <li>Knowledge of <code>LinkedHashMap</code> access-order</li>
               <li>Understanding of eviction policies</li>
+              <li>Understanding that <code>get()</code> is a write operation in access-order LRU because it changes recency</li>
+              <li>Safe synchronization strategy for concurrent access</li>
             </ul>
 
             <h5>⏱ Complexity</h5>
             <p>Time: O(1) average for get/put, Space: O(capacity)</p>
 
-            <pre><code class="language-java">
-public class LRUCache extends LinkedHashMap&lt;Integer, Integer&gt; {
+            <pre><code class="language-java">import java.util.LinkedHashMap;
+import java.util.Map;
+
+public class ThreadSafeLRUCache {
 
     private final int capacity;
+    private final Map&lt;Integer, Integer&gt; cache;
 
-    public LRUCache(int capacity) {
-        super(capacity, 0.75f, true); // accessOrder = true
+    public ThreadSafeLRUCache(int capacity) {
         this.capacity = capacity;
+        this.cache = new LinkedHashMap&lt;Integer, Integer&gt;(capacity, 0.75f, true) {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry&lt;Integer, Integer&gt; eldest) {
+                return size() &gt; ThreadSafeLRUCache.this.capacity;
+            }
+        };
     }
 
-    public int get(int key) {
-        return super.getOrDefault(key, -1);
+    public synchronized int get(int key) {
+        return cache.getOrDefault(key, -1); // access-order makes this a write to recency state
     }
 
-    public void put(int key, int value) {
-        super.put(key, value);
+    public synchronized void put(int key, int value) {
+        cache.put(key, value);
     }
 
-    @Override
-    protected boolean removeEldestEntry(Map.Entry&lt;Integer, Integer&gt; eldest) {
-        return size() &gt; capacity;
+    public synchronized boolean containsKey(int key) {
+        return cache.containsKey(key);
+    }
+
+    public synchronized int size() {
+        return cache.size();
     }
 }
 </code></pre>
+
+            <p>
+              This works because all cache operations are guarded by the same monitor. With
+              <code>accessOrder = true</code>, a read also mutates the list order, so <code>get()</code> must be
+              synchronized too. That makes the implementation correct, though not highly concurrent.
+            </p>
+
+            <h5>🔁 Follow-up: why not just use ConcurrentHashMap?</h5>
+            <p>
+              A <code>ConcurrentHashMap</code> does not preserve access order by itself. LRU needs both fast lookup and
+              order maintenance, so we need a structure like <code>LinkedHashMap</code> plus synchronization, or a
+              purpose-built cache library such as Caffeine for better concurrency.
+            </p>
+
+            <h5>🛠 If interviewer asks for higher concurrency</h5>
+            <ul>
+              <li>Use a single lock for correctness-first simplicity.</li>
+              <li>For production-grade performance, prefer Caffeine or another mature concurrent cache.</li>
+              <li>Do not try to combine <code>ConcurrentHashMap</code> and a separate list unless you can keep them perfectly consistent.</li>
+            </ul>
+
+            <h5>Interview-ready answer</h5>
+            <p>
+              "I would implement a thread-safe LRU cache with a synchronized access-order LinkedHashMap. The get
+              operation must also be synchronized because it updates recency. That gives O(1) average lookup and
+              eviction, and for higher concurrency I would use a dedicated cache library like Caffeine."
+            </p>
 
           </div>
         </div>
@@ -30083,31 +31849,65 @@ public static int[][] merge(int[][] intervals) {
           <div class="accordion-body bg-dark text-light">
 
             <h5>📌 Problem</h5>
-            Given an int array and <code>k</code>, return k most frequent elements.
+            Find the top <code>k</code> frequent elements in a large log file or data stream using a heap
+            (min/max priority queue).
 
             <h5>💡 Approach</h5>
             <ul>
-              <li>Use <code>Map&lt;value, frequency&gt;</code></li>
-              <li>Use max-heap or sort by frequency</li>
+              <li>First count frequencies using <code>Map&lt;value, frequency&gt;</code>.</li>
+              <li>Then keep a <code>min-heap</code> of size <code>k</code> so we only store the top k candidates.</li>
+              <li>For a stream, update counts as records arrive and trim the heap to size <code>k</code>.</li>
             </ul>
 
             <h5>⏱ Complexity</h5>
-            <p>Time: O(n log n) (with sort), Space: O(n)</p>
+            <p>Time: O(n log k), Space: O(n) for frequency map + O(k) for heap</p>
 
-            <pre><code class="language-java">
-public static List&lt;Integer&gt; topKFrequent(int[] nums, int k) {
-    Map&lt;Integer, Integer&gt; freq = new HashMap&lt;&gt;();
-    for (int n : nums) {
-        freq.put(n, freq.getOrDefault(n, 0) + 1);
+            <pre><code class="language-java">import java.util.*;
+
+public static List&lt;String&gt; topKFrequent(List&lt;String&gt; logs, int k) {
+    Map&lt;String, Integer&gt; freq = new HashMap&lt;&gt;();
+
+    for (String item : logs) {
+        freq.put(item, freq.getOrDefault(item, 0) + 1);
     }
 
-    return freq.entrySet().stream()
-            .sorted((a, b) -&gt; b.getValue() - a.getValue())
-            .limit(k)
-            .map(Map.Entry::getKey)
-            .collect(Collectors.toList());
-}
-</code></pre>
+    PriorityQueue&lt;Map.Entry&lt;String, Integer&gt;&gt; minHeap =
+            new PriorityQueue&lt;&gt;(Comparator.comparingInt(Map.Entry::getValue));
+
+    for (Map.Entry&lt;String, Integer&gt; entry : freq.entrySet()) {
+        minHeap.offer(entry);
+        if (minHeap.size() &gt; k) {
+            minHeap.poll();
+        }
+    }
+
+    List&lt;String&gt; result = new ArrayList&lt;&gt;();
+    while (!minHeap.isEmpty()) {
+        result.add(minHeap.poll().getKey());
+    }
+    Collections.reverse(result);
+    return result;
+}</code></pre>
+
+            <h5>📡 Large log file / data stream angle</h5>
+            <p>
+              For a huge file, process line by line instead of loading everything in memory. For an unbounded stream,
+              keep frequency counts for the current window you care about, and continuously maintain the top-k heap.
+            </p>
+
+            <h5>🔁 If interviewer asks for a max-heap version</h5>
+            <p>
+              You can push all frequency entries into a max-heap and pop <code>k</code> times. That is simpler to
+              explain, but the min-heap of size <code>k</code> is better when <code>k</code> is much smaller than the
+              number of unique elements.
+            </p>
+
+            <h5>Interview-ready answer</h5>
+            <p>
+              "I would count frequencies with a HashMap and maintain a min-heap of size k. Every new entry goes into
+              the heap, and if the heap grows beyond k, I remove the smallest. That gives O(n log k) time and works
+              well for large logs or streaming data."
+            </p>
 
           </div>
         </div>
@@ -30510,115 +32310,6 @@ public static int minMeetingRooms(int[][] intervals) {
         </div>
       </div>
 
-      <!-- P15 -->
-      <div class="accordion-item">
-        <h2 class="accordion-header" id="p15">
-          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#pc15">
-            💻 1️⃣5️⃣ Implement Simple Token Bucket Rate Limiter
-          </button>
-        </h2>
-        <div id="pc15" class="accordion-collapse collapse" data-bs-parent="#accordionCodingRound">
-          <div class="accordion-body bg-dark text-light">
-
-            <h5>📌 Problem</h5>
-            Implement a simple in-memory rate limiter for N requests per second.
-
-            <h5>💡 Approach</h5>
-            <ul>
-              <li>Token bucket: refill tokens at fixed rate, consume per request</li>
-            </ul>
-
-            <pre><code class="language-java">
-public class TokenBucket {
-
-    private final int capacity;
-    private final int refillPerSecond;
-    private double tokens;
-    private long lastRefillTimestamp;
-
-    public TokenBucket(int capacity, int refillPerSecond) {
-        this.capacity = capacity;
-        this.refillPerSecond = refillPerSecond;
-        this.tokens = capacity;
-        this.lastRefillTimestamp = System.nanoTime();
-    }
-
-    public synchronized boolean allowRequest() {
-        refill();
-        if (tokens &gt;= 1) {
-            tokens -= 1;
-            return true;
-        }
-        return false;
-    }
-
-    private void refill() {
-        long now = System.nanoTime();
-        double seconds = (now - lastRefillTimestamp) / 1_000_000_000.0;
-        double add = seconds * refillPerSecond;
-        if (add &gt; 0) {
-            tokens = Math.min(capacity, tokens + add);
-            lastRefillTimestamp = now;
-        }
-    }
-}
-</code></pre>
-
-          </div>
-        </div>
-      </div>
-
-      <!-- P16 -->
-      <div class="accordion-item">
-        <h2 class="accordion-header" id="p16">
-          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#pc16">
-            💻 1️⃣6️⃣ Producer–Consumer Using BlockingQueue
-          </button>
-        </h2>
-        <div id="pc16" class="accordion-collapse collapse" data-bs-parent="#accordionCodingRound">
-          <div class="accordion-body bg-dark text-light">
-
-            <h5>📌 Problem</h5>
-            Implement producer-consumer using <code>BlockingQueue</code>.
-
-            <pre><code class="language-java">
-public class ProducerConsumerDemo {
-
-    private final BlockingQueue&lt;Integer&gt; queue = new ArrayBlockingQueue&lt;&gt;(10);
-
-    class Producer implements Runnable {
-        public void run() {
-            int i = 0;
-            try {
-                while (true) {
-                    queue.put(i);
-                    System.out.println("Produced " + i);
-                    i++;
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }
-    }
-
-    class Consumer implements Runnable {
-        public void run() {
-            try {
-                while (true) {
-                    Integer val = queue.take();
-                    System.out.println("Consumed " + val);
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }
-    }
-}
-</code></pre>
-
-          </div>
-        </div>
-      </div>
 
       <!-- P17 -->
       <div class="accordion-item">
