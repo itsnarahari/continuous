@@ -152,6 +152,1398 @@
     </div>
     <div class="accordion" id="accordionSeniorJava">
 
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="beanLifecycleTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#beanLifecycleTopBody">
+            What is the Spring Bean lifecycle hierarchy, and which annotations or interfaces run at each stage?
+          </button>
+        </h2>
+        <div id="beanLifecycleTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              The Spring Bean lifecycle is the order in which Spring creates, configures, initializes, uses, and
+              destroys a bean. A simple way to remember it is:
+              <strong>instantiate -&gt; populate -&gt; aware -&gt; post-process -&gt; initialize -&gt; ready -&gt; destroy</strong>.
+            </p>
+
+            <h5 class="text-warning">Hierarchy of lifecycle phases</h5>
+            <ol>
+              <li><strong>Instantiate:</strong> Spring creates the object using constructor or factory method.</li>
+              <li><strong>Populate properties:</strong> Spring injects dependencies and values.</li>
+              <li><strong>Aware callbacks:</strong> Spring gives context like bean name, factory, or application context.</li>
+              <li><strong>BeanPostProcessor before init:</strong> custom hooks run before initialization callbacks.</li>
+              <li><strong>Initialization:</strong> <code>@PostConstruct</code>, <code>afterPropertiesSet()</code>, and custom init methods run.</li>
+              <li><strong>BeanPostProcessor after init:</strong> final post-processing, often used by proxies.</li>
+              <li><strong>Bean ready for use:</strong> application code can now use the bean.</li>
+              <li><strong>Destroy:</strong> <code>@PreDestroy</code>, <code>destroy()</code>, and custom destroy methods run for singleton beans.</li>
+            </ol>
+
+            <h5 class="text-warning">What runs at each level</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Stage</th>
+                  <th>Annotation / Interface / Class hook</th>
+                  <th>What it does</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Instantiation</td>
+                  <td>Constructor, factory method, <code>@Bean</code></td>
+                  <td>Creates the bean object.</td>
+                </tr>
+                <tr>
+                  <td>Dependency injection</td>
+                  <td><code>@Autowired</code>, <code>@Value</code></td>
+                  <td>Injects dependencies and configuration values.</td>
+                </tr>
+                <tr>
+                  <td>Aware callbacks</td>
+                  <td><code>BeanNameAware</code>, <code>BeanFactoryAware</code>, <code>ApplicationContextAware</code></td>
+                  <td>Injects container metadata into the bean.</td>
+                </tr>
+                <tr>
+                  <td>Before initialization</td>
+                  <td><code>BeanPostProcessor#postProcessBeforeInitialization()</code></td>
+                  <td>Runs custom logic before init callbacks.</td>
+                </tr>
+                <tr>
+                  <td>Initialization</td>
+                  <td><code>@PostConstruct</code>, <code>InitializingBean</code>, custom <code>initMethod</code></td>
+                  <td>Runs setup logic after dependencies are ready.</td>
+                </tr>
+                <tr>
+                  <td>After initialization</td>
+                  <td><code>BeanPostProcessor#postProcessAfterInitialization()</code></td>
+                  <td>Often used to wrap the bean with AOP proxy logic.</td>
+                </tr>
+                <tr>
+                  <td>Destruction</td>
+                  <td><code>@PreDestroy</code>, <code>DisposableBean</code>, custom <code>destroyMethod</code></td>
+                  <td>Runs cleanup logic before bean removal.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Simple flow diagram</h5>
+            <pre><code class="language-text">Constructor
+   -&gt; Dependency Injection
+   -&gt; Aware interfaces
+   -&gt; BeanPostProcessor before init
+   -&gt; @PostConstruct / afterPropertiesSet / initMethod
+   -&gt; BeanPostProcessor after init
+   -&gt; Bean ready
+   -&gt; @PreDestroy / destroyMethod</code></pre>
+
+            <h5 class="text-warning">Example bean</h5>
+            <pre><code class="language-java">@Component
+class PaymentService implements BeanNameAware, InitializingBean, DisposableBean {
+    @PostConstruct
+    public void postConstruct() {
+        System.out.println("PostConstruct called");
+    }
+
+    @Override
+    public void setBeanName(String name) {
+        System.out.println("Bean name = " + name);
+    }
+
+    @Override
+    public void afterPropertiesSet() {
+        System.out.println("afterPropertiesSet called");
+    }
+
+    @PreDestroy
+    public void preDestroy() {
+        System.out.println("PreDestroy called");
+    }
+
+    @Override
+    public void destroy() {
+        System.out.println("destroy called");
+    }
+}</code></pre>
+
+            <p>
+              In practice, <code>@PostConstruct</code> is preferred for initialization, and <code>@PreDestroy</code>
+              for cleanup, because they are cleaner than implementing framework interfaces directly.
+              Interfaces like <code>InitializingBean</code> and <code>DisposableBean</code> still work, but they
+              couple the class to Spring.
+            </p>
+
+            <h5 class="text-warning">Important interview points</h5>
+            <ul>
+              <li><code>BeanPostProcessor</code> is often where Spring adds proxy behavior.</li>
+              <li><code>@PreDestroy</code> usually runs only for singleton beans managed by the container.</li>
+              <li>Prototype beans are created by Spring, but Spring does not fully manage their destroy phase.</li>
+              <li><code>@Bean(initMethod = "...", destroyMethod = "...")</code> lets you define custom lifecycle methods.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Spring bean lifecycle starts with instantiation, then dependency injection, aware callbacks, init
+              callbacks like @PostConstruct or afterPropertiesSet, then BeanPostProcessor hooks, and finally
+              destruction callbacks like @PreDestroy. Annotations are cleaner, while interfaces like InitializingBean
+              and DisposableBean are framework-coupled alternatives."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="happensBeforeTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#happensBeforeTopBody">
+            What is happens-before in Java, and why is it important?
+          </button>
+        </h2>
+        <div id="happensBeforeTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>Happens-before</strong> is a Java Memory Model rule that defines visibility and ordering.
+              If action A happens-before action B, then B is guaranteed to see the effects of A.
+            </p>
+
+            <h5 class="text-warning">Why it matters</h5>
+            <ul>
+              <li>It prevents stale reads between threads.</li>
+              <li>It gives a clear rule for when one thread can safely rely on another thread's writes.</li>
+              <li>It is the reason <code>volatile</code>, <code>synchronized</code>, and thread start/join work for visibility.</li>
+            </ul>
+
+            <h5 class="text-warning">Real-world example</h5>
+            <pre><code class="language-java">class SharedState {
+    private int data;
+    private volatile boolean ready;
+
+    public void writer() {
+        data = 42;      // write data first
+        ready = true;   // volatile write publishes it
+    }
+
+    public void reader() {
+        if (ready) {    // volatile read creates happens-before edge
+            System.out.println(data); // guaranteed to see 42
+        }
+    }
+}</code></pre>
+
+            <p>
+              Here, the write to <code>ready</code> happens-before the read of <code>ready</code>, so the reader
+              also sees the earlier write to <code>data</code>.
+            </p>
+
+            <h5 class="text-warning">Common rules</h5>
+            <ul>
+              <li><strong>Program order:</strong> actions in the same thread happen in code order.</li>
+              <li><strong>Monitor lock:</strong> unlocking a monitor happens-before a later lock on the same monitor.</li>
+              <li><strong>Volatile:</strong> a write to a volatile field happens-before a later read of that field.</li>
+              <li><strong>Thread start/join:</strong> starting a thread and joining it also create happens-before edges.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Happens-before is the Java Memory Model guarantee that one thread's writes become visible to another
+              thread in a predictable order. I use volatile, synchronized blocks, or thread start/join to create the
+              visibility edge and avoid stale data bugs."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="prototypePatternTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#prototypePatternTopBody">
+            What is the Prototype design pattern, and how is it different from Spring bean scope prototype?
+          </button>
+        </h2>
+        <div id="prototypePatternTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              The <strong>Prototype design pattern</strong> is a creational pattern where a new object is created by
+              copying an existing object instead of building it from scratch.
+              In <strong>Spring prototype scope</strong>, Spring creates a <em>new bean instance every time</em> the
+              bean is requested from the container.
+            </p>
+
+            <h5 class="text-warning">Main difference</h5>
+            <ul>
+              <li><strong>Prototype pattern:</strong> object cloning or copying is part of your domain design.</li>
+              <li><strong>Spring prototype scope:</strong> bean lifecycle rule inside the Spring container.</li>
+              <li><strong>Prototype pattern:</strong> you control how the copy is made.</li>
+              <li><strong>Spring prototype scope:</strong> Spring returns a fresh instance, but it does not manage full destroy lifecycle like singleton beans.</li>
+            </ul>
+
+            <h5 class="text-warning">Real-world analogy</h5>
+            <p>
+              Think of a restaurant menu card template. The prototype pattern is like copying an existing menu design
+              and changing only the title. Spring prototype scope is like asking the kitchen for a fresh plate each
+              time you place an order.
+            </p>
+
+            <h5 class="text-warning">Prototype design pattern example</h5>
+            <pre><code class="language-java">class Employee implements Cloneable {
+    private String name;
+    private String department;
+
+    public Employee(String name, String department) {
+        this.name = name;
+        this.department = department;
+    }
+
+    @Override
+    public Employee clone() {
+        try {
+            return (Employee) super.clone();
+        } catch (CloneNotSupportedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+}</code></pre>
+            <p>
+              Here, the clone is a copy of an existing object, so we reuse the original object structure instead of
+              rebuilding it.
+            </p>
+
+            <h5 class="text-warning">Does it copy data or create an empty object?</h5>
+            <p>
+              Usually it copies the existing object's state, so the new object starts with the same field values as
+              the original. It is not an empty object by default. If the object contains nested objects, the result
+              depends on whether you do a <strong>shallow copy</strong> or a <strong>deep copy</strong>.
+            </p>
+            <ul>
+              <li><strong>Shallow copy:</strong> primitive values are copied, but referenced child objects are shared.</li>
+              <li><strong>Deep copy:</strong> both the object and its nested objects are copied.</li>
+            </ul>
+            <pre><code class="language-java">Employee original = new Employee("Asha", "IT");
+Employee copy = original.clone(); // copy has same field values initially</code></pre>
+            <p>
+              So in interviews, the safe answer is: the Prototype pattern normally gives a copied object with the
+              existing data, not an empty shell, unless the clone logic explicitly resets fields.
+            </p>
+
+            <h5 class="text-warning">Spring prototype scope example</h5>
+            <pre><code class="language-java">@Component
+@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+class RequestContextHolder {
+    private UUID requestId = UUID.randomUUID();
+}</code></pre>
+            <p>
+              Every time Spring injects or looks up this bean, it creates a new <code>RequestContextHolder</code>
+              instance. That is useful for per-request state, temporary helpers, or objects that should not be shared.
+            </p>
+
+            <h5 class="text-warning">Important note in Spring</h5>
+            <p>
+              A prototype bean is created every time it is requested, but Spring does not fully manage its destruction
+              lifecycle the way it does for singleton beans. If the bean needs cleanup, you usually handle that
+              yourself.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "The Prototype design pattern means creating a new object by copying an existing one. Spring prototype
+              scope means the container gives a fresh bean instance every time it is requested. They are related by
+              name, but one is a design pattern and the other is a Spring lifecycle scope."
+            </p>
+          </div>
+        </div>
+      </div>
+
+
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="copyTypesTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#copyTypesTopBody">
+            What is shallow copy vs deep copy, with an example, and what is the best approach?
+          </button>
+        </h2>
+        <div id="copyTypesTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>Shallow copy</strong> copies the top-level fields, but nested referenced objects are shared.
+              <strong>Deep copy</strong> copies the top-level fields as well as all nested objects, so the copy is
+              fully independent.
+            </p>
+
+            <h5 class="text-warning">Simple example</h5>
+            <pre><code class="language-java">class Address {
+    String city;
+    Address(String city) { this.city = city; }
+}
+
+class Employee {
+    String name;
+    Address address;
+
+    Employee(String name, Address address) {
+        this.name = name;
+        this.address = address;
+    }
+
+    Employee shallowCopy() {
+        return new Employee(this.name, this.address);
+    }
+
+    Employee deepCopy() {
+        return new Employee(this.name, new Address(this.address.city));
+    }
+}</code></pre>
+
+            <p>
+              If you change <code>address.city</code> in the shallow copy, the original object also changes because
+              both objects point to the same <code>Address</code>. In the deep copy, the original stays unchanged.
+            </p>
+
+            <h5 class="text-warning">Real-world analogy</h5>
+            <ul>
+              <li><strong>Shallow copy:</strong> photocopying a form but sharing the same attached folder.</li>
+              <li><strong>Deep copy:</strong> photocopying the form and making a separate copy of the folder too.</li>
+            </ul>
+
+            <h5 class="text-warning">Best way</h5>
+            <ul>
+              <li><strong>Best overall:</strong> prefer immutable objects when possible, because then copying is usually unnecessary.</li>
+              <li><strong>Use shallow copy:</strong> when nested objects are immutable or shared state is acceptable.</li>
+              <li><strong>Use deep copy:</strong> when nested objects are mutable and changes must not affect the original.</li>
+              <li><strong>In interviews:</strong> say that deep copy is safer for independent state, but immutability is often the cleanest design.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Shallow copy duplicates the outer object but shares nested references, while deep copy duplicates the
+              nested objects too. The best approach is usually immutability if possible; otherwise use shallow copy
+              for shared immutable data and deep copy when you need full independence."
+            </p>
+          </div>
+        </div>
+      </div>
+
+
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="countDownLatchTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#countDownLatchTopBody">
+            What is CountDownLatch, and how is it used with a real-world example?
+          </button>
+        </h2>
+        <div id="countDownLatchTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>CountDownLatch</strong> is a synchronization aid that lets one or more threads wait until a
+              set of operations in other threads finishes. Think of it like a countdown gate: when the count reaches
+              zero, waiting threads are released.
+            </p>
+
+            <h5 class="text-warning">How it works</h5>
+            <ul>
+              <li>You create the latch with an initial count, for example <code>new CountDownLatch(3)</code>.</li>
+              <li>Each worker thread calls <code>countDown()</code> when it finishes its task.</li>
+              <li>The waiting thread calls <code>await()</code> and blocks until the count becomes zero.</li>
+              <li>Once the count hits zero, all waiting threads continue.</li>
+            </ul>
+
+            <h5 class="text-warning">Real-world example</h5>
+            <p>
+              Suppose a dashboard needs data from Orders, Payments, and Inventory services before rendering the page.
+              We can start all three requests in parallel, and the UI aggregator waits until all responses arrive or a
+              timeout happens.
+            </p>
+            <pre><code class="language-java">CountDownLatch latch = new CountDownLatch(3);
+ExecutorService executor = Executors.newFixedThreadPool(3);
+
+executor.submit(() -&gt; {
+    try {
+        loadOrders();
+    } finally {
+        latch.countDown();
+    }
+});
+
+executor.submit(() -&gt; {
+    try {
+        loadPayments();
+    } finally {
+        latch.countDown();
+    }
+});
+
+executor.submit(() -&gt; {
+    try {
+        loadInventory();
+    } finally {
+        latch.countDown();
+    }
+});
+
+latch.await(2, TimeUnit.SECONDS); // wait until all three finish or timeout</code></pre>
+            <p>
+              In a backend system, the same pattern is useful for waiting until several startup checks finish, or for
+              running parallel integration test steps and continuing only when all are ready.
+            </p>
+
+            <h5 class="text-warning">Important methods</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Method</th>
+                  <th>Purpose</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>CountDownLatch(int count)</code></td>
+                  <td>Creates the latch with the initial count.</td>
+                </tr>
+                <tr>
+                  <td><code>await()</code></td>
+                  <td>Waits until the count reaches zero.</td>
+                </tr>
+                <tr>
+                  <td><code>await(long timeout, TimeUnit unit)</code></td>
+                  <td>Waits up to a timeout instead of blocking forever.</td>
+                </tr>
+                <tr>
+                  <td><code>countDown()</code></td>
+                  <td>Decreases the count by one.</td>
+                </tr>
+                <tr>
+                  <td><code>getCount()</code></td>
+                  <td>Returns the current count value for monitoring or debugging.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Where it is commonly used</h5>
+            <ul>
+              <li>Waiting for multiple service calls in parallel.</li>
+              <li>Coordinating startup checks or warm-up tasks.</li>
+              <li>Test cases that must wait for a background operation to finish.</li>
+              <li>One-time synchronization where a group of workers must finish before continuing.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "CountDownLatch is used when one or more threads need to wait until a fixed number of other tasks finish.
+              Each task calls countDown when done, and the waiting thread calls await. I often use it for parallel
+              service aggregation, startup coordination, and test synchronization."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="cyclicBarrierTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#cyclicBarrierTopBody">
+            What is CyclicBarrier, and how is it used with a real-world example?
+          </button>
+        </h2>
+        <div id="cyclicBarrierTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>CyclicBarrier</strong> is a synchronization aid that makes a fixed number of threads wait
+              until all of them reach the same barrier point. Once the last thread arrives, all waiting threads are
+              released together, and the barrier can be reused again in the next phase.
+            </p>
+
+            <h5 class="text-warning">How it works</h5>
+            <ul>
+              <li>You create it with a number of parties, for example <code>new CyclicBarrier(3)</code>.</li>
+              <li>Each thread calls <code>await()</code> when it reaches the checkpoint.</li>
+              <li>When the last thread arrives, the barrier opens and all threads continue.</li>
+              <li>It is reusable, so the same barrier can be used again for the next round.</li>
+            </ul>
+
+            <h5 class="text-warning">Real-world example</h5>
+            <p>
+              Imagine three services in a batch analytics pipeline: Order Loader, Payment Loader, and Inventory
+              Loader. Each service fetches data in parallel, but the aggregation phase should begin only after all
+              three finish the current step. CyclicBarrier is a good fit because the workers can meet at the same
+              checkpoint repeatedly for each batch.
+            </p>
+            <pre><code class="language-java">CyclicBarrier barrier = new CyclicBarrier(3, () -&gt;
+        System.out.println("All services reached the checkpoint, starting aggregation"));
+
+ExecutorService executor = Executors.newFixedThreadPool(3);
+
+executor.submit(() -&gt; {
+    loadOrders();
+    barrier.await();
+    aggregateOrders();
+});
+
+executor.submit(() -&gt; {
+    loadPayments();
+    barrier.await();
+    aggregatePayments();
+});
+
+executor.submit(() -&gt; {
+    loadInventory();
+    barrier.await();
+    aggregateInventory();
+});</code></pre>
+            <p>
+              In real systems, this is useful for phased batch jobs, parallel simulations, or workflows where a set
+              of threads must synchronize at repeated checkpoints.
+            </p>
+
+            <h5 class="text-warning">Important methods</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Method</th>
+                  <th>Purpose</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>CyclicBarrier(int parties)</code></td>
+                  <td>Creates a barrier for the given number of threads.</td>
+                </tr>
+                <tr>
+                  <td><code>CyclicBarrier(int parties, Runnable barrierAction)</code></td>
+                  <td>Runs a task once the last thread arrives at the barrier.</td>
+                </tr>
+                <tr>
+                  <td><code>await()</code></td>
+                  <td>Waits until all parties arrive.</td>
+                </tr>
+                <tr>
+                  <td><code>await(long timeout, TimeUnit unit)</code></td>
+                  <td>Waits with a timeout instead of blocking forever.</td>
+                </tr>
+                <tr>
+                  <td><code>getNumberWaiting()</code></td>
+                  <td>Returns how many threads are waiting at the barrier.</td>
+                </tr>
+                <tr>
+                  <td><code>getParties()</code></td>
+                  <td>Returns the total number of parties required to trip the barrier.</td>
+                </tr>
+                <tr>
+                  <td><code>isBroken()</code></td>
+                  <td>Checks whether the barrier is broken because of timeout, interruption, or failure.</td>
+                </tr>
+                <tr>
+                  <td><code>reset()</code></td>
+                  <td>Resets the barrier so it can be reused after failure or for a fresh cycle.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">CountDownLatch vs CyclicBarrier</h5>
+            <ul>
+              <li><strong>CountDownLatch:</strong> one-time waiting for others to finish.</li>
+              <li><strong>CyclicBarrier:</strong> repeated waiting at a checkpoint, then reuse for the next phase.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "CyclicBarrier is used when a fixed number of threads need to meet at a checkpoint before continuing,
+              and the same barrier may be reused again for the next phase. I use CountDownLatch when one or more
+              threads wait for tasks to finish, and CyclicBarrier when the workers must synchronize with each other."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="phaserTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#phaserTopBody">
+            What is Phaser, and how is it used with a real-world example?
+          </button>
+        </h2>
+        <div id="phaserTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>Phaser</strong> is a flexible synchronization aid that works like a reusable barrier, but with
+              dynamic registration and multiple phases. It is useful when the number of participating threads can
+              change over time and the same workflow has several checkpoints.
+            </p>
+
+            <h5 class="text-warning">How it works</h5>
+            <ul>
+              <li>Threads can register and deregister dynamically.</li>
+              <li>Each phase ends when all registered parties arrive.</li>
+              <li>The phaser advances to the next phase and can be reused repeatedly.</li>
+              <li>It is more flexible than <code>CyclicBarrier</code> when the participant count changes.</li>
+            </ul>
+
+            <h5 class="text-warning">Real-world example</h5>
+            <p>
+              Imagine a multi-step data pipeline for a banking batch job. Step 1 loads customers, step 2 loads
+              accounts, and step 3 loads transactions. Some partitions may be skipped if there is no data, and new
+              worker threads may join dynamically for extra shards. A Phaser lets all active workers finish each
+              phase before the next phase starts.
+            </p>
+            <pre><code class="language-java">Phaser phaser = new Phaser(1); // main thread registers itself
+
+phaser.register(); // customer loader
+executor.submit(() -&gt; {
+    loadCustomers();
+    phaser.arriveAndDeregister();
+});
+
+phaser.register(); // account loader
+executor.submit(() -&gt; {
+    loadAccounts();
+    phaser.arriveAndDeregister();
+});
+
+phaser.register(); // transaction loader
+executor.submit(() -&gt; {
+    loadTransactions();
+    phaser.arriveAndDeregister();
+});
+
+phaser.arriveAndAwaitAdvance(); // wait for phase 0 to finish
+processPhaseTwo();
+
+phaser.arriveAndDeregister(); // main thread done</code></pre>
+            <p>
+              In real systems, Phaser is a strong fit for batch processing, simulations, recursive task splitting, or
+              workflows where workers join and leave dynamically across phases.
+            </p>
+
+            <h5 class="text-warning">Important methods</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Method</th>
+                  <th>Purpose</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>Phaser()</code> / <code>Phaser(int parties)</code></td>
+                  <td>Creates a phaser with optional initial registered parties.</td>
+                </tr>
+                <tr>
+                  <td><code>register()</code></td>
+                  <td>Registers a new party dynamically.</td>
+                </tr>
+                <tr>
+                  <td><code>bulkRegister(int parties)</code></td>
+                  <td>Registers multiple parties at once.</td>
+                </tr>
+                <tr>
+                  <td><code>arrive()</code></td>
+                  <td>Signals arrival at the current phase without waiting.</td>
+                </tr>
+                <tr>
+                  <td><code>arriveAndAwaitAdvance()</code></td>
+                  <td>Signals arrival and waits for all parties to reach the phase.</td>
+                </tr>
+                <tr>
+                  <td><code>arriveAndDeregister()</code></td>
+                  <td>Signals arrival and removes the party from future phases.</td>
+                </tr>
+                <tr>
+                  <td><code>getPhase()</code></td>
+                  <td>Returns the current phase number.</td>
+                </tr>
+                <tr>
+                  <td><code>getRegisteredParties()</code></td>
+                  <td>Returns how many parties are currently registered.</td>
+                </tr>
+                <tr>
+                  <td><code>getArrivedParties()</code></td>
+                  <td>Returns how many registered parties have already arrived.</td>
+                </tr>
+                <tr>
+                  <td><code>getUnarrivedParties()</code></td>
+                  <td>Returns how many parties are still expected for the current phase.</td>
+                </tr>
+                <tr>
+                  <td><code>isTerminated()</code></td>
+                  <td>Checks whether the phaser has terminated.</td>
+                </tr>
+                <tr>
+                  <td><code>forceTermination()</code></td>
+                  <td>Forces the phaser to terminate immediately.</td>
+                </tr>
+            </tbody>
+            </table>
+
+            <h5 class="text-warning">Phaser vs CyclicBarrier vs CountDownLatch</h5>
+            <ul>
+              <li><strong>CountDownLatch:</strong> one-time waiting for tasks to finish.</li>
+              <li><strong>CyclicBarrier:</strong> reusable fixed-party checkpoint.</li>
+              <li><strong>Phaser:</strong> reusable checkpoint with dynamic registration and multiple phases.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Phaser is a reusable synchronization aid for phased workflows where threads may join or leave
+              dynamically. I use CountDownLatch for one-time waiting, CyclicBarrier for fixed-party checkpoints, and
+              Phaser when the number of participants can change across multiple phases."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="semaphoreTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#semaphoreTopBody">
+            What is Semaphore, and how is it used with a real-world example?
+          </button>
+        </h2>
+        <div id="semaphoreTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>Semaphore</strong> is a concurrency control tool that limits how many threads can access a
+              shared resource at the same time. You can think of it like a parking gate with a fixed number of
+              available spots.
+            </p>
+
+            <h5 class="text-warning">How it works</h5>
+            <ul>
+              <li>It is created with a number of permits, for example <code>new Semaphore(3)</code>.</li>
+              <li>A thread calls <code>acquire()</code> to take a permit before using the resource.</li>
+              <li>When the thread is done, it calls <code>release()</code> to return the permit.</li>
+              <li>If no permits are available, other threads block or time out until one becomes free.</li>
+            </ul>
+
+            <h5 class="text-warning">Real-world example</h5>
+            <p>
+              Suppose a payment gateway can safely process only 5 checkout requests at a time because the downstream
+              third-party provider has a strict concurrency limit. A Semaphore can enforce that limit so extra
+              requests wait instead of overwhelming the provider.
+            </p>
+            <pre><code class="language-java">private final Semaphore semaphore = new Semaphore(5);
+
+public PaymentResponse processPayment(PaymentRequest request) throws InterruptedException {
+    semaphore.acquire();
+    try {
+        return callExternalPaymentGateway(request);
+    } finally {
+        semaphore.release();
+    }
+}</code></pre>
+            <p>
+              In a backend system, Semaphore is also useful for limiting access to a database connection pool,
+              protecting a rate-limited external API, or controlling how many batch jobs run in parallel.
+            </p>
+
+            <h5 class="text-warning">Important methods</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Method</th>
+                  <th>Purpose</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>Semaphore(int permits)</code></td>
+                  <td>Creates a semaphore with the given number of permits.</td>
+                </tr>
+                <tr>
+                  <td><code>acquire()</code></td>
+                  <td>Blocks until a permit is available, then takes one.</td>
+                </tr>
+                <tr>
+                  <td><code>acquire(int permits)</code></td>
+                  <td>Acquires multiple permits at once.</td>
+                </tr>
+                <tr>
+                  <td><code>tryAcquire()</code></td>
+                  <td>Tries to take a permit immediately without blocking.</td>
+                </tr>
+                <tr>
+                  <td><code>tryAcquire(long timeout, TimeUnit unit)</code></td>
+                  <td>Waits up to a timeout for a permit.</td>
+                </tr>
+                <tr>
+                  <td><code>release()</code></td>
+                  <td>Returns one permit to the semaphore.</td>
+                </tr>
+                <tr>
+                  <td><code>release(int permits)</code></td>
+                  <td>Returns multiple permits to the semaphore.</td>
+                </tr>
+                <tr>
+                  <td><code>availablePermits()</code></td>
+                  <td>Shows how many permits are currently free.</td>
+                </tr>
+                <tr>
+                  <td><code>drainPermits()</code></td>
+                  <td>Takes away all currently available permits.</td>
+                </tr>
+                <tr>
+                  <td><code>hasQueuedThreads()</code></td>
+                  <td>Checks whether threads are waiting.</td>
+                </tr>
+                <tr>
+                  <td><code>getQueueLength()</code></td>
+                  <td>Returns an estimate of the number of waiting threads.</td>
+                </tr>
+                <tr>
+                  <td><code>isFair()</code></td>
+                  <td>Indicates whether the semaphore uses fair ordering.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Fair vs non-fair</h5>
+            <ul>
+              <li><strong>Fair semaphore:</strong> grants permits roughly in FIFO order, which is more predictable.</li>
+              <li><strong>Non-fair semaphore:</strong> can be faster but may let some threads barge ahead.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Semaphore is used to limit concurrent access to a shared resource by controlling permits. I use it to
+              protect rate-limited APIs, cap batch job concurrency, or control access to scarce resources like a
+              connection pool. Threads call acquire before the work and release after they finish."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="syncPrimitiveCompareTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#syncPrimitiveCompareTopBody">
+            What is the difference between CountDownLatch, CyclicBarrier, Phaser, and Semaphore? How can I remember them easily?
+          </button>
+        </h2>
+        <div id="syncPrimitiveCompareTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              The easiest way to remember them is by the job they do:
+            </p>
+            <ul>
+              <li><strong>CountDownLatch:</strong> one-way countdown, wait until others finish.</li>
+              <li><strong>CyclicBarrier:</strong> meeting point, all threads wait for each other at a checkpoint.</li>
+              <li><strong>Phaser:</strong> reusable meeting point across multiple phases, with dynamic thread registration.</li>
+              <li><strong>Semaphore:</strong> permit counter, limit how many threads can access something at once.</li>
+            </ul>
+
+            <h5 class="text-warning">Quick comparison</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Utility</th>
+                  <th>Main idea</th>
+                  <th>Reusable?</th>
+                  <th>Typical use</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>CountDownLatch</strong></td>
+                  <td>Wait for a fixed number of completions</td>
+                  <td>No</td>
+                  <td>Wait for parallel tasks, startup checks, tests</td>
+                </tr>
+                <tr>
+                  <td><strong>CyclicBarrier</strong></td>
+                  <td>All threads meet at a checkpoint</td>
+                  <td>Yes</td>
+                  <td>Parallel batch steps, simulations, phased work</td>
+                </tr>
+                <tr>
+                  <td><strong>Phaser</strong></td>
+                  <td>Checkpoint per phase with dynamic parties</td>
+                  <td>Yes</td>
+                  <td>Multi-phase workflows, dynamic thread counts</td>
+                </tr>
+                <tr>
+                  <td><strong>Semaphore</strong></td>
+                  <td>Limit concurrent access with permits</td>
+                  <td>Yes</td>
+                  <td>Rate limiting, pool protection, bounded concurrency</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Easy memory trick</h5>
+            <ul>
+              <li><strong>Latch = wait</strong>: count down until zero, then move.</li>
+              <li><strong>Barrier = meet</strong>: everyone meets at the barrier together.</li>
+              <li><strong>Phaser = stage</strong>: multiple stages or phases, dynamic parties.</li>
+              <li><strong>Semaphore = seats</strong>: only a fixed number of threads get a seat.</li>
+            </ul>
+
+            <h5 class="text-warning">Real-world analogy</h5>
+            <ul>
+              <li><strong>CountDownLatch:</strong> waiting for 3 delivery trucks before opening the warehouse.</li>
+              <li><strong>CyclicBarrier:</strong> a team standup where everyone starts the next task only after all arrive.</li>
+              <li><strong>Phaser:</strong> a multi-round tournament where new players can join and leave between rounds.</li>
+              <li><strong>Semaphore:</strong> 5 seats in a restaurant, so only 5 customers can sit at once.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "I remember them as CountDownLatch = wait, CyclicBarrier = meet, Phaser = meet across phases, and Semaphore = limit permits.
+              CountDownLatch is one-time, CyclicBarrier and Phaser are reusable, and Semaphore controls concurrency rather than synchronization at a checkpoint."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="printEvenOddTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#printEvenOddTopBody">
+            How do you print even or odd numbers using 3 threads in a simple way?
+          </button>
+        </h2>
+        <div id="printEvenOddTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              A simple approach is to share one counter and one lock. Two threads handle odd and even numbers, and
+              the third thread can act as a coordinator or a third worker in the exercise.
+            </p>
+
+            <h5 class="text-warning">Simple idea</h5>
+            <ul>
+              <li>One shared counter decides what should print next.</li>
+              <li>The odd thread prints only when the counter is odd.</li>
+              <li>The even thread prints only when the counter is even.</li>
+              <li>The third thread can coordinate the turns or print a label/sequence marker.</li>
+            </ul>
+
+            <h5 class="text-warning">Very small example</h5>
+            <pre><code class="language-java">class Printer {
+    private int num = 1;
+    private final int max = 10;
+    private final Object lock = new Object();
+
+    public void printOdd() {
+        while (num &lt;= max) {
+            synchronized (lock) {
+                if (num % 2 == 1) {
+                    System.out.println("Odd: " + num++);
+                    lock.notifyAll();
+                } else {
+                    try { lock.wait(); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+                }
+            }
+        }
+    }
+
+    public void printEven() {
+        while (num &lt;= max) {
+            synchronized (lock) {
+                if (num % 2 == 0) {
+                    System.out.println("Even: " + num++);
+                    lock.notifyAll();
+                } else {
+                    try { lock.wait(); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+                }
+            }
+        }
+    }
+}</code></pre>
+
+            <p>
+              If you want a strict 3-thread version, the third thread can be a coordinator that starts the sequence
+              and waits for both workers to finish.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "I would use one shared counter, one lock, and wait/notify coordination so the odd and even threads
+              print only when it is their turn. A third thread can be used as a coordinator or a separate worker in
+              the exercise."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="printOneToTenTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#printOneToTenTopBody">
+            How do you print 1 to 10 using 2 or 3 threads in a simple way?
+          </button>
+        </h2>
+        <div id="printOneToTenTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              The simplest approach is to share one counter and use a lock so threads take turns printing the next
+              number. You can do this with 2 threads or 3 threads depending on the interview setup.
+            </p>
+
+            <h5 class="text-warning">Simple idea</h5>
+            <ul>
+              <li>One shared counter starts at 1.</li>
+              <li>Each thread checks whether it is allowed to print the current number.</li>
+              <li>After printing, it increments the counter and wakes other threads.</li>
+              <li>Use <code>wait()</code> and <code>notifyAll()</code> to hand over the turn.</li>
+            </ul>
+
+            <h5 class="text-warning">Example with 2 threads</h5>
+            <pre><code class="language-java">class NumberPrinter {
+    private int num = 1;
+    private final int max = 10;
+    private final Object lock = new Object();
+
+    public void printNumbers() {
+        while (num &lt;= max) {
+            synchronized (lock) {
+                System.out.println(Thread.currentThread().getName() + " -&gt; " + num++);
+                lock.notifyAll();
+                if (num &lt;= max) {
+                    try { lock.wait(); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+                }
+            }
+        }
+    }
+}</code></pre>
+
+            <h5 class="text-warning">Example with 3 threads</h5>
+            <p>
+              A third thread can be a coordinator or just another worker that also prints the next available number
+              when it gets the lock. The logic stays the same: one shared counter, one lock, and turn-based printing.
+            </p>
+            <pre><code class="language-java">Runnable task = () -&gt; {
+    while (true) {
+        synchronized (lock) {
+            if (num &gt; 10) return;
+            System.out.println(Thread.currentThread().getName() + " -&gt; " + num++);
+            lock.notifyAll();
+            try { if (num &lt;= 10) lock.wait(); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+        }
+    }
+};</code></pre>
+
+            <h5 class="text-warning">Where this is used</h5>
+            <ul>
+              <li>Interview problems about thread coordination.</li>
+              <li>Ordered output tasks.</li>
+              <li>Learning <code>wait()</code>, <code>notify()</code>, and <code>notifyAll()</code>.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "I would use one shared counter and a lock so the threads print numbers in order. Each thread waits for
+              its turn, prints the next number, increments the counter, and notifies the others. The same pattern can
+              work with 2 or 3 threads."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="printOneToTenTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#printOneToTenTopBody">
+            How do you print 1 to 10 using 2 or 3 threads in a simple way?
+          </button>
+        </h2>
+        <div id="printOneToTenTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              The simplest approach is to share one counter and use a lock so threads take turns printing the next
+              number. You can do this with 2 threads or 3 threads depending on the interview setup.
+            </p>
+
+            <h5 class="text-warning">Simple idea</h5>
+            <ul>
+              <li>One shared counter starts at 1.</li>
+              <li>Each thread checks whether it is allowed to print the current number.</li>
+              <li>After printing, it increments the counter and wakes other threads.</li>
+              <li>Use <code>wait()</code> and <code>notifyAll()</code> to hand over the turn.</li>
+            </ul>
+
+            <h5 class="text-warning">Example with 2 threads</h5>
+            <pre><code class="language-java">class NumberPrinter {
+    private int num = 1;
+    private final int max = 10;
+    private final Object lock = new Object();
+
+    public void printNumbers() {
+        while (num &lt;= max) {
+            synchronized (lock) {
+                System.out.println(Thread.currentThread().getName() + " -&gt; " + num++);
+                lock.notifyAll();
+                if (num &lt;= max) {
+                    try { lock.wait(); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+                }
+            }
+        }
+    }
+}</code></pre>
+
+            <h5 class="text-warning">Example with 3 threads</h5>
+            <p>
+              A third thread can be a coordinator or just another worker that also prints the next available number
+              when it gets the lock. The logic stays the same: one shared counter, one lock, and turn-based printing.
+            </p>
+            <pre><code class="language-java">Runnable task = () -&gt; {
+    while (true) {
+        synchronized (lock) {
+            if (num &gt; 10) return;
+            System.out.println(Thread.currentThread().getName() + " -&gt; " + num++);
+            lock.notifyAll();
+            try { if (num &lt;= 10) lock.wait(); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+        }
+    }
+};</code></pre>
+
+            <h5 class="text-warning">Where this is used</h5>
+            <ul>
+              <li>Interview problems about thread coordination.</li>
+              <li>Ordered output tasks.</li>
+              <li>Learning <code>wait()</code>, <code>notify()</code>, and <code>notifyAll()</code>.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "I would use one shared counter and a lock so the threads print numbers in order. Each thread waits for
+              its turn, prints the next number, increments the counter, and notifies the others. The same pattern can
+              work with 2 or 3 threads."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="threadMethodsTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#threadMethodsTopBody">
+            What are the important Thread class methods, and when should I use each one?
+          </button>
+        </h2>
+        <div id="threadMethodsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              The <code>Thread</code> class gives you the basic life-cycle and control methods for running work in a
+              separate thread. In interviews, the important part is knowing what each method does and when to use it
+              safely.
+            </p>
+
+            <h5 class="text-warning">Most important methods</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Method</th>
+                  <th>Difference / purpose</th>
+                  <th>When to use</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>start()</code></td>
+                  <td>Creates a new thread and calls <code>run()</code> on that new thread.</td>
+                  <td>Use when you want actual concurrent execution.</td>
+                </tr>
+                <tr>
+                  <td><code>run()</code></td>
+                  <td>Just a normal method unless called by <code>start()</code>.</td>
+                  <td>Override it to define thread work, but do not call it directly for concurrency.</td>
+                </tr>
+                <tr>
+                  <td><code>sleep(ms)</code></td>
+                  <td>Pauses the current thread for a fixed time.</td>
+                  <td>Use for delay, backoff, or test waiting; it does not release locks.</td>
+                </tr>
+                <tr>
+                  <td><code>join()</code></td>
+                  <td>Makes one thread wait for another thread to finish.</td>
+                  <td>Use when a parent thread needs a child thread to complete first.</td>
+                </tr>
+                <tr>
+                  <td><code>interrupt()</code></td>
+                  <td>Requests a thread to stop waiting/blocking cooperatively.</td>
+                  <td>Use for cancellation or shutdown signals.</td>
+                </tr>
+                <tr>
+                  <td><code>isInterrupted()</code></td>
+                  <td>Checks whether a thread has been interrupted without clearing the flag.</td>
+                  <td>Use when you want to inspect interruption state.</td>
+                </tr>
+                <tr>
+                  <td><code>interrupted()</code></td>
+                  <td>Static method that checks and clears the interrupt flag of the current thread.</td>
+                  <td>Use carefully when handling interrupt status in loops or cleanup code.</td>
+                </tr>
+                <tr>
+                  <td><code>yield()</code></td>
+                  <td>Hint to the scheduler that the current thread can pause briefly.</td>
+                  <td>Rarely needed in production; mostly for low-level coordination experiments.</td>
+                </tr>
+                <tr>
+                  <td><code>currentThread()</code></td>
+                  <td>Returns the currently executing thread.</td>
+                  <td>Use for logging, interruption checks, or debugging.</td>
+                </tr>
+                <tr>
+                  <td><code>setName()</code> / <code>getName()</code></td>
+                  <td>Sets or reads the thread name.</td>
+                  <td>Use for debugging and readable logs.</td>
+                </tr>
+                <tr>
+                  <td><code>setPriority()</code> / <code>getPriority()</code></td>
+                  <td>Changes the priority hint given to the scheduler.</td>
+                  <td>Usually avoid relying on priority for business logic.</td>
+                </tr>
+                <tr>
+                  <td><code>setDaemon()</code> / <code>isDaemon()</code></td>
+                  <td>Marks a thread as a background daemon thread.</td>
+                  <td>Use for background tasks that should not keep the JVM alive.</td>
+                </tr>
+                <tr>
+                  <td><code>isAlive()</code></td>
+                  <td>Checks whether a thread has started and has not yet terminated.</td>
+                  <td>Use for basic state checks, not for synchronization.</td>
+                </tr>
+                <tr>
+                  <td><code>getState()</code></td>
+                  <td>Returns the current thread state like <code>NEW</code>, <code>RUNNABLE</code>, or <code>WAITING</code>.</td>
+                  <td>Use for diagnostics, thread dumps, and monitoring.</td>
+                </tr>
+                <tr>
+                  <td><code>setUncaughtExceptionHandler()</code> / <code>getUncaughtExceptionHandler()</code></td>
+                  <td>Handles uncaught exceptions from a thread.</td>
+                  <td>Use to log or react to unexpected thread failures.</td>
+                </tr>
+                <tr>
+                  <td><code>getId()</code></td>
+                  <td>Returns the thread identifier.</td>
+                  <td>Use for logging and troubleshooting.</td>
+                </tr>
+                <tr>
+                  <td><code>getStackTrace()</code></td>
+                  <td>Returns the current stack trace of the thread.</td>
+                  <td>Use for debugging or diagnostics.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Important differences to remember</h5>
+            <ul>
+              <li><code>start()</code> creates concurrency, <code>run()</code> does not.</li>
+              <li><code>sleep()</code> pauses the current thread, but it does not release locks.</li>
+              <li><code>join()</code> makes another thread wait for completion.</li>
+              <li><code>interrupt()</code> is cooperative cancellation, not forced termination.</li>
+              <li><code>isInterrupted()</code> checks the flag, while <code>interrupted()</code> also clears it.</li>
+            </ul>
+
+            <h5 class="text-warning">Deprecated methods to avoid</h5>
+            <ul>
+              <li><code>stop()</code> is unsafe because it can leave objects in inconsistent state.</li>
+              <li><code>suspend()</code> and <code>resume()</code> are deprecated because they can cause deadlock.</li>
+            </ul>
+
+            <h5 class="text-warning">Real-world example</h5>
+            <p>
+              In a background batch job, I would use <code>start()</code> to launch workers, <code>join()</code> to
+              wait for them to finish, <code>interrupt()</code> to cancel them during shutdown, and
+              <code>setName()</code> so logs clearly show which worker failed.
+            </p>
+
+            <h5 class="text-warning">Easy memory trick</h5>
+            <ul>
+              <li><strong>start</strong> = begin a new thread</li>
+              <li><strong>run</strong> = the task body</li>
+              <li><strong>sleep</strong> = pause self</li>
+              <li><strong>join</strong> = wait for another thread</li>
+              <li><strong>interrupt</strong> = ask politely to stop</li>
+              <li><strong>name / priority / daemon</strong> = thread metadata</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "The most important Thread methods are start, run, sleep, join, interrupt, isInterrupted, currentThread,
+              setName, setPriority, setDaemon, isAlive, and getState. I use start for concurrency, join for waiting,
+              sleep for delay, interrupt for cooperative cancellation, and getState or setName mainly for diagnostics."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="staticNestedClassTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#staticNestedClassTopBody">
+            What is the use of making a nested class static, and what benefit does it give?
+          </button>
+        </h2>
+        <div id="staticNestedClassTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              In Java, only a <strong>nested class</strong> can be <code>static</code>. A static nested class belongs
+              to the outer class itself, not to any one instance of the outer class.
+            </p>
+
+            <h5 class="text-warning">Main benefit</h5>
+            <ul>
+              <li>It does not need an outer class object to be created.</li>
+              <li>It does not keep an implicit reference to the outer class instance.</li>
+              <li>It uses less memory than a normal inner class because it is not tied to the outer object.</li>
+              <li>It improves clarity when the helper type logically belongs to the outer class but does not need its instance state.</li>
+            </ul>
+
+            <h5 class="text-warning">Example</h5>
+            <pre><code class="language-java">class Outer {
+    static class Inner {
+        void show() {
+            System.out.println("Hello from static nested class");
+        }
+    }
+}
+
+Outer.Inner obj = new Outer.Inner();
+obj.show();</code></pre>
+
+            <h5 class="text-warning">When to use it</h5>
+            <ul>
+              <li>Builder classes inside an outer class.</li>
+              <li>Helper or DTO classes that are logically grouped with the outer class.</li>
+              <li>Utility code that does not need access to instance fields of the outer class.</li>
+              <li>When you want to avoid the memory overhead of holding an outer instance reference.</li>
+            </ul>
+
+            <h5 class="text-warning">Static nested class vs inner class</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Needs outer object?</th>
+                  <th>Key point</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Static nested class</td>
+                  <td>No</td>
+                  <td>Independent helper, no outer instance reference.</td>
+                </tr>
+                <tr>
+                  <td>Inner class</td>
+                  <td>Yes</td>
+                  <td>Automatically tied to the outer class object.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Real-world example</h5>
+            <p>
+              In builder patterns or config holder classes, a static nested class is useful because it keeps the
+              related code grouped together without forcing the outer class object to exist.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "A static nested class is used when the helper type belongs to the outer class logically but does not
+              need the outer instance. It saves memory, avoids an implicit outer reference, and is useful for
+              builders, DTO helpers, and utility-style nested classes."
+            </p>
+          </div>
+        </div>
+      </div>
+
              <!-- Q8B -->
         <div class="accordion-item">
           <h2 class="accordion-header" id="q8b">
