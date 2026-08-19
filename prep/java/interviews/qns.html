@@ -136,6 +136,7 @@
     <div class="tech-filter-container" id="techFilterBar">
       <button class="tech-filter-btn active" type="button" data-category="all">All</button>
       <button class="tech-filter-btn" type="button" data-category="java">Java</button>
+      <button class="tech-filter-btn" type="button" data-category="java8">Java 8 Coding</button>
       <button class="tech-filter-btn" type="button" data-category="springboot">Spring Boot</button>
       <button class="tech-filter-btn" type="button" data-category="hibernate">Hibernate</button>
       <button class="tech-filter-btn" type="button" data-category="microservices">Microservices</button>
@@ -151,6 +152,59 @@
         onkeyup="searchQuestions()" />
     </div>
     <div class="accordion" id="accordionSeniorJava">
+
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="systemOutPrintlnTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#systemOutPrintlnTopBody">
+            What is System.out.println(), and what are System, out, and println?
+          </button>
+        </h2>
+        <div id="systemOutPrintlnTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <code>System.out.println()</code> is the most common way to print text to the console in Java.
+              It is actually three parts working together.
+            </p>
+
+            <h5 class="text-warning">Breakdown</h5>
+            <ul>
+              <li><strong>System:</strong> a final Java class in <code>java.lang</code> that gives access to system resources.</li>
+              <li><strong>out:</strong> a public static field of type <code>PrintStream</code> that points to the standard output stream.</li>
+              <li><strong>println:</strong> a method on <code>PrintStream</code> that prints the value and then moves the cursor to a new line.</li>
+            </ul>
+
+            <h5 class="text-warning">Simple example</h5>
+            <pre><code class="language-java">System.out.println("Hello Java");</code></pre>
+
+            <h5 class="text-warning">What about System.err.println()?</h5>
+            <p>
+              <code>System.err.println()</code> writes to the standard error stream instead of standard output.
+              We usually use it for error messages, warnings, or logs that should stand out from normal output.
+            </p>
+            <pre><code class="language-java">System.out.println("Normal application message");
+System.err.println("Something went wrong");</code></pre>
+
+            <h5 class="text-warning">What happens internally</h5>
+            <p>
+              Java looks up <code>System.out</code>, which is usually connected to the console, and then
+              <code>println()</code> writes the text followed by a newline character.
+            </p>
+
+            <h5 class="text-warning">Real-world analogy</h5>
+            <p>
+              Think of <code>System</code> as the control panel, <code>out</code> as the speaker line, and
+              <code>println</code> as the person speaking a message and then pausing for the next line.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "System is a utility class, out is the standard output PrintStream, and println prints the value to
+              the console with a new line. So System.out.println() means write this message to standard output."
+            </p>
+          </div>
+        </div>
+      </div>
 
       <div class="accordion-item" data-manual-category="java">
         <h2 class="accordion-header" id="designPatternsCreationalTop">
@@ -2448,6 +2502,11 @@ List&lt;String&gt; allRoles = users.stream()
         </div>
       </div>
 
+      <div class="mb-2 mt-4">
+        <h5 class="text-info mb-1">Employee Analytics and Collectors</h5>
+        <p class="text-muted mb-0">Counting, averaging, grouping, and salary-report style questions.</p>
+      </div>
+
       <div class="accordion-item" data-manual-category="java">
         <h2 class="accordion-header" id="maleFemaleCountTop">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
@@ -2593,6 +2652,11 @@ List&lt;String&gt; allRoles = users.stream()
             <p>Nested <code>groupingBy</code> gives department-wise gender counts.</p>
           </div>
         </div>
+      </div>
+
+      <div class="mb-2 mt-4">
+        <h5 class="text-info mb-1">Salary and Department Queries</h5>
+        <p class="text-muted mb-0">These are the common expert-level grouping and salary questions.</p>
       </div>
 
       <div class="accordion-item" data-manual-category="java">
@@ -2780,6 +2844,11 @@ List&lt;String&gt; merged = Stream.concat(s1, s2).collect(Collectors.toList());<
         </div>
       </div>
 
+      <div class="mb-2 mt-4">
+        <h5 class="text-info mb-1">String Problems</h5>
+        <p class="text-muted mb-0">Character, word, and StringJoiner-style coding questions.</p>
+      </div>
+
       <div class="accordion-item" data-manual-category="java">
         <h2 class="accordion-header" id="firstNonRepeatingTop">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
@@ -2840,6 +2909,11 @@ Character repeated = s.chars()
             <p>Use <code>groupingBy + counting</code> for word frequencies.</p>
           </div>
         </div>
+      </div>
+
+      <div class="mb-2 mt-4">
+        <h5 class="text-info mb-1">Number Problems</h5>
+        <p class="text-muted mb-0">Min, max, second highest, sum, and numeric transformation questions.</p>
       </div>
 
       <div class="accordion-item" data-manual-category="java">
@@ -6854,6 +6928,33 @@ class CustomerService {
               <code>@Service</code> for use cases/business rules, <code>@Repository</code> for manual DAO classes,
               and <code>@Component</code> for supporting beans such as validators, mappers, schedulers, or listeners.
               The names also make architecture easier to read and allow framework tooling to understand intent.
+            </p>
+
+            <h5 class="text-warning">Can we replace @RestController with @Component?</h5>
+            <p>
+              In practice, <strong>no</strong>. <code>@RestController</code> is a web stereotype that tells Spring MVC
+              to expose request-handling methods and write return values directly to the HTTP response body.
+              <code>@Component</code> only makes the class a Spring bean; it does not make it a REST endpoint.
+            </p>
+            <pre><code class="language-java">// Correct for REST endpoints
+@RestController
+@RequestMapping("/users")
+class UserController {
+  @GetMapping("/{id}")
+  User getUser(@PathVariable Long id) {
+    return service.findById(id);
+  }
+}
+
+// Not a replacement for REST endpoints
+@Component
+class UserControllerLikeBean {
+  // Spring will manage it as a bean, but it will not act as a REST controller
+}</code></pre>
+            <p>
+              If you want a web controller, use <code>@RestController</code> or <code>@Controller</code> plus
+              <code>@ResponseBody</code>. Use <code>@Component</code> for helper beans that the controller calls,
+              such as mappers, validators, or utility services.
             </p>
 
             <h5 class="text-warning">Interview-ready answer</h5>
@@ -42818,6 +42919,42 @@ public class OrderController {
 
     const categoryRules = [
       {
+        category: "java8",
+        keywords: [
+          "java 8",
+          "java8",
+          "streams",
+          "stream api",
+          "streams improved",
+          "streaming",
+          "completablefuture",
+          "optional",
+          "lambda",
+          "functional interface",
+          "method reference",
+          "collectors",
+          "stringjoiner",
+          "java.time",
+          "date and time api",
+          "allmatch",
+          "anymatch",
+          "nonematch",
+          "findfirst",
+          "findany",
+          "limit",
+          "skip",
+          "distinct",
+          "sorted",
+          "peek",
+          "foreachordered",
+          "groupingby",
+          "partitioningby",
+          "tomap",
+          "flatmap",
+          "reduce"
+        ]
+      },
+      {
         category: "sql",
         keywords: [
           "sql",
@@ -42985,8 +43122,11 @@ public class OrderController {
           .toLowerCase();
 
         item.dataset.searchText = combinedText;
+        const detectedCategory = detectCategory(combinedText);
         item.dataset.category =
-          item.dataset.manualCategory || detectCategory(combinedText);
+          item.dataset.manualCategory === "java" && detectedCategory === "java8"
+            ? "java8"
+            : item.dataset.manualCategory || detectedCategory;
       });
 
       document.querySelectorAll(".accordion-body").forEach((body) => {
