@@ -229,9 +229,39 @@ public class Streams2026 {
                         .map(hobby -> Map.entry(hobby, emp.getName())))
                 .collect(Collectors.groupingBy(Map.Entry::getKey,
                         Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
+        employees.stream().sorted(Comparator.comparing(Employee::getName)).toList();
+        List<Employee> sortedEmployees = employees.stream()
+                .sorted(Comparator.comparing(Employee::getName).reversed())
+                .collect(Collectors.toList());
+
+        employees.sort(
+                Comparator.comparing(Employee::getName)
+        );
+
 //        32. Find the second Highest number in a list.
 //
 //        33. Count the occurrences of each word in a list.
 
+        //34 reduces
+        // 1. Without identity: returns Optional
+        Optional<Integer> sum1 = listOfNumbers.stream()
+                .reduce((a, b) -> a + b);
+        System.out.println(sum1);
+
+        // 2. With identity: returns plain value
+        Integer sum2 = listOfNumbers.stream()
+                .reduce(1, Integer::sum);
+        System.out.println(sum2);
+
+        // 3. With identity + accumulator + combiner
+        Integer sum3 = listOfNumbers.stream()
+                .reduce(2, Integer::sum, (integer, integer2) -> integer-integer2);
+        System.out.println(sum3);
+        boolean b = listOfNumbers.stream().anyMatch(integer -> integer == 400);
+        System.out.println(b);
+        boolean b1 = listOfNumbers.stream().allMatch(integer -> integer > 1);
+        System.out.println(b1);
+        boolean b2 = listOfNumbers.stream().noneMatch(integer -> integer > 1000);
+        System.out.println(b2);
     }
 }
