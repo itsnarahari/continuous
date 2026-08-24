@@ -6455,6 +6455,227 @@ class RefundService {
         </div>
       </div>
 
+      <div class="accordion-item" data-manual-category="springboot">
+        <h2 class="accordion-header" id="basicAuthOAuthComparison">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#basicAuthOAuthComparisonBody">
+            Basic Auth vs OAuth 1 vs OAuth 2 in simple words?
+          </button>
+        </h2>
+        <div id="basicAuthOAuthComparisonBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              These are three different ways to handle access. The simplest way to think about them is:
+              <strong>Basic Auth</strong> sends credentials directly, <strong>OAuth 1</strong> adds signed requests,
+              and <strong>OAuth 2</strong> uses tokens for delegated access.
+            </p>
+
+            <h5 class="text-warning">Simple comparison</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Simple meaning</th>
+                  <th>Real-world idea</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Basic Auth</strong></td>
+                  <td>Sends username and password on every request, usually encoded, not encrypted by itself.</td>
+                  <td>Showing your ID card every time you enter a room.</td>
+                </tr>
+                <tr>
+                  <td><strong>OAuth 1</strong></td>
+                  <td>Uses signed requests with tokens and secrets. Older and more complex.</td>
+                  <td>Signing every gate pass so nobody can tamper with it.</td>
+                </tr>
+                <tr>
+                  <td><strong>OAuth 2</strong></td>
+                  <td>Uses access tokens so one app can access another app's data without seeing the password.</td>
+                  <td>Giving a valet key that opens only specific doors for a limited time.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">When to use</h5>
+            <ul>
+              <li><strong>Basic Auth:</strong> for very simple internal APIs or testing, and usually only over HTTPS.</li>
+              <li><strong>OAuth 1:</strong> mostly legacy systems now; rarely chosen for new projects.</li>
+              <li><strong>OAuth 2:</strong> modern login and third-party access flows like Google login, API access, or delegated authorization.</li>
+            </ul>
+
+            <h5 class="text-warning">Easy memory trick</h5>
+            <ul>
+              <li><strong>Basic Auth:</strong> "I send my username and password."</li>
+              <li><strong>OAuth 1:</strong> "I sign every request."</li>
+              <li><strong>OAuth 2:</strong> "I use a token instead of sharing my password."</li>
+            </ul>
+
+            <h5 class="text-warning">Spring Security angle</h5>
+            <p>
+              In Spring Boot, Basic Auth is quick to configure, but OAuth2 is what we usually use for modern
+              authorization flows with login providers, authorization servers, or JWT-based resource servers.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Basic Auth sends username and password with each request, OAuth 1 is an older signed-request model,
+              and OAuth 2 is the modern token-based approach for delegated access. In most Spring Boot systems today,
+              OAuth 2 is the common choice, while Basic Auth is mostly for simple internal use."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="springboot">
+        <h2 class="accordion-header" id="basicAuthJwtOAuthComparison">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#basicAuthJwtOAuthComparisonBody">
+            Basic Auth vs JWT vs OAuth 2 in simple words?
+          </button>
+        </h2>
+        <div id="basicAuthJwtOAuthComparisonBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              This is the comparison most interviewers actually expect. The easy way to remember it is:
+              <strong>Basic Auth</strong> sends the password, <strong>JWT</strong> carries identity in a signed token,
+              and <strong>OAuth 2</strong> is the authorization framework that usually issues those tokens.
+            </p>
+
+            <h5 class="text-warning">Simple comparison</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Simple meaning</th>
+                  <th>Real-world idea</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Basic Auth</strong></td>
+                  <td>Username and password are sent with every request.</td>
+                  <td>Showing your full ID and password every time.</td>
+                </tr>
+                <tr>
+                  <td><strong>JWT</strong></td>
+                  <td>A signed token that carries claims like user name, roles, and expiry.</td>
+                  <td>A tamper-proof entry pass with your details printed on it.</td>
+                </tr>
+                <tr>
+                  <td><strong>OAuth 2</strong></td>
+                  <td>A framework for delegated authorization that often uses access tokens and refresh tokens.</td>
+                  <td>Giving limited access to a trusted helper without giving away your password.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">How they relate</h5>
+            <ul>
+              <li><strong>Basic Auth</strong> is a simple authentication mechanism.</li>
+              <li><strong>JWT</strong> is a token format, not a full login framework by itself.</li>
+              <li><strong>OAuth 2</strong> is the authorization framework; it may use JWT as the access token format.</li>
+            </ul>
+
+            <h5 class="text-warning">When to use</h5>
+            <ul>
+              <li><strong>Basic Auth:</strong> quick internal tools, demos, or simple server-to-server checks over HTTPS.</li>
+              <li><strong>JWT:</strong> stateless API authentication where the server does not want to store session data.</li>
+              <li><strong>OAuth 2:</strong> login with Google/Facebook, delegated access, or enterprise identity flows.</li>
+            </ul>
+
+            <h5 class="text-warning">Spring Boot angle</h5>
+            <p>
+              In Spring Boot, Basic Auth is the easiest to configure, JWT is common for stateless REST APIs, and
+              OAuth2 is used when you want login/authorization to be managed by an authorization server like Keycloak,
+              Okta, or Google.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Basic Auth sends username and password every time, JWT is a signed token that carries user identity
+              and claims, and OAuth 2 is the authorization framework that issues tokens and enables delegated access.
+              In modern Spring Boot apps, JWT is common for stateless APIs and OAuth 2 is used for full authorization
+              flows."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="springboot">
+        <h2 class="accordion-header" id="basicAuthJwtSessionComparison">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#basicAuthJwtSessionComparisonBody">
+            Basic Auth vs JWT vs Session in simple words?
+          </button>
+        </h2>
+        <div id="basicAuthJwtSessionComparisonBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              This comparison is about <strong>where the login state lives</strong>. With Basic Auth, the password is
+              sent each time. With JWT, the token itself carries the identity. With Session, the server stores the
+              login state and the browser only keeps a session id.
+            </p>
+
+            <h5 class="text-warning">Simple comparison</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Simple meaning</th>
+                  <th>Real-world idea</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Basic Auth</strong></td>
+                  <td>User sends username and password with each request.</td>
+                  <td>Showing your full ID card every time you enter.</td>
+                </tr>
+                <tr>
+                  <td><strong>JWT</strong></td>
+                  <td>User sends a signed token with each request.</td>
+                  <td>Carrying a sealed pass that proves who you are.</td>
+                </tr>
+                <tr>
+                  <td><strong>Session</strong></td>
+                  <td>Server remembers the user after login and client sends only session id.</td>
+                  <td>Getting a wristband after check-in, while the venue keeps your details.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Main difference</h5>
+            <ul>
+              <li><strong>Basic Auth:</strong> credentials travel every time.</li>
+              <li><strong>JWT:</strong> stateless, token contains the identity claims.</li>
+              <li><strong>Session:</strong> stateful, server keeps login data in memory or shared store like Redis.</li>
+            </ul>
+
+            <h5 class="text-warning">When to use</h5>
+            <ul>
+              <li><strong>Basic Auth:</strong> simple internal APIs, demos, or tooling.</li>
+              <li><strong>JWT:</strong> stateless REST APIs, mobile apps, and microservices.</li>
+              <li><strong>Session:</strong> classic web apps where server-side state is acceptable.</li>
+            </ul>
+
+            <h5 class="text-warning">Spring Boot angle</h5>
+            <p>
+              In Spring Boot, session-based auth is common for browser apps, JWT is common for REST APIs, and Basic
+              Auth is usually the quickest but least flexible option.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Basic Auth sends username and password every time, JWT is a stateless signed token that carries user
+              claims, and Session authentication stores the login state on the server while the client keeps only a
+              session id. For modern APIs, JWT is usually preferred; for browser apps, session-based auth is common."
+            </p>
+          </div>
+        </div>
+      </div>
+
       <!-- Controller Method Selection -->
       <div class="accordion-item" data-manual-category="springboot">
         <h2 class="accordion-header" id="controllerMethodSelection">
