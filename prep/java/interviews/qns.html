@@ -136,6 +136,7 @@
     <div class="tech-filter-container" id="techFilterBar">
       <button class="tech-filter-btn active" type="button" data-category="all">All</button>
       <button class="tech-filter-btn" type="button" data-category="java">Java</button>
+      <button class="tech-filter-btn" type="button" data-category="java8">Java 8 Coding</button>
       <button class="tech-filter-btn" type="button" data-category="springboot">Spring Boot</button>
       <button class="tech-filter-btn" type="button" data-category="hibernate">Hibernate</button>
       <button class="tech-filter-btn" type="button" data-category="microservices">Microservices</button>
@@ -151,6 +152,59 @@
         onkeyup="searchQuestions()" />
     </div>
     <div class="accordion" id="accordionSeniorJava">
+
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="systemOutPrintlnTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#systemOutPrintlnTopBody">
+            What is System.out.println(), and what are System, out, and println?
+          </button>
+        </h2>
+        <div id="systemOutPrintlnTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <code>System.out.println()</code> is the most common way to print text to the console in Java.
+              It is actually three parts working together.
+            </p>
+
+            <h5 class="text-warning">Breakdown</h5>
+            <ul>
+              <li><strong>System:</strong> a final Java class in <code>java.lang</code> that gives access to system resources.</li>
+              <li><strong>out:</strong> a public static field of type <code>PrintStream</code> that points to the standard output stream.</li>
+              <li><strong>println:</strong> a method on <code>PrintStream</code> that prints the value and then moves the cursor to a new line.</li>
+            </ul>
+
+            <h5 class="text-warning">Simple example</h5>
+            <pre><code class="language-java">System.out.println("Hello Java");</code></pre>
+
+            <h5 class="text-warning">What about System.err.println()?</h5>
+            <p>
+              <code>System.err.println()</code> writes to the standard error stream instead of standard output.
+              We usually use it for error messages, warnings, or logs that should stand out from normal output.
+            </p>
+            <pre><code class="language-java">System.out.println("Normal application message");
+System.err.println("Something went wrong");</code></pre>
+
+            <h5 class="text-warning">What happens internally</h5>
+            <p>
+              Java looks up <code>System.out</code>, which is usually connected to the console, and then
+              <code>println()</code> writes the text followed by a newline character.
+            </p>
+
+            <h5 class="text-warning">Real-world analogy</h5>
+            <p>
+              Think of <code>System</code> as the control panel, <code>out</code> as the speaker line, and
+              <code>println</code> as the person speaking a message and then pausing for the next line.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "System is a utility class, out is the standard output PrintStream, and println prints the value to
+              the console with a new line. So System.out.println() means write this message to standard output."
+            </p>
+          </div>
+        </div>
+      </div>
 
       <div class="accordion-item" data-manual-category="java">
         <h2 class="accordion-header" id="designPatternsCreationalTop">
@@ -1846,11 +1900,611 @@ List&lt;String&gt; result = names.stream()
         </div>
       </div>
 
-      <div class="p-3 mb-3 border border-secondary rounded bg-dark bg-opacity-50">
-        <h4 class="text-warning mb-1">Java 8 Streams Practice Set</h4>
-        <p class="mb-0 text-light">
-          Grouped interview questions with separate sections for common stream, collector, and grouping problems.
-        </p>
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="streamReduceTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#streamReduceTopBody">
+            What is reduce() in Java Streams, why do we use it, and what are its overloads?
+          </button>
+        </h2>
+        <div id="streamReduceTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>reduce()</strong> is a terminal operation used to combine many stream elements into one result.
+              We use it when we want to aggregate values like sum, product, max, min, or a custom combined object.
+            </p>
+
+            <h5 class="text-warning">Why we use reduce</h5>
+            <ul>
+              <li>To collapse a stream into a single value.</li>
+              <li>To perform custom aggregation beyond built-in collectors.</li>
+              <li>To express associative operations cleanly in a functional style.</li>
+            </ul>
+
+            <h5 class="text-warning">The three overloads</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Overload</th>
+                  <th>Use case</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>Optional&lt;T&gt; reduce(BinaryOperator&lt;T&gt; accumulator)</code></td>
+                  <td>Combine stream elements when there is no initial value.</td>
+                </tr>
+                <tr>
+                  <td><code>T reduce(T identity, BinaryOperator&lt;T&gt; accumulator)</code></td>
+                  <td>Combine stream elements with a default starting value.</td>
+                </tr>
+                <tr>
+                  <td><code>U reduce(U identity, BiFunction&lt;U, ? super T, U&gt; accumulator, BinaryOperator&lt;U&gt; combiner)</code></td>
+                  <td>Combine and transform into a different result type, especially useful in parallel streams.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Simple examples</h5>
+            <pre><code class="language-java">List&lt;Integer&gt; nums = List.of(10, 20, 30, 40);
+
+// 1. Without identity: returns Optional
+Optional&lt;Integer&gt; sum1 = nums.stream()
+    .reduce((a, b) -&gt; a + b);
+
+// 2. With identity: returns plain value
+Integer sum2 = nums.stream()
+    .reduce(0, Integer::sum);
+
+// 3. With identity + accumulator + combiner
+Integer sum3 = nums.stream()
+    .reduce(0, Integer::sum, Integer::sum);</code></pre>
+
+            <h5 class="text-warning">What does combiner mean?</h5>
+            <p>
+              The <strong>combiner</strong> is used mainly in parallel streams. If the stream is split into multiple
+              parts, each part gets reduced separately, and then the combiner merges those partial results into one
+              final result.
+            </p>
+            <ul>
+              <li><strong>Accumulator:</strong> combines one existing partial result with the next stream element.</li>
+              <li><strong>Combiner:</strong> combines two partial results produced by different threads.</li>
+            </ul>
+
+            <h5 class="text-warning">Easy example</h5>
+            <pre><code class="language-java">Integer sum = nums.parallelStream()
+    .reduce(
+        0,                 // identity
+        Integer::sum,      // accumulator: partial + element
+        Integer::sum       // combiner: partial + partial
+    );</code></pre>
+
+            <p>
+              In this example, if one thread sums <code>10 + 20</code> and another sums <code>30 + 40</code>, the
+              combiner merges those two partial sums into the final value.
+            </p>
+
+            <h5 class="text-warning">Another example: string join</h5>
+            <pre><code class="language-java">String joined = Stream.of("Java", "Spring", "Boot")
+    .parallel()
+    .reduce(
+        "",
+        (a, b) -&gt; a.isEmpty() ? b : a + ", " + b,
+        (a, b) -&gt; a.isEmpty() ? b : b.isEmpty() ? a : a + ", " + b
+    );</code></pre>
+            <p>
+              Here the accumulator builds each partial string, and the combiner joins two partial strings together.
+            </p>
+
+            <h5 class="text-warning">Real-world example</h5>
+            <p>
+              Imagine calculating the total cart amount from many line items. Reduce lets you fold all item prices
+              into one final bill.
+            </p>
+
+            <h5 class="text-warning">When to use reduce vs Collectors</h5>
+            <ul>
+              <li><strong>Use reduce:</strong> when you want one final value from a stream.</li>
+              <li><strong>Use Collectors:</strong> when you want grouping, mapping, partitioning, or collection-based results.</li>
+              <li><strong>Use reduce carefully:</strong> only for associative operations where the order of grouping does not change the result.</li>
+            </ul>
+
+            <h5 class="text-warning">Important note</h5>
+            <p>
+              The operation should ideally be associative and stateless. If you write a non-associative reduce, the
+              result may behave unexpectedly, especially in parallel streams.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "reduce() is a terminal stream operation used to combine all elements into one result, such as a sum
+              or product. It has three overloads: one without identity that returns Optional, one with identity that
+              returns a plain value, and one with identity plus combiner for parallel-friendly transformations."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="streamMatchTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#streamMatchTopBody">
+            What are allMatch(), anyMatch(), and noneMatch() in streams?
+          </button>
+        </h2>
+        <div id="streamMatchTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              These are terminal operations used to check whether stream elements satisfy a condition.
+              They are very useful when you only need a yes/no answer.
+            </p>
+
+            <h5 class="text-warning">Meaning of each method</h5>
+            <ul>
+              <li><strong>allMatch:</strong> returns true if every element matches the predicate.</li>
+              <li><strong>anyMatch:</strong> returns true if at least one element matches the predicate.</li>
+              <li><strong>noneMatch:</strong> returns true if no elements match the predicate.</li>
+            </ul>
+
+            <h5 class="text-warning">Simple example</h5>
+            <pre><code class="language-java">List&lt;Integer&gt; nums = List.of(10, 20, 30, 40);
+
+boolean allPositive = nums.stream().allMatch(n -&gt; n &gt; 0);
+boolean anyGreaterThan25 = nums.stream().anyMatch(n -&gt; n &gt; 25);
+boolean noneNegative = nums.stream().noneMatch(n -&gt; n &lt; 0);</code></pre>
+
+            <h5 class="text-warning">Spring Security role example</h5>
+            <p>
+              Think of user roles like <code>ROLE_USER</code>, <code>ROLE_ADMIN</code>, and <code>ROLE_AUDITOR</code>.
+              These methods help answer authorization-style questions quickly.
+            </p>
+            <pre><code class="language-java">Set&lt;String&gt; roles = Set.of("ROLE_USER", "ROLE_ADMIN");
+
+boolean allAreAdmin = roles.stream().allMatch(role -&gt; role.equals("ROLE_ADMIN"));
+boolean hasAdmin = roles.stream().anyMatch(role -&gt; role.equals("ROLE_ADMIN"));
+boolean noGuestRole = roles.stream().noneMatch(role -&gt; role.equals("ROLE_GUEST"));</code></pre>
+
+            <h5 class="text-warning">How to remember</h5>
+            <ul>
+              <li><strong>allMatch:</strong> everyone must satisfy the rule.</li>
+              <li><strong>anyMatch:</strong> at least one must satisfy the rule.</li>
+              <li><strong>noneMatch:</strong> nobody should satisfy the rule.</li>
+            </ul>
+
+            <h5 class="text-warning">When to use</h5>
+            <ul>
+              <li>Validation checks like "are all inputs valid?"</li>
+              <li>Access checks like "does any role allow this action?"</li>
+              <li>Safety checks like "is there no forbidden value?"</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "allMatch checks that every element satisfies the condition, anyMatch checks whether at least one does,
+              and noneMatch checks whether none do. They are useful for validation and authorization-style checks,
+              like verifying roles in Spring Security."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="findFirstAnyTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#findFirstAnyTopBody">
+            What is the difference between findFirst() and findAny() in streams?
+          </button>
+        </h2>
+        <div id="findFirstAnyTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Both are terminal operations that return one matching element wrapped in <code>Optional</code>.
+              The difference is about ordering and parallel performance.
+            </p>
+
+            <h5 class="text-warning">Meaning of each method</h5>
+            <ul>
+              <li><strong>findFirst:</strong> returns the first matching element in encounter order.</li>
+              <li><strong>findAny:</strong> returns any matching element, which may be faster in parallel streams.</li>
+            </ul>
+
+            <h5 class="text-warning">Simple example</h5>
+            <pre><code class="language-java">List&lt;String&gt; names = List.of("Asha", "Ravi", "Meera", "Raj");
+
+Optional&lt;String&gt; first = names.stream()
+    .filter(name -&gt; name.startsWith("R"))
+    .findFirst();
+
+Optional&lt;String&gt; any = names.stream()
+    .filter(name -&gt; name.startsWith("R"))
+    .findAny();</code></pre>
+
+            <h5 class="text-warning">Spring Security style example</h5>
+            <p>
+              Imagine a user has multiple roles and you want to pick one matching role for a check.
+              <code>findFirst</code> respects order, while <code>findAny</code> can return any acceptable match.
+            </p>
+            <pre><code class="language-java">List&lt;String&gt; roles = List.of("ROLE_USER", "ROLE_ADMIN", "ROLE_AUDITOR");
+
+Optional&lt;String&gt; firstAdmin = roles.stream()
+    .filter(role -&gt; role.contains("ADMIN"))
+    .findFirst();
+
+Optional&lt;String&gt; anyAdmin = roles.parallelStream()
+    .filter(role -&gt; role.contains("ADMIN"))
+    .findAny();</code></pre>
+
+            <h5 class="text-warning">How to remember</h5>
+            <ul>
+              <li><strong>findFirst:</strong> strict order, first match.</li>
+              <li><strong>findAny:</strong> any match, better freedom for parallel execution.</li>
+            </ul>
+
+            <h5 class="text-warning">When to use</h5>
+            <ul>
+              <li>Use <code>findFirst</code> when order matters.</li>
+              <li>Use <code>findAny</code> when you only need one match and parallel speed matters.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "findFirst returns the first matching element in encounter order, while findAny can return any matching
+              element and is often better for parallel streams. I use findFirst when order matters and findAny when I
+              only need one match."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="limitSkipTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#limitSkipTopBody">
+            What are limit() and skip() in streams?
+          </button>
+        </h2>
+        <div id="limitSkipTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              These are intermediate operations used for pagination, sampling, and trimming a stream.
+            </p>
+
+            <h5 class="text-warning">Meaning of each method</h5>
+            <ul>
+              <li><strong>limit(n):</strong> keeps only the first <code>n</code> elements.</li>
+              <li><strong>skip(n):</strong> ignores the first <code>n</code> elements and keeps the rest.</li>
+            </ul>
+
+            <h5 class="text-warning">Simple example</h5>
+            <pre><code class="language-java">List&lt;Integer&gt; nums = List.of(1, 2, 3, 4, 5, 6);
+
+List&lt;Integer&gt; firstThree = nums.stream()
+    .limit(3)
+    .collect(Collectors.toList());
+
+List&lt;Integer&gt; afterSkippingTwo = nums.stream()
+    .skip(2)
+    .collect(Collectors.toList());</code></pre>
+
+            <h5 class="text-warning">Spring Security style example</h5>
+            <p>
+              Think of a list of roles or permissions. <code>limit</code> gives only the first few roles to inspect,
+              and <code>skip</code> jumps past initial roles when paging through results.
+            </p>
+            <pre><code class="language-java">List&lt;String&gt; roles = List.of("ROLE_USER", "ROLE_ADMIN", "ROLE_AUDITOR", "ROLE_MANAGER");
+
+List&lt;String&gt; firstTwoRoles = roles.stream()
+    .limit(2)
+    .collect(Collectors.toList());
+
+List&lt;String&gt; rolesAfterFirst = roles.stream()
+    .skip(1)
+    .collect(Collectors.toList());</code></pre>
+
+            <h5 class="text-warning">When to use</h5>
+            <ul>
+              <li><strong>limit:</strong> when you want top N results or preview data.</li>
+              <li><strong>skip:</strong> when you want pagination or to ignore already processed items.</li>
+              <li><strong>Both together:</strong> for page-based retrieval like page 2, 3, 4 etc.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "limit keeps the first n elements and skip ignores the first n elements. I use them for pagination,
+              sampling, and top-N style queries."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="distinctTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#distinctTopBody">
+            What does distinct() do in streams?
+          </button>
+        </h2>
+        <div id="distinctTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <code>distinct()</code> removes duplicate elements from a stream by using <code>equals()</code> and
+              <code>hashCode()</code>.
+            </p>
+
+            <h5 class="text-warning">Simple example</h5>
+            <pre><code class="language-java">List&lt;Integer&gt; unique = List.of(1, 2, 2, 3, 3, 3).stream()
+    .distinct()
+    .collect(Collectors.toList());</code></pre>
+
+            <h5 class="text-warning">Spring Security style example</h5>
+            <p>
+              If a user accidentally has duplicate roles, <code>distinct()</code> can clean them before further
+              processing.
+            </p>
+            <pre><code class="language-java">List&lt;String&gt; roles = List.of("ROLE_USER", "ROLE_ADMIN", "ROLE_USER");
+List&lt;String&gt; uniqueRoles = roles.stream()
+    .distinct()
+    .collect(Collectors.toList());</code></pre>
+
+            <h5 class="text-warning">When to use</h5>
+            <ul>
+              <li>When you need unique values only.</li>
+              <li>When duplicates should be removed before sorting, grouping, or collecting.</li>
+              <li>When you want a clean list of distinct permissions, tags, or IDs.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "distinct removes duplicate stream elements using equals and hashCode. I use it when I want unique
+              values, like distinct roles, tags, or ids."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="sortedTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#sortedTopBody">
+            What does sorted() do in streams?
+          </button>
+        </h2>
+        <div id="sortedTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <code>sorted()</code> orders stream elements naturally or using a custom comparator.
+            </p>
+
+            <h5 class="text-warning">Simple example</h5>
+            <pre><code class="language-java">List&lt;Integer&gt; sortedNumbers = List.of(5, 2, 9, 1, 7).stream()
+    .sorted()
+    .collect(Collectors.toList());</code></pre>
+
+            <h5 class="text-warning">Spring Security style example</h5>
+            <p>
+              If you have role names, you can sort them alphabetically before displaying or auditing them.
+            </p>
+            <pre><code class="language-java">List&lt;String&gt; roles = List.of("ROLE_USER", "ROLE_ADMIN", "ROLE_AUDITOR");
+List&lt;String&gt; sortedRoles = roles.stream()
+    .sorted()
+    .collect(Collectors.toList());</code></pre>
+
+            <h5 class="text-warning">Custom sort example</h5>
+            <pre><code class="language-java">List&lt;Employee&gt; sortedEmployees = employees.stream()
+    .sorted(Comparator.comparing(Employee::getDepartment)
+        .thenComparing(Employee::getSalary, Comparator.reverseOrder()))
+    .collect(Collectors.toList());</code></pre>
+
+            <h5 class="text-warning">When to use</h5>
+            <ul>
+              <li>When you need ordered output.</li>
+              <li>When you want to sort by natural order or custom business fields.</li>
+              <li>When you want to sort roles, names, salaries, or report rows.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "sorted() orders stream elements using natural ordering or a comparator. I use it when the final output
+              needs to be arranged, like sorting roles, employees, or numbers."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="peekTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#peekTopBody">
+            What does peek() do in streams?
+          </button>
+        </h2>
+        <div id="peekTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <code>peek()</code> is mainly used for debugging or observing elements as they move through a pipeline.
+            </p>
+
+            <h5 class="text-warning">Simple example</h5>
+            <pre><code class="language-java">List&lt;Integer&gt; result = List.of(1, 2, 3, 4).stream()
+    .peek(n -&gt; System.out.println("Before filter: " + n))
+    .filter(n -&gt; n % 2 == 0)
+    .peek(n -&gt; System.out.println("After filter: " + n))
+    .collect(Collectors.toList());</code></pre>
+
+            <h5 class="text-warning">Spring Security style example</h5>
+            <p>
+              You can use <code>peek()</code> to inspect roles as they move through a security validation pipeline.
+            </p>
+            <pre><code class="language-java">Set&lt;String&gt; roles = Set.of("ROLE_USER", "ROLE_ADMIN");
+
+roles.stream()
+    .peek(role -&gt; System.out.println("Incoming role: " + role))
+    .filter(role -&gt; role.startsWith("ROLE_"))
+    .peek(role -&gt; System.out.println("Allowed role: " + role))
+    .collect(Collectors.toList());</code></pre>
+
+            <h5 class="text-warning">When to use</h5>
+            <ul>
+              <li>For debugging stream pipelines.</li>
+              <li>To log intermediate values without changing them.</li>
+              <li>Not for critical business logic or side effects.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "peek() is a debugging helper that lets me inspect elements inside a stream pipeline without modifying
+              them. I use it for logging or troubleshooting, not for business logic."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="forEachOrderedTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#forEachOrderedTopBody">
+            What is the difference between forEach() and forEachOrdered() in streams?
+          </button>
+        </h2>
+        <div id="forEachOrderedTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Both are terminal operations used to process each element in a stream. The difference is ordering,
+              especially in parallel streams.
+            </p>
+
+            <h5 class="text-warning">Meaning of each method</h5>
+            <ul>
+              <li><strong>forEach:</strong> processes elements as they become available; order is not guaranteed in parallel streams.</li>
+              <li><strong>forEachOrdered:</strong> processes elements in encounter order.</li>
+            </ul>
+
+            <h5 class="text-warning">Simple example</h5>
+            <pre><code class="language-java">List&lt;String&gt; names = List.of("Asha", "Ravi", "Meera", "Raj");
+
+names.stream()
+    .forEach(System.out::println);
+
+names.stream()
+    .forEachOrdered(System.out::println);</code></pre>
+
+            <h5 class="text-warning">Parallel stream example</h5>
+            <p>
+              In a parallel stream, <code>forEach()</code> may print in any order, while <code>forEachOrdered()</code>
+              preserves the original order.
+            </p>
+            <pre><code class="language-java">List&lt;Integer&gt; nums = List.of(1, 2, 3, 4, 5);
+
+nums.parallelStream()
+    .forEach(n -&gt; System.out.print(n + " "));
+
+nums.parallelStream()
+    .forEachOrdered(n -&gt; System.out.print(n + " "));</code></pre>
+
+            <h5 class="text-warning">Spring Security style example</h5>
+            <p>
+              Imagine logging roles after authorization. Use <code>forEachOrdered()</code> when the display order
+              matters, such as user, admin, auditor. Use <code>forEach()</code> when order does not matter.
+            </p>
+            <pre><code class="language-java">List&lt;String&gt; roles = List.of("ROLE_USER", "ROLE_ADMIN", "ROLE_AUDITOR");
+
+roles.parallelStream()
+    .forEach(role -&gt; System.out.println("Audit: " + role));
+
+roles.parallelStream()
+    .forEachOrdered(role -&gt; System.out.println("Display: " + role));</code></pre>
+
+            <h5 class="text-warning">How to remember</h5>
+            <ul>
+              <li><strong>forEach:</strong> faster freedom, no guaranteed order.</li>
+              <li><strong>forEachOrdered:</strong> ordered output, may be a bit slower in parallel.</li>
+            </ul>
+
+            <h5 class="text-warning">When to use</h5>
+            <ul>
+              <li>Use <code>forEach</code> when order does not matter and you want simpler iteration.</li>
+              <li>Use <code>forEachOrdered</code> when output order matters, especially after parallel streams.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "forEach processes stream elements without guaranteeing order in parallel streams, while
+              forEachOrdered preserves encounter order. I use forEach when order does not matter and forEachOrdered
+              when the result must stay in sequence."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="mapFlatMapTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#mapFlatMapTopBody">
+            What is the difference between map() and flatMap() in streams?
+          </button>
+        </h2>
+        <div id="mapFlatMapTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <code>map()</code> transforms each element into one output element. <code>flatMap()</code> transforms
+              each element into a stream and then flattens all those streams into one stream.
+            </p>
+
+            <h5 class="text-warning">Simple example</h5>
+            <pre><code class="language-java">List&lt;List&lt;String&gt;&gt; nested = List.of(
+    List.of("Java", "Spring"),
+    List.of("Streams", "Collectors")
+);
+
+List&lt;String&gt; mapped = nested.stream()
+    .map(list -&gt; list.toString())
+    .collect(Collectors.toList());
+
+List&lt;String&gt; flattened = nested.stream()
+    .flatMap(List::stream)
+    .collect(Collectors.toList());</code></pre>
+
+            <h5 class="text-warning">Spring Security style example</h5>
+            <p>
+              If each user has multiple roles, <code>map()</code> gives you nested role lists, while
+              <code>flatMap()</code> gives you one flat stream of all roles.
+            </p>
+            <pre><code class="language-java">List&lt;User&gt; users = getUsers();
+
+List&lt;List&lt;String&gt;&gt; nestedRoles = users.stream()
+    .map(User::getRoles)
+    .collect(Collectors.toList());
+
+List&lt;String&gt; allRoles = users.stream()
+    .flatMap(user -&gt; user.getRoles().stream())
+    .distinct()
+    .collect(Collectors.toList());</code></pre>
+
+            <h5 class="text-warning">Easy way to remember</h5>
+            <ul>
+              <li><strong>map:</strong> one input becomes one output.</li>
+              <li><strong>flatMap:</strong> one input becomes many outputs, then flatten them.</li>
+            </ul>
+
+            <h5 class="text-warning">When to use</h5>
+            <ul>
+              <li>Use <code>map()</code> for simple transformation.</li>
+              <li>Use <code>flatMap()</code> when each item contains nested lists, optional values, or sub-streams.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "map transforms each element into one output, while flatMap transforms each element into a stream and
+              then flattens the result. I use flatMap when the source contains nested collections, like users with
+              multiple roles or orders with line items."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-2 mt-4">
+        <h5 class="text-info mb-1">Employee Analytics and Collectors</h5>
+        <p class="text-muted mb-0">Counting, averaging, grouping, and salary-report style questions.</p>
       </div>
 
       <div class="accordion-item" data-manual-category="java">
@@ -1998,6 +2652,11 @@ List&lt;String&gt; result = names.stream()
             <p>Nested <code>groupingBy</code> gives department-wise gender counts.</p>
           </div>
         </div>
+      </div>
+
+      <div class="mb-2 mt-4">
+        <h5 class="text-info mb-1">Salary and Department Queries</h5>
+        <p class="text-muted mb-0">These are the common expert-level grouping and salary questions.</p>
       </div>
 
       <div class="accordion-item" data-manual-category="java">
@@ -2185,6 +2844,11 @@ List&lt;String&gt; merged = Stream.concat(s1, s2).collect(Collectors.toList());<
         </div>
       </div>
 
+      <div class="mb-2 mt-4">
+        <h5 class="text-info mb-1">String Problems</h5>
+        <p class="text-muted mb-0">Character, word, and StringJoiner-style coding questions.</p>
+      </div>
+
       <div class="accordion-item" data-manual-category="java">
         <h2 class="accordion-header" id="firstNonRepeatingTop">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
@@ -2245,6 +2909,11 @@ Character repeated = s.chars()
             <p>Use <code>groupingBy + counting</code> for word frequencies.</p>
           </div>
         </div>
+      </div>
+
+      <div class="mb-2 mt-4">
+        <h5 class="text-info mb-1">Number Problems</h5>
+        <p class="text-muted mb-0">Min, max, second highest, sum, and numeric transformation questions.</p>
       </div>
 
       <div class="accordion-item" data-manual-category="java">
@@ -2374,27 +3043,6 @@ List&lt;Integer&gt; desc = numbers.stream()
     .sorted(Comparator.reverseOrder())
     .collect(Collectors.toList());</code></pre>
             <p>Use <code>sorted()</code> for ascending and <code>Comparator.reverseOrder()</code> for descending.</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="accordion-item" data-manual-category="java">
-        <h2 class="accordion-header" id="hobbiesTop">
-          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
-            data-bs-target="#hobbiesTopBody">
-            Group Each Employee By Hobbies
-          </button>
-        </h2>
-        <div id="hobbiesTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
-          <div class="accordion-body bg-dark text-light">
-            <pre><code class="language-java">Map&lt;String, List&lt;Employee&gt;&gt; byHobby =
-    employees.stream()
-             .flatMap(e -&gt; e.getHobbies().stream().map(h -&gt; new AbstractMap.SimpleEntry&lt;&gt;(h, e)))
-             .collect(Collectors.groupingBy(
-                 Map.Entry::getKey,
-                 Collectors.mapping(Map.Entry::getValue, Collectors.toList())
-             ));</code></pre>
-            <p>Use <code>flatMap</code> to explode employee-hobby pairs, then group by hobby.</p>
           </div>
         </div>
       </div>
@@ -5807,6 +6455,227 @@ class RefundService {
         </div>
       </div>
 
+      <div class="accordion-item" data-manual-category="springboot">
+        <h2 class="accordion-header" id="basicAuthOAuthComparison">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#basicAuthOAuthComparisonBody">
+            Basic Auth vs OAuth 1 vs OAuth 2 in simple words?
+          </button>
+        </h2>
+        <div id="basicAuthOAuthComparisonBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              These are three different ways to handle access. The simplest way to think about them is:
+              <strong>Basic Auth</strong> sends credentials directly, <strong>OAuth 1</strong> adds signed requests,
+              and <strong>OAuth 2</strong> uses tokens for delegated access.
+            </p>
+
+            <h5 class="text-warning">Simple comparison</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Simple meaning</th>
+                  <th>Real-world idea</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Basic Auth</strong></td>
+                  <td>Sends username and password on every request, usually encoded, not encrypted by itself.</td>
+                  <td>Showing your ID card every time you enter a room.</td>
+                </tr>
+                <tr>
+                  <td><strong>OAuth 1</strong></td>
+                  <td>Uses signed requests with tokens and secrets. Older and more complex.</td>
+                  <td>Signing every gate pass so nobody can tamper with it.</td>
+                </tr>
+                <tr>
+                  <td><strong>OAuth 2</strong></td>
+                  <td>Uses access tokens so one app can access another app's data without seeing the password.</td>
+                  <td>Giving a valet key that opens only specific doors for a limited time.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">When to use</h5>
+            <ul>
+              <li><strong>Basic Auth:</strong> for very simple internal APIs or testing, and usually only over HTTPS.</li>
+              <li><strong>OAuth 1:</strong> mostly legacy systems now; rarely chosen for new projects.</li>
+              <li><strong>OAuth 2:</strong> modern login and third-party access flows like Google login, API access, or delegated authorization.</li>
+            </ul>
+
+            <h5 class="text-warning">Easy memory trick</h5>
+            <ul>
+              <li><strong>Basic Auth:</strong> "I send my username and password."</li>
+              <li><strong>OAuth 1:</strong> "I sign every request."</li>
+              <li><strong>OAuth 2:</strong> "I use a token instead of sharing my password."</li>
+            </ul>
+
+            <h5 class="text-warning">Spring Security angle</h5>
+            <p>
+              In Spring Boot, Basic Auth is quick to configure, but OAuth2 is what we usually use for modern
+              authorization flows with login providers, authorization servers, or JWT-based resource servers.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Basic Auth sends username and password with each request, OAuth 1 is an older signed-request model,
+              and OAuth 2 is the modern token-based approach for delegated access. In most Spring Boot systems today,
+              OAuth 2 is the common choice, while Basic Auth is mostly for simple internal use."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="springboot">
+        <h2 class="accordion-header" id="basicAuthJwtOAuthComparison">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#basicAuthJwtOAuthComparisonBody">
+            Basic Auth vs JWT vs OAuth 2 in simple words?
+          </button>
+        </h2>
+        <div id="basicAuthJwtOAuthComparisonBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              This is the comparison most interviewers actually expect. The easy way to remember it is:
+              <strong>Basic Auth</strong> sends the password, <strong>JWT</strong> carries identity in a signed token,
+              and <strong>OAuth 2</strong> is the authorization framework that usually issues those tokens.
+            </p>
+
+            <h5 class="text-warning">Simple comparison</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Simple meaning</th>
+                  <th>Real-world idea</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Basic Auth</strong></td>
+                  <td>Username and password are sent with every request.</td>
+                  <td>Showing your full ID and password every time.</td>
+                </tr>
+                <tr>
+                  <td><strong>JWT</strong></td>
+                  <td>A signed token that carries claims like user name, roles, and expiry.</td>
+                  <td>A tamper-proof entry pass with your details printed on it.</td>
+                </tr>
+                <tr>
+                  <td><strong>OAuth 2</strong></td>
+                  <td>A framework for delegated authorization that often uses access tokens and refresh tokens.</td>
+                  <td>Giving limited access to a trusted helper without giving away your password.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">How they relate</h5>
+            <ul>
+              <li><strong>Basic Auth</strong> is a simple authentication mechanism.</li>
+              <li><strong>JWT</strong> is a token format, not a full login framework by itself.</li>
+              <li><strong>OAuth 2</strong> is the authorization framework; it may use JWT as the access token format.</li>
+            </ul>
+
+            <h5 class="text-warning">When to use</h5>
+            <ul>
+              <li><strong>Basic Auth:</strong> quick internal tools, demos, or simple server-to-server checks over HTTPS.</li>
+              <li><strong>JWT:</strong> stateless API authentication where the server does not want to store session data.</li>
+              <li><strong>OAuth 2:</strong> login with Google/Facebook, delegated access, or enterprise identity flows.</li>
+            </ul>
+
+            <h5 class="text-warning">Spring Boot angle</h5>
+            <p>
+              In Spring Boot, Basic Auth is the easiest to configure, JWT is common for stateless REST APIs, and
+              OAuth2 is used when you want login/authorization to be managed by an authorization server like Keycloak,
+              Okta, or Google.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Basic Auth sends username and password every time, JWT is a signed token that carries user identity
+              and claims, and OAuth 2 is the authorization framework that issues tokens and enables delegated access.
+              In modern Spring Boot apps, JWT is common for stateless APIs and OAuth 2 is used for full authorization
+              flows."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="springboot">
+        <h2 class="accordion-header" id="basicAuthJwtSessionComparison">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#basicAuthJwtSessionComparisonBody">
+            Basic Auth vs JWT vs Session in simple words?
+          </button>
+        </h2>
+        <div id="basicAuthJwtSessionComparisonBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              This comparison is about <strong>where the login state lives</strong>. With Basic Auth, the password is
+              sent each time. With JWT, the token itself carries the identity. With Session, the server stores the
+              login state and the browser only keeps a session id.
+            </p>
+
+            <h5 class="text-warning">Simple comparison</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Simple meaning</th>
+                  <th>Real-world idea</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Basic Auth</strong></td>
+                  <td>User sends username and password with each request.</td>
+                  <td>Showing your full ID card every time you enter.</td>
+                </tr>
+                <tr>
+                  <td><strong>JWT</strong></td>
+                  <td>User sends a signed token with each request.</td>
+                  <td>Carrying a sealed pass that proves who you are.</td>
+                </tr>
+                <tr>
+                  <td><strong>Session</strong></td>
+                  <td>Server remembers the user after login and client sends only session id.</td>
+                  <td>Getting a wristband after check-in, while the venue keeps your details.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Main difference</h5>
+            <ul>
+              <li><strong>Basic Auth:</strong> credentials travel every time.</li>
+              <li><strong>JWT:</strong> stateless, token contains the identity claims.</li>
+              <li><strong>Session:</strong> stateful, server keeps login data in memory or shared store like Redis.</li>
+            </ul>
+
+            <h5 class="text-warning">When to use</h5>
+            <ul>
+              <li><strong>Basic Auth:</strong> simple internal APIs, demos, or tooling.</li>
+              <li><strong>JWT:</strong> stateless REST APIs, mobile apps, and microservices.</li>
+              <li><strong>Session:</strong> classic web apps where server-side state is acceptable.</li>
+            </ul>
+
+            <h5 class="text-warning">Spring Boot angle</h5>
+            <p>
+              In Spring Boot, session-based auth is common for browser apps, JWT is common for REST APIs, and Basic
+              Auth is usually the quickest but least flexible option.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Basic Auth sends username and password every time, JWT is a stateless signed token that carries user
+              claims, and Session authentication stores the login state on the server while the client keeps only a
+              session id. For modern APIs, JWT is usually preferred; for browser apps, session-based auth is common."
+            </p>
+          </div>
+        </div>
+      </div>
+
       <!-- Controller Method Selection -->
       <div class="accordion-item" data-manual-category="springboot">
         <h2 class="accordion-header" id="controllerMethodSelection">
@@ -6280,6 +7149,33 @@ class CustomerService {
               <code>@Service</code> for use cases/business rules, <code>@Repository</code> for manual DAO classes,
               and <code>@Component</code> for supporting beans such as validators, mappers, schedulers, or listeners.
               The names also make architecture easier to read and allow framework tooling to understand intent.
+            </p>
+
+            <h5 class="text-warning">Can we replace @RestController with @Component?</h5>
+            <p>
+              In practice, <strong>no</strong>. <code>@RestController</code> is a web stereotype that tells Spring MVC
+              to expose request-handling methods and write return values directly to the HTTP response body.
+              <code>@Component</code> only makes the class a Spring bean; it does not make it a REST endpoint.
+            </p>
+            <pre><code class="language-java">// Correct for REST endpoints
+@RestController
+@RequestMapping("/users")
+class UserController {
+  @GetMapping("/{id}")
+  User getUser(@PathVariable Long id) {
+    return service.findById(id);
+  }
+}
+
+// Not a replacement for REST endpoints
+@Component
+class UserControllerLikeBean {
+  // Spring will manage it as a bean, but it will not act as a REST controller
+}</code></pre>
+            <p>
+              If you want a web controller, use <code>@RestController</code> or <code>@Controller</code> plus
+              <code>@ResponseBody</code>. Use <code>@Component</code> for helper beans that the controller calls,
+              such as mappers, validators, or utility services.
             </p>
 
             <h5 class="text-warning">Interview-ready answer</h5>
@@ -23825,7 +24721,7 @@ CREATE TABLE invoice (
         .flatMap(employee -&gt;
             employee.getHobbies().stream()
                 .map(hobby -&gt;
-                    new AbstractMap.SimpleEntry&lt;&gt;(hobby, employee.getName())
+                    Map.entry(hobby, employee.getName())
                 )
         )
         .collect(Collectors.groupingBy(
@@ -42244,6 +43140,42 @@ public class OrderController {
 
     const categoryRules = [
       {
+        category: "java8",
+        keywords: [
+          "java 8",
+          "java8",
+          "streams",
+          "stream api",
+          "streams improved",
+          "streaming",
+          "completablefuture",
+          "optional",
+          "lambda",
+          "functional interface",
+          "method reference",
+          "collectors",
+          "stringjoiner",
+          "java.time",
+          "date and time api",
+          "allmatch",
+          "anymatch",
+          "nonematch",
+          "findfirst",
+          "findany",
+          "limit",
+          "skip",
+          "distinct",
+          "sorted",
+          "peek",
+          "foreachordered",
+          "groupingby",
+          "partitioningby",
+          "tomap",
+          "flatmap",
+          "reduce"
+        ]
+      },
+      {
         category: "sql",
         keywords: [
           "sql",
@@ -42411,8 +43343,11 @@ public class OrderController {
           .toLowerCase();
 
         item.dataset.searchText = combinedText;
+        const detectedCategory = detectCategory(combinedText);
         item.dataset.category =
-          item.dataset.manualCategory || detectCategory(combinedText);
+          item.dataset.manualCategory === "java" && detectedCategory === "java8"
+            ? "java8"
+            : item.dataset.manualCategory || detectedCategory;
       });
 
       document.querySelectorAll(".accordion-body").forEach((body) => {
