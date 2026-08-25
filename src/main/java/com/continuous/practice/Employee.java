@@ -36,14 +36,15 @@ public class Employee{
 
     @Override
     public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-        Employee employee = (Employee) o;
-        return  id==employee.getId();
-    }
+        if (this == o) return true;
+        if (!(o instanceof Employee)) return false;
 
+        Employee e = (Employee) o;
+        return id == e.id;
+    }
     @Override
     public int hashCode() {
-        return 0;
+        return Objects.hash(id);
     }
 }
 
