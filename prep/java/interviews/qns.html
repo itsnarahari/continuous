@@ -153,6 +153,1437 @@
     </div>
     <div class="accordion" id="accordionSeniorJava">
 
++      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="productionRestartPerformanceTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#productionRestartPerformanceTopBody">
+            Is a server restart mandatory in production to make an application serve requests faster?
+          </button>
+        </h2>
+        <div id="productionRestartPerformanceTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>No.</strong> A restart is not normally required to make a production application fast. A restart
+              clears the process state and can temporarily hide symptoms such as a memory leak, stuck threads, exhausted
+              connection pools, corrupted local cache, or excessive garbage collection. It does not fix the underlying
+              cause.
+            </p>
+
+            <h5 class="text-warning">Real-world example</h5>
+            <p>
+              Suppose a Spring Boot service slowly becomes slower because a code path never closes database connections.
+              After the pool is exhausted, requests wait and time out. Restarting creates a fresh pool, so the service
+              appears fast again for a while. The leak remains, and the same failure returns later.
+            </p>
+            <pre><code class="language-text">Temporary restart effect:
+connection pool exhausted -> restart -> fresh pool -> requests recover
+
+Correct fix:
+find leaked connections -> close them with try-with-resources / framework management
+-> add pool metrics and alerts -> deploy the fix</code></pre>
+
+            <h5 class="text-warning">What should happen first?</h5>
+            <ol>
+              <li>Check request latency, throughput, error rate, CPU, heap, garbage-collection pauses, thread count, and database connection-pool usage.</li>
+              <li>Inspect logs, distributed traces, thread dumps, heap dumps, slow queries, and dependency health.</li>
+              <li>Identify whether the bottleneck is application code, JVM memory, database, downstream service, network, or insufficient capacity.</li>
+              <li>Mitigate safely with scaling, traffic reduction, cache refresh, circuit breaking, or a controlled restart if necessary.</li>
+              <li>Fix the root cause, load-test the change, and monitor after deployment.</li>
+            </ol>
+
+            <h5 class="text-warning">When can a restart be justified?</h5>
+            <ul>
+              <li>A process is deadlocked, corrupted, unresponsive, or has exhausted a non-recoverable resource.</li>
+              <li>A known memory leak or native-library issue requires temporary recovery while the permanent fix is prepared.</li>
+              <li>Configuration, certificates, native libraries, or a deployed code change requires process reinitialization.</li>
+              <li>A controlled rolling deployment is replacing old instances with a new version.</li>
+              <li>An operational runbook explicitly defines the restart as a safe, measured mitigation.</li>
+            </ul>
+
+            <h5 class="text-warning">How production restarts safely</h5>
+            <p>
+              In a highly available system, we do not normally stop every instance together. A load balancer or
+              orchestrator removes one instance from traffic, waits for it to finish active requests, starts or replaces
+              it, checks readiness, and then returns it to service. The process repeats instance by instance.
+            </p>
+            <pre><code class="language-text">Load balancer
+  |-> instance-1: drain requests -> graceful shutdown -> restart -> readiness check -> traffic restored
+  |-> instance-2: continues serving
+  |-> instance-3: continues serving
+
+Result: capacity remains available during the rolling restart.</code></pre>
+
+            <h5 class="text-warning">Liveness versus readiness</h5>
+            <ul>
+              <li><strong>Liveness check:</strong> asks whether the process is alive. A failed liveness check may cause the platform to restart it.</li>
+              <li><strong>Readiness check:</strong> asks whether the instance is ready to receive traffic. A failed readiness check should remove it from traffic without necessarily restarting it.</li>
+            </ul>
+            <p>
+              A readiness check should verify only what is necessary to serve requests. Making it depend on every optional
+              downstream service can remove healthy instances unnecessarily.
+            </p>
+
+            <h5 class="text-warning">Why a freshly restarted service may seem faster</h5>
+            <ul>
+              <li>Heap usage and old temporary objects are gone, so garbage collection may reduce temporarily.</li>
+              <li>Thread pools and connection pools start with available capacity.</li>
+              <li>Local caches are empty and then repopulate, although cold caches can initially make performance worse.</li>
+              <li>Queues, buffers, and leaked resources are cleared.</li>
+              <li>JIT compilation and class loading start again, so restart can also temporarily make the service slower during warm-up.</li>
+            </ul>
+
+            <h5 class="text-warning">Better alternatives to restarting</h5>
+            <ul>
+              <li>Scale out more instances or scale up resources when demand exceeds capacity.</li>
+              <li>Tune slow SQL, indexes, connection pools, thread pools, JVM memory, and garbage collection based on measurements.</li>
+              <li>Use cache eviction or refresh controls when a cache is the specific problem.</li>
+              <li>Use circuit breakers and timeouts when a downstream dependency is slow.</li>
+              <li>Use graceful rolling restarts only as a controlled operational action, not as an automatic performance fix.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "A production restart is not mandatory for fast service. It can temporarily clear leaked resources or
+              unhealthy process state, but recurring slowness means we must find the root cause using metrics, logs,
+              traces, thread dumps, heap analysis, and database monitoring. If a restart is needed, we use graceful
+              shutdown, readiness checks, connection draining, and a rolling strategy so other instances continue serving
+              traffic."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="microservices">
++      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="twoPhaseCommitVsSagaTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#twoPhaseCommitVsSagaTopBody">
+            2-Phase Commit (2PC) vs Saga design pattern
+          </button>
+        </h2>
+        <div id="twoPhaseCommitVsSagaTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>2-Phase Commit</strong> tries to make several participants commit one distributed transaction
+              atomically. <strong>Saga</strong> breaks a business transaction into local transactions and uses
+              compensating actions when a later step fails. 2PC targets strong atomicity; Saga targets availability,
+              loose coupling, and eventual consistency.
+            </p>
+
+            <h5 class="text-warning">Real-world example: placing an order</h5>
+            <p>
+              A checkout needs to create an order, reserve inventory, and charge payment. These operations belong to
+              separate services and often separate databases.
+            </p>
+
+            <h5 class="text-warning">How 2PC works</h5>
+            <pre><code class="language-text">Coordinator -> Prepare?
+                |-> Order database: ready
+                |-> Inventory database: ready
+                |-> Payment database: ready
+
+Coordinator -> Commit
+                |-> Order database: commit
+                |-> Inventory database: commit
+                |-> Payment database: commit</code></pre>
+            <ol>
+              <li><strong>Prepare phase:</strong> the coordinator asks every participant to validate the operation and reserve required resources. Each replies yes or no.</li>
+              <li><strong>Commit phase:</strong> if every participant says yes, the coordinator sends commit. If any participant says no, it sends rollback.</li>
+            </ol>
+            <p>
+              Participants usually keep locks or prepared transaction state between phases. If the coordinator fails after
+              prepare but before the final decision, participants may wait, which is why 2PC can be blocking and expensive.
+            </p>
+
+            <h5 class="text-warning">How Saga works</h5>
+            <p>
+              Each service commits its own local transaction. If a later step fails, the workflow runs a compensating
+              action rather than asking every database to perform a global rollback.
+            </p>
+            <pre><code class="language-text">1. Order service: create order = PENDING
+2. Inventory service: reserve stock = SUCCESS
+3. Payment service: charge card = FAILED
+4. Inventory service: release stock (compensation)
+5. Order service: mark order = CANCELLED</code></pre>
+            <p>
+              A compensation is a new business operation, not a technical undo. For example, a successful payment may be
+              refunded, and a shipped item may require a return instead of a database rollback.
+            </p>
+
+            <h5 class="text-warning">Saga implementation styles</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Style</th>
+                  <th>How it works</th>
+                  <th>Example</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Choreography</strong></td>
+                  <td>Services publish events and react to events without a central coordinator.</td>
+                  <td><code>OrderCreated</code> -> inventory reserves -> <code>InventoryReserved</code> -> payment charges.</td>
+                </tr>
+                <tr>
+                  <td><strong>Orchestration</strong></td>
+                  <td>A saga orchestrator sends commands, tracks state, and invokes compensations.</td>
+                  <td>Order orchestrator calls inventory, then payment, then confirms or cancels the order.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Comparison</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Aspect</th>
+                  <th>2PC</th>
+                  <th>Saga</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Consistency</td>
+                  <td>Strong atomic commit when all participants and coordinator cooperate.</td>
+                  <td>Eventual consistency with explicit business compensations.</td>
+                </tr>
+                <tr>
+                  <td>Failure behavior</td>
+                  <td>Can block while participants wait for the coordinator's decision.</td>
+                  <td>Continues through retries and compensating actions.</td>
+                </tr>
+                <tr>
+                  <td>Performance</td>
+                  <td>Higher latency and resource locking across participants.</td>
+                  <td>Usually better availability and throughput, but more workflow messages.</td>
+                </tr>
+                <tr>
+                  <td>Coupling</td>
+                  <td>Participants need distributed-transaction support and coordinator integration.</td>
+                  <td>Services communicate through commands/events and local transactions.</td>
+                </tr>
+                <tr>
+                  <td>Rollback</td>
+                  <td>Technical rollback before the global commit.</td>
+                  <td>Business compensation after a local commit.</td>
+                </tr>
+                <tr>
+                  <td>Complexity</td>
+                  <td>Infrastructure and blocking/failure recovery are difficult.</td>
+                  <td>Application workflow, retries, ordering, idempotency, and compensation are difficult.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">When to use 2PC</h5>
+            <ul>
+              <li>Participants are trusted and support a compatible distributed transaction protocol.</li>
+              <li>Strong atomicity is more important than availability and latency.</li>
+              <li>The transaction is short-lived and the number of participants is small.</li>
+              <li>Examples include tightly controlled enterprise systems where two resource managers must commit together.</li>
+            </ul>
+
+            <h5 class="text-warning">When to use Saga</h5>
+            <ul>
+              <li>Services own separate databases and should remain independently deployable.</li>
+              <li>The workflow may be long-running, such as payment, shipment, and approval.</li>
+              <li>Temporary inconsistency is acceptable if the final business state is correct.</li>
+              <li>High availability and throughput matter more than a single global database transaction.</li>
+              <li>Each step has a safe, well-defined, idempotent compensation.</li>
+            </ul>
+
+            <h5 class="text-warning">Important Saga safeguards</h5>
+            <ul>
+              <li>Persist saga state so the workflow can resume after a service restart.</li>
+              <li>Use an outbox pattern so a database change and its event publication are reliable together.</li>
+              <li>Make commands and compensations idempotent because messages can be retried or delivered more than once.</li>
+              <li>Use timeouts, retry limits, dead-letter handling, and observability with a correlation or saga ID.</li>
+              <li>Design for duplicate, delayed, and out-of-order events.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "2PC uses a coordinator and prepare/commit phases to make multiple participants commit atomically, but it
+              can block, hold locks, and reduce availability. A Saga uses local transactions connected by events or an
+              orchestrator; if a later step fails, compensating business actions undo the earlier effects. I prefer Saga
+              for independent microservices and long-running workflows, and 2PC only when strong atomicity is essential,
+              participants support it, and the transaction is small and tightly controlled."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="microservices">
++      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="shardingRouterTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#shardingRouterTopBody">
+            What is a sharding router and how does it work?
+          </button>
+        </h2>
+        <div id="shardingRouterTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              A <strong>sharding router</strong> is the component that decides which database shard should receive a
+              request. It reads the shard key, applies the configured routing rule, selects the correct shard endpoint,
+              and forwards the query. It is not normally a copy of the business data; it manages routing metadata and
+              database connections.
+            </p>
+
+            <h5 class="text-warning">Real-world request flow</h5>
+            <pre><code class="language-text">POST /orders, customer_id = 202
+        |
+        v
+Sharding router
+  1. Validate customer_id
+  2. hash(202) -> virtual bucket 17
+  3. bucket 17 -> shard-2
+  4. write to shard-2 leader
+        |
+        v
+shard-2 leader -> replicated followers</code></pre>
+
+            <h5 class="text-warning">Main responsibilities</h5>
+            <ul>
+              <li>Extract and validate the shard key, such as <code>customer_id</code> or <code>tenant_id</code>.</li>
+              <li>Use range, hash, directory, geographic, or virtual-bucket mapping to identify the shard.</li>
+              <li>Route writes to the shard leader and reads to a suitable replica when consistency allows it.</li>
+              <li>Maintain or refresh a versioned shard map from a central catalog.</li>
+              <li>Manage connection pools, health checks, timeouts, and leader failover.</li>
+              <li>Reject unsafe cross-shard transactions or execute scatter-gather queries when explicitly supported.</li>
+              <li>Expose routing metrics such as per-shard latency, traffic, errors, and connection usage.</li>
+            </ul>
+
+            <h5 class="text-warning">How the router finds the shard</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Routing rule</th>
+                  <th>Example</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Range</td>
+                  <td><code>customer_id 1-1,000,000 -> shard-1</code></td>
+                </tr>
+                <tr>
+                  <td>Hash</td>
+                  <td><code>hash(customer_id) -> bucket 17 -> shard-2</code></td>
+                </tr>
+                <tr>
+                  <td>Directory</td>
+                  <td><code>tenant-acme -> shard-3</code> from a shard catalog</td>
+                </tr>
+                <tr>
+                  <td>Geographic</td>
+                  <td><code>region = EU -> eu-shard-group</code></td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Types of sharding routers</h5>
+            <ul>
+              <li><strong>Application-side router:</strong> the service selects a <code>DataSource</code> or connection pool. It offers control but requires shared routing code and configuration in every service.</li>
+              <li><strong>Database proxy router:</strong> applications connect to a proxy, which routes requests to shards. This keeps application code simpler but adds an infrastructure dependency and proxy capacity planning.</li>
+              <li><strong>Database-native router:</strong> a distributed database or managed service owns the partition map and routing. It reduces custom operations, but ties the design to that product's capabilities.</li>
+              <li><strong>Sharding library:</strong> a library integrates routing, SQL rewriting, and scatter-gather into the application. It can speed adoption but needs careful compatibility testing.</li>
+            </ul>
+
+            <h5 class="text-warning">Central shard catalog</h5>
+            <pre><code class="language-text">shard-map version = 42
+
+bucket 0-15   -> shard-1 -> leader db1-writer -> replicas db1-r1, db1-r2
+bucket 16-31  -> shard-2 -> leader db2-writer -> replicas db2-r1, db2-r2
+bucket 32-47  -> shard-3 -> leader db3-writer -> replicas db3-r1, db3-r2</code></pre>
+            <p>
+              The router loads this map from a strongly consistent catalog or control-plane service. It caches the map
+              locally for speed, refreshes it when the version changes, and should fail closed or use a safe retry when
+              its map is stale. During a shard move, the catalog can represent states such as
+              <code>JOINING</code>, <code>MIGRATING</code>, and <code>ACTIVE</code>.
+            </p>
+
+            <h5 class="text-warning">Spring Boot-style application router</h5>
+            <pre><code class="language-java">public DataSource chooseDataSource(String customerId, boolean write) {
+    String shardId = shardCatalog.findShard(customerId);
+    return write
+        ? leaderPools.get(shardId)
+        : replicaSelector.chooseReadablePool(shardId);
+}
+
+public Order createOrder(Order order) {
+    DataSource leader = chooseDataSource(order.customerId(), true);
+    return orderRepository.insert(leader, order);
+}</code></pre>
+            <p>
+              The repository should not independently calculate a different shard from the router. Keep routing logic in
+              one well-tested component, and make the shard key available for every operation that should be targeted.
+            </p>
+
+            <h5 class="text-warning">What if the shard key is missing?</h5>
+            <p>
+              The router cannot safely choose one shard. It may reject the request, query a known subset, or perform a
+              scatter-gather query across all relevant shards. For example, <code>WHERE customer_id = 202</code> is
+              targeted, while <code>WHERE age &gt; 30</code> may need every shard if users are sharded by customer ID.
+            </p>
+
+            <h5 class="text-warning">Router risks and safeguards</h5>
+            <ul>
+              <li>Use a stable and evenly distributed shard key to avoid hot shards.</li>
+              <li>Version shard maps and update them atomically during migrations.</li>
+              <li>Use bounded connection pools and per-shard timeouts so one unhealthy shard does not exhaust all resources.</li>
+              <li>Route read-after-write operations to the leader or use a consistency mechanism when replicas can lag.</li>
+              <li>Use idempotency keys because retries during failover or migration can repeat a write.</li>
+              <li>Do not blindly retry a transaction after an unknown result; first determine whether it committed.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "A sharding router receives a request, extracts its shard key, consults a range or shard map, and forwards
+              the query to the correct shard. It commonly routes writes to a leader and reads to replicas, while a
+              central, versioned catalog manages ownership. The router can live in the application, a proxy, a sharding
+              library, or the database platform. Its main challenges are stale metadata, hot shards, missing keys,
+              failover, and cross-shard queries."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="microservices">
++      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="replicationVsShardingTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#replicationVsShardingTopBody">
+            Replication vs sharding: what is the difference?
+          </button>
+        </h2>
+        <div id="replicationVsShardingTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>Replication copies data.</strong> <strong>Sharding divides data.</strong> Replicas contain the
+              same logical dataset, while shards contain different portions of the dataset.
+            </p>
+
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Aspect</th>
+                  <th>Replication</th>
+                  <th>Sharding</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Data placement</td>
+                  <td>The same rows are copied to multiple nodes.</td>
+                  <td>Different rows or columns are placed on different nodes.</td>
+                </tr>
+                <tr>
+                  <td>Main purpose</td>
+                  <td>High availability, disaster recovery, and read scaling.</td>
+                  <td>Scaling storage, writes, CPU, and total dataset size.</td>
+                </tr>
+                <tr>
+                  <td>Write behavior</td>
+                  <td>Usually one leader receives the write and replicates it.</td>
+                  <td>Different shard leaders can receive writes for different keys.</td>
+                </tr>
+                <tr>
+                  <td>Read behavior</td>
+                  <td>Reads can be distributed across replicas, subject to replication lag.</td>
+                  <td>The shard key routes a request to the shard that owns the data.</td>
+                </tr>
+                <tr>
+                  <td>Failure handling</td>
+                  <td>A replica can be promoted if the leader fails.</td>
+                  <td>Only the affected shard's data is available elsewhere if that shard is also replicated.</td>
+                </tr>
+                <tr>
+                  <td>Typical challenge</td>
+                  <td>Stale reads, lag, conflict handling, and failover.</td>
+                  <td>Cross-shard joins, transactions, routing, and rebalancing.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Real-world example</h5>
+            <pre><code class="language-text">Replication:
+orders database
+  primary  -> all orders
+  replica1 -> all orders
+  replica2 -> all orders
+
+Sharding:
+shard-1 -> customers 1 to 1,000,000
+shard-2 -> customers 1,000,001 to 2,000,000
+shard-3 -> customers 2,000,001 to 3,000,000</code></pre>
+            <p>
+              If the application has many reads but a manageable dataset, add replicas. If one database cannot store or
+              write the entire dataset fast enough, shard it. A large e-commerce system commonly uses both: each shard
+              owns part of the orders and has its own leader and followers.
+            </p>
+
+            <h5 class="text-warning">Easy memory trick</h5>
+            <p>
+              <strong>Replication = same data, more copies.</strong><br>
+              <strong>Sharding = different data, more partitions.</strong>
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Replication duplicates the same data across nodes to improve availability and read capacity. Sharding
+              partitions the data across nodes to scale storage and write throughput. Replication alone does not normally
+              distribute all writes because one leader still handles them. For a large application, we shard by a stable
+              key and replicate every shard for failover and read scaling."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="microservices">
++      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="replicationAndShardingTogetherTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#replicationAndShardingTogetherTopBody">
+            Can we use replication and sharding together in one application?
+          </button>
+        </h2>
+        <div id="replicationAndShardingTogetherTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>Yes.</strong> Large production applications commonly use both. Sharding divides the complete
+              dataset across multiple shard groups, while replication creates redundant copies inside each shard group.
+              They solve different problems and complement each other.
+            </p>
+
+            <h5 class="text-warning">Real-world order-service architecture</h5>
+            <pre><code class="language-text">Complete orders dataset
+        |
+        +--> Shard 1: customer IDs 1-1,000,000
+        |       +--> leader   (writes)
+        |       +--> follower (read scaling / failover)
+        |
+        +--> Shard 2: customer IDs 1,000,001-2,000,000
+        |       +--> leader   (writes)
+        |       +--> follower (read scaling / failover)
+        |
+        +--> Shard 3: customer IDs 2,000,001-3,000,000
+                +--> leader   (writes)
+                +--> follower (read scaling / failover)</code></pre>
+
+            <h5 class="text-warning">How one request flows</h5>
+            <ul>
+              <li><code>POST /orders</code> uses <code>customer_id</code> to find the shard and writes to that shard's leader.</li>
+              <li><code>GET /orders</code> is routed to a follower when slightly stale data is acceptable.</li>
+              <li>A read-after-write request is routed to the leader, or uses a consistency token, so it does not read stale follower data.</li>
+              <li>If a leader fails, a healthy follower can be promoted without moving the entire dataset.</li>
+            </ul>
+
+            <h5 class="text-warning">Why use both?</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Requirement</th>
+                  <th>Technique</th>
+                  <th>How it helps</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Dataset is too large for one database</td>
+                  <td>Sharding</td>
+                  <td>Each shard stores only part of the data.</td>
+                </tr>
+                <tr>
+                  <td>Write traffic is too high for one database</td>
+                  <td>Sharding</td>
+                  <td>Different shard leaders handle different keys.</td>
+                </tr>
+                <tr>
+                  <td>Many read requests</td>
+                  <td>Replication</td>
+                  <td>Followers distribute read traffic within each shard.</td>
+                </tr>
+                <tr>
+                  <td>Database node failure</td>
+                  <td>Replication</td>
+                  <td>A follower can be promoted for the affected shard.</td>
+                </tr>
+                <tr>
+                  <td>Regional disaster or recovery</td>
+                  <td>Replication across zones or regions</td>
+                  <td>A second copy can support recovery or regional failover.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Spring Boot request-routing idea</h5>
+            <pre><code class="language-java">String shardId = shardCatalog.findShard(customerId);
+DataSource shardLeader = shardLeaders.get(shardId);
+
+// Write to the leader of the selected shard.
+orderRepository.insert(shardLeader, order);
+
+// For an eventually consistent read, select a replica in that shard.
+DataSource replica = replicaSelector.choose(shardId);
+return orderRepository.findByCustomerId(replica, customerId);</code></pre>
+            <p>
+              In practice, a sharding library, database proxy, or managed database service may handle shard maps,
+              connection pools, replica selection, health checks, and leader failover. The application still needs to
+              understand consistency and transaction boundaries.
+            </p>
+
+            <h5 class="text-warning">Important limitations</h5>
+            <ul>
+              <li>Replication does not remove the need for sharding when one leader cannot handle the total write load.</li>
+              <li>Replication lag can make follower reads stale.</li>
+              <li>Transactions across shards are difficult; prefer a single shard key for one business transaction.</li>
+              <li>Cross-shard joins and global sorting may require scatter-gather queries or a separate reporting store.</li>
+              <li>Each shard must be monitored and capacity-planned independently.</li>
+              <li>Adding a shard requires data rebalancing, while adding a replica usually requires synchronization and routing updates.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Yes. We shard the dataset to distribute storage and write load, then replicate each shard for read
+              scaling, availability, and failover. The shard key selects a shard, and the leader or one of its followers
+              handles the request depending on whether strong or eventual consistency is required. This is powerful,
+              but it adds shard-routing, replication-lag, cross-shard transaction, and operational complexity."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="microservices">
++      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="failoverSystemsTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#failoverSystemsTopBody">
+            What is a failover system, and how does it overcome failures?
+          </button>
+        </h2>
+        <div id="failoverSystemsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              A <strong>failover system</strong> keeps a standby component or alternate path ready so that traffic can
+              move away from a failed component. It does not prevent the original failure; it reduces downtime by
+              detecting the failure, promoting or selecting a healthy replacement, and redirecting requests.
+            </p>
+
+            <h5 class="text-warning">Real-world example: order database</h5>
+            <p>
+              An e-commerce service has one database leader and two replicated followers. The leader accepts new orders.
+              A health monitor checks connectivity and replication health. If the leader's machine loses power, the
+              cluster manager confirms the failure, promotes a sufficiently up-to-date follower, and updates the database
+              endpoint used by the application.
+            </p>
+            <pre><code class="language-text">Normal:
+Order Service -> db-primary
+                  |-> db-replica-1
+                  |-> db-replica-2
+
+After primary failure:
+Order Service -> virtual database endpoint -> db-replica-1 (promoted leader)</code></pre>
+            <p>
+              The application should use a stable endpoint or service discovery name rather than a hard-coded server
+              address. Requests interrupted during the switch are retried only when the operation is safe or protected by
+              an idempotency key.
+            </p>
+
+            <h5 class="text-warning">Failover sequence</h5>
+            <ol>
+              <li><strong>Detect:</strong> health checks, heartbeats, timeouts, or error-rate monitoring identify a suspected failure.</li>
+              <li><strong>Confirm:</strong> a quorum or fencing mechanism prevents two nodes from becoming leader at the same time.</li>
+              <li><strong>Promote:</strong> a standby, replica, or alternate service becomes active.</li>
+              <li><strong>Redirect:</strong> DNS, a load balancer, service discovery, or a virtual IP sends new requests to the replacement.</li>
+              <li><strong>Recover:</strong> the failed component is repaired, rejoined, and resynchronized before becoming a standby again.</li>
+            </ol>
+
+            <h5 class="text-warning">Main failover models</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Model</th>
+                  <th>How it works</th>
+                  <th>Example and trade-off</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Active-passive</strong></td>
+                  <td>One node serves traffic; a standby waits for promotion.</td>
+                  <td>Primary database plus replica. Simple and safe, but standby capacity may be underused.</td>
+                </tr>
+                <tr>
+                  <td><strong>Active-active</strong></td>
+                  <td>Multiple nodes serve traffic simultaneously.</td>
+                  <td>Two application regions behind a load balancer. Better utilization, but conflicts and split-brain need handling.</td>
+                </tr>
+                <tr>
+                  <td><strong>Warm standby</strong></td>
+                  <td>Replacement is running and partly synchronized, but does not serve normal traffic.</td>
+                  <td>Lower failover time than a cold backup with moderate cost.</td>
+                </tr>
+                <tr>
+                  <td><strong>Cold standby</strong></td>
+                  <td>Replacement is started or restored only after failure.</td>
+                  <td>Low ongoing cost, but recovery takes longer.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Failover in microservices</h5>
+            <p>
+              A service can run multiple instances across availability zones. A load balancer removes unhealthy
+              instances from rotation. For an external dependency, a client can use timeouts, limited retries,
+              circuit breakers, and a fallback such as a cached response or queued command.
+            </p>
+            <pre><code class="language-text">Client -> Load Balancer -> service-instance-1 (unhealthy, removed)
+                      |-> service-instance-2 (healthy)
+                      |-> service-instance-3 (healthy)
+
+Payment provider unavailable:
+request -> timeout -> circuit opens -> queue payment for retry / return safe response</code></pre>
+
+            <h5 class="text-warning">RTO and RPO</h5>
+            <ul>
+              <li><strong>RTO (Recovery Time Objective):</strong> maximum acceptable time to restore service. Automatic promotion can reduce it.</li>
+              <li><strong>RPO (Recovery Point Objective):</strong> maximum acceptable data loss. Synchronous replication can reduce loss, while asynchronous replication may have replication lag.</li>
+            </ul>
+            <p>
+              For example, an RTO of 30 seconds means failover should complete within 30 seconds. An RPO of zero means
+              the business cannot lose acknowledged data, which usually requires stronger replication and may increase
+              write latency.
+            </p>
+
+            <h5 class="text-warning">Important failure risks</h5>
+            <ul>
+              <li><strong>False failure detection:</strong> a slow network can make a healthy node look dead, so use sensible timeouts and quorum.</li>
+              <li><strong>Split-brain:</strong> two nodes accept writes as leader; use fencing, leases, or consensus to allow only one leader.</li>
+              <li><strong>Stale replica:</strong> promoting a lagging replica can lose recently acknowledged data.</li>
+              <li><strong>Retry duplication:</strong> a client may retry after an unknown result; use idempotency keys for payments and orders.</li>
+              <li><strong>Failback risk:</strong> do not immediately return traffic to the repaired node; resynchronize and test it first.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "A failover system detects that an active component is unavailable and redirects traffic to a healthy
+              standby or alternate instance. In a replicated database, a cluster manager promotes a suitable follower
+              and updates a stable endpoint. Active-passive is simpler, while active-active improves utilization but
+              needs conflict and split-brain protection. Failover improves availability, but timeouts, idempotency,
+              replication lag, quorum, RTO, and RPO must all be designed explicitly."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="microservices">
++      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="scatterGatherQueryTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#scatterGatherQueryTopBody">
+            What is a scatter-gather query in database sharding?
+          </button>
+        </h2>
+        <div id="scatterGatherQueryTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              A <strong>scatter-gather query</strong> is used when the router cannot identify one shard for a request.
+              It scatters, or sends, the same query to multiple shards, then gathers the partial results and merges them
+              into one response.
+            </p>
+
+            <h5 class="text-warning">Example: find all users whose age is greater than 30</h5>
+            <p>
+              Assume users are sharded by <code>user_id</code>, but the query filters by <code>age</code>. Since age is
+              not the shard key, users older than 30 may exist on every shard.
+            </p>
+            <pre><code class="language-text">Application / query router
+        |
+        | Scatter: send to every relevant shard
+        +--> shard-1: SELECT * FROM users WHERE age > 30
+        +--> shard-2: SELECT * FROM users WHERE age > 30
+        +--> shard-3: SELECT * FROM users WHERE age > 30
+        |
+        | Gather: combine, sort, remove duplicates, and paginate
+        v
+One response containing all matching users</code></pre>
+
+            <h5 class="text-warning">SQL executed on each shard</h5>
+            <pre><code class="language-sql">SELECT user_id, name, age
+FROM users
+WHERE age > 30;</code></pre>
+            <p>
+              Each shard returns only its local matches. The router concatenates the results for a simple query, or
+              performs a distributed merge for operations such as <code>ORDER BY</code>, <code>LIMIT</code>,
+              <code>COUNT</code>, <code>SUM</code>, and pagination.
+            </p>
+
+            <h5 class="text-warning">How aggregation is gathered</h5>
+            <p>
+              For <code>COUNT(*)</code>, each shard returns a partial count and the router adds them. For
+              <code>ORDER BY age DESC LIMIT 10</code>, each shard can return its local top 10, and the router merges
+              those sorted lists to calculate the global top 10.
+            </p>
+            <pre><code class="language-text">shard-1 count = 120
+shard-2 count = 95
+shard-3 count = 140
+
+global count = 120 + 95 + 140 = 355</code></pre>
+
+            <h5 class="text-warning">Why it can be expensive</h5>
+            <ul>
+              <li>One user request creates multiple database requests, so network traffic and connection usage increase.</li>
+              <li>Latency is often close to the slowest shard, not the fastest one.</li>
+              <li>Sorting, grouping, joining, and pagination require extra memory and CPU in the router.</li>
+              <li>A failure or timeout on one shard makes the global result incomplete unless partial results are allowed.</li>
+              <li>Large offsets can cause every shard to scan and return many unnecessary rows.</li>
+            </ul>
+
+            <h5 class="text-warning">Spring Boot-style pseudocode</h5>
+            <pre><code class="language-java">List&lt;User&gt; allUsers = new ArrayList&lt;&gt;();
+
+for (DataSource shard : shardDataSources) {
+    allUsers.addAll(jdbcTemplate(shard).query(
+        "select user_id, name, age from users where age > ?",
+        userRowMapper,
+        30));
+}
+
+return allUsers.stream()
+    .sorted(Comparator.comparing(User::getAge).reversed())
+    .limit(10)
+    .toList();</code></pre>
+            <p>
+              A production implementation normally runs the shard requests in parallel with bounded concurrency, pushes
+              filtering and aggregation down to each shard, enforces timeouts, and records which shards succeeded or
+              failed. It must also avoid unbounded result collection.
+            </p>
+
+            <h5 class="text-warning">How to improve this query</h5>
+            <ul>
+              <li>Choose a shard key that matches the most common access pattern, when possible.</li>
+              <li>Add a local index on <code>age</code> so every shard can filter efficiently.</li>
+              <li>Create a global search index or read model in Elasticsearch/OpenSearch for frequent cross-shard searches.</li>
+              <li>Maintain a reporting database or materialized view for analytics instead of querying transactional shards.</li>
+              <li>Use a directory or secondary index that maps an age range to candidate shards, if the data and update model support it.</li>
+              <li>Use cursor-based pagination and a stable sort key rather than large offset pagination.</li>
+            </ul>
+
+            <h5 class="text-warning">Scatter-gather versus targeted query</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Query</th>
+                  <th>Routing behavior</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>WHERE user_id = 101</code></td>
+                  <td>Targeted query: the shard key identifies one shard.</td>
+                </tr>
+                <tr>
+                  <td><code>WHERE age &gt; 30</code></td>
+                  <td>Scatter-gather: age is not the shard key, so many shards may be queried.</td>
+                </tr>
+                <tr>
+                  <td><code>WHERE region = 'EU'</code></td>
+                  <td>Potentially targeted if the shard key or catalog is geographic.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "A scatter-gather query is a distributed query used when the shard key cannot identify one shard. For
+              finding users with age greater than 30, the router sends the filter to every shard, gathers each shard's
+              matches, and merges them into one response. It is simple but can be slow and expensive, so frequent
+              cross-shard searches should use suitable indexing, a global search index, a reporting read model, or a
+              better routing key."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="microservices">
++      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="databaseShardHotspotOverflowTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#databaseShardHotspotOverflowTopBody">
+            What is a hot shard, and what happens when a range is full or overflows?
+          </button>
+        </h2>
+        <div id="databaseShardHotspotOverflowTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              A <strong>hot shard</strong> is a shard receiving a disproportionately high amount of traffic, reads,
+              writes, CPU work, or storage growth compared with the other shards. The entire system can look healthy
+              overall while requests routed to that one shard become slow, time out, or fail.
+            </p>
+
+            <h5 class="text-warning">Real-world example</h5>
+            <p>
+              Suppose orders are range-sharded by <code>customer_id</code>. If a large retailer with millions of active
+              users is assigned to shard-2, most checkout traffic may hit shard-2 while shard-1 and shard-3 remain idle.
+              A time-based design has a similar problem when all current writes go to the newest date range.
+            </p>
+            <pre><code class="language-text">1-1,000,000       -> shard-1
+1,000,001-2,000,000 -> shard-2  (large tenant and heavy traffic)
+2,000,001-3,000,000 -> shard-3
+
+Result: shard-2 is a hot shard even if the row counts look reasonable.</code></pre>
+
+            <h5 class="text-warning">Does overflow automatically move to the next shard?</h5>
+            <p>
+              <strong>No.</strong> A database does not normally decide that a full range belongs on another shard.
+              The shard router follows the configured mapping. If the key falls in the range assigned to shard-2, the
+              request continues going to shard-2, even if that shard is near its storage or performance limit.
+            </p>
+            <p>
+              If the range is defined by a database constraint, an insert outside the allowed range may fail. If the
+              routing catalog has no mapping for the new key, the application may return an error such as
+              <code>NO_SHARD_MAPPING</code>. A new mapping must be created deliberately.
+            </p>
+
+            <h5 class="text-warning">How range overflow is handled</h5>
+            <p>
+              The usual solution is to update the shard map before capacity is exhausted. For example, split the old
+              range and move part of its data to a new shard.
+            </p>
+            <pre><code class="language-text">Before:
+1-2,000,000 -> shard-2
+
+After adding shard-4:
+1-1,000,000       -> shard-2
+1,000,001-2,000,000 -> shard-4</code></pre>
+            <ol>
+              <li>Provision the new shard and create the same schema, indexes, and security settings.</li>
+              <li>Copy the selected rows from the overloaded shard while capturing ongoing changes.</li>
+              <li>Wait until the destination catches up and validate counts, checksums, and application behavior.</li>
+              <li>Atomically update the routing catalog so new requests use the new ranges.</li>
+              <li>Keep the old mapping for rollback until the migration is proven safe.</li>
+            </ol>
+
+            <h5 class="text-warning">Common ways to prevent hot shards</h5>
+            <ul>
+              <li>Use a high-cardinality, evenly distributed key instead of a low-cardinality key such as status or country alone.</li>
+              <li>Use hash sharding or virtual buckets when traffic is not naturally range-based.</li>
+              <li>Use composite routing, such as <code>tenant_id + hash(user_id)</code>, for very large tenants.</li>
+              <li>Split a large tenant into multiple buckets or give that tenant dedicated shards.</li>
+              <li>For time-series data, use time plus a hash bucket so the current period is distributed across several shards.</li>
+              <li>Monitor per-shard QPS, latency, CPU, disk, connection count, replication lag, and error rate.</li>
+            </ul>
+
+            <h5 class="text-warning">Range sharding versus hash sharding</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Situation</th>
+                  <th>Better approach</th>
+                  <th>Reason</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Queries mostly use date ranges</td>
+                  <td>Range sharding with planned range splits</td>
+                  <td>Queries can target only the relevant shard.</td>
+                </tr>
+                <tr>
+                  <td>Uniform point lookups by customer ID</td>
+                  <td>Hash sharding with virtual buckets</td>
+                  <td>Traffic and data are usually distributed more evenly.</td>
+                </tr>
+                <tr>
+                  <td>One tenant is much larger than others</td>
+                  <td>Directory or composite sharding</td>
+                  <td>The large tenant can be moved or divided independently.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Important distinction</h5>
+            <p>
+              A range being logically exhausted, such as all customer IDs in its assigned interval being used, is
+              different from a shard being physically full or operationally overloaded. In both cases, the routing
+              metadata must be changed through a controlled split, migration, or new-range assignment. The system should
+              alert and scale before an insert or request reaches the limit.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "A hot shard is an unevenly loaded shard that becomes the bottleneck. In range sharding, overflow is not
+              automatically sent to the next shard; the router follows its shard map, so an unmapped key can fail. We
+              handle it by provisioning a shard, splitting or extending ranges, migrating data with change capture,
+              atomically updating the catalog, and validating the cutover. Hashing with virtual buckets or composite keys
+              helps prevent hot shards in the first place."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="microservices">
++      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="databaseShardingTypesTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#databaseShardingTypesTopBody">
+            What are the different types of database sharding? Explain with examples.
+          </button>
+        </h2>
+        <div id="databaseShardingTypesTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>Sharding</strong> divides one logical database into smaller databases called shards. Each shard
+              owns a portion of the data, and a router uses a shard key to send a request to the correct shard.
+            </p>
+
+            <h5 class="text-warning">1. Horizontal sharding (row-based)</h5>
+            <p>
+              Every shard has the same table structure, but different rows. For example, an orders table can be split by
+              customer: customers 1-1,000,000 go to shard-1 and customers 1,000,001-2,000,000 go to shard-2.
+            </p>
+            <pre><code class="language-text">shard-1.orders: customer_id = 101, 102, 103
+shard-2.orders: customer_id = 201, 202, 203</code></pre>
+            <p><strong>Use when:</strong> the table has too many rows or the write traffic must be distributed.</p>
+
+            <h5 class="text-warning">2. Vertical sharding (column-based)</h5>
+            <p>
+              Columns or functional tables are split across databases. A customer service may keep identity data in one
+              database and a document service may keep large profile documents in another.
+            </p>
+            <pre><code class="language-text">customer_core_db: customer_id, name, email
+customer_profile_db: customer_id, photo, preferences, biography</code></pre>
+            <p><strong>Use when:</strong> some columns are large, sensitive, or accessed by a different service. The
+              application joins the data, because a normal database join across shards may not be available.</p>
+
+            <h5 class="text-warning">3. Range-based sharding</h5>
+            <p>
+              A range of the shard key maps to one shard. For time-series events, January data can go to shard-1 and
+              February data to shard-2.
+            </p>
+            <pre><code class="language-text">2026-01-01 to 2026-01-31 -> shard-1
+2026-02-01 to 2026-02-28 -> shard-2</code></pre>
+            <p><strong>Advantages:</strong> efficient range queries and easy archival. <strong>Risk:</strong> the newest
+              range can become a hot shard when most writes are for the current date.</p>
+
+            <h5 class="text-warning">4. Hash-based sharding</h5>
+            <p>
+              A hash function is applied to the shard key to distribute records. An e-commerce system might calculate
+              <code>hash(customer_id)</code> and use the result to choose a bucket.
+            </p>
+            <pre><code class="language-text">customer_id 202 -> hash -> bucket 17 -> shard-2</code></pre>
+            <p><strong>Advantages:</strong> generally even distribution. <strong>Risk:</strong> range queries become
+              difficult, and simple <code>hash(key) % shardCount</code> can move many records when a shard is added.</p>
+
+            <h5 class="text-warning">5. Directory-based sharding</h5>
+            <p>
+              A lookup service or catalog explicitly maps a tenant, customer, or key to a shard. A SaaS platform can
+              place large tenants on dedicated shards.
+            </p>
+            <pre><code class="language-text">tenant-acme  -> shard-1
+tenant-globex -> shard-3
+tenant-small-7 -> shard-2</code></pre>
+            <p><strong>Advantages:</strong> flexible placement and easy tenant movement. <strong>Risk:</strong> the
+              directory is critical infrastructure and must be highly available, cached, and versioned.</p>
+
+            <h5 class="text-warning">6. Geographic sharding</h5>
+            <p>
+              Data is placed according to geography. EU customers can be routed to EU shards, Indian customers to India
+              shards, and US customers to US shards.
+            </p>
+            <pre><code class="language-text">region = EU     -> eu-shard-group
+region = India  -> india-shard-group
+region = US     -> us-shard-group</code></pre>
+            <p><strong>Use when:</strong> low regional latency, data residency, or regional failure isolation matters.
+              Cross-region reporting and users who travel between regions need an explicit design.</p>
+
+            <h5 class="text-warning">7. Composite or hybrid sharding</h5>
+            <p>
+              Two or more strategies are combined. For example, first choose a region, then hash the customer ID inside
+              that region. This prevents cross-region traffic while balancing customers within each region.
+            </p>
+            <pre><code class="language-text">India + hash(customer_id) -> India shard-1 or India shard-2
+EU    + hash(customer_id) -> EU shard-1 or EU shard-2</code></pre>
+            <p><strong>Use when:</strong> the system needs both geographic isolation and even distribution within each
+              region.</p>
+
+            <h5 class="text-warning">8. Consistent-hashing sharding</h5>
+            <p>
+              Shards and keys are placed on a logical hash ring, often using virtual nodes or virtual buckets. When a new
+              shard is added, only the keys owned by the reassigned buckets need to move instead of remapping every key.
+            </p>
+            <pre><code class="language-text">key A -> virtual bucket 12 -> shard-1
+key B -> virtual bucket 29 -> shard-2
+New shard-3 takes buckets 12 and 29 from the existing owners.</code></pre>
+            <p><strong>Use when:</strong> nodes can be added or removed frequently. A catalog still records ownership,
+              and data migration must be completed before changing ownership permanently.</p>
+
+            <h5 class="text-warning">Quick selection guide</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Requirement</th>
+                  <th>Good starting choice</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Many rows and customer-isolated requests</td>
+                  <td>Horizontal hash or directory sharding by customer/tenant ID</td>
+                </tr>
+                <tr>
+                  <td>Time-based queries and easy archival</td>
+                  <td>Range sharding by timestamp, with a plan for hot current ranges</td>
+                </tr>
+                <tr>
+                  <td>Regional latency or legal residency</td>
+                  <td>Geographic sharding, optionally combined with hashing</td>
+                </tr>
+                <tr>
+                  <td>Frequent node expansion</td>
+                  <td>Hashing with virtual buckets or consistent hashing</td>
+                </tr>
+                <tr>
+                  <td>Large or sensitive columns</td>
+                  <td>Vertical sharding, usually aligned with service ownership</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <p>
+              In real production systems, sharding is commonly combined with replication: the shard key chooses the
+              shard, and each shard has a leader plus replicas for availability and read scaling. The hardest decisions
+              are choosing a stable, evenly distributed key, avoiding cross-shard transactions, and planning resharding
+              before the current shards become full.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="microservices">
+      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="shardRoutingManagementTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#shardRoutingManagementTopBody">
+            How does a sharded system know which shard should receive a database call?
+          </button>
+        </h2>
+        <div id="shardRoutingManagementTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              A sharded system chooses a <strong>shard key</strong>, such as <code>customer_id</code> or
+              <code>tenant_id</code>, and applies a routing rule to it. The result identifies the shard that owns the
+              record. The application, a database proxy, or the database cluster itself can perform this routing.
+            </p>
+
+            <h5 class="text-warning">Basic routing flow</h5>
+            <pre><code class="language-text">Incoming request
+      |
+      | customerId = 202
+      v
+Shard router: hash(202) -> virtual bucket 17 -> shard-2
+      |
+      v
+Connection pool for shard-2 leader
+      |
+      v
+SELECT * FROM orders WHERE customer_id = 202</code></pre>
+            <p>
+              The routing key must be present in the request or derivable from it. Queries without the shard key may
+              need a scatter-gather operation across many shards, which is slower and should be avoided for hot paths.
+            </p>
+
+            <h5 class="text-warning">Common routing methods</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Method</th>
+                  <th>Example</th>
+                  <th>Important consideration</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Range routing</strong></td>
+                  <td>Customer IDs 1-1,000,000 -> shard-1</td>
+                  <td>Easy range queries, but one range can become a hot shard.</td>
+                </tr>
+                <tr>
+                  <td><strong>Hash routing</strong></td>
+                  <td><code>hash(customerId) -> bucket -> shard</code></td>
+                  <td>Usually balances load; use virtual buckets so new shards do not require moving everything.</td>
+                </tr>
+                <tr>
+                  <td><strong>Directory routing</strong></td>
+                  <td><code>tenant-abc -> shard-3</code> in a catalog</td>
+                  <td>Flexible tenant movement, but the catalog must be highly available and consistent.</td>
+                </tr>
+                <tr>
+                  <td><strong>Geographic routing</strong></td>
+                  <td>EU tenant -> EU shard group</td>
+                  <td>Useful for latency and data-residency requirements; cross-region requests need care.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Is there a central configuration?</h5>
+            <p>
+              Usually there is a central <strong>shard catalog</strong> or control-plane service. It stores the mapping,
+              not the business data. A production catalog can be backed by a strongly consistent database or a system
+              such as ZooKeeper, etcd, or a managed service. Services cache a read-only copy locally and refresh it when
+              the catalog publishes a version change. The version prevents a stale router from silently using an old map.
+            </p>
+            <pre><code class="language-text">Shard catalog
+----------------------------------------------------------------
+mapVersion | bucket/range | shardId | leaderEndpoint | status
+42         | bucket 0-15   | shard-1 | db1-writer     | ACTIVE
+42         | bucket 16-31  | shard-2 | db2-writer     | ACTIVE
+
+The application receives version 42 and routes using the matching map.</code></pre>
+
+            <h5 class="text-warning">Application-side routing example</h5>
+            <p>
+              In a Spring Boot application, a routing component can select a connection pool from the catalog before
+              calling the repository. In practice, teams often use a database proxy or a sharding library to avoid
+              duplicating this logic in every service.
+            </p>
+            <pre><code class="language-java">String shardId = shardCatalog.findShardByCustomerId(customerId);
+DataSource dataSource = dataSources.get(shardId);
+
+// The repository runs using the selected shard's connection.
+return jdbcTemplate(dataSource).query(
+    "select * from orders where customer_id = ?", orderRowMapper, customerId);</code></pre>
+            <p>
+              A real router also validates the key, maintains one pool per shard, routes writes to the shard leader,
+              optionally routes consistent reads to the leader, and retries only safe or idempotent operations.
+            </p>
+
+            <h5 class="text-warning">What happens when we add a new shard?</h5>
+            <ol>
+              <li><strong>Provision:</strong> create the new database node, security rules, schema, monitoring, and replicas.</li>
+              <li><strong>Register:</strong> add it to the catalog as <code>JOINING</code>; do not send normal traffic yet.</li>
+              <li><strong>Choose data to move:</strong> with virtual buckets, assign selected buckets to the new shard. With range sharding, split a range.</li>
+              <li><strong>Copy and catch up:</strong> bulk-copy the selected rows, then replay changes from a change log or CDC stream until the destination catches up.</li>
+              <li><strong>Cut over:</strong> briefly coordinate writes or use a migration state machine, update the catalog atomically, and mark the new mapping <code>ACTIVE</code>.</li>
+              <li><strong>Clean up:</strong> verify counts, checksums, latency, and error rates, then delete old copies only after the rollback window expires.</li>
+            </ol>
+
+            <h5 class="text-warning">Why virtual buckets are preferred</h5>
+            <p>
+              With <code>hash(customerId) % 3</code>, adding a fourth shard changes the result for many customers, so a
+              large amount of data moves. With 1,024 virtual buckets, the router first maps a customer to a bucket and
+              then maps buckets to physical shards. Adding shard-4 might move only selected buckets instead of remapping
+              every customer.
+            </p>
+            <pre><code class="language-text">customer 202 -> hash -> bucket 17 -> shard-2
+After expansion:
+customer 202 -> hash -> bucket 17 -> shard-4
+
+Only bucket 17 (and other deliberately migrated buckets) changes owner.</code></pre>
+
+            <h5 class="text-warning">Operational safeguards</h5>
+            <ul>
+              <li>Use an atomic catalog update and include a map version in routing logs.</li>
+              <li>Make migration resumable, throttled, and observable so it does not overwhelm production traffic.</li>
+              <li>Use idempotency keys or unique business keys because retries can happen during migration or failover.</li>
+              <li>Keep a rollback mapping until the destination is verified; never remove the source immediately after cutover.</li>
+              <li>Ensure every important query includes the shard key, or explicitly accept the cost of scatter-gather.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "The router uses a stable shard key and a routing algorithm or shard catalog to select the correct shard.
+              The catalog is commonly managed centrally and cached by services with versioned refreshes. To add a shard,
+              we provision it, register it, migrate selected ranges or virtual buckets, catch up changes, atomically
+              update the mapping, validate the cutover, and keep rollback support. Virtual buckets make expansion much
+              safer than simple modulo hashing."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="databaseReplicationShardingTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#databaseReplicationShardingTopBody">
+            What are database replication and sharding, and why do we need both?
+          </button>
+        </h2>
+        <div id="databaseReplicationShardingTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>Replication</strong> keeps copies of the same data on multiple database nodes. It mainly improves
+              availability, disaster recovery, and read capacity. <strong>Sharding</strong> splits different parts of the
+              data across multiple nodes. It mainly improves storage capacity and write or query throughput.
+            </p>
+
+            <h5 class="text-warning">Simple real-world analogy</h5>
+            <p>
+              Replication is like making photocopies of the same library in different cities. Sharding is like dividing
+              one huge library into specialist branches: one branch stores science books, another stores history books.
+              Copies help when a branch is unavailable; division helps when one branch cannot hold or serve everything.
+            </p>
+
+            <h5 class="text-warning">Replication versus sharding</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Concern</th>
+                  <th>Replication</th>
+                  <th>Sharding</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Data on each node</td>
+                  <td>Usually the same dataset</td>
+                  <td>Different subset of the dataset</td>
+                </tr>
+                <tr>
+                  <td>Main benefit</td>
+                  <td>Availability and read scaling</td>
+                  <td>Write, storage, and large-dataset scaling</td>
+                </tr>
+                <tr>
+                  <td>Typical problem solved</td>
+                  <td>Read traffic or node failure</td>
+                  <td>One database has reached CPU, disk, or write limits</td>
+                </tr>
+                <tr>
+                  <td>Typical challenge</td>
+                  <td>Replication lag and failover consistency</td>
+                  <td>Cross-shard joins, transactions, and resharding</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Why replication alone is not enough</h5>
+            <p>
+              If an orders database has 10 TB of data and one primary receives every write, adding read replicas can
+              distribute reads but does not normally distribute writes. Every replica still needs a copy of the 10 TB,
+              every write still has to be replicated, and the primary can remain the bottleneck. Sharding can partition
+              orders by <code>customer_id</code>, so different shard leaders handle different writes and each shard stores
+              only part of the data.
+            </p>
+
+            <h5 class="text-warning">Replication strategies</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Strategy</th>
+                  <th>How it works</th>
+                  <th>When to use</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Leader-follower</strong> (primary-replica)</td>
+                  <td>One leader accepts writes and followers copy its change log. Reads can go to followers.</td>
+                  <td>Most applications needing simple writes, read scaling, and failover.</td>
+                </tr>
+                <tr>
+                  <td><strong>Multi-leader</strong> (multi-primary)</td>
+                  <td>More than one node accepts writes and changes are replicated between leaders.</td>
+                  <td>Multi-region writes or independently operating data centers; requires conflict resolution.</td>
+                </tr>
+                <tr>
+                  <td><strong>Leaderless</strong> / quorum</td>
+                  <td>Clients write to and read from several replicas. A quorum such as <code>W + R &gt; N</code> helps overlap reads and writes.</td>
+                  <td>Highly available key-value workloads where eventual consistency is acceptable.</td>
+                </tr>
+                <tr>
+                  <td><strong>Synchronous</strong></td>
+                  <td>The write is acknowledged only after required replicas confirm it.</td>
+                  <td>Strong durability or consistency; accepts higher latency and possible write unavailability.</td>
+                </tr>
+                <tr>
+                  <td><strong>Asynchronous</strong></td>
+                  <td>The leader acknowledges first and followers catch up later.</td>
+                  <td>Low latency and high availability when a small data-loss window or stale reads is acceptable.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <p>
+              Replication may copy physical database pages, write-ahead logs, or logical row changes, depending on the
+              database. In an asynchronous leader-follower setup, a follower can be behind the leader, so a user may not
+              immediately see a newly created order if the next read is routed to a lagging follower.
+            </p>
+
+            <h5 class="text-warning">Sharding strategies</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Strategy</th>
+                  <th>Example routing key</th>
+                  <th>Strength and risk</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Range-based</strong></td>
+                  <td><code>customer_id 1-1,000,000</code> goes to shard A</td>
+                  <td>Good range queries; hot ranges and uneven growth are possible.</td>
+                </tr>
+                <tr>
+                  <td><strong>Hash-based</strong></td>
+                  <td><code>hash(customer_id) % shardCount</code></td>
+                  <td>Usually distributes load evenly; range queries become expensive and resizing needs care.</td>
+                </tr>
+                <tr>
+                  <td><strong>Directory-based</strong></td>
+                  <td>A routing table maps each tenant to a shard</td>
+                  <td>Flexible placement and tenant moves; routing metadata must be highly available.</td>
+                </tr>
+                <tr>
+                  <td><strong>Geographic</strong></td>
+                  <td>India customers to an India shard, EU customers to an EU shard</td>
+                  <td>Lower regional latency and data residency support; cross-region queries are harder.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Combined order-service example</h5>
+            <p>
+              Assume an e-commerce system has millions of customers. A request first uses a stable shard key such as
+              <code>customer_id</code> to select a shard. Each shard has one leader and two followers. The leader handles
+              order writes, followers serve safe read-only queries, and a coordinator or database proxy routes requests.
+            </p>
+            <pre><code class="language-text">customer_id 101  --hash--&gt; Shard 1 leader --replicates--&gt; Shard 1 followers
+customer_id 202  --hash--&gt; Shard 2 leader --replicates--&gt; Shard 2 followers
+
+POST /orders       - route by customer_id to that shard's leader
+GET /orders        - route to a follower when slightly stale data is acceptable
+GET /orders/latest - route to leader when read-after-write consistency is required</code></pre>
+
+            <p>
+              This architecture uses both techniques: sharding distributes the total workload, while replication protects
+              each shard and distributes its reads. If a shard leader fails, an eligible follower can be promoted. The
+              application should use idempotency keys because a retry during failover could otherwise create a duplicate order.
+            </p>
+
+            <h5 class="text-warning">How to choose</h5>
+            <ul>
+              <li>Choose <strong>replication</strong> when the dataset fits on one node but you need read scaling, high availability, or disaster recovery.</li>
+              <li>Choose <strong>sharding</strong> when one node cannot handle the data size, write rate, storage, or working set.</li>
+              <li>Choose <strong>both</strong> for very large systems: partition data into shards and replicate every shard.</li>
+              <li>Do not shard prematurely. Start with good indexes, query tuning, connection-pool sizing, caching, and read replicas where they solve the problem.</li>
+              <li>Choose a shard key with high cardinality and even distribution. Avoid a key that creates a hot shard, and plan resharding before capacity is exhausted.</li>
+            </ul>
+
+            <h5 class="text-warning">Important interview conclusion</h5>
+            <p>
+              "Replication creates redundant copies of the same data for availability and read scaling. Sharding divides
+              data across nodes for write, storage, and dataset scaling. Replication does not automatically distribute the
+              write workload, so large systems commonly shard first and then replicate each shard. The correct choice
+              depends on the bottleneck, consistency requirement, query pattern, failure model, and operational complexity."
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div class="accordion-item" data-manual-category="java">
         <h2 class="accordion-header" id="systemOutPrintlnTop">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
@@ -201,6 +1632,97 @@ System.err.println("Something went wrong");</code></pre>
             <p>
               "System is a utility class, out is the standard output PrintStream, and println prints the value to
               the console with a new line. So System.out.println() means write this message to standard output."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="javaPassByValueTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#javaPassByValueTopBody">
+            Is Java pass by value? How does it work with objects and nested objects?
+          </button>
+        </h2>
+        <div id="javaPassByValueTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>Java is always pass by value.</strong> The important difference is what value is copied:
+              a primitive value is copied directly, while an object reference value is copied. Java never passes the
+              original variable itself by reference.
+            </p>
+
+            <h5 class="text-warning">Primitive values</h5>
+            <p>
+              When a primitive is passed, the method receives an independent copy. Changing the parameter does not
+              change the caller's variable.
+            </p>
+            <pre><code class="language-java">static void changeNumber(int number) {
+    number = 99;
+}
+
+int value = 10;
+changeNumber(value);
+System.out.println(value); // 10</code></pre>
+
+            <h5 class="text-warning">Objects: the reference value is copied</h5>
+            <p>
+              For an object, the copied value is a reference pointing to the same object. Therefore, changing a field
+              through that reference affects the original object. However, assigning a completely new object to the
+              method parameter does not change the caller's reference.
+            </p>
+            <pre><code class="language-java">class Address {
+    String city;
+
+    Address(String city) {
+        this.city = city;
+    }
+}
+
+class Person {
+    String name;
+    Address address;
+
+    Person(String name, Address address) {
+        this.name = name;
+        this.address = address;
+    }
+}
+
+static void updatePerson(Person person) {
+    person.name = "Maya";                 // Mutates the shared object
+    person.address.city = "Bengaluru";    // Mutates the shared nested object
+    person = new Person("Ravi", new Address("Pune")); // Only changes local copy
+}
+
+Person person = new Person("Anu", new Address("Chennai"));
+updatePerson(person);
+
+System.out.println(person.name);         // Maya
+System.out.println(person.address.city); // Bengaluru
+System.out.println(person.name);         // Not Ravi: caller still has original object</code></pre>
+
+            <h5 class="text-warning">What happens with nested objects?</h5>
+            <p>
+              Nested objects follow the same rule. The copied reference points to the original <code>Person</code>, and
+              its <code>address</code> field points to the original <code>Address</code>. Mutating
+              <code>person.address.city</code> is visible to the caller because both references share the same object
+              graph. To prevent this, create a deep copy or use immutable objects.
+            </p>
+
+            <h5 class="text-warning">Real-world analogy</h5>
+            <p>
+              Imagine giving someone a copy of your house key. Both keys open the same house, so changing the furniture
+              is visible to both people. But replacing the key in their hand with a key to another house does not change
+              the key you kept. The key is the copied reference; the house is the object.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Java is strictly pass-by-value. For primitives, the primitive value is copied. For objects, the reference
+              value is copied, so both variables can point to the same object. Object field or nested-object mutations
+              are visible to the caller, but reassigning the method parameter to a new object is not visible outside the
+              method."
             </p>
           </div>
         </div>
