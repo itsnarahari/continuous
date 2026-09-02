@@ -153,7 +153,412 @@
     </div>
     <div class="accordion" id="accordionSeniorJava">
 
-+      <div class="accordion-item" data-manual-category="microservices">
+      <!-- Business id generation -->
+      <div class="accordion-item" data-manual-category="springboot">
+        <h2 class="accordion-header" id="businessIdGeneration">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#businessIdGenerationBody">
+            How do we generate business IDs such as NTA2026A00001 in Spring Boot? Should the sequence be generated in the database or application?
+          </button>
+        </h2>
+        <div id="businessIdGenerationBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <code>NTA2026A00001</code> is a <strong>business-facing reference number</strong>, not usually the
+              database primary key. Break it into: <code>NTA</code> (organisation/product prefix),
+              <code>2026</code> (year), <code>A</code> (branch/type), and <code>00001</code> (running number).
+              Keep a normal technical primary key such as <code>Long</code> or <code>UUID</code> as well, and add a
+              unique constraint to the business id.
+            </p>
+
+            <h5 class="text-warning">Best choice for most Spring Boot applications</h5>
+            <p>
+              Generate the <strong>counter in the database</strong> and format the final string in the application.
+              A database sequence or an atomic counter update is safe when several requests, pods, or service
+              instances create records at the same time. Generating the counter only in application memory is unsafe:
+              each instance can produce the same number after a restart or during concurrent traffic.
+            </p>
+
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Approach</th><th>Use it when</th><th>Important point</th></tr></thead>
+              <tbody>
+                <tr><td>Database sequence + application formatting</td><td>Most monoliths and Spring Boot APIs</td><td>Recommended: simple, fast, and safe across instances.</td></tr>
+                <tr><td>Database stored procedure/function</td><td>The database owns all business-number rules</td><td>Strong central control, but more database-specific logic.</td></tr>
+                <tr><td>Application counter</td><td>Only one instance and no concurrency, which is rare in production</td><td>Do not use for scalable production systems.</td></tr>
+                <tr><td>Snowflake/ULID/UUID</td><td>Distributed services needing IDs without a database call</td><td>Good technical ID; usually not a short sequential business number.</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">PostgreSQL: use a sequence</h5>
+            <pre><code class="language-sql">CREATE SEQUENCE nta_reference_sequence START WITH 1 INCREMENT BY 1;
+
+CREATE TABLE applications (
+    id BIGSERIAL PRIMARY KEY,
+    application_number VARCHAR(20) NOT NULL UNIQUE,
+    applicant_name VARCHAR(100) NOT NULL
+);</code></pre>
+            <pre><code class="language-java">@Repository
+public class ReferenceSequenceRepository {
+    private final JdbcTemplate jdbcTemplate;
+
+    public ReferenceSequenceRepository(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+    public long nextValue() {
+        return jdbcTemplate.queryForObject(
+                "SELECT nextval('nta_reference_sequence')",
+                Long.class
+        );
+    }
+}
+
+@Service
+public class ApplicationNumberService {
+    private final ReferenceSequenceRepository sequenceRepository;
+
+    public ApplicationNumberService(ReferenceSequenceRepository sequenceRepository) {
+        this.sequenceRepository = sequenceRepository;
+    }
+
+    public String nextApplicationNumber() {
+        long sequenceValue = sequenceRepository.nextValue();
+        int year = Year.now().getValue();
+
+        return "NTA" + year + "A" + String.format("%05d", sequenceValue);
+    }
+}</code></pre>
+            <p>
+              The first call returns <code>NTA2026A00001</code>, then <code>NTA2026A00002</code>. A database sequence
+              is atomic, so two simultaneous requests receive different values. Gaps are normal: a transaction can
+              obtain a number and later roll back, but the sequence value is not returned. Never promise gap-free IDs
+              unless the business and database design explicitly require it.
+            </p>
+
+            <h5 class="text-warning">If the number must restart every year</h5>
+            <p>
+              Do not reset one global sequence in a live application: concurrent requests around New Year can race.
+              Instead maintain one counter row per business scope, for example <code>(prefix, year, branch)</code>.
+              The database increments that one row atomically.
+            </p>
+            <pre><code class="language-sql">CREATE TABLE business_id_counter (
+    prefix VARCHAR(10) NOT NULL,
+    id_year INTEGER NOT NULL,
+    branch_code VARCHAR(10) NOT NULL,
+    last_value BIGINT NOT NULL,
+    PRIMARY KEY (prefix, id_year, branch_code)
+);</code></pre>
+            <p>
+              In PostgreSQL, an <code>INSERT ... ON CONFLICT ... DO UPDATE ... RETURNING last_value</code> statement
+              can create or increment the counter in one atomic operation. For MySQL, use a transaction with a row
+              lock (<code>SELECT ... FOR UPDATE</code>) or a stored procedure. Then build
+              <code>NTA + year + branch + zero-padded value</code> in Java.
+            </p>
+
+            <h5 class="text-warning">Save it with a unique database constraint</h5>
+            <pre><code class="language-java">@Entity
+@Table(name = "applications",
+       uniqueConstraints = @UniqueConstraint(name = "uk_application_number",
+                                             columnNames = "application_number"))
+public class Application {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "application_number", nullable = false, updatable = false)
+    private String applicationNumber;
+}</code></pre>
+
+            <p><strong>Interview answer:</strong> For readable sequential IDs, I keep a separate technical primary key and generate the sequence atomically in the database. The Spring Boot service formats it as <code>NTA2026A00001</code>, and a unique constraint protects the final value. For yearly or branch-wise counters, I use one locked/atomic counter per scope instead of resetting a global sequence.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Thread join and JVM lifetime -->
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="threadJoinAndJvmLifetime">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#threadJoinAndJvmLifetimeBody">
+            If main() does not call join(), will the JVM stop before worker threads finish? When should we use Thread.join()?
+          </button>
+        </h2>
+        <div id="threadJoinAndJvmLifetimeBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              In your example, <code>main()</code> does not call <code>join()</code>, and that is completely valid.
+              The <strong>main thread can finish</strong>, but the JVM does <strong>not</strong> exit while any
+              <strong>non-daemon</strong> thread is still running. Threads created with <code>new Thread(...)</code>
+              are non-daemon by default, so <code>Thread-1</code>, <code>Thread-2</code>, and <code>Thread-3</code>
+              keep the application alive until they complete.
+            </p>
+
+            <pre><code class="language-text">main thread starts t1, t2, t3
+        |
+        +-- main() reaches its end and stops
+        |
+        +-- JVM remains alive because t1, t2, and t3 are non-daemon threads
+        |
+        +-- workers finish printing numbers
+        |
+        +-- JVM exits</code></pre>
+
+            <h5 class="text-warning">What does join() do?</h5>
+            <p>
+              <code>t1.join()</code> makes the current thread wait until <code>t1</code> terminates. It does not
+              make the worker thread run differently and it is not required to prevent JVM shutdown in this case.
+              Use it when the current thread has work that must happen <strong>after</strong> the worker threads finish,
+              such as printing a final result, closing a resource, or running an assertion in a test.
+            </p>
+
+            <h5 class="text-warning">Example: print a completion message only after all workers finish</h5>
+            <pre><code class="language-java">public static void main(String[] args) throws InterruptedException {
+    NumberPrinter2 printer = new NumberPrinter2();
+
+    Thread t1 = new Thread(() -&gt; printer.print(0), "Thread-1");
+    Thread t2 = new Thread(() -&gt; printer.print(1), "Thread-2");
+    Thread t3 = new Thread(() -&gt; printer.print(2), "Thread-3");
+
+    t1.start();
+    t2.start();
+    t3.start();
+
+    t1.join();
+    t2.join();
+    t3.join();
+
+    System.out.println("All number-printing threads finished.");
+}</code></pre>
+
+            <p>
+              Without the three <code>join()</code> calls, the completion message could print immediately, before any
+              number or before all numbers. With them, the main thread waits for all three workers in sequence. The
+              total wait still ends only when every thread has completed.
+            </p>
+
+            <h5 class="text-warning">Important daemon-thread difference</h5>
+            <p>
+              If you call <code>t1.setDaemon(true)</code> before <code>t1.start()</code>, that thread no longer keeps
+              the JVM alive. Once only daemon threads remain, the JVM may exit immediately. Do not use daemon threads
+              for work that must reliably finish, such as saving data or completing a payment.
+            </p>
+
+            <p><strong>Interview answer:</strong> <code>join()</code> is not needed just to keep the JVM alive; active non-daemon threads already do that. Use <code>join()</code> when one thread must wait for another thread's result or completion.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Print numbers in order using multiple threads -->
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="orderedNumberPrintingThreads">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#orderedNumberPrintingThreadsBody">
+            How do multiple threads print numbers in strict order (1, 2, 3...) using wait(), notifyAll(), and modulo? What changes for 3, 4, or N threads?
+          </button>
+        </h2>
+        <div id="orderedNumberPrintingThreadsBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              The goal is to share one counter and give each thread one turn in a fixed round-robin order. For three
+              threads: <code>Thread-1</code> prints 1, 4, 7...; <code>Thread-2</code> prints 2, 5, 8...; and
+              <code>Thread-3</code> prints 3, 6, 9.... The shared <code>NumberPrinter</code> object is also the
+              monitor used by <code>synchronized</code>, <code>wait()</code>, and <code>notifyAll()</code>.
+            </p>
+
+            <h5 class="text-warning">Your three-thread solution</h5>
+            <pre><code class="language-java">package com.continuous.p2026;
+
+public class NumberPrinter2 {
+
+    private int number = 1;
+    private final int max = 20;
+
+    public synchronized void print(int threadId) {
+        while (number &lt;= max) {
+            while ((number - 1) % 3 != threadId && number &lt;= max) {
+                try {
+                    wait();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+            }
+
+            if (number &lt;= max) {
+                System.out.println(Thread.currentThread().getName() + " : " + number);
+                number++;
+                notifyAll();
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        NumberPrinter2 printer = new NumberPrinter2();
+
+        Thread t1 = new Thread(() -&gt; printer.print(0), "Thread-1");
+        Thread t2 = new Thread(() -&gt; printer.print(1), "Thread-2");
+        Thread t3 = new Thread(() -&gt; printer.print(2), "Thread-3");
+
+        t1.start();
+        t2.start();
+        t3.start();
+    }
+}</code></pre>
+
+            <h5 class="text-warning">How each important line works</h5>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Code</th><th>Reason</th></tr></thead>
+              <tbody>
+                <tr><td><code>private int number = 1</code></td><td>One shared counter. It is accessed only while holding the object's monitor.</td></tr>
+                <tr><td><code>synchronized void print(...)</code></td><td>Only one thread can check, print, and increment at a time. It also allows <code>wait()</code> and <code>notifyAll()</code>.</td></tr>
+                <tr><td><code>(number - 1) % 3</code></td><td>Maps 1 to thread id 0, 2 to id 1, 3 to id 2, then repeats: 4 maps to id 0.</td></tr>
+                <tr><td><code>while (notMyTurn)</code></td><td>The thread releases the lock and waits. Use <code>while</code>, not <code>if</code>, because it can wake spuriously or another thread can run first.</td></tr>
+                <tr><td><code>wait()</code></td><td>Places the current thread in this monitor's wait set and releases the monitor so the correct thread can continue.</td></tr>
+                <tr><td><code>Thread.currentThread().interrupt()</code></td><td>Restores the interrupt flag because <code>wait()</code> clears it before throwing <code>InterruptedException</code>.</td></tr>
+                <tr><td><code>number++</code></td><td>Moves the turn to the next thread.</td></tr>
+                <tr><td><code>notifyAll()</code></td><td>Wakes all waiters; only the thread whose modulo matches the new number proceeds.</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Why notifyAll() instead of notify()?</h5>
+            <p>
+              With three or more threads, <code>notify()</code> may wake the wrong thread. That thread sees it is not
+              its turn and waits again, while the correct thread can remain asleep forever. <code>notifyAll()</code>
+              lets every waiting thread re-check the turn condition safely.
+            </p>
+
+            <h5 class="text-warning">For 4 threads or any N threads</h5>
+            <p>
+              Replace the fixed <code>3</code> with a configurable thread count. Give threads ids from
+              <code>0</code> through <code>threadCount - 1</code>. The rule remains
+              <code>(number - 1) % threadCount == threadId</code>.
+            </p>
+            <pre><code class="language-java">public class OrderedNumberPrinter {
+    private int number = 1;
+    private final int max;
+    private final int threadCount;
+
+    public OrderedNumberPrinter(int max, int threadCount) {
+        this.max = max;
+        this.threadCount = threadCount;
+    }
+
+    public synchronized void print(int threadId) {
+        while (number &lt;= max) {
+            while (number &lt;= max && (number - 1) % threadCount != threadId) {
+                try {
+                    wait();
+                } catch (InterruptedException exception) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+            }
+
+            if (number &lt;= max) {
+                System.out.println(Thread.currentThread().getName() + " : " + number++);
+                notifyAll();
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        int threadCount = 4;
+        OrderedNumberPrinter printer = new OrderedNumberPrinter(20, threadCount);
+
+        for (int threadId = 0; threadId &lt; threadCount; threadId++) {
+            int id = threadId; // Lambda captures an effectively final value.
+            new Thread(() -&gt; printer.print(id), "Thread-" + (id + 1)).start();
+        }
+    }
+}</code></pre>
+
+            <p>
+              For four threads, the output ownership is: thread id 0 prints 1, 5, 9...; id 1 prints 2, 6, 10...;
+              id 2 prints 3, 7, 11...; id 3 prints 4, 8, 12.... If <code>max</code> is not divisible by the thread
+              count, the last few threads simply have fewer turns.
+            </p>
+
+            <p><strong>Interview answer:</strong> Use one shared monitor, protect the counter with <code>synchronized</code>, calculate the owner with modulo, wait in a <code>while</code> loop until it is that thread's turn, then increment and call <code>notifyAll()</code>.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- notify() vs notifyAll() -->
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="notifyVsNotifyAll">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#notifyVsNotifyAllBody">
+            What is the difference between notify() and notifyAll() in Java? If multiple threads are waiting on the same monitor, which thread does notify() wake up, and how does the JVM decide?
+          </button>
+        </h2>
+        <div id="notifyVsNotifyAllBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Both methods are defined on <code>Object</code> and are used for threads waiting on the same object's
+              monitor. They must be called while the current thread owns that monitor, usually inside a
+              <code>synchronized</code> block. Otherwise Java throws <code>IllegalMonitorStateException</code>.
+            </p>
+
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Method</th><th>What it does</th></tr></thead>
+              <tbody>
+                <tr><td><code>notify()</code></td><td>Moves one arbitrary waiting thread from that monitor's wait set to the entry set.</td></tr>
+                <tr><td><code>notifyAll()</code></td><td>Moves every waiting thread from that monitor's wait set to the entry set.</td></tr>
+              </tbody>
+            </table>
+
+            <p>
+              A notified thread does <strong>not</strong> run immediately. It first has to compete again to acquire the
+              same monitor after the notifying thread leaves the synchronized block. It then returns from
+              <code>wait()</code> and must re-check its condition.
+            </p>
+
+            <h5 class="text-warning">Which thread does notify() wake?</h5>
+            <p>
+              If several threads called <code>wait()</code> on the same object, <code>notify()</code> selects
+              <strong>one arbitrary thread</strong>. Java does not promise FIFO order, priority order, fairness, or a
+              predictable selection rule. The exact choice is JVM and operating-system scheduling dependent, so code
+              must never rely on a particular waiting thread being chosen.
+            </p>
+
+            <h5 class="text-warning">Real-world producer/consumer example</h5>
+            <pre><code class="language-java">class TaskQueue {
+    private final Queue&lt;String&gt; tasks = new ArrayDeque&lt;&gt;();
+
+    public synchronized void put(String task) {
+        tasks.add(task);
+        notifyAll(); // Several consumers may be waiting for work.
+    }
+
+    public synchronized String take() throws InterruptedException {
+        while (tasks.isEmpty()) { // Use while, never if.
+            wait();
+        }
+        return tasks.remove();
+    }
+}</code></pre>
+
+            <p>
+              <code>notifyAll()</code> is safer when different kinds of threads wait on the same monitor, such as
+              producers waiting for space and consumers waiting for data. With <code>notify()</code>, Java may wake a
+              thread whose condition is still false; the thread waits again while a thread that could proceed remains
+              asleep. <code>notifyAll()</code> wakes everyone, and the <code>while</code> condition lets only eligible
+              threads continue.
+            </p>
+
+            <h5 class="text-warning">When can notify() be used?</h5>
+            <p>
+              Use it only when you can prove that all waiting threads are interchangeable and waking one is always
+              sufficient. Otherwise prefer <code>notifyAll()</code>, or use higher-level concurrency utilities such as
+              <code>BlockingQueue</code>, <code>CountDownLatch</code>, <code>Semaphore</code>, or
+              <code>ReentrantLock</code> with separate <code>Condition</code> objects.
+            </p>
+
+            <p><strong>Interview answer:</strong> <code>notify()</code> wakes one arbitrary waiter; <code>notifyAll()</code> wakes all waiters. Neither method transfers the lock immediately, and every awakened thread must re-check its condition in a <code>while</code> loop.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="microservices">
         <h2 class="accordion-header" id="productionRestartPerformanceTop">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
             data-bs-target="#productionRestartPerformanceTopBody">
@@ -254,7 +659,6 @@ Result: capacity remains available during the rolling restart.</code></pre>
       </div>
 
       <div class="accordion-item" data-manual-category="microservices">
-+      <div class="accordion-item" data-manual-category="microservices">
         <h2 class="accordion-header" id="twoPhaseCommitVsSagaTop">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
             data-bs-target="#twoPhaseCommitVsSagaTopBody">
@@ -415,7 +819,6 @@ Coordinator -> Commit
       </div>
 
       <div class="accordion-item" data-manual-category="microservices">
-+      <div class="accordion-item" data-manual-category="microservices">
         <h2 class="accordion-header" id="shardingRouterTop">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
             data-bs-target="#shardingRouterTopBody">
@@ -551,7 +954,6 @@ public Order createOrder(Order order) {
       </div>
 
       <div class="accordion-item" data-manual-category="microservices">
-+      <div class="accordion-item" data-manual-category="microservices">
         <h2 class="accordion-header" id="replicationVsShardingTop">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
             data-bs-target="#replicationVsShardingTopBody">
@@ -642,7 +1044,6 @@ shard-3 -> customers 2,000,001 to 3,000,000</code></pre>
       </div>
 
       <div class="accordion-item" data-manual-category="microservices">
-+      <div class="accordion-item" data-manual-category="microservices">
         <h2 class="accordion-header" id="replicationAndShardingTogetherTop">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
             data-bs-target="#replicationAndShardingTogetherTopBody">
@@ -756,7 +1157,6 @@ return orderRepository.findByCustomerId(replica, customerId);</code></pre>
       </div>
 
       <div class="accordion-item" data-manual-category="microservices">
-+      <div class="accordion-item" data-manual-category="microservices">
         <h2 class="accordion-header" id="failoverSystemsTop">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
             data-bs-target="#failoverSystemsTopBody">
@@ -879,7 +1279,6 @@ request -> timeout -> circuit opens -> queue payment for retry / return safe res
       </div>
 
       <div class="accordion-item" data-manual-category="microservices">
-+      <div class="accordion-item" data-manual-category="microservices">
         <h2 class="accordion-header" id="scatterGatherQueryTop">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
             data-bs-target="#scatterGatherQueryTopBody">
@@ -1008,7 +1407,6 @@ return allUsers.stream()
       </div>
 
       <div class="accordion-item" data-manual-category="microservices">
-+      <div class="accordion-item" data-manual-category="microservices">
         <h2 class="accordion-header" id="databaseShardHotspotOverflowTop">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
             data-bs-target="#databaseShardHotspotOverflowTopBody">
@@ -1125,7 +1523,6 @@ After adding shard-4:
       </div>
 
       <div class="accordion-item" data-manual-category="microservices">
-+      <div class="accordion-item" data-manual-category="microservices">
         <h2 class="accordion-header" id="databaseShardingTypesTop">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
             data-bs-target="#databaseShardingTypesTopBody">
@@ -1262,7 +1659,6 @@ New shard-3 takes buckets 12 and 29 from the existing owners.</code></pre>
         </div>
       </div>
 
-      <div class="accordion-item" data-manual-category="microservices">
       <div class="accordion-item" data-manual-category="microservices">
         <h2 class="accordion-header" id="shardRoutingManagementTop">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
