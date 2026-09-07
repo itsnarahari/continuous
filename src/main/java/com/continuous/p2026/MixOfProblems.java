@@ -13,6 +13,12 @@ public class MixOfProblems {
         System.out.println(countOfDigits(123450));
         System.out.println(checkArmStrongNumber(153));
         System.out.println(checkArmStrongNumber(152));
+        System.out.println(factorial(5));
+//        System.out.println(factorial(0));
+//        System.out.println(factorial(1));
+//        System.out.println(factorial(-1));
+        fibonacciSeries(20);
+
 
     }
 
@@ -119,4 +125,40 @@ public class MixOfProblems {
         }
         return result;
     }
+
+
+    public static int factorial(int n){
+        // n  = 5
+        if(n<=1){
+            throw new IllegalArgumentException("Number cannot be negative");
+        }
+        if (n <= 1) {
+            return 1;
+        }
+
+        int result = 1;
+        for (int i = n; i > 0; i--) {
+            result *=i;
+        }
+        return result;
+
     }
+
+    public static void fibonacciSeries(int n) {
+
+        int first = 0;
+        int second = 1;
+
+        for (int i = 0; i < n; i++) {
+
+            System.out.print(first + " ");
+
+            int next = first + second;
+            first = second;
+            second = next;
+        }
+    }
+
+
+    }
+

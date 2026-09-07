@@ -153,6 +153,3474 @@
     </div>
     <div class="accordion" id="accordionSeniorJava">
 
+      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="stranglerPatternTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#stranglerPatternTopBody">
+            What is the Strangler Pattern in microservices?
+          </button>
+        </h2>
+        <div id="stranglerPatternTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              The <strong>Strangler Pattern</strong> is a gradual modernization approach. Instead of rewriting a
+              monolith in one risky release, new services are built around it and a gateway or facade routes selected
+              capabilities to the new implementation. As more capabilities move, the legacy system is reduced and
+              eventually retired, like a strangler fig growing around and replacing a host tree.
+            </p>
+
+            <h5 class="text-warning">Real-world example</h5>
+            <p>
+              Suppose one legacy application contains User, Order, Payment, and Reporting modules. We first extract User
+              Service, then route only user APIs to it. Order APIs continue using the monolith until Order Service is
+              ready.
+            </p>
+            <pre><code class="language-text">Phase 1:
+Client -> API Gateway -> Legacy Monolith
+                         User + Order + Payment + Reports
+
+Phase 2:
+Client -> API Gateway -> User Service
+                     -> Legacy Monolith (Order + Payment + Reports)
+
+Phase 3:
+Client -> API Gateway -> User Service
+                     -> Order Service
+                     -> Legacy Monolith (Payment + Reports)
+
+Final:
+Client -> Gateway -> User / Order / Payment / Reporting services</code></pre>
+
+            <h5 class="text-warning">Typical migration steps</h5>
+            <ol>
+              <li><strong>Understand:</strong> map endpoints, database tables, dependencies, jobs, reports, and business ownership.</li>
+              <li><strong>Place a facade:</strong> route requests through a gateway or facade without changing client URLs.</li>
+              <li><strong>Choose a bounded capability:</strong> extract a cohesive module such as User or Notifications.</li>
+              <li><strong>Build the new service:</strong> define its API, data ownership, security, observability, and deployment.</li>
+              <li><strong>Migrate data:</strong> backfill, synchronize changes with CDC or an outbox, and validate results.</li>
+              <li><strong>Shift traffic gradually:</strong> use feature flags, shadow reads, canary routing, and metrics.</li>
+              <li><strong>Retire the old path:</strong> remove legacy routes and code only after usage, data, and rollback checks are complete.</li>
+            </ol>
+
+            <h5 class="text-warning">Routing example</h5>
+            <pre><code class="language-text">/api/users/**  -> User Service
+/api/orders/** -> Order Service
+/api/payment/** -> Legacy Monolith
+/api/reports/** -> Legacy Monolith</code></pre>
+            <p>
+              The gateway can route by path, header, tenant, feature flag, or percentage. The client does not need to
+              know which implementation currently serves the endpoint.
+            </p>
+
+            <h5 class="text-warning">Database migration choices</h5>
+            <ul>
+              <li><strong>Separate ownership:</strong> create a new database and move the capability's data there.</li>
+              <li><strong>Read model:</strong> consume events from the legacy system for temporary local reads.</li>
+              <li><strong>CDC:</strong> capture legacy database changes while the new service is being synchronized.</li>
+              <li><strong>Temporary shared database:</strong> sometimes necessary during transition, but avoid allowing both services to own and modify the same tables indefinitely.</li>
+            </ul>
+
+            <h5 class="text-warning">Benefits</h5>
+            <ul>
+              <li>Smaller releases and lower migration risk than a big-bang rewrite.</li>
+              <li>Business functionality continues to run during the migration.</li>
+              <li>Each extraction provides production feedback before the next one.</li>
+              <li>Rollback can be limited to one route or capability.</li>
+              <li>Teams can gradually introduce independent scaling and deployment.</li>
+            </ul>
+
+            <h5 class="text-warning">Risks and safeguards</h5>
+            <ul>
+              <li>Temporary duplication can create inconsistent data; define one owner and reconciliation rules.</li>
+              <li>Routing may become complex; version routes, trace decisions, and keep a rollback switch.</li>
+              <li>The monolith can become a permanent dependency; define exit milestones and remove old paths.</li>
+              <li>Distributed calls can add latency; use clear contracts, timeouts, circuit breakers, and local read models.</li>
+              <li>Do not extract by technical layers alone; choose a business capability with clear ownership.</li>
+            </ul>
+
+            <h5 class="text-warning">When should we use it?</h5>
+            <p>
+              Use the Strangler Pattern when the existing system is valuable but difficult to change, downtime is
+              unacceptable, the domain can be divided into bounded capabilities, and the organization can migrate
+              incrementally. A small, well-tested application may be simpler to replace directly rather than creating
+              long-lived migration infrastructure.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "The Strangler Pattern incrementally replaces a legacy monolith. We put a facade or gateway in front,
+              extract one business capability into a new service, route only that capability to the new service, migrate
+              and validate its data, and gradually repeat until the old path can be removed. It reduces big-bang rewrite
+              risk, but requires clear data ownership, reconciliation, observability, feature flags, and a plan to retire
+              the legacy implementation."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="microservices">
+      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="apiVersioningAutoscalingTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#apiVersioningAutoscalingTopBody">
+            How do we manage API versions, and what is the best approach for autoscaling?
+          </button>
+        </h2>
+        <div id="apiVersioningAutoscalingTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <h5 class="text-warning">API versioning</h5>
+            <p>
+              API versioning allows a service to evolve its contract without unexpectedly breaking existing consumers.
+              Version the public contract when there is a breaking change, while keeping additive changes backward
+              compatible whenever possible.
+            </p>
+
+            <h5 class="text-warning">Common versioning approaches</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Approach</th>
+                  <th>Example</th>
+                  <th>Trade-off</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>URI path</strong></td>
+                  <td><code>/api/v1/orders</code>, <code>/api/v2/orders</code></td>
+                  <td>Very visible and easy to route, document, and test; creates different URLs.</td>
+                </tr>
+                <tr>
+                  <td><strong>Query parameter</strong></td>
+                  <td><code>/orders?version=2</code></td>
+                  <td>Easy to add but versions can be missed in caches, logs, and links.</td>
+                </tr>
+                <tr>
+                  <td><strong>Custom header</strong></td>
+                  <td><code>X-API-Version: 2</code></td>
+                  <td>Keeps URLs clean but is less visible and harder to use manually.</td>
+                </tr>
+                <tr>
+                  <td><strong>Media type</strong></td>
+                  <td><code>Accept: application/vnd.company.order.v2+json</code></td>
+                  <td>Good HTTP semantics but more complex for clients and tooling.</td>
+                </tr>
+                <tr>
+                  <td><strong>Separate host</strong></td>
+                  <td><code>v2-api.example.com</code></td>
+                  <td>Useful for independent infrastructure; adds DNS and deployment complexity.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Recommended versioning strategy</h5>
+            <p>
+              For most external REST APIs, use a clear URI path such as <code>/api/v1</code> and keep changes
+              backward-compatible within a version. Add fields instead of renaming or removing them, tolerate unknown
+              response fields, and introduce a new version only for a breaking contract change.
+            </p>
+            <pre><code class="language-java">@RestController
+@RequestMapping("/api/v1/orders")
+class OrderControllerV1 {
+    @GetMapping("/{id}")
+    OrderResponseV1 find(@PathVariable UUID id) {
+        return orderService.findV1(id);
+    }
+}
+
+@RestController
+@RequestMapping("/api/v2/orders")
+class OrderControllerV2 {
+    @GetMapping("/{id}")
+    OrderResponseV2 find(@PathVariable UUID id) {
+        return orderService.findV2(id);
+    }
+}</code></pre>
+
+            <h5 class="text-warning">Versioning best practices</h5>
+            <ul>
+              <li>Define compatibility rules before release: additive fields are usually safer than changing types or meanings.</li>
+              <li>Keep versioning at the contract boundary; avoid duplicating all business logic by delegating both controllers to shared services.</li>
+              <li>Publish OpenAPI documentation and consumer-driven contract tests for every supported version.</li>
+              <li>Use API Gateway routing, feature flags, and canary traffic when introducing a new version.</li>
+              <li>Set a deprecation date, usage metrics, migration guide, and removal date for old versions.</li>
+              <li>Version asynchronous event schemas too; consumers should tolerate unknown fields and process compatible versions.</li>
+            </ul>
+
+            <h5 class="text-warning">Autoscaling in microservices</h5>
+            <p>
+              Autoscaling automatically adds or removes service instances according to demand. For stateless HTTP
+              services, <strong>horizontal scaling</strong> is usually the best first choice: run more identical
+              instances behind a load balancer instead of making one instance larger.
+            </p>
+            <pre><code class="language-text">Traffic increases
+      |
+      v
+Metrics cross target threshold
+      |
+      v
+Autoscaler adds service instances
+      |
+      v
+Load balancer distributes new requests
+
+Traffic decreases -> scale down after a stabilization window</code></pre>
+
+            <h5 class="text-warning">Kubernetes HPA example</h5>
+            <pre><code class="language-yaml">apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: order-service
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: order-service
+  minReplicas: 3
+  maxReplicas: 20
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 65</code></pre>
+
+            <h5 class="text-warning">Choose the right scaling metric</h5>
+            <ul>
+              <li><strong>CPU:</strong> useful for CPU-bound work, but insufficient when requests mostly wait on I/O.</li>
+              <li><strong>Memory:</strong> useful for memory-driven workloads, but not a direct measure of request demand.</li>
+              <li><strong>Requests per second:</strong> useful for stateless APIs when capacity per instance is known.</li>
+              <li><strong>Latency:</strong> scale when p95 or p99 exceeds the service objective, with careful stabilization.</li>
+              <li><strong>Queue depth or consumer lag:</strong> best for Kafka or batch workers; add consumers according to partitions and downstream capacity.</li>
+              <li><strong>Custom business metric:</strong> use active jobs or files when that reflects work more accurately than CPU.</li>
+            </ul>
+
+            <h5 class="text-warning">Other autoscaling types</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Purpose</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Horizontal Pod Autoscaler</strong></td>
+                  <td>Changes the number of service instances.</td>
+                </tr>
+                <tr>
+                  <td><strong>Vertical Pod Autoscaler</strong></td>
+                  <td>Changes CPU or memory requests and limits; useful when sizing is wrong, but may restart pods.</td>
+                </tr>
+                <tr>
+                  <td><strong>Cluster Autoscaler</strong></td>
+                  <td>Adds or removes worker nodes when pods cannot be scheduled or capacity is unused.</td>
+                </tr>
+                <tr>
+                  <td><strong>Scheduled scaling</strong></td>
+                  <td>Pre-scales for predictable events such as a Tuesday batch or a sale.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Autoscaling safeguards</h5>
+            <ul>
+              <li>Keep instances stateless; store sessions, jobs, and shared state in external systems.</li>
+              <li>Use readiness and liveness probes, graceful shutdown, connection draining, and warm-up time.</li>
+              <li>Set minimum replicas for availability and maximum replicas to protect databases and downstream systems.</li>
+              <li>Scale the database, connection pool, Kafka partitions, and downstream limits along with the service.</li>
+              <li>Use load tests and observe scaling delay, cold starts, queue growth, saturation, and error rates.</li>
+              <li>Do not use autoscaling to hide memory leaks, slow queries, retry storms, or unbounded queues.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "I prefer URI-based API versions such as /api/v1 for clear routing, maintain backward compatibility within
+              a version, publish contracts, and deprecate old versions with usage metrics and a migration window. For
+              autoscaling, I keep services stateless and use horizontal scaling behind a load balancer. Kubernetes HPA
+              scales on measured CPU, request rate, latency, or queue lag with minimum and maximum limits. I also use
+              graceful shutdown, readiness checks, stabilization windows, and capacity protection for the database and
+              downstream services."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="microservices">
+      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="splitUserOrderServiceTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#splitUserOrderServiceTopBody">
+            How do we split one User-and-Order service and database into User MS and Order MS?
+          </button>
+        </h2>
+        <div id="splitUserOrderServiceTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Split the system around <strong>business ownership and transaction boundaries</strong>, not only around
+              tables. User Service should own user identity and profile data. Order Service should own orders and order
+              state. Order Service should reference a user by <code>user_id</code> or a stable user identifier, but it
+              should not directly update User Service's tables.
+            </p>
+
+            <h5 class="text-warning">Target architecture</h5>
+            <pre><code class="language-text">Client -> API Gateway
+           |-> User Service  -> User Database
+           |-> Order Service -> Order Database
+
+Order Service -> User Service API
+Order Service -> User events / read model when it needs user information</code></pre>
+
+            <h5 class="text-warning">Current design</h5>
+            <pre><code class="language-text">Monolithic service -> one database
+  users
+  user_profiles
+  orders
+  order_items</code></pre>
+
+            <h5 class="text-warning">Step 1: define ownership</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Owner after split</th>
+                  <th>Access rule</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Login, password hash, roles, profile</td>
+                  <td>User Service</td>
+                  <td>Only User Service writes it.</td>
+                </tr>
+                <tr>
+                  <td>Order, order items, status, total</td>
+                  <td>Order Service</td>
+                  <td>Only Order Service writes it.</td>
+                </tr>
+                <tr>
+                  <td>Historical customer display name on an order</td>
+                  <td>Order Service snapshot or read model</td>
+                  <td>Keep history stable even if the user later changes the name.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Step 2: create service contracts</h5>
+            <pre><code class="language-text">User Service:
+  GET /users/{userId}
+  GET /users/{userId}/summary
+  UserCreated
+  UserProfileUpdated
+
+Order Service:
+  POST /orders
+  GET /orders/{orderId}
+  GET /users/{userId}/orders
+  OrderCreated
+  OrderStatusChanged</code></pre>
+            <p>
+              Use stable IDs, versioned APIs and events, clear ownership, authentication between services, timeouts,
+              circuit breakers, and correlation IDs. Avoid exposing the entire User entity as the contract; return only
+              the fields the Order Service needs.
+            </p>
+
+            <h5 class="text-warning">Step 3: decide how Order Service gets user data</h5>
+            <ul>
+              <li><strong>Synchronous lookup:</strong> Order Service calls User Service during order creation when it must validate the user immediately.</li>
+              <li><strong>Local read model:</strong> User events update a small user summary table in Order Service for fast reads.</li>
+              <li><strong>Snapshot:</strong> Copy required values such as customer name or shipping address into the order because historical orders need the value at purchase time.</li>
+              <li><strong>Do not share tables:</strong> Direct cross-service database access recreates the original monolith and couples deployments.</li>
+            </ul>
+
+            <h5 class="text-warning">Step 4: migrate the database safely</h5>
+            <ol>
+              <li>Inventory tables, queries, foreign keys, scheduled jobs, reports, and hidden dependencies.</li>
+              <li>Separate user tables and order tables logically, then create the new User and Order database schemas.</li>
+              <li>Backfill User data into the User database and Order data into the Order database.</li>
+              <li>Use CDC, an outbox, or a carefully controlled synchronization process to capture changes during migration.</li>
+              <li>Validate row counts, checksums, relationships, and business totals.</li>
+              <li>Route reads gradually to the new services, compare results, then move writes.</li>
+              <li>Keep rollback support until the new path is stable; remove old writes only after the migration window.</li>
+            </ol>
+
+            <h5 class="text-warning">Avoid uncontrolled dual writes</h5>
+            <p>
+              Writing the same business change independently to both databases can leave them inconsistent if one write
+              succeeds and the other fails. If temporary dual write is unavoidable, use an outbox or CDC process, record
+              reconciliation status, make writes idempotent, and monitor mismatches. Prefer one authoritative owner as
+              early as possible.
+            </p>
+
+            <h5 class="text-warning">Example order creation flow</h5>
+            <pre><code class="language-text">1. Client sends POST /orders with userId
+2. Order Service validates the token and checks user existence
+3. Order Service writes order = PENDING in Order DB
+4. Order Service writes OrderCreated to its outbox
+5. Outbox publishes the event
+6. Payment / inventory services process their own local work
+7. Order Service updates order status through its Saga workflow</code></pre>
+            <p>
+              User creation and order creation should not require one distributed database transaction. If a business
+              workflow spans both services, use an explicit Saga or a local validation plus eventual consistency, based
+              on the business requirement.
+            </p>
+
+            <h5 class="text-warning">Deployment strategy</h5>
+            <ul>
+              <li>Use the strangler pattern: place the new services behind the gateway while the old service handles untouched endpoints.</li>
+              <li>Extract read endpoints first, then migrate writes after the new data path is verified.</li>
+              <li>Use feature flags, shadow reads, canary traffic, metrics, and a rollback switch.</li>
+              <li>Deploy database schema changes backward-compatibly: expand, migrate, switch, then contract.</li>
+              <li>Update authentication and authorization so each service validates tokens and enforces its own permissions.</li>
+            </ul>
+
+            <h5 class="text-warning">Common mistakes</h5>
+            <ul>
+              <li>Splitting code into two deployments while both services still modify the same tables.</li>
+              <li>Creating synchronous chains for every field lookup and causing cascading failures.</li>
+              <li>Trying to maintain strong cross-service transactions without accepting distributed-transaction complexity.</li>
+              <li>Moving tables without identifying reports, jobs, foreign keys, and integrations.</li>
+              <li>Deleting the old database path before reconciliation and rollback are complete.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "I would define User and Order ownership first, create separate APIs and databases, and stop cross-service
+              table writes. I would backfill the new stores, synchronize changes with an outbox or CDC, validate the
+              data, and gradually route traffic using the strangler pattern. Order Service would keep only a user ID or
+              required snapshot and communicate with User Service through APIs or events. For workflows spanning both
+              services, I would use a Saga or eventual consistency instead of sharing a database transaction."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="microservices">
+      <div class="accordion-item" data-manual-category="springboot">
+        <h2 class="accordion-header" id="serverTimeoutDefaultsTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#serverTimeoutDefaultsTopBody">
+            What is the default server timeout, how do we increase it, and is increasing it correct?
+          </button>
+        </h2>
+        <div id="serverTimeoutDefaultsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              There is <strong>no single default timeout for every server</strong>. A request can pass through several
+              layers, and each layer may have a different timeout: client, API Gateway, load balancer, reverse proxy,
+              Spring Boot server, Feign client, database pool, and downstream service.
+            </p>
+
+            <h5 class="text-warning">Typical timeout chain</h5>
+            <pre><code class="language-text">Client timeout       = 10 seconds
+API Gateway timeout  = 8 seconds
+Load balancer        = 7 seconds
+Spring request       = 6 seconds
+Feign read timeout   = 5 seconds
+Database query       = 3 seconds</code></pre>
+            <p>
+              The effective request timeout is often controlled by the smallest applicable limit. A client may see a
+              timeout even though the backend would have completed later. Check the exact versions, server, proxy, and
+              deployment platform instead of assuming a universal default.
+            </p>
+
+            <h5 class="text-warning">Spring Boot server configuration</h5>
+            <p>
+              For a servlet-based application, configure the embedded server's connection timeout when appropriate.
+              This concerns how long the server waits for a connection or request data and is different from the time
+              allowed for slow business processing.
+            </p>
+            <pre><code class="language-yaml">server:
+  tomcat:
+    connection-timeout: 5s
+  netty:
+    connection-timeout: 5s</code></pre>
+            <p>
+              Use the property for the server actually in use; do not configure Tomcat properties for a Netty
+              application. Async request timeout, proxy timeout, and downstream client timeout may need separate
+              configuration.
+            </p>
+
+            <h5 class="text-warning">Feign client timeout</h5>
+            <pre><code class="language-yaml">spring:
+  cloud:
+    openfeign:
+      client:
+        config:
+          inventory-service:
+            connectTimeout: 1000
+            readTimeout: 5000</code></pre>
+            <p>
+              <code>connectTimeout</code> limits establishing the connection. <code>readTimeout</code> limits waiting
+              for response data after the connection is established. They are client-side limits and do not change the
+              downstream server's timeout.
+            </p>
+
+            <h5 class="text-warning">Gateway and proxy timeouts</h5>
+            <p>
+              Nginx, an API Gateway, a cloud load balancer, Kubernetes ingress, and a service mesh can each terminate a
+              request. Configure their route or idle timeout consistently with the API's latency contract, and verify
+              whether the limit applies to connection setup, request upload, response headers, or idle response time.
+            </p>
+
+            <h5 class="text-warning">Should we increase the timeout?</h5>
+            <p>
+              <strong>Only when the longer duration is expected, measured, and within the business latency budget.</strong>
+              Increasing a timeout can hide slow SQL, thread-pool starvation, connection-pool exhaustion, garbage
+              collection, downstream failures, or a retry storm. It also keeps request threads and connections occupied
+              longer, which can reduce throughput and cause cascading failures.
+            </p>
+
+            <h5 class="text-warning">When increasing can be correct</h5>
+            <ul>
+              <li>A documented operation is intentionally long-running and the caller has a matching deadline.</li>
+              <li>Measured p99 latency changed because of an accepted business requirement or a known batch operation.</li>
+              <li>The system has enough request threads, connections, memory, and capacity for the longer wait.</li>
+              <li>Timeouts are updated consistently across the client, gateway, load balancer, server, and downstream services.</li>
+              <li>An asynchronous job design is not appropriate and the operation can safely remain synchronous.</li>
+            </ul>
+
+            <h5 class="text-warning">When not to increase it</h5>
+            <ul>
+              <li>The service is slow because of a regression, unindexed query, lock, overloaded dependency, or resource leak.</li>
+              <li>Requests perform long-running batch work that should be asynchronous.</li>
+              <li>Retries are multiplying the work and occupying all threads.</li>
+              <li>The caller's overall deadline is shorter than the new timeout.</li>
+              <li>There is no fallback, cancellation, backpressure, or capacity plan.</li>
+            </ul>
+
+            <h5 class="text-warning">Better approach for long work</h5>
+            <p>
+              For a report, large CSV import, export, or batch operation, return <code>202 Accepted</code> with a job ID,
+              process it asynchronously, and expose a status endpoint. Keep normal request timeouts short enough to
+              release resources when a dependency is unhealthy.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "There is no universal default timeout; it depends on each layer and version. I identify the complete
+              timeout chain, distinguish connect, read, idle, and processing timeouts, and configure them per dependency.
+              I increase a timeout only when measured latency and the business SLA justify it. Otherwise I fix the
+              bottleneck, use deadlines, retries with backoff, circuit breakers, and asynchronous processing for
+              long-running work."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="springboot">
+      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="exponentialBackoffTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#exponentialBackoffTopBody">
+            What is exponential backoff and why do we use it?
+          </button>
+        </h2>
+        <div id="exponentialBackoffTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>Exponential backoff</strong> means increasing the wait time after each failed retry instead of
+              retrying immediately. It gives the downstream service time to recover and reduces the chance that many
+              clients will overload it again at the same moment.
+            </p>
+
+            <h5 class="text-warning">Example timeline</h5>
+            <pre><code class="language-text">Initial request -> fails
+Wait 200 ms     -> retry 1 fails
+Wait 400 ms     -> retry 2 fails
+Wait 800 ms     -> retry 3 fails
+Stop or use fallback</code></pre>
+            <p>
+              A common formula is
+              <code>delay = min(maxDelay, initialDelay * multiplier^(attempt - 1))</code>. For example, an initial delay
+              of 200 ms and multiplier 2 produces 200, 400, 800, and 1,600 ms before applying the maximum delay.
+            </p>
+
+            <h5 class="text-warning">Why add jitter?</h5>
+            <p>
+              If 1,000 clients fail at the same time and all wait exactly 200 ms, they can retry together and create a
+              retry storm. <strong>Jitter</strong> adds a random amount to the delay so requests spread over time.
+            </p>
+            <pre><code class="language-text">Without jitter:
+all clients retry at 200 ms -> 400 ms -> 800 ms
+
+With jitter:
+client A retries at 237 ms
+client B retries at 281 ms
+client C retries at 319 ms</code></pre>
+            <p>
+              Common strategies include full jitter, where the delay is randomly selected between zero and the calculated
+              delay, and equal jitter, where part of the calculated delay is fixed and part is random.
+            </p>
+
+            <h5 class="text-warning">Spring Retry or Resilience4j example</h5>
+            <pre><code class="language-yaml">resilience4j:
+  retry:
+    instances:
+      inventory:
+        maxAttempts: 3
+        waitDuration: 200ms
+        enableExponentialBackoff: true
+        exponentialBackoffMultiplier: 2
+        enableRandomizedWait: true
+        randomizedWaitFactor: 0.5</code></pre>
+            <p>
+              Configuration property names can vary by Resilience4j and Spring Cloud version, so validate them against
+              the dependency version used by the application. The principle is always the same: bounded attempts,
+              increasing delay, and randomization.
+            </p>
+
+            <h5 class="text-warning">What should be retried?</h5>
+            <ul>
+              <li>Temporary connection failures, timeouts, selected 503 responses, and rate-limit responses when the server permits retrying.</li>
+              <li>Read-only operations are usually safer than writes.</li>
+              <li>Payment, order creation, and other writes require idempotency keys before retrying.</li>
+              <li>Do not retry validation, authentication, authorization, or not-found errors.</li>
+              <li>Respect the downstream Retry-After header and the caller's overall deadline.</li>
+            </ul>
+
+            <h5 class="text-warning">Backoff is not a complete resilience strategy</h5>
+            <p>
+              Limit the maximum attempts and total delay. Combine backoff with timeouts, a circuit breaker, bulkheads,
+              rate limits, and a safe fallback. If the circuit is already open, fail fast instead of starting another
+              retry sequence.
+            </p>
+            <pre><code class="language-text">request deadline = 3 seconds
+retry budget    = at most 2 attempts
+backoff         = 200 ms + jitter, then 400 ms + jitter
+circuit breaker = stop calls after repeated failures</code></pre>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Exponential backoff increases the delay between retries, such as 200 ms, 400 ms, and 800 ms. It prevents
+              clients from immediately overwhelming a recovering dependency. I add jitter so clients do not retry in
+              synchronized waves, cap the attempts and delay, respect Retry-After and request deadlines, and retry only
+              transient failures. For writes I require idempotency protection and combine backoff with timeouts and a
+              circuit breaker."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="microservices">
+      <div class="accordion-item" data-manual-category="springboot">
+        <h2 class="accordion-header" id="feignRetryTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#feignRetryTopBody">
+            Can we retry a failed request with a Feign Client?
+          </button>
+        </h2>
+        <div id="feignRetryTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>Yes, but do not retry every failure.</strong> A Feign retry should be limited to transient failures
+              such as a connection reset, temporary network problem, selected gateway errors, or a 503 response. A retry
+              cannot fix a validation error, authentication failure, a missing resource, or a permanently slow service.
+            </p>
+
+            <h5 class="text-warning">Configure a Feign Retryer</h5>
+            <pre><code class="language-java">@Configuration
+class FeignRetryConfig {
+    @Bean
+    Retryer feignRetryer() {
+        // period, maxPeriod, maxAttempts
+        return new Retryer.Default(200, 1000, 2);
+    }
+}
+
+@FeignClient(
+    name = "inventory-service",
+    configuration = FeignRetryConfig.class)
+interface InventoryClient {
+    @GetMapping("/inventory/{sku}")
+    InventoryResponse find(@PathVariable String sku);
+}</code></pre>
+            <p>
+              The exact retry behavior depends on the Feign and Spring Cloud version and exception mapping. In Spring
+              Cloud OpenFeign, the default configuration commonly uses a no-retry policy, so an explicit
+              <code>Retryer</code> is needed when retries are desired. Feign retries exceptions that its retry mechanism
+              recognizes, such as retryable I/O failures or <code>RetryableException</code>; configure error decoding
+              carefully if selected HTTP responses should become retryable.
+            </p>
+
+            <h5 class="text-warning">Which failures should be retried?</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Failure</th>
+                  <th>Retry?</th>
+                  <th>Reason</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Connection reset, temporary network failure</td>
+                  <td>Usually yes, with a small limit</td>
+                  <td>The request may succeed on another attempt.</td>
+                </tr>
+                <tr>
+                  <td>HTTP 503 or 429</td>
+                  <td>Sometimes</td>
+                  <td>Respect Retry-After and use backoff; the dependency may be overloaded.</td>
+                </tr>
+                <tr>
+                  <td>HTTP 400, 401, 403, 404</td>
+                  <td>No</td>
+                  <td>Usually a request, credential, permission, or resource problem.</td>
+                </tr>
+                <tr>
+                  <td>POST payment or order creation</td>
+                  <td>Only with idempotency protection</td>
+                  <td>The first attempt may have succeeded even if the response was lost.</td>
+                </tr>
+                <tr>
+                  <td>Read-only GET</td>
+                  <td>Usually safer</td>
+                  <td>Still needs a timeout, retry limit, and downstream capacity protection.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Use exponential backoff and jitter</h5>
+            <p>
+              Immediate retries from many service instances can create a retry storm. Wait for an increasing delay and
+              add random jitter so clients do not retry together. Keep total retry time inside the caller's deadline.
+            </p>
+            <pre><code class="language-text">Attempt 1: initial request
+Attempt 2: wait about 200 ms + jitter
+Attempt 3: wait about 400 ms + jitter
+Then fail or use a fallback</code></pre>
+
+            <h5 class="text-warning">Combine retries with Resilience4j</h5>
+            <pre><code class="language-java">@Retry(name = "inventory")
+@CircuitBreaker(name = "inventory", fallbackMethod = "fallback")
+public InventoryResponse getInventory(String sku) {
+    return inventoryClient.find(sku);
+}
+
+private InventoryResponse fallback(String sku, Throwable error) {
+    return InventoryResponse.unavailable(sku);
+}</code></pre>
+            <p>
+              Avoid accidentally configuring retries in both Feign and Resilience4j without calculating the total
+              attempts. One logical call can otherwise become many network calls. A common design uses one retry layer,
+              a short timeout, a circuit breaker, and a bulkhead.
+            </p>
+
+            <h5 class="text-warning">Important idempotency rule</h5>
+            <p>
+              A timeout does not prove that the downstream operation failed. The server may have committed the request
+              before the client lost the response. For order, payment, or inventory writes, send an idempotency key and
+              let the downstream service return the original result for a duplicate key.
+            </p>
+            <pre><code class="language-http">POST /payments
+Idempotency-Key: payment-ORD-100-v1</code></pre>
+
+            <h5 class="text-warning">Best practices</h5>
+            <ul>
+              <li>Retry only transient and explicitly retryable failures.</li>
+              <li>Use a small maximum attempt count, exponential backoff, and jitter.</li>
+              <li>Respect the overall request deadline and the downstream Retry-After header.</li>
+              <li>Never retry authentication, validation, or authorization failures.</li>
+              <li>Protect non-idempotent operations with idempotency keys or use an idempotent API design.</li>
+              <li>Use circuit breakers and bulkheads to stop retries from overwhelming an unhealthy dependency.</li>
+              <li>Record retry count, final error, latency, and downstream response status in metrics and traces.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Yes, Feign can retry, but I configure a small, dependency-specific retry policy rather than retrying every
+              exception. I retry transient network failures and selected 503 or 429 responses with exponential backoff,
+              jitter, and a total deadline. I do not retry 4xx errors or non-idempotent writes unless an idempotency key
+              protects the operation. I combine one retry layer with timeouts, circuit breakers, bulkheads, and metrics."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="springboot">
+      <div class="accordion-item" data-manual-category="springboot">
+        <h2 class="accordion-header" id="feignReadTimeoutResilienceTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#feignReadTimeoutResilienceTopBody">
+            What should we do when a Feign downstream call normally takes 5 seconds but sometimes takes 6 seconds?
+          </button>
+        </h2>
+        <div id="feignReadTimeoutResilienceTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              A 5-second configured read timeout means the client will stop waiting before a 6-second response arrives.
+              The request will usually fail with a read-timeout exception. Do not immediately increase every timeout;
+              first decide whether 6 seconds is an acceptable business latency and identify why the downstream service is
+              slower on that day.
+            </p>
+
+            <h5 class="text-warning">First diagnose the latency</h5>
+            <ul>
+              <li>Compare client timing with downstream server timing using trace IDs and distributed tracing.</li>
+              <li>Check whether the delay is in DNS, connection establishment, TLS, server queueing, database queries, or response transfer.</li>
+              <li>Check downstream CPU, memory, garbage collection, thread pools, connection pools, slow queries, locks, and dependency latency.</li>
+              <li>Look for traffic spikes, Tuesday batch jobs, deployments, backups, cache misses, or a hot database shard.</li>
+              <li>Measure percentiles such as p50, p95, and p99 rather than relying only on the average.</li>
+            </ul>
+
+            <h5 class="text-warning">Use a timeout budget</h5>
+            <p>
+              If the incoming API must respond within 8 seconds, it cannot safely spend 5 seconds on several sequential
+              downstream calls and retry each one. Set a deadline for the whole request and allocate smaller budgets to
+              each dependency.
+            </p>
+            <pre><code class="language-text">Client deadline: 8 seconds
+  Gateway: 0.5 seconds
+  Order Service: 7 seconds
+  Inventory call: 2 seconds
+  Payment call: 3 seconds
+  Remaining time: response processing and safety margin</code></pre>
+            <p>
+              Propagate a deadline or remaining-time header where supported, so downstream services fail fast instead of
+              continuing work after the caller has already timed out.
+            </p>
+
+            <h5 class="text-warning">Feign timeout configuration</h5>
+            <pre><code class="language-yaml">spring:
+  cloud:
+    openfeign:
+      client:
+        config:
+          inventory-service:
+            connectTimeout: 1000
+            readTimeout: 6000</code></pre>
+            <p>
+              Set timeouts per dependency based on its contract and measured latency. A small margin above the agreed
+              service-level objective may be appropriate, but an unlimited or very large timeout can exhaust request
+              threads and connection pools.
+            </p>
+
+            <h5 class="text-warning">Add Resilience4j protection</h5>
+            <pre><code class="language-java">@CircuitBreaker(name = "inventory", fallbackMethod = "inventoryFallback")
+@TimeLimiter(name = "inventory")
+public InventoryResponse getInventory(String sku) {
+    return inventoryClient.getInventory(sku);
+}
+
+private InventoryResponse inventoryFallback(String sku, Throwable error) {
+    return InventoryResponse.unknown(sku);
+}</code></pre>
+            <p>
+              Use a circuit breaker to stop sending requests when the dependency is repeatedly failing, a bulkhead to
+              limit how many threads or concurrent calls can wait, and a fallback only when the business behavior is safe.
+              For example, a product page may show inventory as temporarily unavailable, but an order should not be
+              confirmed using an unsafe fallback.
+            </p>
+
+            <h5 class="text-warning">Should we retry?</h5>
+            <p>
+              Retry only transient failures such as connection resets or selected 5xx responses, with a small limit,
+              exponential backoff, and jitter. A read-only query may be retried more safely than a payment or order
+              creation. Even reads can overload a slow downstream service if every caller retries at once.
+            </p>
+            <pre><code class="language-yaml">resilience4j:
+  retry:
+    instances:
+      inventory:
+        maxAttempts: 2
+        waitDuration: 200ms
+        enableExponentialBackoff: true
+        exponentialBackoffMultiplier: 2
+  circuitbreaker:
+    instances:
+      inventory:
+        slidingWindowSize: 20
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s</code></pre>
+
+            <h5 class="text-warning">Best ways to handle the read issue</h5>
+            <ul>
+              <li>If the data can be slightly stale, read from a local cache or read model with a short TTL.</li>
+              <li>If the read is not required to complete the request, publish an event and process it asynchronously.</li>
+              <li>For expensive repeated reads, use request coalescing so concurrent callers share one in-flight request.</li>
+              <li>Use pagination, field selection, compression, and server-side filtering to reduce response size.</li>
+              <li>Fix slow downstream queries and indexes rather than hiding the issue by increasing the timeout.</li>
+              <li>Return a clear degraded response such as 503 or a documented partial result; do not return false business data.</li>
+            </ul>
+
+            <h5 class="text-warning">A practical decision</h5>
+            <p>
+              If the downstream contract genuinely changed from a p99 of 5 seconds to 6 seconds and the business can
+              tolerate it, update the dependency-specific timeout with a safety margin, update the latency objective, and
+              capacity-test the system. If 6 seconds is abnormal, keep the timeout budget, fail fast, protect the caller
+              with a circuit breaker, and fix the downstream bottleneck.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "A 5-second Feign read timeout will fail a 6-second response. I would first use tracing and downstream
+              metrics to identify whether the delay is query, pool, GC, network, batch, or load related. I would use a
+              deadline budget, dependency-specific connect/read timeouts, a circuit breaker, bulkhead, and limited jittered
+              retries only for safe transient operations. For reads, a cache or read model may provide a safe fallback.
+              I would increase the timeout only if the new latency is an accepted, tested service contract; otherwise I
+              would fix the bottleneck and fail fast with a clear response."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="springboot">
+      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="httpPostIdempotencyTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#httpPostIdempotencyTopBody">
+            Is POST idempotent? Which HTTP methods are idempotent?
+          </button>
+        </h2>
+        <div id="httpPostIdempotencyTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>POST is not idempotent by default.</strong> An HTTP operation is idempotent when making the same
+              request one or more times has the same intended server-side effect as making it once. The response can
+              still differ, such as a different timestamp or request ID.
+            </p>
+
+            <h5 class="text-warning">POST example</h5>
+            <pre><code class="language-http">POST /orders
+{
+  "sku": "BOOK-10",
+  "quantity": 1
+}</code></pre>
+            <p>
+              Sending this request twice may create two orders. That is a different server-side effect, so the operation
+              is non-idempotent. This is why blindly retrying a timed-out payment or order POST can create duplicates.
+            </p>
+
+            <h5 class="text-warning">HTTP method comparison</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Method</th>
+                  <th>Idempotent?</th>
+                  <th>Typical meaning</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>GET</code></td>
+                  <td>Yes</td>
+                  <td>Read a resource; should not change server state.</td>
+                </tr>
+                <tr>
+                  <td><code>HEAD</code></td>
+                  <td>Yes</td>
+                  <td>Read headers without the response body.</td>
+                </tr>
+                <tr>
+                  <td><code>OPTIONS</code></td>
+                  <td>Yes</td>
+                  <td>Ask what communication options are supported.</td>
+                </tr>
+                <tr>
+                  <td><code>PUT</code></td>
+                  <td>Yes</td>
+                  <td>Replace or create the resource at a known URI.</td>
+                </tr>
+                <tr>
+                  <td><code>DELETE</code></td>
+                  <td>Yes</td>
+                  <td>Deleting an already deleted resource leaves the same final state, even if responses differ.</td>
+                </tr>
+                <tr>
+                  <td><code>POST</code></td>
+                  <td>Usually no</td>
+                  <td>Create a subordinate resource or trigger an action.</td>
+                </tr>
+                <tr>
+                  <td><code>PATCH</code></td>
+                  <td>Not guaranteed</td>
+                  <td>Partial update; idempotency depends on the patch operation.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">PATCH example</h5>
+            <pre><code class="language-http">PATCH /accounts/10
+{ "balance": 100 }</code></pre>
+            <p>
+              Setting the balance to 100 is effectively idempotent. But this patch is not idempotent:
+            </p>
+            <pre><code class="language-http">PATCH /accounts/10
+{ "incrementBalanceBy": 10 }</code></pre>
+            <p>
+              Repeating it increases the balance repeatedly. The method name alone does not guarantee idempotency; the
+              operation semantics matter.
+            </p>
+
+            <h5 class="text-warning">How to make POST idempotent</h5>
+            <p>
+              Accept an <code>Idempotency-Key</code> supplied by the client. Store the key, request fingerprint, final
+              result, and resource ID under a unique database constraint. When the same key is retried, return the
+              original result instead of creating a second resource.
+            </p>
+            <pre><code class="language-http">POST /payments
+Idempotency-Key: payment-ORD-100-v1
+
+{
+  "orderId": "ORD-100",
+  "amount": 125.00
+}</code></pre>
+            <pre><code class="language-sql">CREATE TABLE idempotency_keys (
+    key VARCHAR(100) PRIMARY KEY,
+    request_hash VARCHAR(128) NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    response_body TEXT,
+    resource_id VARCHAR(100)
+);</code></pre>
+            <p>
+              If the same key arrives with a different request body, reject it. If the first request is still running,
+              return an in-progress response or coordinate safely. Expire old keys only after the business retry window.
+            </p>
+
+            <h5 class="text-warning">Spring Boot-style endpoint</h5>
+            <pre><code class="language-java">@PostMapping("/payments")
+public ResponseEntity&lt;PaymentResponse&gt; pay(
+        @RequestHeader("Idempotency-Key") String key,
+        @RequestBody PaymentRequest request) {
+    return paymentService.processOnce(key, request);
+}</code></pre>
+            <p>
+              Idempotency does not mean the server never retries internally. It means repeated client attempts produce
+              one business effect. Use it with unique business constraints, transactional state changes, and an outbox
+              when an event must be published after the operation.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "POST is generally non-idempotent because repeating it can create multiple resources or charges. GET, HEAD,
+              OPTIONS, PUT, and DELETE are idempotent by HTTP semantics; PATCH depends on the operation. For an order or
+              payment POST, I use a client-provided idempotency key, store it with a unique constraint and the original
+              result, and return the same result on retries."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="microservices">
+      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="orchestratorTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#orchestratorTopBody">
+            What is an orchestrator in microservices?
+          </button>
+        </h2>
+        <div id="orchestratorTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              In microservices, an <strong>orchestrator</strong> is a component that coordinates multiple services or
+              infrastructure tasks. The exact meaning depends on context. In a business workflow, it coordinates service
+              calls and compensations. In deployment, it manages service instances, scheduling, scaling, networking, and
+              recovery.
+            </p>
+
+            <h5 class="text-warning">1. Saga or workflow orchestrator</h5>
+            <p>
+              A Saga orchestrator is a central workflow component that knows the steps of a distributed business
+              operation, sends commands to services, records progress, retries failures, and triggers compensating
+              actions.
+            </p>
+            <pre><code class="language-text">Order Orchestrator
+  1. Create order
+  2. Reserve inventory
+  3. Charge payment
+  4. Confirm order
+
+If payment fails:
+  release inventory
+  cancel order</code></pre>
+            <p>
+              Each service commits only its own local database transaction. The orchestrator does not perform one
+              global database transaction; it coordinates local transactions and business compensations.
+            </p>
+
+            <h5 class="text-warning">Spring-style workflow example</h5>
+            <pre><code class="language-java">@Service
+class OrderWorkflow {
+    public void placeOrder(OrderCommand command) {
+        Order order = orderService.createPending(command);
+        inventoryService.reserve(order.id(), command.items());
+
+        try {
+            paymentService.charge(order.id(), command.amount());
+            orderService.confirm(order.id());
+        } catch (RuntimeException failure) {
+            inventoryService.release(order.id());
+            orderService.cancel(order.id());
+            throw failure;
+        }
+    }
+}</code></pre>
+            <p>
+              A production orchestrator normally persists workflow state and uses events or commands rather than holding
+              one thread open through every remote call. Temporal, Camunda, Conductor, and a custom Kafka-based workflow
+              are examples of technologies or approaches used for durable workflows.
+            </p>
+
+            <h5 class="text-warning">2. Container orchestrator</h5>
+            <p>
+              A container orchestrator such as Kubernetes manages the runtime lifecycle of service instances. It
+              schedules containers, restarts unhealthy instances, performs rolling deployments, exposes services, and
+              scales replicas.
+            </p>
+            <pre><code class="language-text">Kubernetes desired state:
+  order-service replicas = 3
+
+Kubernetes:
+  schedules three pods
+  checks readiness and liveness
+  replaces a failed pod
+  routes traffic through a Service
+  performs rolling updates</code></pre>
+            <p>
+              Kubernetes orchestrates infrastructure and runtime placement; it does not understand that an order must
+              reserve inventory before payment. That business workflow belongs to a Saga or workflow orchestrator.
+            </p>
+
+            <h5 class="text-warning">Orchestration versus choreography</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Approach</th>
+                  <th>How it works</th>
+                  <th>Trade-off</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Orchestration</strong></td>
+                  <td>A coordinator sends commands and tracks the workflow.</td>
+                  <td>Clear process and centralized monitoring; coordinator becomes an important component.</td>
+                </tr>
+                <tr>
+                  <td><strong>Choreography</strong></td>
+                  <td>Services publish events and react to events independently.</td>
+                  <td>Loose coupling; large workflows can become difficult to trace and understand.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">When should we use a Saga orchestrator?</h5>
+            <ul>
+              <li>The business process has several ordered steps and explicit failure compensations.</li>
+              <li>The workflow is long-running and must resume after service or process restarts.</li>
+              <li>Central visibility, timeout handling, and operational control are important.</li>
+              <li>There are many participants and event choreography would become difficult to maintain.</li>
+            </ul>
+
+            <h5 class="text-warning">Important orchestrator practices</h5>
+            <ul>
+              <li>Persist workflow state and use a durable execution or message mechanism.</li>
+              <li>Make commands and compensations idempotent because retries and duplicate messages are normal.</li>
+              <li>Use timeouts, bounded retries, dead-letter handling, and a manual recovery path.</li>
+              <li>Propagate workflow ID, correlation ID, and trace ID across every service.</li>
+              <li>Keep business ownership in the participating services; the orchestrator coordinates rather than directly updates their databases.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "An orchestrator coordinates a process. In a Saga, it sends commands to services, records workflow state,
+              handles retries, and runs compensating actions when a later step fails. Kubernetes is a different type of
+              orchestrator: it manages container deployment, health, scaling, and recovery. The Saga orchestrator
+              manages business behavior, while the container orchestrator manages infrastructure."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="microservices">
+      <div class="accordion-item" data-manual-category="springboot">
+        <h2 class="accordion-header" id="largeCsvUploadTimeoutTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#largeCsvUploadTimeoutTopBody">
+            How should we redesign a CSV upload API when 50,000 rows cause an HTTP timeout?
+          </button>
+        </h2>
+        <div id="largeCsvUploadTimeoutTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Do not keep the HTTP request open while parsing and processing all 50,000 rows. Make the upload an
+              <strong>asynchronous job</strong>: accept the file quickly, return <code>202 Accepted</code> with a job ID,
+              and process the file in the background.
+            </p>
+
+            <h5 class="text-warning">Recommended flow</h5>
+            <pre><code class="language-text">1. Client -> POST /imports with CSV
+2. API streams file to object storage and creates job = ACCEPTED
+3. API -> 202 Accepted { jobId, statusUrl }
+4. API publishes ImportRequested(jobId, objectKey)
+5. Worker streams the file and processes bounded chunks
+6. Worker updates progress and stores row-level errors
+7. Client -> GET /imports/{jobId}
+8. API -> status, counts, progress, and error-report URL</code></pre>
+
+            <h5 class="text-warning">Spring Boot endpoint</h5>
+            <pre><code class="language-java">@PostMapping(value = "/imports", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+public ResponseEntity&lt;ImportAccepted&gt; upload(
+        @RequestParam MultipartFile file,
+        @RequestHeader("Idempotency-Key") String key) {
+    ImportJob job = importService.accept(file, key);
+    URI statusUrl = URI.create("/imports/" + job.id());
+    return ResponseEntity.accepted()
+        .location(statusUrl)
+        .body(new ImportAccepted(job.id(), statusUrl.toString()));
+}
+
+@GetMapping("/imports/{jobId}")
+public ImportStatus status(@PathVariable UUID jobId) {
+    return importService.status(jobId);
+}</code></pre>
+            <p>
+              Stream the file to object storage instead of loading all rows into heap memory. Store job metadata and the
+              object key in a short transaction, then publish work with an outbox pattern so a committed job is not lost.
+            </p>
+
+            <h5 class="text-warning">Background worker</h5>
+            <pre><code class="language-java">@KafkaListener(topics = "imports.requested", groupId = "csv-import-workers")
+public void process(ImportRequested event) {
+    importService.processFile(event.jobId(), event.objectKey());
+}
+
+@Transactional
+public void processChunk(UUID jobId, List&lt;CustomerRow&gt; rows) {
+    customerRepository.batchInsert(rows); // Example: 500-1,000 rows
+    importJobRepository.incrementProcessed(jobId, rows.size());
+}</code></pre>
+            <p>
+              Use a streaming CSV parser, validate rows one at a time, and write bounded batches. Do not use one huge
+              transaction for the complete file.
+            </p>
+
+            <h5 class="text-warning">Job lifecycle</h5>
+            <pre><code class="language-text">ACCEPTED -> PROCESSING -> COMPLETED
+                         \-> COMPLETED_WITH_ERRORS
+                         \-> FAILED
+                         \-> CANCELLED</code></pre>
+            <pre><code class="language-json">{
+  "jobId": "4f6c...",
+  "status": "PROCESSING",
+  "totalRows": 50000,
+  "processedRows": 32000,
+  "successRows": 31850,
+  "failedRows": 150,
+  "errorReportUrl": "/imports/4f6c.../errors"
+}</code></pre>
+
+            <h5 class="text-warning">Validation and error handling</h5>
+            <ul>
+              <li>Validate file type, size, encoding, headers, required columns, and maximum row count before accepting it.</li>
+              <li>A malformed header can fail the whole job; invalid rows can be recorded individually in an error report.</li>
+              <li>Choose all-or-nothing semantics with a staging table, or best-effort semantics with successful and failed row counts.</li>
+              <li>Do not store sensitive raw values in error logs unless required.</li>
+            </ul>
+
+            <h5 class="text-warning">Reliability and duplicate protection</h5>
+            <ul>
+              <li>Use an idempotency key so a client retry does not create two imports.</li>
+              <li>Make chunk writes retryable and idempotent with an import ID, row number or business key, and a unique constraint.</li>
+              <li>Use a durable queue, retry policy, dead-letter topic, and poison-message handling.</li>
+              <li>Use a job lease or atomic status transition so two workers do not process one job concurrently.</li>
+              <li>Support cancellation and check for it between chunks.</li>
+            </ul>
+
+            <h5 class="text-warning">Scaling and HTTP design</h5>
+            <ul>
+              <li>Limit worker concurrency according to database connections and downstream capacity.</li>
+              <li>If rows are independent, partition the file or dispatch bounded chunks to workers.</li>
+              <li>For very large files, use a pre-signed object-storage upload so the API does not proxy the whole file.</li>
+              <li>Do not solve processing time only by increasing the HTTP timeout; return 202 because acceptance is not completion.</li>
+              <li>Notify completion with polling, a webhook, server-sent events, or a message.</li>
+            </ul>
+
+            <h5 class="text-warning">Observability</h5>
+            <p>
+              Propagate an import ID, correlation ID, and trace ID through the API, object storage, queue, worker, and
+              database. Monitor acceptance latency, queue lag, rows per second, chunk latency, failures, retries, memory,
+              database pool usage, and final job outcome.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "I would make the upload asynchronous. The API streams the CSV to object storage, creates an import job,
+              publishes an event, and immediately returns 202 with a job ID. A worker streams the file, validates rows,
+              writes bounded batches, updates progress, and stores row-level errors. I would add idempotency, an outbox,
+              durable retries, dead-letter handling, chunk-level transactions, concurrency limits, cancellation,
+              monitoring, and a status endpoint."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="springboot">
+      <div class="accordion-item" data-manual-category="springboot">
+        <h2 class="accordion-header" id="controllerReturnsNullTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#controllerReturnsNullTopBody">
+            What response body and status code are returned when a controller method returns null?
+          </button>
+        </h2>
+        <div id="controllerReturnsNullTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              In a typical Spring Boot REST controller, if a method annotated with <code>@ResponseBody</code> or inside
+              <code>@RestController</code> returns <code>null</code>, Spring considers the request handled, writes no
+              response body, and keeps the default successful status: <strong>HTTP 200 OK</strong>.
+            </p>
+
+            <h5 class="text-warning">Example</h5>
+            <pre><code class="language-java">@RestController
+class UserController {
+    @GetMapping("/users/{id}")
+    public User find(@PathVariable long id) {
+        return userService.findById(id); // returns null
+    }
+}</code></pre>
+            <p>
+              The usual result is a response with status <code>200 OK</code> and an empty body. It is not automatically
+              converted to <code>404 Not Found</code>. The exact content type and response headers depend on what was
+              negotiated and configured, but there is no JSON object to serialize when the result is null.
+            </p>
+
+            <h5 class="text-warning">Why is null not automatically 404?</h5>
+            <p>
+              Spring MVC does not know whether null means "resource not found", "successful operation with no data", or
+              "the service intentionally returned nothing". The controller or application must express that business
+              meaning explicitly.
+            </p>
+
+            <h5 class="text-warning">Recommended: return ResponseEntity</h5>
+            <pre><code class="language-java">@GetMapping("/users/{id}")
+public ResponseEntity&lt;User&gt; find(@PathVariable long id) {
+    return userService.findById(id)
+        .map(ResponseEntity::ok)
+        .orElseGet(() -> ResponseEntity.notFound().build());
+}</code></pre>
+            <p>
+              This returns <code>200 OK</code> with JSON when the user exists and <code>404 Not Found</code> with an empty
+              body when it does not.
+            </p>
+
+            <h5 class="text-warning">Other explicit choices</h5>
+            <pre><code class="language-java">@GetMapping("/users/{id}")
+@ResponseStatus(HttpStatus.NO_CONTENT)
+public void delete(@PathVariable long id) {
+    userService.delete(id);
+}
+
+// Or:
+return ResponseEntity.noContent().build(); // 204 No Content</code></pre>
+            <ul>
+              <li><strong>200 OK with empty body:</strong> possible default for a REST method returning null.</li>
+              <li><strong>204 No Content:</strong> explicit success where there is intentionally no response representation.</li>
+              <li><strong>404 Not Found:</strong> explicit response when a requested resource does not exist.</li>
+              <li><strong>500 Internal Server Error:</strong> occurs only if an exception is thrown and no exception handler changes the response; returning null itself is not a 500.</li>
+            </ul>
+
+            <h5 class="text-warning">What about @Controller?</h5>
+            <pre><code class="language-java">@Controller
+class PageController {
+    @GetMapping("/home")
+    public String home() {
+        return null;
+    }
+}</code></pre>
+            <p>
+              A plain <code>@Controller</code> method returning <code>String</code> is normally interpreted as a view name,
+              not a response body. Returning null means no view name is selected and may result in a framework error or an
+              incomplete response depending on the handler and configuration. Use <code>@ResponseBody</code> when you want
+              the return value written as the HTTP body.
+            </p>
+
+            <h5 class="text-warning">ResponseEntity itself must be handled carefully</h5>
+            <pre><code class="language-java">public ResponseEntity&lt;User&gt; find(long id) {
+    User user = findUser(id);
+    return user == null
+        ? ResponseEntity.notFound().build()
+        : ResponseEntity.ok(user);
+}</code></pre>
+            <p>
+              Prefer returning an explicit <code>ResponseEntity</code> rather than returning a null
+              <code>ResponseEntity</code>. That makes the intended status and body clear and prevents behavior from
+              depending on handler details.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "For a normal <code>@RestController</code> method, returning null generally produces HTTP 200 OK with an
+              empty response body; Spring does not infer 404. If the resource is absent, I return
+              <code>ResponseEntity.notFound().build()</code> or throw a mapped exception. For an intentional successful
+              response without content, I return 204 No Content. A plain <code>@Controller</code> treats a String as a
+              view name unless <code>@ResponseBody</code> is used."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="springboot">
+      <div class="accordion-item" data-manual-category="springboot">
+        <h2 class="accordion-header" id="requiresNewAcrossBeansTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#requiresNewAcrossBeansTopBody">
+            What happens when a transactional method calls a REQUIRES_NEW method in another class?
+          </button>
+        </h2>
+        <div id="requiresNewAcrossBeansTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              With Spring transaction management, <code>Propagation.REQUIRES_NEW</code> always starts an independent
+              transaction. When a transactional method in one Spring bean calls a <code>REQUIRES_NEW</code> method in
+              another Spring bean through its proxy, Spring suspends the outer transaction, starts the inner transaction,
+              and resumes the outer transaction after the inner method returns.
+            </p>
+
+            <h5 class="text-warning">Example</h5>
+            <pre><code class="language-java">@Service
+class OrderService {
+    private final AuditService auditService;
+
+    OrderService(AuditService auditService) {
+        this.auditService = auditService;
+    }
+
+    @Transactional
+    public void placeOrder() {
+        orderRepository.save(new Order("ORD-100"));
+
+        auditService.writeAudit("Order creation started"); // REQUIRES_NEW
+
+        throw new RuntimeException("Payment failed");
+    }
+}
+
+@Service
+class AuditService {
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void writeAudit(String message) {
+        auditRepository.save(new AuditRecord(message));
+    }
+}</code></pre>
+
+            <h5 class="text-warning">Transaction sequence</h5>
+            <pre><code class="language-text">1. OrderService.placeOrder() starts Transaction T1
+2. Order row is written inside T1
+3. AuditService.writeAudit() suspends T1
+4. AuditService starts independent Transaction T2
+5. Audit row is committed by T2
+6. T1 is resumed
+7. placeOrder() throws an exception
+8. T1 rolls back; T2 remains committed</code></pre>
+            <p>
+              Therefore, the audit record can remain even though the order transaction rolls back. This is useful for
+              audit trails, independent retry records, or failure logging, but it must be intentional because the inner
+              data is no longer part of the outer atomic unit.
+            </p>
+
+            <h5 class="text-warning">What if the inner method fails?</h5>
+            <ul>
+              <li>If T2 throws a runtime exception and it is not handled, T2 rolls back and the exception usually propagates to T1.</li>
+              <li>If the caller catches the exception, T1 may continue, depending on the exception and transaction state.</li>
+              <li>If the inner method catches its own exception and returns normally, T2 may commit unless it was explicitly marked rollback-only.</li>
+              <li>If T2 commits successfully and T1 later fails, T2 is not rolled back.</li>
+            </ul>
+
+            <h5 class="text-warning">Why can REQUIRES_NEW cause connection issues?</h5>
+            <p>
+              The outer transaction keeps its database connection while it is suspended. The inner transaction generally
+              needs another connection. If a thread holds T1 and the connection pool has no free connection for T2,
+              the call can block or time out. Size the pool for the maximum nesting and avoid unnecessary
+              <code>REQUIRES_NEW</code> calls inside loops.
+            </p>
+
+            <h5 class="text-warning">Important self-invocation caveat</h5>
+            <pre><code class="language-java">@Service
+class OrderService {
+    @Transactional
+    public void placeOrder() {
+        writeAudit(); // Same-class call: bypasses Spring proxy
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void writeAudit() {
+        // REQUIRES_NEW may not be applied here
+    }
+}</code></pre>
+            <p>
+              Spring usually applies <code>@Transactional</code> through an AOP proxy. A call from one method to another
+              method on the same object uses <code>this</code> and bypasses that proxy, so the propagation setting may not
+              take effect. Put the inner method in another Spring bean, as in the first example, or use another supported
+              proxy-based design.
+            </p>
+
+            <h5 class="text-warning">REQUIRES_NEW versus REQUIRED</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Propagation</th>
+                  <th>Behavior when an outer transaction exists</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>REQUIRED</code></td>
+                  <td>Joins the existing transaction; outer commit or rollback affects both operations.</td>
+                </tr>
+                <tr>
+                  <td><code>REQUIRES_NEW</code></td>
+                  <td>Suspends the existing transaction and starts a separate transaction.</td>
+                </tr>
+                <tr>
+                  <td><code>NESTED</code></td>
+                  <td>Uses a savepoint when supported; usually remains within the same physical transaction.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">When should we use it?</h5>
+            <ul>
+              <li>Persisting an audit or failure record even when the business transaction rolls back.</li>
+              <li>Recording an independent retry or outbox entry when the design explicitly requires separate boundaries.</li>
+              <li>Running a small independent operation that must commit regardless of the caller's outcome.</li>
+              <li>Not for ordinary service calls where the data should commit or roll back together; use the default REQUIRED instead.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "If a transactional method calls a REQUIRES_NEW method on another Spring bean, Spring suspends the outer
+              transaction, starts a new independent transaction, commits or rolls it back, and then resumes the outer
+              transaction. The inner commit survives an outer rollback. It requires a proxy call and usually another
+              database connection, so self-invocation and connection-pool sizing are important considerations."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="springboot">
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="tenKTasksTwentyConcurrentTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#tenKTasksTwentyConcurrentTopBody">
+            How do we process 10,000 independent tasks with only 20 running concurrently?
+          </button>
+        </h2>
+        <div id="tenKTasksTwentyConcurrentTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Use a bounded executor with a pool size of <strong>20</strong>. The executor runs at most 20 tasks at
+              the same time, while remaining tasks wait in a queue. For independent work, this gives controlled
+              concurrency without creating 10,000 threads.
+            </p>
+
+            <h5 class="text-warning">Basic implementation with ExecutorService</h5>
+            <pre><code class="language-java">ExecutorService executor = Executors.newFixedThreadPool(20);
+
+try {
+    List&lt;Future&lt;Result&gt;&gt; futures = new ArrayList&lt;&gt;(10_000);
+
+    for (Task task : tasks) {
+        futures.add(executor.submit(() -> process(task)));
+    }
+
+    for (Future&lt;Result&gt; future : futures) {
+        Result result = future.get(); // Waits for that task and propagates failure
+        storeResult(result);
+    }
+} finally {
+    executor.shutdown();
+    if (!executor.awaitTermination(1, TimeUnit.MINUTES)) {
+        executor.shutdownNow();
+    }
+}</code></pre>
+            <p>
+              With a fixed pool of 20, only 20 tasks execute concurrently. As one finishes, the executor takes the
+              next task from its queue. The maximum concurrency is therefore bounded by the pool size, not by the number
+              of submitted tasks.
+            </p>
+
+            <h5 class="text-warning">Production-friendly bounded submission</h5>
+            <p>
+              A fixed thread pool uses an unbounded queue by default. Submitting 10,000 tasks may be acceptable for small
+              task objects, but for large task payloads use a bounded queue and an explicit rejection policy to apply
+              backpressure.
+            </p>
+            <pre><code class="language-java">int workers = 20;
+BlockingQueue&lt;Runnable&gt; queue = new ArrayBlockingQueue&lt;&gt;(500);
+
+ThreadPoolExecutor executor = new ThreadPoolExecutor(
+    workers,
+    workers,
+    0L,
+    TimeUnit.MILLISECONDS,
+    queue,
+    new ThreadPoolExecutor.CallerRunsPolicy());
+
+for (Task task : tasks) {
+    executor.execute(() -> process(task));
+}
+
+executor.shutdown();
+executor.awaitTermination(10, TimeUnit.MINUTES);</code></pre>
+            <p>
+              <code>CallerRunsPolicy</code> slows the submitting thread when the pool and queue are full, providing
+              backpressure instead of silently dropping work or allowing unlimited memory growth. Choose the rejection
+              policy according to whether work can be retried, rejected, or executed by the producer.
+            </p>
+
+            <h5 class="text-warning">Using CompletionService</h5>
+            <p>
+              If results should be handled as soon as any task finishes, use <code>ExecutorCompletionService</code>
+              instead of reading futures in submission order.
+            </p>
+            <pre><code class="language-java">ExecutorService executor = Executors.newFixedThreadPool(20);
+CompletionService&lt;Result&gt; completed =
+    new ExecutorCompletionService&lt;&gt;(executor);
+
+try {
+    for (Task task : tasks) {
+        completed.submit(() -> process(task));
+    }
+
+    for (int i = 0; i &lt; tasks.size(); i++) {
+        Result result = completed.take().get(); // Next completed result
+        storeResult(result);
+    }
+} finally {
+    executor.shutdown();
+}</code></pre>
+            <p>
+              This avoids waiting for a slow early task before handling results from tasks that already completed.
+            </p>
+
+            <h5 class="text-warning">Spring Boot configuration</h5>
+            <pre><code class="language-java">@Bean(name = "taskExecutor")
+ThreadPoolTaskExecutor taskExecutor() {
+    ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+    executor.setCorePoolSize(20);
+    executor.setMaxPoolSize(20);
+    executor.setQueueCapacity(500);
+    executor.setThreadNamePrefix("batch-worker-");
+    executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+    executor.setWaitForTasksToCompleteOnShutdown(true);
+    executor.setAwaitTerminationSeconds(60);
+    executor.initialize();
+    return executor;
+}</code></pre>
+            <p>
+              In a Spring service, inject the executor and submit tasks through it. Avoid putting <code>@Async</code> on
+              the same method that calls it, because self-invocation bypasses the Spring proxy.
+            </p>
+
+            <h5 class="text-warning">Choosing the pool size</h5>
+            <ul>
+              <li>For CPU-heavy tasks, start near the number of available CPU cores and measure.</li>
+              <li>For blocking I/O tasks, more than the core count may be useful, but respect database and downstream limits.</li>
+              <li>Twenty is a concurrency requirement, not automatically the correct number for every machine.</li>
+              <li>Use separate executors for unrelated workloads so a slow batch does not starve API request work.</li>
+            </ul>
+
+            <h5 class="text-warning">Failure, cancellation, and observability</h5>
+            <ul>
+              <li>Capture each task's exception and decide whether to retry, record failure, or continue.</li>
+              <li>Use timeouts so one stuck task does not keep the whole batch waiting forever.</li>
+              <li>Make tasks idempotent if they may be retried after a process crash.</li>
+              <li>Measure active threads, queue depth, completed count, failure count, task latency, and rejection count.</li>
+              <li>For work that must survive application restarts, use a durable queue or batch-job system rather than only an in-memory executor.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "I would use a fixed or bounded <code>ThreadPoolExecutor</code> with 20 worker threads. I submit the
+              10,000 independent tasks, let the remaining tasks wait in a bounded queue, process results with
+              <code>CompletionService</code> if completion order matters, and shut the executor down gracefully. I add
+              backpressure, timeouts, retries, idempotency, and metrics. The pool size must also respect CPU, database,
+              and downstream-service capacity."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+      <div class="accordion-item" data-manual-category="springboot">
+        <h2 class="accordion-header" id="processVsThreadSpringTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#processVsThreadSpringTopBody">
+            Process vs thread with a Spring Boot API example
+          </button>
+        </h2>
+        <div id="processVsThreadSpringTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              A <strong>process</strong> is an independently running program with its own memory space and operating
+              system resources. A <strong>thread</strong> is a path of execution inside a process. Threads in the same
+              process share heap memory, class metadata, and open resources, but each thread has its own stack and
+              execution state.
+            </p>
+
+            <h5 class="text-warning">Simple analogy</h5>
+            <p>
+              A process is like a restaurant branch with its own kitchen, tables, and supplies. Threads are chefs working
+              inside that branch. Chefs can share the kitchen and ingredients, while separate branches are isolated and
+              need explicit communication to share information.
+            </p>
+
+            <h5 class="text-warning">Spring Boot API example</h5>
+            <p>
+              When a Spring Boot application starts, the operating system starts one Java process and the JVM runs inside
+              it. The embedded Tomcat, Jetty, or Netty server accepts network connections and uses request-processing
+              threads to handle API calls.
+            </p>
+            <pre><code class="language-text">Operating system
+  |
+  +-- java process: order-service.jar
+        |
+        +-- JVM heap: Spring beans, caches, objects
+        +-- main thread: application startup
+        +-- Tomcat request thread-1 -> GET /orders
+        +-- Tomcat request thread-2 -> POST /orders
+        +-- Tomcat request thread-3 -> GET /customers
+        +-- garbage collector threads
+        +-- scheduler / async worker threads</code></pre>
+
+            <pre><code class="language-java">@RestController
+class OrderController {
+    @GetMapping("/orders/{id}")
+    Order getOrder(@PathVariable long id) {
+        // The embedded server invokes this method on a request thread.
+        return orderService.findById(id);
+    }
+}</code></pre>
+            <p>
+              If three requests arrive concurrently, the server can execute the controller three times on different
+              threads within the same JVM process. They share Spring singleton beans and heap objects, so shared mutable
+              state must be protected or avoided.
+            </p>
+
+            <h5 class="text-warning">Process versus thread</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Aspect</th>
+                  <th>Process</th>
+                  <th>Thread</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Memory</td>
+                  <td>Own isolated address space.</td>
+                  <td>Shares heap with threads in the same process.</td>
+                </tr>
+                <tr>
+                  <td>Creation cost</td>
+                  <td>Usually heavier and slower.</td>
+                  <td>Usually lighter, though platform threads still have stack and scheduling cost.</td>
+                </tr>
+                <tr>
+                  <td>Failure isolation</td>
+                  <td>One process crash normally does not corrupt another process's memory.</td>
+                  <td>An uncaught fatal failure can bring down the whole JVM process.</td>
+                </tr>
+                <tr>
+                  <td>Communication</td>
+                  <td>Needs IPC, network calls, files, or messaging.</td>
+                  <td>Can communicate through shared memory, requiring synchronization.</td>
+                </tr>
+                <tr>
+                  <td>Spring deployment</td>
+                  <td>One service instance or container commonly runs one JVM process.</td>
+                  <td>Many request and worker threads run inside that instance.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Using a separate worker thread</h5>
+            <pre><code class="language-java">@Service
+class NotificationService {
+    @Async
+    public void sendEmail(long orderId) {
+        emailClient.send(orderId);
+    }
+}
+
+@Configuration
+@EnableAsync
+class AsyncConfig {
+}</code></pre>
+            <p>
+              The API thread can return while the email runs on a Spring-managed executor. Configure a bounded executor
+              rather than creating an unlimited new thread for every request.
+            </p>
+            <pre><code class="language-java">@Bean
+ThreadPoolTaskExecutor applicationExecutor() {
+    ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+    executor.setCorePoolSize(10);
+    executor.setMaxPoolSize(50);
+    executor.setQueueCapacity(500);
+    executor.setThreadNamePrefix("order-worker-");
+    executor.initialize();
+    return executor;
+}</code></pre>
+
+            <h5 class="text-warning">Scaling Spring Boot APIs</h5>
+            <ul>
+              <li><strong>Scale vertically:</strong> give one process more CPU or memory and tune its thread pools.</li>
+              <li><strong>Scale horizontally:</strong> run multiple JVM processes or containers behind a load balancer.</li>
+              <li>Keep services stateless where possible so any process can handle a request.</li>
+              <li>Do not assume an in-memory lock or cache is shared across processes; use Redis, a database, or messaging for distributed coordination.</li>
+              <li>Size request and worker pools according to CPU, blocking I/O, downstream limits, and database connections.</li>
+            </ul>
+
+            <h5 class="text-warning">Important thread-safety point</h5>
+            <p>
+              A Spring singleton bean is normally one object per application process, shared by many request threads. Do
+              not store request-specific mutable data in instance fields. Use local variables, immutable objects, or
+              properly synchronized/concurrent structures.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "A process is an isolated running program with its own memory, while a thread is an execution unit inside
+              the process that shares the process heap. A Spring Boot API normally runs as one JVM process with many
+              server request threads. Concurrent requests execute on different threads and share singleton beans, so
+              state must be thread-safe. We scale with thread pools inside a process and multiple processes or containers
+              across machines."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="springboot">
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="synchronizedThisObjectTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#synchronizedThisObjectTopBody">
+            synchronized(this) vs synchronized method vs synchronized(object)
+          </button>
+        </h2>
+        <div id="synchronizedThisObjectTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              All three forms use a JVM monitor, but the important difference is <strong>which object is used as the
+              lock</strong>. Threads block only when they try to acquire the same monitor object.
+            </p>
+
+            <h5 class="text-warning">1. Synchronized instance method</h5>
+            <pre><code class="language-java">public synchronized void increment() {
+    count++;
+}</code></pre>
+            <p>
+              For an instance method, this is equivalent to <code>synchronized (this)</code>. The current object
+              instance is the monitor. Two threads calling synchronized methods on the same instance block each other,
+              while calls on two different instances use different locks.
+            </p>
+
+            <h5 class="text-warning">2. synchronized(this)</h5>
+            <pre><code class="language-java">public void increment() {
+    synchronized (this) {
+        count++;
+    }
+
+    doNonCriticalWork(); // Runs outside the lock
+}</code></pre>
+            <p>
+              This locks the current instance, just like a synchronized instance method, but allows only the critical
+              section to be protected. That can reduce lock duration. It also allows unrelated work in the same method
+              to run without holding the monitor.
+            </p>
+
+            <h5 class="text-warning">3. synchronized(object)</h5>
+            <pre><code class="language-java">private final Object countLock = new Object();
+
+public void increment() {
+    synchronized (countLock) {
+        count++;
+    }
+}</code></pre>
+            <p>
+              This locks the specific object expression, not necessarily the current instance. Any code that
+              synchronizes on the same <code>countLock</code> shares the lock. A private final lock object is usually
+              safer than locking on <code>this</code>, because external code cannot accidentally synchronize on it.
+            </p>
+
+            <h5 class="text-warning">Comparison</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Form</th>
+                  <th>Actual monitor</th>
+                  <th>Scope and use</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>synchronized void method()</code></td>
+                  <td><code>this</code> for an instance method</td>
+                  <td>Locks the entire instance method.</td>
+                </tr>
+                <tr>
+                  <td><code>synchronized (this)</code></td>
+                  <td>The current instance</td>
+                  <td>Locks only the selected block and is equivalent to the instance-method monitor.</td>
+                </tr>
+                <tr>
+                  <td><code>synchronized (lockObject)</code></td>
+                  <td>The exact object in the expression</td>
+                  <td>Allows a private, dedicated lock and can protect only related state.</td>
+                </tr>
+                <tr>
+                  <td><code>static synchronized void method()</code></td>
+                  <td><code>ClassName.class</code></td>
+                  <td>One lock shared by all instances of that class.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Important example: different locks do not coordinate</h5>
+            <pre><code class="language-java">class Counter {
+    private int count;
+
+    public synchronized void methodA() {
+        count++;
+    }
+
+    public void methodB() {
+        synchronized (new Object()) {
+            count++; // Does not share the lock used by methodA
+        }
+    }
+}</code></pre>
+            <p>
+              Creating a new lock inside each call does not provide mutual exclusion because every thread receives a
+              different monitor. The lock must be shared and stable, such as a <code>private final</code> field.
+            </p>
+
+            <h5 class="text-warning">Best practices</h5>
+            <ul>
+              <li>Use a synchronized method when the whole method is the critical section and the instance lock is acceptable.</li>
+              <li>Use <code>synchronized(this)</code> when only a small part of an instance method needs protection.</li>
+              <li>Use a private final lock object when you want a dedicated lock that external code cannot acquire.</li>
+              <li>Do not lock on String literals, boxed values, public objects, or objects that callers can access.</li>
+              <li>Never replace a shared lock with <code>new Object()</code> inside the method.</li>
+              <li>Keep the critical section short and avoid calling unknown external code while holding the lock.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "A synchronized instance method locks <code>this</code> for the entire method. A
+              <code>synchronized(this)</code> block locks the same monitor but only for that block. A
+              <code>synchronized(object)</code> block locks the specific shared object, so a private final lock object
+              is often safer and gives more control. A static synchronized method locks the class object, which is
+              shared by all instances."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="atomicVsSynchronizedTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#atomicVsSynchronizedTopBody">
+            How do Atomic variables work internally compared with synchronized, and when should we use each?
+          </button>
+        </h2>
+        <div id="atomicVsSynchronizedTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Atomic variables such as <code>AtomicInteger</code> and <code>AtomicReference</code> use
+              <strong>compare-and-set (CAS)</strong> operations to update one variable safely without entering a
+              traditional monitor lock. <code>synchronized</code> uses the JVM's monitor mechanism to give one thread
+              exclusive access to a critical section.
+            </p>
+
+            <h5 class="text-warning">How an AtomicInteger works internally</h5>
+            <p>
+              A typical atomic update reads the current value, calculates the new value, and asks the CPU to replace
+              the old value only if it has not changed. The CPU instruction is performed atomically. If another thread
+              changed the value first, CAS fails and the operation retries with the latest value.
+            </p>
+            <pre><code class="language-java">AtomicInteger count = new AtomicInteger(0);
+
+count.incrementAndGet(); // internally behaves like a CAS retry loop
+
+int current;
+int next;
+do {
+    current = count.get();
+    next = current + 1;
+} while (!count.compareAndSet(current, next));</code></pre>
+            <p>
+              Atomic classes also provide volatile-like visibility: a successful update by one thread becomes visible to
+              other threads that read the atomic variable. They do not make every related field or multi-step business
+              operation automatically atomic.
+            </p>
+
+            <h5 class="text-warning">How synchronized works internally</h5>
+            <p>
+              The JVM associates a monitor with an object. A thread entering a <code>synchronized</code> method or block
+              acquires that monitor. Other threads trying to enter the same monitor wait until the owner exits. Entering
+              and exiting the monitor also establish memory-visibility guarantees.
+            </p>
+            <pre><code class="language-java">private int count;
+
+public synchronized void increment() {
+    count++;
+}
+
+// Equivalent scope:
+synchronized (this) {
+    count++;
+}</code></pre>
+            <p>
+              The read, addition, and write happen inside one exclusive critical section. This makes it suitable for
+              protecting several related fields and enforcing a multi-step invariant.
+            </p>
+
+            <h5 class="text-warning">Atomic versus synchronized</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Aspect</th>
+                  <th>Atomic variables</th>
+                  <th>synchronized</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Mechanism</td>
+                  <td>CAS and retry loops, usually without blocking.</td>
+                  <td>JVM monitor with exclusive ownership.</td>
+                </tr>
+                <tr>
+                  <td>Best scope</td>
+                  <td>One independent value or a simple state transition.</td>
+                  <td>Multiple fields and a multi-step invariant.</td>
+                </tr>
+                <tr>
+                  <td>Contention</td>
+                  <td>Retries can increase CPU usage under heavy contention.</td>
+                  <td>Waiting threads may block, but do not repeatedly retry the update.</td>
+                </tr>
+                <tr>
+                  <td>Deadlock</td>
+                  <td>No lock cycle for a single atomic variable.</td>
+                  <td>Possible if multiple locks are acquired in inconsistent order.</td>
+                </tr>
+                <tr>
+                  <td>Fairness</td>
+                  <td>No fairness guarantee.</td>
+                  <td>No fairness guarantee; use an explicit fair Lock when needed.</td>
+                </tr>
+                <tr>
+                  <td>Readability</td>
+                  <td>Excellent for counters and flags; harder for complex workflows.</td>
+                  <td>Clear for critical sections and object invariants.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Atomic does not mean every operation is atomic</h5>
+            <p>
+              Calling <code>get()</code> and then <code>set()</code> separately creates a race. Use one atomic method
+              such as <code>incrementAndGet</code>, <code>updateAndGet</code>, or <code>compareAndSet</code> for the
+              complete state transition.
+            </p>
+            <pre><code class="language-java">// Unsafe compound operation
+if (stock.get() > 0) {
+    stock.decrementAndGet(); // another thread may consume the last item first
+}
+
+// Safe conditional transition
+boolean reserved = stock.updateAndGet(value -> value > 0 ? value - 1 : value) < currentStock;</code></pre>
+            <p>
+              For clarity in business code, a CAS loop that returns whether the update occurred is often preferable to
+              relying on a comparison with a separately read value.
+            </p>
+
+            <h5 class="text-warning">When to use Atomic variables</h5>
+            <ul>
+              <li>A single counter, sequence number, flag, reference, or state value is updated independently.</li>
+              <li>You need a non-blocking compare-and-set state transition.</li>
+              <li>The critical operation is very short and contention is low or moderate.</li>
+              <li>You are implementing a lock-free data structure or a coordination primitive.</li>
+            </ul>
+            <pre><code class="language-java">private final AtomicBoolean started = new AtomicBoolean();
+
+if (started.compareAndSet(false, true)) {
+    startOnce();
+}</code></pre>
+
+            <h5 class="text-warning">When to use synchronized</h5>
+            <ul>
+              <li>Several fields must change together consistently.</li>
+              <li>You need to protect a collection or an object invariant.</li>
+              <li>The critical section contains multiple operations and a lock makes the logic clearer.</li>
+              <li>Contention is high enough that continuous CAS retries would waste CPU.</li>
+            </ul>
+            <pre><code class="language-java">private int available;
+private int reserved;
+
+public synchronized boolean reserve(int quantity) {
+    if (available < quantity) {
+        return false;
+    }
+    available -= quantity;
+    reserved += quantity;
+    return true;
+}</code></pre>
+
+            <h5 class="text-warning">AtomicLong versus LongAdder</h5>
+            <p>
+              Use <code>AtomicLong</code> when every update needs an immediately meaningful exact value or when CAS
+              operations such as compare-and-set are required. Use <code>LongAdder</code> for very hot metrics counters
+              where high write throughput matters more than reading an exact instantaneous value; it spreads updates over
+              internal cells and combines them during <code>sum()</code>.
+            </p>
+
+            <h5 class="text-warning">Important limitations</h5>
+            <ul>
+              <li>Atomic variables do not coordinate changes to unrelated variables.</li>
+              <li>A CAS loop can starve or consume CPU under extreme contention.</li>
+              <li>ABA problems can occur with references when a value changes A -> B -> A; versioned or stamped references can help.</li>
+              <li>Atomicity, visibility, ordering, and durability are different concerns. An atomic variable does not persist data to a database.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Atomic variables use CPU-supported compare-and-set and retry when the value changed, while
+              <code>synchronized</code> uses a JVM monitor to provide exclusive access to a critical section. I use
+              atomics for independent counters, flags, references, and short CAS state transitions. I use
+              <code>synchronized</code> when multiple fields or operations must change together, because the monitor makes
+              the invariant clear and protects the whole critical section. Under heavy counter contention,
+              <code>LongAdder</code> may be better than AtomicLong."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="lockFairnessTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#lockFairnessTopBody">
+            What does fairness mean in a Lock?
+          </button>
+        </h2>
+        <div id="lockFairnessTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>Fairness</strong> describes how a lock chooses the next waiting thread when the lock becomes
+              available. A fair lock generally gives preference to the thread that has been waiting the longest. A
+              non-fair lock allows a newly arriving thread to acquire the lock before an older waiter; this is called
+              <strong>barging</strong>.
+            </p>
+
+            <h5 class="text-warning">Fair ReentrantLock example</h5>
+            <pre><code class="language-java">private final Lock lock = new ReentrantLock(true); // fair lock
+
+void updateInventory() {
+    lock.lock();
+    try {
+        reserveStock();
+    } finally {
+        lock.unlock();
+    }
+}</code></pre>
+            <p>
+              Passing <code>true</code> requests a fair ordering policy. Waiting threads are generally selected in
+              arrival order, reducing the chance that one thread waits indefinitely.
+            </p>
+
+            <h5 class="text-warning">Non-fair lock example</h5>
+            <pre><code class="language-java">private final Lock lock = new ReentrantLock(); // non-fair by default
+// Equivalent to new ReentrantLock(false)</code></pre>
+            <p>
+              A non-fair lock is usually faster because a thread that arrives when the lock is released may acquire it
+              immediately without waiting behind queued threads. It can provide better throughput, but a frequently
+              arriving thread can delay another thread for a long time.
+            </p>
+
+            <h5 class="text-warning">Fair versus non-fair</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Aspect</th>
+                  <th>Fair lock</th>
+                  <th>Non-fair lock</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Selection</td>
+                  <td>Prefers queued threads in waiting order.</td>
+                  <td>New arrivals may acquire before queued threads.</td>
+                </tr>
+                <tr>
+                  <td>Starvation risk</td>
+                  <td>Lower, though no general progress guarantee is absolute.</td>
+                  <td>Higher under heavy contention.</td>
+                </tr>
+                <tr>
+                  <td>Throughput</td>
+                  <td>Usually lower because of queue management and context switching.</td>
+                  <td>Usually higher.</td>
+                </tr>
+                <tr>
+                  <td>Latency predictability</td>
+                  <td>Better for waiting requests.</td>
+                  <td>Can have more variation.</td>
+                </tr>
+                <tr>
+                  <td>Best fit</td>
+                  <td>Queues, scarce resources, or operations where starvation is unacceptable.</td>
+                  <td>Short critical sections where throughput is more important.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Important details</h5>
+            <ul>
+              <li>Fairness applies to lock acquisition, not to the order in which tasks were submitted to an executor.</li>
+              <li>It does not make the code thread-safe by itself; the shared state still must be protected correctly.</li>
+              <li>Fairness does not guarantee strict FIFO behavior in every scheduling situation.</li>
+              <li>Use <code>tryLock()</code> carefully: untimed <code>tryLock()</code> may acquire a fair lock immediately even when other threads are waiting.</li>
+              <li>Always unlock in a <code>finally</code> block.</li>
+            </ul>
+
+            <h5 class="text-warning">Other fair concurrency primitives</h5>
+            <pre><code class="language-java">Semaphore fairSemaphore = new Semaphore(3, true);
+ReadWriteLock fairReadWriteLock =
+    new ReentrantReadWriteLock(true);</code></pre>
+            <p>
+              A fair Semaphore generally grants permits to waiting threads in order, and a fair
+              <code>ReentrantReadWriteLock</code> applies fairness to acquiring its read and write locks. The exact
+              scheduling behavior still depends on the JVM and operating-system scheduler.
+            </p>
+
+            <h5 class="text-warning">Real-world example</h5>
+            <p>
+              For a ticket counter, a fair lock helps prevent one request thread from repeatedly jumping ahead while
+              another waits. For a short in-memory cache update where requests are extremely frequent, a non-fair lock
+              may provide better throughput. Measure contention and waiting time before choosing fairness.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "A fair lock gives preference to threads that have waited longer, reducing starvation but usually adding
+              overhead and lowering throughput. A non-fair lock allows barging and is the default for
+              <code>ReentrantLock</code>, often giving better performance. I choose a fair lock when predictable access
+              and starvation avoidance matter, and a non-fair lock for short, highly contended critical sections when
+              throughput is the priority."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="collectionNumberInvarianceTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#collectionNumberInvarianceTopBody">
+            Can List&lt;Integer&gt; be passed to a method parameter of type Collection&lt;Number&gt;?
+          </button>
+        </h2>
+        <div id="collectionNumberInvarianceTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>No, it gives a compilation error.</strong> Java generics are invariant:
+              <code>Integer</code> extends <code>Number</code>, but <code>List&lt;Integer&gt;</code> does not extend
+              <code>Collection&lt;Number&gt;</code>. A collection of a subtype is not automatically a collection of its
+              supertype.
+            </p>
+
+            <pre><code class="language-java">static void addNumber(Collection&lt;Number&gt; values) {
+    values.add(3.14); // A Double is a Number
+}
+
+List&lt;Integer&gt; integers = new ArrayList&lt;&gt;();
+
+// Compilation error:
+// addNumber(integers);</code></pre>
+
+            <h5 class="text-warning">Why does Java reject it?</h5>
+            <p>
+              If Java allowed the call, the method could add a <code>Double</code> or another
+              <code>Number</code> into a list that is supposed to contain only <code>Integer</code> values. That would
+              break generic type safety.
+            </p>
+            <pre><code class="language-java">List&lt;Integer&gt; integers = new ArrayList&lt;&gt;();
+
+// If this were allowed:
+Collection&lt;Number&gt; numbers = integers;
+numbers.add(3.14); // Double enters a List&lt;Integer&gt;
+
+// Later this would be unsafe:
+Integer value = integers.get(0);</code></pre>
+
+            <h5 class="text-warning">Correct alternatives</h5>
+            <p>
+              Use the wildcard that matches what the method needs to do.
+            </p>
+            <pre><code class="language-java">// Read numbers from any Number subtype
+static double sum(Collection&lt;? extends Number&gt; values) {
+    return values.stream()
+        .mapToDouble(Number::doubleValue)
+        .sum();
+}
+
+List&lt;Integer&gt; integers = List.of(10, 20, 30);
+double total = sum(integers); // Compiles</code></pre>
+            <p>
+              <code>Collection&lt;? extends Number&gt;</code> can receive
+              <code>Collection&lt;Integer&gt;</code>, <code>Collection&lt;Double&gt;</code>, or another Number subtype. Read
+              values as <code>Number</code>, but do not add a Number because the exact subtype is unknown.
+            </p>
+
+            <pre><code class="language-java">// Add Integer values to a collection of Integer or its supertypes
+static void addIntegers(Collection&lt;? super Integer&gt; values) {
+    values.add(10);
+    values.add(20);
+}
+
+Collection&lt;Number&gt; numbers = new ArrayList&lt;&gt;();
+addIntegers(numbers); // Compiles</code></pre>
+            <p>
+              <code>Collection&lt;? super Integer&gt;</code> can be a collection of
+              <code>Integer</code>, <code>Number</code>, or <code>Object</code>. Integer values can be added safely, but
+              values can be read only as <code>Object</code>.
+            </p>
+
+            <h5 class="text-warning">Direct comparison</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Parameter</th>
+                  <th>Can receive List&lt;Integer&gt;?</th>
+                  <th>Use when</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>Collection&lt;Number&gt;</code></td>
+                  <td>No</td>
+                  <td>The method must work specifically with a collection declared for Number and may add any Number.</td>
+                </tr>
+                <tr>
+                  <td><code>Collection&lt;? extends Number&gt;</code></td>
+                  <td>Yes</td>
+                  <td>The method reads values as Number.</td>
+                </tr>
+                <tr>
+                  <td><code>Collection&lt;? super Integer&gt;</code></td>
+                  <td>Yes</td>
+                  <td>The method adds Integer values.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              <code>List&lt;Integer&gt;</code> cannot be passed to <code>Collection&lt;Number&gt;</code> because Java
+              generics are invariant. If it were allowed, the method could add a Double to a list of Integer values.
+              Use <code>? extends Number</code> for reading Number values from Integer, Double, or other subtypes, and
+              use <code>? super Integer</code> when adding Integer values.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="collectionWildcardTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#collectionWildcardTopBody">
+            Can List&lt;Integer&gt; be passed to a method parameter of type Collection&lt;?&gt;?
+          </button>
+        </h2>
+        <div id="collectionWildcardTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>Yes, it compiles.</strong> <code>List&lt;Integer&gt;</code> is a subtype of
+              <code>Collection&lt;Integer&gt;</code>, and <code>Collection&lt;?&gt;</code> means a collection of some
+              unknown type. The compiler knows that the collection has one consistent element type, but the method does
+              not know what that type is.
+            </p>
+
+            <pre><code class="language-java">static void printCollection(Collection&lt;?&gt; values) {
+    for (Object value : values) {
+        System.out.println(value);
+    }
+}
+
+List&lt;Integer&gt; numbers = List.of(10, 20, 30);
+printCollection(numbers); // Compiles successfully</code></pre>
+
+            <h5 class="text-warning">Why is this safe?</h5>
+            <p>
+              The method can read every element as <code>Object</code>, because every Java reference type is an
+              <code>Object</code>. But it cannot safely add an arbitrary value. The actual collection might be a
+              <code>List&lt;Integer&gt;</code>, <code>List&lt;String&gt;</code>, or another type.
+            </p>
+            <pre><code class="language-java">static void inspect(Collection&lt;?&gt; values) {
+    Object value = values.iterator().next(); // Safe to read as Object
+
+    // values.add(10);      // Compilation error
+    // values.add("hello"); // Compilation error
+    values.add(null);       // The only generally safe value to add
+}</code></pre>
+            <p>
+              If Java allowed <code>values.add("hello")</code>, a method receiving a
+              <code>List&lt;Integer&gt;</code> could insert a String into it and break type safety. The unknown type is
+              therefore treated as a captured, read-only type for adding purposes.
+            </p>
+
+            <h5 class="text-warning">Wildcard comparison</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Meaning</th>
+                  <th>What it allows</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>List&lt;Integer&gt;</code></td>
+                  <td>A list whose elements are Integer.</td>
+                  <td>Read Integer values and add Integer values.</td>
+                </tr>
+                <tr>
+                  <td><code>Collection&lt;?&gt;</code></td>
+                  <td>A collection of one unknown type.</td>
+                  <td>Read as Object; cannot add arbitrary non-null values.</td>
+                </tr>
+                <tr>
+                  <td><code>Collection&lt;? extends Number&gt;</code></td>
+                  <td>A collection of some subtype of Number.</td>
+                  <td>Read as Number; cannot add Integer safely because the actual type may be Double.</td>
+                </tr>
+                <tr>
+                  <td><code>Collection&lt;? super Integer&gt;</code></td>
+                  <td>A collection of Integer or one of its supertypes.</td>
+                  <td>Add Integer safely; read values only as Object.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Why List&lt;Integer&gt; is not List&lt;Number&gt;</h5>
+            <p>
+              Java generics are invariant. Even though <code>Integer</code> extends <code>Number</code>,
+              <code>List&lt;Integer&gt;</code> does not extend <code>List&lt;Number&gt;</code>. Otherwise a Double could
+              be inserted into a list that should contain only Integer values.
+            </p>
+            <pre><code class="language-java">List&lt;Integer&gt; integers = new ArrayList&lt;&gt;();
+
+// Not allowed:
+// List&lt;Number&gt; numbers = integers;
+// numbers.add(3.14);</code></pre>
+
+            <h5 class="text-warning">Real-world examples</h5>
+            <pre><code class="language-java">static int sum(Collection&lt;? extends Number&gt; values) {
+    return values.stream()
+        .mapToInt(Number::intValue)
+        .sum();
+}
+
+static void addDefaults(Collection&lt;? super Integer&gt; values) {
+    values.add(0);
+    values.add(1);
+}
+
+List&lt;Integer&gt; numbers = new ArrayList&lt;&gt;();
+addDefaults(numbers); // Compiles</code></pre>
+            <p>
+              Use <code>Collection&lt;?&gt;</code> when you only need to inspect arbitrary values. Use
+              <code>? extends T</code> for a producer that supplies values of type T, and <code>? super T</code> for a
+              consumer that accepts values of type T. This is remembered as PECS: Producer Extends, Consumer Super.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              <code>List&lt;Integer&gt;</code> can be passed to <code>Collection&lt;?&gt;</code> because the wildcard
+              accepts a collection of any unknown element type, and List extends Collection. The method can read
+              elements only as Object and cannot add arbitrary values because the actual collection type is unknown.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+      <div class="accordion-item" data-manual-category="hibernate">
+        <h2 class="accordion-header" id="databaseStatusStorageTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#databaseStatusStorageTopBody">
+            What is the best way to store a status in a database: string or integer?
+          </button>
+        </h2>
+        <div id="databaseStatusStorageTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              For most business applications, store a status as a <strong>stable string code</strong> such as
+              <code>PENDING</code>, <code>PAID</code>, or <code>CANCELLED</code>, not as the enum's ordinal integer.
+              The small storage difference is usually less important than readability, safe evolution, debugging, and
+              avoiding accidental meaning changes.
+            </p>
+
+            <h5 class="text-warning">Recommended table design</h5>
+            <pre><code class="language-sql">CREATE TABLE orders (
+    id BIGINT PRIMARY KEY,
+    status VARCHAR(30) NOT NULL,
+    CONSTRAINT chk_orders_status
+      CHECK (status IN ('PENDING', 'PAID', 'CANCELLED', 'REFUNDED'))
+);</code></pre>
+            <p>
+              A developer or support engineer can understand a production row directly. The check constraint prevents
+              invalid values. For a large or frequently changing status model, use a status lookup table with a stable
+              code and metadata such as display name, allowed transitions, or active flag.
+            </p>
+
+            <h5 class="text-warning">Spring Boot and JPA example</h5>
+            <pre><code class="language-java">public enum OrderStatus {
+    PENDING, PAID, CANCELLED, REFUNDED
+}
+
+@Entity
+class Order {
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    private OrderStatus status;
+}</code></pre>
+            <p>
+              Use <code>EnumType.STRING</code>. Do not use <code>EnumType.ORDINAL</code> for durable business data
+              because the database stores positions such as <code>0</code>, <code>1</code>, and <code>2</code>.
+            </p>
+
+            <h5 class="text-warning">Why integer ordinals are risky</h5>
+            <pre><code class="language-java">enum Status {
+    PENDING,    // 0
+    PAID,       // 1
+    CANCELLED   // 2
+}
+
+// Later someone inserts:
+enum Status {
+    PENDING,    // 0
+    PROCESSING, // 1
+    PAID,       // 2
+    CANCELLED   // 3
+}</code></pre>
+            <p>
+              Existing rows containing <code>1</code> used to mean <code>PAID</code>, but now the application interprets
+              them as <code>PROCESSING</code>. Reordering or inserting enum constants silently changes historical data.
+            </p>
+
+            <h5 class="text-warning">String versus integer</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Choice</th>
+                  <th>Advantages</th>
+                  <th>Risks / use</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>String code</strong></td>
+                  <td>Readable, safe when values are appended, easy to debug and integrate.</td>
+                  <td>Uses more space; use for most business statuses.</td>
+                </tr>
+                <tr>
+                  <td><strong>Enum ordinal integer</strong></td>
+                  <td>Small and fast.</td>
+                  <td>Meaning changes when enum order changes; avoid for persistent data.</td>
+                </tr>
+                <tr>
+                  <td><strong>Explicit stable integer code</strong></td>
+                  <td>Compact and can remain stable if codes are explicitly assigned.</td>
+                  <td>Less readable; document codes and never reuse them.</td>
+                </tr>
+                <tr>
+                  <td><strong>Lookup table</strong></td>
+                  <td>Supports descriptions, metadata, localization, configuration, and controlled evolution.</td>
+                  <td>Requires a join or cached reference data; good for dynamic workflows.</td>
+                </tr>
+                <tr>
+                  <td><strong>Database enum type</strong></td>
+                  <td>Database enforces allowed values.</td>
+                  <td>Schema changes can be less portable across databases and deployment tools.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">When an explicit integer can be acceptable</h5>
+            <p>
+              An integer is reasonable for very high-volume telemetry or compact protocols when storage and index size
+              are critical. Use an explicit immutable mapping, not the Java enum position.
+            </p>
+            <pre><code class="language-java">enum OrderStatus {
+    PENDING(10),
+    PAID(20),
+    CANCELLED(30),
+    REFUNDED(40);
+
+    private final int code;
+
+    OrderStatus(int code) {
+        this.code = code;
+    }
+}</code></pre>
+            <p>
+              Never reuse a retired code. Keep the mapping in a shared contract and expose a readable value in logs,
+              APIs, and debugging tools.
+            </p>
+
+            <h5 class="text-warning">Status is also a state machine</h5>
+            <p>
+              Storing a status does not enforce valid transitions. The application or database should prevent invalid
+              changes such as <code>REFUNDED -> PAID</code>. Use a version column or conditional update when multiple
+              instances can change the same row.
+            </p>
+            <pre><code class="language-sql">UPDATE orders
+SET status = 'PAID', version = version + 1
+WHERE id = :id
+  AND status = 'PENDING'
+  AND version = :version;</code></pre>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "For normal business statuses I use a stable string code and map it with JPA
+              <code>@Enumerated(EnumType.STRING)</code>, optionally adding a database check constraint or lookup table.
+              I avoid enum ordinals because inserting or reordering constants changes their meaning. Explicit integer
+              codes are acceptable for very high-volume data only when the mapping is stable, documented, and never
+              reused. I also validate legal state transitions and handle concurrent updates."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="hibernate">
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="privateConstructorTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#privateConstructorTopBody">
+            Can a constructor be private? Why and when do we use it?
+          </button>
+        </h2>
+        <div id="privateConstructorTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>Yes.</strong> A constructor can be declared <code>private</code>. It can then be called only
+              inside the same class. Code outside the class cannot use <code>new</code> to create an instance directly.
+              This gives the class control over how and whether its objects are created.
+            </p>
+
+            <h5 class="text-warning">1. Utility class: prevent object creation</h5>
+            <p>
+              A utility class contains only static methods and should not be instantiated. A private constructor makes
+              accidental creation impossible.
+            </p>
+            <pre><code class="language-java">public final class MathUtils {
+    private MathUtils() {
+        throw new AssertionError("Utility class");
+    }
+
+    public static int square(int value) {
+        return value * value;
+    }
+}
+
+// MathUtils utils = new MathUtils(); // compilation error
+int result = MathUtils.square(5);</code></pre>
+
+            <h5 class="text-warning">2. Singleton: allow only one instance</h5>
+            <p>
+              A private constructor prevents callers from creating additional objects. A public static method returns the
+              controlled instance.
+            </p>
+            <pre><code class="language-java">public final class AppConfig {
+    private static final AppConfig INSTANCE = new AppConfig();
+
+    private AppConfig() {
+    }
+
+    public static AppConfig getInstance() {
+        return INSTANCE;
+    }
+}
+
+AppConfig first = AppConfig.getInstance();
+AppConfig second = AppConfig.getInstance();
+System.out.println(first == second); // true</code></pre>
+            <p>
+              In a multi-threaded application, prefer a proven thread-safe Singleton approach such as an enum, eager
+              initialization, or the initialization-on-demand holder idiom. A private constructor alone does not make a
+              class a Singleton if reflection or other creation mechanisms are not considered.
+            </p>
+
+            <h5 class="text-warning">3. Static factory method: control object creation</h5>
+            <p>
+              A class can expose a named method that validates input, returns a cached object, or chooses a subtype
+              instead of exposing a public constructor.
+            </p>
+            <pre><code class="language-java">public final class UserId {
+    private final String value;
+
+    private UserId(String value) {
+        this.value = value;
+    }
+
+    public static UserId of(String value) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException("User ID is required");
+        }
+        return new UserId(value.trim());
+    }
+
+    public String value() {
+        return value;
+    }
+}
+
+UserId id = UserId.of("user-101");</code></pre>
+
+            <h5 class="text-warning">What does a private constructor prevent?</h5>
+            <ul>
+              <li>Direct construction from outside the class.</li>
+              <li>Normal subclass construction, because a subclass cannot call an inaccessible parent constructor.</li>
+              <li>Uncontrolled creation when the class should expose static behavior or a factory.</li>
+            </ul>
+
+            <h5 class="text-warning">Important note</h5>
+            <p>
+              A private constructor does not mean the class can never create an object. The class itself, a nested class,
+              or a factory method inside the class can call it. Frameworks such as Spring usually need an accessible
+              constructor or a configured factory method to create beans, so do not make a Spring bean constructor
+              private unless the bean is intentionally created through a supported factory.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Yes, a constructor can be private. It restricts object creation to the class itself. We use it for
+              utility classes, Singleton implementations, and static factory methods that validate input, cache objects,
+              or choose an implementation. A private constructor is a creation-control technique; it does not
+              automatically make an object immutable or thread-safe."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="distributedLocksAtomicOperationsTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#distributedLocksAtomicOperationsTopBody">
+            What distributed locks and atomic operations are available, and what do they achieve?
+          </button>
+        </h2>
+        <div id="distributedLocksAtomicOperationsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              A <strong>distributed lock</strong> coordinates work across multiple application instances or machines.
+              It provides mutual exclusion for a shared resource, so only one eligible instance performs a critical
+              operation at a time. An <strong>atomic operation</strong> completes a check and change as one indivisible
+              action, without another worker observing an unsafe intermediate state.
+            </p>
+
+            <h5 class="text-warning">Real-world example: prevent duplicate payment</h5>
+            <p>
+              Two instances receive the same retry for order <code>ORD-100</code>. A lock can ensure only one instance
+              processes it at a time, while an idempotency record or unique database constraint provides the stronger
+              guarantee that the payment is not created twice.
+            </p>
+            <pre><code class="language-text">Instance A: acquire lock order:ORD-100 -> success -> process payment
+Instance B: acquire lock order:ORD-100 -> fail/wait -> do not process concurrently
+
+Best protection:
+idempotency key ORD-100 + unique constraint + safe payment provider retry</code></pre>
+
+            <h5 class="text-warning">Distributed lock options</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Mechanism</th>
+                  <th>How it works</th>
+                  <th>Good use</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Redis lease lock</strong></td>
+                  <td>Atomically set a unique token only if the key does not exist, with an expiry.</td>
+                  <td>Short critical sections, duplicate-work reduction, and fast coordination.</td>
+                </tr>
+                <tr>
+                  <td><strong>Database row lock</strong></td>
+                  <td><code>SELECT ... FOR UPDATE</code> locks a row inside a database transaction.</td>
+                  <td>Coordination for data already owned by that database.</td>
+                </tr>
+                <tr>
+                  <td><strong>Database advisory lock</strong></td>
+                  <td>The database exposes an application-defined lock name or key.</td>
+                  <td>Job coordination when the database is the natural authority.</td>
+                </tr>
+                <tr>
+                  <td><strong>ZooKeeper or etcd</strong></td>
+                  <td>Ephemeral sessions, leases, and consensus-backed coordination provide lock or leader-election primitives.</td>
+                  <td>Strong coordination, leader election, and cluster membership.</td>
+                </tr>
+                <tr>
+                  <td><strong>Cloud lease service</strong></td>
+                  <td>A managed key/value or lease API grants ownership for a limited duration.</td>
+                  <td>Cloud-native coordination without operating a coordination cluster.</td>
+                </tr>
+                <tr>
+                  <td><strong>Message broker ownership</strong></td>
+                  <td>A consumer group assigns each partition to one active consumer at a time.</td>
+                  <td>Exclusive event processing and work distribution rather than arbitrary resource locking.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Redis lock example</h5>
+            <pre><code class="language-text">SET lock:order:ORD-100 unique-token NX PX 10000
+
+NX  = set only when the key does not exist
+PX  = expire after 10 seconds
+unique-token = identifies the owner</code></pre>
+            <p>
+              The owner must release the lock only if the stored value still equals its own token. A compare-and-delete
+              Lua script makes the check and delete atomic; a plain <code>DEL</code> could delete a lock acquired by a
+              different instance after the original lease expired.
+            </p>
+            <pre><code class="language-lua">if redis.call("get", KEYS[1]) == ARGV[1] then
+  return redis.call("del", KEYS[1])
+else
+  return 0
+end</code></pre>
+
+            <h5 class="text-warning">Database atomic operations</h5>
+            <ul>
+              <li><strong>Unique constraint:</strong> prevents duplicate business records, such as one payment per idempotency key.</li>
+              <li><strong>Conditional update:</strong> <code>UPDATE inventory SET quantity = quantity - 1 WHERE sku = ? AND quantity &gt; 0</code> reserves stock safely.</li>
+              <li><strong>Optimistic locking:</strong> update with <code>WHERE id = ? AND version = ?</code>, then increment the version; a zero-row update means a conflict.</li>
+              <li><strong>Pessimistic row locking:</strong> lock the selected row inside a short transaction when contention is expected.</li>
+              <li><strong>Compare-and-set:</strong> change a value only if it still equals the expected old value.</li>
+            </ul>
+
+            <h5 class="text-warning">Other atomic primitives</h5>
+            <ul>
+              <li><strong>Redis:</strong> <code>INCR</code>, <code>DECR</code>, <code>HSETNX</code>, <code>SET NX</code>, transactions, and Lua scripts.</li>
+              <li><strong>Java local concurrency:</strong> <code>AtomicInteger</code>, <code>AtomicReference</code>, locks, and concurrent collections. These work only inside one JVM, not across service instances.</li>
+              <li><strong>Kafka:</strong> partition ordering and consumer-group ownership provide ordered, single-consumer processing per partition; exactly-once semantics have specific scope and configuration requirements.</li>
+              <li><strong>ZooKeeper/etcd:</strong> compare-and-swap, revisions, leases, watches, and ephemeral ownership.</li>
+            </ul>
+
+            <h5 class="text-warning">What are we achieving?</h5>
+            <ul>
+              <li><strong>Mutual exclusion:</strong> one worker operates on a shared resource at a time.</li>
+              <li><strong>Leader election:</strong> one instance becomes the active scheduler or coordinator.</li>
+              <li><strong>Duplicate-work reduction:</strong> concurrent cache rebuilds or scheduled jobs are limited.</li>
+              <li><strong>Atomic state transitions:</strong> an order moves from <code>PENDING</code> to <code>PAID</code> only from an allowed state.</li>
+              <li><strong>Idempotency and uniqueness:</strong> repeated requests do not create duplicate business effects.</li>
+              <li><strong>Concurrency control:</strong> inventory, quotas, counters, and resources are updated safely.</li>
+            </ul>
+
+            <h5 class="text-warning">What is the best way?</h5>
+            <p>
+              There is no single best mechanism. For business correctness, prefer an atomic database constraint,
+              conditional update, optimistic version, or idempotency key because these remain authoritative even if an
+              application crashes. Use a distributed lock for coordination around a short operation, not as the only
+              protection for a payment or inventory invariant.
+            </p>
+            <ul>
+              <li>Use a database transaction and row or optimistic locking when the data is owned by one database.</li>
+              <li>Use Redis with a unique token, lease expiry, bounded wait, and safe compare-and-delete for short-lived coordination.</li>
+              <li>Use ZooKeeper or etcd for leader election and strong cluster coordination.</li>
+              <li>Use Kafka consumer groups for partitioned event work instead of inventing a lock per message.</li>
+              <li>Use a managed cloud lease when it meets the consistency and availability requirements.</li>
+            </ul>
+
+            <h5 class="text-warning">Important lock safeguards</h5>
+            <ul>
+              <li>Always set an expiry or lease; an instance can crash while holding a lock.</li>
+              <li>Keep the critical section short and never hold a lock while waiting on an unbounded external call.</li>
+              <li>Use a unique ownership token and verify ownership before releasing or extending the lease.</li>
+              <li>Use fencing tokens when stale lock holders could still perform dangerous writes after a lease expires.</li>
+              <li>Define timeout, retry, backoff, and failure behavior; never wait forever.</li>
+              <li>Measure lock contention, wait time, expiry count, and owner changes.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Distributed locks coordinate instances using Redis leases, database locks, ZooKeeper/etcd leases, or a
+              managed cloud lease. Atomic operations such as unique constraints, compare-and-set, conditional updates,
+              and Lua scripts make a check and change indivisible. They help with mutual exclusion, leader election,
+              duplicate-work reduction, and safe state transitions. For business correctness I prefer idempotency and
+              database constraints; I use a distributed lock as a short-lived coordination tool with expiry, ownership
+              verification, fencing where needed, and bounded retries."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="microservices">
+      <div class="accordion-item" data-manual-category="springboot">
+        <h2 class="accordion-header" id="userTokenAcrossServicesTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#userTokenAcrossServicesTopBody">
+            Does the same user token travel through all microservices?
+          </button>
+        </h2>
+        <div id="userTokenAcrossServicesTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>Your understanding is possible, but not universally correct.</strong> A user access token may be
+              forwarded from the API Gateway to Order Service and then to another service when the downstream service
+              must authorize the action on behalf of that user. However, the same token should not automatically be
+              forwarded to every service. The design must consider audience, scopes, trust boundaries, and whether the
+              downstream service needs user identity.
+            </p>
+
+            <h5 class="text-warning">Option 1: Token propagation</h5>
+            <p>
+              The original user access token is passed to a downstream service in the
+              <code>Authorization: Bearer</code> header. Each resource server validates the token and checks only the
+              scopes it needs.
+            </p>
+            <pre><code class="language-text">User
+  |
+  | Authorization: Bearer user-token
+  v
+API Gateway -> Order Service -> Payment Service
+     same user token may be propagated when user context is required
+
+Each service validates:
+issuer, signature, expiry, audience, scopes, and user claims</code></pre>
+            <p>
+              For example, Order Service may require <code>orders.write</code> and Payment Service may require
+              <code>payments.write</code>. If the token does not have the correct audience or scope, the receiving service
+              must reject the call.
+            </p>
+
+            <h5 class="text-warning">Option 2: Token exchange or on-behalf-of token</h5>
+            <p>
+              Order Service exchanges the user token for a short-lived token specifically intended for Payment Service.
+              The new token can preserve the user's identity while having a narrower audience and scope.
+            </p>
+            <pre><code class="language-text">User token -> Order Service
+Order Service -> Authorization Server: exchange user token for payment token
+Authorization Server -> Order Service: token audience=payment-service
+Order Service -> Payment Service: payment-service token</code></pre>
+            <p>
+              This is safer when services have different trust boundaries because Payment Service does not receive a token
+              intended for the entire API. The exact feature is provider-specific and may be called token exchange,
+              on-behalf-of, or delegated authorization.
+            </p>
+
+            <h5 class="text-warning">Option 3: Service token with separate user context</h5>
+            <p>
+              Order Service calls Payment Service using its own Client Credentials token. If Payment Service needs audit
+              context, Order Service passes a controlled, signed or validated user-context claim and a correlation ID
+              separately. The service token proves which workload is calling; it does not pretend to be the user.
+            </p>
+            <pre><code class="language-text">Order Service -> Authorization Server: client_credentials
+Authorization Server -> Order Service: order-service token
+Order Service -> Payment Service:
+  Authorization: Bearer order-service token
+  X-Correlation-Id: request-123
+  user context: only if explicitly designed and trusted</code></pre>
+            <p>
+              Notification Service often does not need the user's access token at all. It can consume an
+              <code>OrderConfirmed</code> event and use its own service identity to send a notification.
+            </p>
+
+            <h5 class="text-warning">Recommended order workflow</h5>
+            <pre><code class="language-text">User -> Gateway -> Order Service
+       user token authenticates the user's order request
+
+Order Service -> Payment Service
+       token exchange or service token, depending on whether payment
+       must authorize the user directly
+
+Order Service -> Kafka: OrderCreated / OrderConfirmed
+       Notification Service consumes the event using its own identity</code></pre>
+
+            <h5 class="text-warning">When can we forward the same token?</h5>
+            <ul>
+              <li>The downstream service is a trusted resource server in the same security domain.</li>
+              <li>The token's audience includes that downstream API or the provider explicitly supports the design.</li>
+              <li>The token contains the required scope, such as <code>payments.write</code>.</li>
+              <li>The downstream service genuinely needs the user's identity and permissions.</li>
+              <li>Token lifetime, logging, storage, and forwarding policies are understood and acceptable.</li>
+            </ul>
+
+            <h5 class="text-warning">When should we not forward it?</h5>
+            <ul>
+              <li>The downstream service does not need user identity; use Client Credentials instead.</li>
+              <li>The token audience is for another API or the downstream service has a different trust boundary.</li>
+              <li>Forwarding would expose unnecessary privileges or violate least-privilege requirements.</li>
+              <li>The next step is an asynchronous event, where the consumer should use its own service identity.</li>
+              <li>The access token could be logged, persisted, or exposed by a less-trusted service.</li>
+            </ul>
+
+            <h5 class="text-warning">Important security rule</h5>
+            <p>
+              Never treat the presence of a bearer token as proof that every downstream operation is allowed. Every
+              service must validate the token and enforce its own authorization. Use HTTPS or mTLS in transit, never log
+              access tokens, use short lifetimes and narrow scopes, and propagate a trace or correlation ID separately
+              from the access token.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "A user token can be propagated from Gateway to Order Service and then to Payment Service when downstream
+              services need the user's identity and the token has the right audience and scopes. But we should not blindly
+              forward the same token through every service. We can use token exchange for a narrower on-behalf-of token,
+              or Client Credentials when the call is service-to-service. Notification Service commonly consumes an event
+              and uses its own service identity."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="springboot">
+      <div class="accordion-item" data-manual-category="springboot">
+        <h2 class="accordion-header" id="microservicesClientCredentialsTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#microservicesClientCredentialsTopBody">
+            Do microservices use the OAuth 2 Client Credentials grant type?
+          </button>
+        </h2>
+        <div id="microservicesClientCredentialsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>Yes.</strong> Microservices commonly use the OAuth 2 <strong>Client Credentials</strong> grant
+              when one service calls another service on its own behalf. There is no end-user login or consent screen;
+              the calling service authenticates with the authorization server and receives an access token.
+            </p>
+
+            <h5 class="text-warning">Real-world example</h5>
+            <p>
+              Order Service needs to call Inventory Service to reserve stock. Inventory does not need the user's password.
+              It needs to know that the request came from the trusted Order Service and that Order Service has the
+              <code>inventory.write</code> permission.
+            </p>
+            <pre><code class="language-text">Order Service -> Authorization Server:
+  client_id + client_secret (or private-key authentication)
+  grant_type=client_credentials
+  scope=inventory.write
+
+Authorization Server -> Order Service:
+  short-lived access token
+
+Order Service -> Inventory Service:
+  Authorization: Bearer &lt;access-token&gt;</code></pre>
+
+            <h5 class="text-warning">Spring Boot resource server configuration</h5>
+            <p>
+              The Inventory Service acts as a resource server. It validates the access token and checks the scope before
+              allowing the endpoint.
+            </p>
+            <pre><code class="language-java">@Bean
+SecurityFilterChain security(HttpSecurity http) throws Exception {
+    return http
+        .authorizeHttpRequests(auth -> auth
+            .requestMatchers(HttpMethod.POST, "/inventory/reserve")
+            .hasAuthority("SCOPE_inventory.write")
+            .anyRequest().authenticated())
+        .oauth2ResourceServer(oauth -> oauth.jwt())
+        .build();
+}</code></pre>
+
+            <h5 class="text-warning">Spring Boot client configuration</h5>
+            <p>
+              A calling service can use Spring Security's OAuth 2 client support to obtain and cache tokens. The token
+              endpoint, client ID, and secret should come from protected configuration such as a secret manager, not
+              source code.
+            </p>
+            <pre><code class="language-yaml">spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          inventory-client:
+            authorization-grant-type: client_credentials
+            client-id: order-service
+            client-secret: ${INVENTORY_CLIENT_SECRET}
+            scope: inventory.write
+        provider:
+          inventory-client:
+            token-uri: https://identity.example.com/oauth2/token</code></pre>
+
+            <h5 class="text-warning">When to use it</h5>
+            <ul>
+              <li>Order Service calls Inventory Service as a workload.</li>
+              <li>Payment reconciliation runs as a scheduled backend job.</li>
+              <li>One internal service publishes data to another protected API.</li>
+              <li>A batch processor accesses an API without an interactive user.</li>
+            </ul>
+
+            <h5 class="text-warning">When not to use it</h5>
+            <p>
+              Do not use Client Credentials when the downstream service must know which user initiated the operation.
+              In that case, use an appropriate user flow such as Authorization Code with PKCE, or use a controlled
+              token-exchange/on-behalf-of flow that carries the user's identity and permissions.
+            </p>
+
+            <h5 class="text-warning">Important security practices</h5>
+            <ul>
+              <li>Use short-lived access tokens with a narrow audience and least-privilege scopes.</li>
+              <li>Prefer private-key JWT, workload identity, or mTLS over distributing long-lived client secrets where supported.</li>
+              <li>Store credentials in a secret manager and rotate them regularly.</li>
+              <li>Validate issuer, signature, audience, expiry, and scopes in the receiving service.</li>
+              <li>Do not forward a service token to an unrelated downstream API or treat it as a user's identity.</li>
+              <li>Cache tokens until shortly before expiry instead of requesting a token for every API call.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Yes. Microservices commonly use Client Credentials for service-to-service authentication. The calling
+              service authenticates with the authorization server, obtains a short-lived access token with a specific
+              audience and scope, and sends it to the target service. The target validates the token and authorizes the
+              operation. This flow represents the service, not an end user; for user context, use authorization code or
+              token exchange."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="microservices">
+      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="microservicesCommunicationTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#microservicesCommunicationTopBody">
+            How do multiple microservices communicate with each other?
+          </button>
+        </h2>
+        <div id="microservicesCommunicationTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Microservices communicate mainly through <strong>synchronous request-response calls</strong> or
+              <strong>asynchronous messages/events</strong>. The choice depends on whether the caller needs an immediate
+              answer, how much coupling is acceptable, and whether the workflow can continue later.
+            </p>
+
+            <h5 class="text-warning">1. Synchronous communication</h5>
+            <p>
+              The caller sends a request and waits for a response. For example, Order Service calls Inventory Service
+              to check stock before confirming an order.
+            </p>
+            <pre><code class="language-text">Client -> Order Service -> Inventory Service
+                         <- stock response <-
+       <- order response <-</code></pre>
+            <p>
+              Common protocols are HTTP/REST with JSON, gRPC with Protocol Buffers, and sometimes GraphQL between
+              trusted services. Synchronous calls are simple for queries, but the caller is affected by downstream
+              latency or failure.
+            </p>
+
+            <h5 class="text-warning">Spring Boot REST and Feign example</h5>
+            <pre><code class="language-java">@FeignClient(name = "inventory-service")
+public interface InventoryClient {
+    @GetMapping("/inventory/{sku}")
+    InventoryResponse getInventory(@PathVariable String sku);
+}
+
+@Service
+class OrderService {
+    private final InventoryClient inventoryClient;
+
+    OrderService(InventoryClient inventoryClient) {
+        this.inventoryClient = inventoryClient;
+    }
+
+    public Order place(Order order) {
+        InventoryResponse stock = inventoryClient.getInventory(order.sku());
+        if (!stock.available()) {
+            throw new OutOfStockException();
+        }
+        return saveOrder(order);
+    }
+}</code></pre>
+            <p>
+              The service name can be resolved by service discovery or a platform DNS name. In a production system, add
+              timeouts, bounded retries, circuit breakers, bulkheads, authentication, and tracing. Never retry a non-
+              idempotent write blindly.
+            </p>
+
+            <h5 class="text-warning">2. Asynchronous communication</h5>
+            <p>
+              The producer publishes a message or event to a broker and does not wait for every consumer to finish.
+              For example, Order Service publishes <code>OrderCreated</code>; Payment, Inventory, Notification, and
+              Analytics services consume it independently.
+            </p>
+            <pre><code class="language-text">Order Service -> Kafka topic: OrderCreated
+                         |-> Payment Service
+                         |-> Inventory Service
+                         |-> Notification Service
+                         |-> Analytics Service</code></pre>
+            <pre><code class="language-java">@KafkaListener(topics = "orders.created", groupId = "payment-service")
+public void handleOrderCreated(OrderCreated event) {
+    chargePaymentIdempotently(event.orderId(), event.amount());
+}</code></pre>
+            <p>
+              Asynchronous communication improves decoupling and resilience, but consumers must handle duplicate,
+              delayed, out-of-order, or failed messages. Use durable topics or queues, consumer groups, retries,
+              dead-letter topics, offsets, idempotency keys, and an outbox pattern.
+            </p>
+
+            <h5 class="text-warning">3. Request-reply over messaging</h5>
+            <p>
+              A service can send a message with a correlation ID and receive a later response through a reply topic or
+              queue. This is useful when the operation is slow or the consumer may be temporarily unavailable, but it is
+              more complex than a normal HTTP call.
+            </p>
+
+            <h5 class="text-warning">Synchronous versus asynchronous</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Aspect</th>
+                  <th>Synchronous</th>
+                  <th>Asynchronous</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Response</td>
+                  <td>Immediate response expected</td>
+                  <td>Response may arrive later or not be needed</td>
+                </tr>
+                <tr>
+                  <td>Coupling</td>
+                  <td>Caller depends on service availability and API behavior</td>
+                  <td>Producer and consumer are more loosely coupled</td>
+                </tr>
+                <tr>
+                  <td>Best for</td>
+                  <td>Queries and short validations</td>
+                  <td>Events, workflows, notifications, and workload buffering</td>
+                </tr>
+                <tr>
+                  <td>Failure behavior</td>
+                  <td>Timeout or fallback is needed</td>
+                  <td>Message can wait and be retried</td>
+                </tr>
+                <tr>
+                  <td>Main risk</td>
+                  <td>Latency chains and cascading failures</td>
+                  <td>Eventual consistency and message-processing complexity</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">How does the caller find the target service?</h5>
+            <ul>
+              <li><strong>Platform DNS:</strong> Kubernetes Service DNS or cloud service discovery maps a logical name to healthy instances.</li>
+              <li><strong>Service registry:</strong> services register themselves and clients or a load balancer discover available instances.</li>
+              <li><strong>API Gateway:</strong> external clients use one entry point; the gateway routes to internal services.</li>
+              <li><strong>Service mesh:</strong> a sidecar or node proxy handles routing, mTLS, retries, and telemetry separately from application code.</li>
+            </ul>
+
+            <h5 class="text-warning">Real-world checkout design</h5>
+            <pre><code class="language-text">1. Client -> API Gateway -> Order Service       (synchronous)
+2. Order Service -> Inventory Service           (synchronous stock check)
+3. Order Service -> OrderCreated event          (asynchronous)
+4. Payment Service consumes event and charges
+5. Inventory Service consumes event and reserves stock
+6. Notification Service consumes success/failure event</code></pre>
+            <p>
+              If the business requires a coordinated multi-service result, use a Saga orchestrator or choreography.
+              Each service owns its database; services should not directly update another service's tables.
+            </p>
+
+            <h5 class="text-warning">Practices required for reliable communication</h5>
+            <ul>
+              <li>Define versioned API and event contracts; use consumer-driven contract tests where appropriate.</li>
+              <li>Set connection and read timeouts. A timeout is safer than waiting forever for a failed dependency.</li>
+              <li>Use circuit breakers, bulkheads, rate limits, bounded retries with backoff, and fallbacks.</li>
+              <li>Use OAuth 2 access tokens or mTLS for service authentication and authorize scopes or service roles.</li>
+              <li>Propagate correlation ID, trace ID, and span context so one request can be followed across services.</li>
+              <li>Use idempotency keys for commands and an outbox/inbox approach for reliable event processing.</li>
+              <li>Monitor latency, error rate, retry count, queue lag, consumer failures, and dead-letter messages.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Microservices communicate synchronously through REST, Feign, or gRPC when the caller needs an immediate
+              result, and asynchronously through Kafka, RabbitMQ, or another broker for events and decoupled workflows.
+              Service discovery or platform DNS finds instances. In production I add timeouts, circuit breakers,
+              idempotency, versioned contracts, authentication, correlation and trace IDs, retries with backoff, and
+              monitoring. Each service owns its data, so cross-service business workflows use events or a Saga rather
+              than direct database access."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="microservices">
+      <div class="accordion-item" data-manual-category="springboot">
+        <h2 class="accordion-header" id="oauth2GrantTypesTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#oauth2GrantTypesTopBody">
+            What are the OAuth 2 grant types, and when should we use each one?
+          </button>
+        </h2>
+        <div id="oauth2GrantTypesTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              An OAuth 2 <strong>grant type</strong>, also called an authorization grant, describes how a client obtains
+              an access token. The correct flow depends on whether the client represents a user, whether it can safely
+              keep a secret, and whether the device has a browser.
+            </p>
+
+            <h5 class="text-warning">1. Authorization Code with PKCE</h5>
+            <p>
+              The user authenticates at the authorization server, which returns a short-lived authorization code. The
+              client exchanges that code for tokens using a one-time PKCE verifier. The user's password is never given
+              to the application.
+            </p>
+            <pre><code class="language-text">Web/mobile app -> authorization server: login + consent
+Authorization server -> app: authorization code
+App + PKCE verifier -> token endpoint: access token + optional refresh token</code></pre>
+            <p><strong>Use when:</strong> a user signs in through a browser, SPA, mobile app, or desktop application.
+              PKCE is recommended for public clients and is commonly used even when a confidential backend is involved.</p>
+
+            <h5 class="text-warning">2. Client Credentials</h5>
+            <p>
+              A backend service authenticates itself with its client credentials and receives a token. There is no user
+              login and no user consent screen.
+            </p>
+            <pre><code class="language-text">Order service -> authorization server: client_id + client_secret
+Authorization server -> Order service: access token
+Order service -> Inventory API: Bearer access token</code></pre>
+            <p><strong>Use when:</strong> service-to-service communication, scheduled jobs, batch processing, or backend
+              APIs. Give the token only service scopes; do not use this flow to represent an end user.</p>
+
+            <h5 class="text-warning">3. Refresh Token</h5>
+            <p>
+              A refresh token is exchanged for a new access token after the short-lived access token expires. It is
+              normally obtained as part of the authorization-code flow and is not usually a standalone user-login flow.
+            </p>
+            <pre><code class="language-text">Access token expires
+Client -> token endpoint: refresh token
+Authorization server -> client: new access token</code></pre>
+            <p><strong>Use when:</strong> a user should remain signed in without repeatedly entering credentials. Store
+              refresh tokens securely, rotate them when possible, revoke them on suspicious use, and request only the
+              scopes needed.</p>
+
+            <h5 class="text-warning">4. Device Authorization Grant</h5>
+            <p>
+              A device with limited input, such as a smart TV or command-line tool, displays a short user code and a
+              verification URL. The user completes login on another device while the original device polls the token
+              endpoint at the permitted interval.
+            </p>
+            <pre><code class="language-text">Smart TV -> authorization server: device code
+Smart TV displays: "Open example.com/activate and enter ABCD"
+User's phone -> authorization server: login + consent
+Smart TV -> token endpoint: poll until authorized</code></pre>
+            <p><strong>Use when:</strong> TVs, printers, consoles, IoT devices, and CLI tools cannot provide a convenient
+              browser or keyboard. Follow the server's polling interval and expiration rules.</p>
+
+            <h5 class="text-warning">5. Implicit Grant</h5>
+            <p>
+              The browser application receives an access token directly from the authorization endpoint instead of
+              exchanging a code. It was designed for older browser applications.
+            </p>
+            <p class="text-danger">
+              <strong>Do not choose this for new applications.</strong> Authorization code with PKCE provides a safer
+              modern flow and avoids exposing tokens in the browser redirect response. Existing systems should plan
+              migration according to their identity provider.
+            </p>
+
+            <h5 class="text-warning">6. Resource Owner Password Credentials</h5>
+            <p>
+              The client directly collects the user's username and password and exchanges them for a token.
+            </p>
+            <p class="text-danger">
+              <strong>Deprecated and not recommended for new systems.</strong> It trains users to give passwords to
+              clients, makes phishing and credential handling worse, and bypasses useful identity-provider controls such
+              as multi-factor authentication. Use authorization code with PKCE instead.
+            </p>
+
+            <h5 class="text-warning">Common extensions and token-exchange flows</h5>
+            <ul>
+              <li><strong>JWT Bearer Grant:</strong> a trusted client exchanges a signed JWT assertion for an access token, often for server-to-server or workload identity scenarios.</li>
+              <li><strong>Token Exchange:</strong> a service exchanges one token for another token with a narrower audience or scope, useful when a gateway or service calls a downstream API on behalf of a user.</li>
+              <li><strong>Device Code and PKCE:</strong> these are standardized grant patterns; the identity provider may expose them with product-specific names and configuration.</li>
+            </ul>
+
+            <h5 class="text-warning">Which grant should we choose?</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Application type</th>
+                  <th>Recommended grant</th>
+                  <th>Why</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Server-rendered web application</td>
+                  <td>Authorization Code, usually with PKCE</td>
+                  <td>User login happens at the identity provider and tokens stay protected by the backend.</td>
+                </tr>
+                <tr>
+                  <td>SPA or mobile app</td>
+                  <td>Authorization Code with PKCE</td>
+                  <td>Public clients cannot safely hide a client secret.</td>
+                </tr>
+                <tr>
+                  <td>Microservice calling another service</td>
+                  <td>Client Credentials</td>
+                  <td>The workload authenticates as itself.</td>
+                </tr>
+                <tr>
+                  <td>Smart TV, CLI, or limited-input device</td>
+                  <td>Device Authorization</td>
+                  <td>The user authenticates on a separate browser-capable device.</td>
+                </tr>
+                <tr>
+                  <td>Long-lived user session</td>
+                  <td>Authorization Code with a securely stored, rotated refresh token</td>
+                  <td>Short-lived access tokens can be renewed without another login.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Grant type is not the same as authentication</h5>
+            <p>
+              Authentication answers <strong>who is the user or client?</strong> Authorization answers
+              <strong>what may it access?</strong> A grant type describes the token acquisition flow. The resulting
+              access token is then sent to an API, where Spring Security validates its signature or introspects it and
+              checks scopes or authorities.
+            </p>
+            <pre><code class="language-text">OAuth grant -> obtain access token
+Access token -> API authentication
+Scopes/roles -> API authorization</code></pre>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "For user-facing applications I use Authorization Code with PKCE. For service-to-service calls I use Client
+              Credentials. For devices with limited input I use Device Authorization, and refresh tokens maintain a user
+              session with secure rotation. Implicit and password grants are legacy flows and should not be used for new
+              applications. The grant obtains a token; the API then authenticates and authorizes requests using that
+              token's claims and scopes."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="microservices">
       <!-- Business id generation -->
       <div class="accordion-item" data-manual-category="springboot">
         <h2 class="accordion-header" id="businessIdGeneration">
