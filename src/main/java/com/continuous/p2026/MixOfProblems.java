@@ -42,16 +42,20 @@ public class MixOfProblems {
         return true;
     }
 
-    public static void primeNumbersUpToMax(int max){
-        for (int i = 0; i <= max; i++) {
-            for (int j = 2; j < i/2; j++) {
-                if(j%2!=0){
-                    System.out.print(j+", ");
+    public static void primeNumbersUpToMax(int max) {
+
+        for (int i = 2; i <= max; i++) {
+            boolean isPrime = true;
+            for (int j = 2; j < i; j++) {
+                if (i % j == 0) {
+                    isPrime = false;
                     break;
                 }
             }
 
-
+            if (isPrime) {
+                System.out.print(i+", ");
+            }
         }
     }
 

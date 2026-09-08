@@ -23,6 +23,10 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-properties.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
   <style>
+    body {
+      background-color: #212529;
+    }
+
     /* body {
       background-color: #121212;
       color: white;
@@ -115,6 +119,10 @@
       color: #fff;
     }
 
+    .accordion {
+      width: 100%;
+    }
+
     /* Prevent underline and fix code block styling */
     code,
     pre,
@@ -129,7 +137,7 @@
 </head>
 
 <body class="bg-dark text-light mb-4">
-  <div class="container">
+  <div class="container px-3">
     <div class="header fw-bold text-center mb-4">Interview questions</div>
     <p id="questionCount" class="text-center">0 Questions</p>
 
@@ -152,6 +160,225 @@
         onkeyup="searchQuestions()" />
     </div>
     <div class="accordion" id="accordionSeniorJava">
+
+      <!-- Transactional outbox pattern -->
+      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="transactionalOutboxPattern">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#transactionalOutboxPatternBody">
+            What is the Transactional Outbox pattern in microservices? Why do we use it, and where is it useful?
+          </button>
+        </h2>
+        <div id="transactionalOutboxPatternBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              The <strong>Transactional Outbox pattern</strong> reliably publishes an event after a database change.
+              Instead of saving business data and publishing directly to Kafka/RabbitMQ as two separate operations, the
+              service saves the business record and an <strong>outbox event row</strong> in the same local database transaction.
+              A separate publisher later reads the outbox and sends the event to the message broker.
+            </p>
+
+            <h5 class="text-warning">The problem it solves</h5>
+            <p>
+              Consider creating an order and publishing <code>OrderCreated</code>. If the database save succeeds but
+              Kafka is temporarily unavailable, the order exists but payment, inventory, and notification services never
+              hear about it. If Kafka publish succeeds but the database transaction rolls back, other services receive an
+              event for an order that does not exist. This is the classic <strong>dual-write problem</strong>.
+            </p>
+
+            <pre><code class="language-text">Unsafe dual write
+save order in database -> publish OrderCreated to Kafka
+
+If either step fails, data and event can become inconsistent.
+
+Transactional outbox
+one database transaction:
+  save order
+  save OrderCreated event in outbox table
+
+separate publisher:
+  read unsent outbox events -> publish to Kafka -> mark as published</code></pre>
+
+            <h5 class="text-warning">How it works</h5>
+            <ol>
+              <li>The API receives a request to create or update business data.</li>
+              <li>Inside one <code>@Transactional</code> method, it saves the business entity and an outbox row.</li>
+              <li>The transaction commits both rows together, or rolls both back together.</li>
+              <li>A scheduled publisher, CDC tool, or Debezium connector reads unprocessed outbox rows.</li>
+              <li>It publishes the event to Kafka/RabbitMQ and marks the row as processed.</li>
+              <li>Consumers process the event idempotently because delivery can be at least once.</li>
+            </ol>
+
+            <h5 class="text-warning">Database table example</h5>
+            <pre><code class="language-sql">CREATE TABLE outbox_event (
+    id UUID PRIMARY KEY,
+    aggregate_type VARCHAR(100) NOT NULL,
+    aggregate_id VARCHAR(100) NOT NULL,
+    event_type VARCHAR(100) NOT NULL,
+    payload TEXT NOT NULL,
+    created_at TIMESTAMP NOT NULL,
+    published_at TIMESTAMP NULL
+);</code></pre>
+
+            <h5 class="text-warning">Spring Boot service example</h5>
+            <pre><code class="language-java">@Service
+public class OrderService {
+    private final OrderRepository orderRepository;
+    private final OutboxEventRepository outboxEventRepository;
+    private final ObjectMapper objectMapper;
+
+    @Transactional
+    public Order createOrder(CreateOrderRequest request) throws JsonProcessingException {
+        Order order = orderRepository.save(new Order(request.customerId(), request.total()));
+
+        OutboxEvent event = new OutboxEvent(
+                UUID.randomUUID(),
+                "Order",
+                order.getId().toString(),
+                "OrderCreated",
+                objectMapper.writeValueAsString(new OrderCreatedEvent(order.getId()))
+        );
+
+        outboxEventRepository.save(event);
+        return order;
+    }
+}</code></pre>
+            <p>
+              No Kafka call is made inside this business transaction. If saving the event fails, the order also rolls
+              back. If the application crashes after commit, the unsent outbox row remains available for publishing when
+              the service starts again.
+            </p>
+
+            <h5 class="text-warning">Publisher example</h5>
+            <pre><code class="language-java">@Component
+public class OutboxPublisher {
+    private final OutboxEventRepository repository;
+    private final KafkaTemplate&lt;String, String&gt; kafkaTemplate;
+
+    @Scheduled(fixedDelay = 1000)
+    @Transactional
+    public void publishPendingEvents() {
+        for (OutboxEvent event : repository.findTop100ByPublishedAtIsNullOrderByCreatedAt()) {
+            kafkaTemplate.send(event.getEventType(), event.getAggregateId(), event.getPayload()).join();
+            event.markPublished(Instant.now());
+        }
+    }
+}</code></pre>
+
+            <h5 class="text-warning">Common uses</h5>
+            <ul>
+              <li>Publish <code>OrderCreated</code> after an order is committed so inventory and payment can start.</li>
+              <li>Publish <code>PaymentCompleted</code> so invoice and notification services update reliably.</li>
+              <li>Synchronize database changes to search indexes, caches, analytics, audit systems, or data warehouses.</li>
+              <li>Implement event-driven microservices and Saga workflows without distributed transactions.</li>
+            </ul>
+
+            <h5 class="text-warning">Important production points</h5>
+            <p>
+              The outbox pattern provides reliable <strong>at-least-once delivery</strong>, not exactly-once processing.
+              A publisher may send an event and crash before recording <code>published_at</code>, so consumers can see a
+              duplicate. Include an event id and make consumers idempotent. For high volume, Debezium CDC is often
+              preferred over polling because it reads committed database changes from the transaction log.
+            </p>
+
+            <p><strong>Interview answer:</strong> The Transactional Outbox pattern solves the dual-write problem. I save the business data and an event row in the same local transaction, then publish that row asynchronously. This prevents lost events after a successful database commit and supports reliable event-driven microservices.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bulkhead pattern -->
+      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="bulkheadPattern">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#bulkheadPatternBody">
+            What is the Bulkhead pattern in microservices? Why do we use it, and where is it useful?
+          </button>
+        </h2>
+        <div id="bulkheadPatternBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              The <strong>Bulkhead pattern</strong> isolates resources used for different operations so that one slow or
+              failing dependency cannot consume everything and bring down the entire application. The name comes from
+              ship bulkheads: if one compartment floods, the other compartments remain safe.
+            </p>
+
+            <h5 class="text-warning">Why do we need it?</h5>
+            <p>
+              A Spring Boot service has limited request threads, connection-pool connections, CPU, memory, and downstream
+              HTTP connections. Without isolation, a slow payment provider can cause hundreds of request threads to wait.
+              Then healthy endpoints such as login, product search, or order status also become slow. This is a cascading failure.
+            </p>
+
+            <pre><code class="language-text">Without bulkhead
+payment API becomes slow
+  -> payment calls occupy all request threads
+  -> other endpoints cannot get a thread
+  -> entire service appears unavailable
+
+With bulkhead
+payment API becomes slow
+  -> only payment's small resource pool is occupied
+  -> product, login, and order-status operations continue</code></pre>
+
+            <h5 class="text-warning">Real-world example</h5>
+            <p>
+              An order service calls inventory, payment, notification, and recommendation services. Recommendations are
+              optional and may become slow during a campaign. Put recommendation calls in their own small pool. If that
+              pool is full, return the product page without recommendations instead of blocking checkout traffic.
+            </p>
+
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Bulkhead type</th><th>How it works</th><th>Best use</th></tr></thead>
+              <tbody>
+                <tr><td>Semaphore bulkhead</td><td>Allows only a fixed number of concurrent calls; extra calls are rejected immediately.</td><td>Fast synchronous HTTP calls where waiting is not useful.</td></tr>
+                <tr><td>Thread-pool bulkhead</td><td>Uses a separate worker pool and queue for one dependency or operation.</td><td>Blocking or slow operations that must not occupy web request threads.</td></tr>
+                <tr><td>Resource-pool isolation</td><td>Uses separate database, HTTP-client, or message-consumer pools.</td><td>Protecting critical workloads from optional or noisy workloads.</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Resilience4j semaphore example</h5>
+            <pre><code class="language-java">@Service
+public class RecommendationClient {
+
+    @Bulkhead(name = "recommendationService", type = Bulkhead.Type.SEMAPHORE,
+              fallbackMethod = "fallbackRecommendations")
+    public List&lt;Product&gt; getRecommendations(String customerId) {
+        return recommendationApi.fetch(customerId);
+    }
+
+    public List&lt;Product&gt; fallbackRecommendations(String customerId, Throwable exception) {
+        return List.of();
+    }
+}</code></pre>
+
+            <pre><code class="language-yaml">resilience4j:
+  bulkhead:
+    instances:
+      recommendationService:
+        max-concurrent-calls: 10
+        max-wait-duration: 0</code></pre>
+            <p>
+              At most ten recommendation calls can run at once. The eleventh fails fast and uses the fallback. It does
+              not wait forever or exhaust threads needed by important operations.
+            </p>
+
+            <h5 class="text-warning">When to use it</h5>
+            <ul>
+              <li>Separate critical flows such as payment or login from optional flows such as email, reports, and recommendations.</li>
+              <li>Protect an application from slow external APIs, legacy services, or expensive database queries.</li>
+              <li>Limit concurrent file processing, PDF generation, exports, or third-party integrations.</li>
+            </ul>
+
+            <p>
+              Bulkhead is usually combined with <code>timeout</code>, <code>circuit breaker</code>, <code>retry</code>,
+              and a fallback. The bulkhead limits damage; timeout stops long waits; circuit breaker avoids repeatedly
+              calling a known failing service; retry is used carefully only for safe transient failures.
+            </p>
+
+            <p><strong>Interview answer:</strong> The Bulkhead pattern isolates threads, connections, or concurrency for each dependency so one overloaded downstream service cannot exhaust shared resources and cause a cascading failure across the whole application.</p>
+          </div>
+        </div>
+      </div>
 
       <!-- Business id generation -->
       <div class="accordion-item" data-manual-category="springboot">
@@ -38200,7 +38427,7 @@ public DefaultErrorHandler errorHandler(KafkaTemplate&lt;String, Object&gt; kafk
 
 
     </div>
-    <div class="accordion container" id="accordionCodingRound">
+    <div class="accordion" id="accordionCodingRound">
 
       <!-- P1 -->
       <div class="accordion-item">
@@ -38977,7 +39204,7 @@ public static int missingNumber(int[] arr) {
       </div>
 
     </div>
-    <div class="accordion container" id="accordionEmployeePrograms">
+    <div class="accordion" id="accordionEmployeePrograms">
 
       <!-- EMP1 -->
       <div class="accordion-item">
@@ -45296,6 +45523,8 @@ public class OrderController {
         });
       });
 
+      document.getElementById("searchBox")?.addEventListener("input", updateVisibleQuestions);
+
       updateVisibleQuestions();
     });
 
@@ -45326,7 +45555,9 @@ public class OrderController {
     }
 
     function updateVisibleQuestions() {
-      const input = document.getElementById("searchBox")?.value.toLowerCase() || "";
+      const input = (document.getElementById("searchBox")?.value || "")
+        .trim()
+        .toLowerCase();
       const items = document.querySelectorAll(".accordion-item");
       let visibleCount = 0;
 
@@ -45337,7 +45568,7 @@ public class OrderController {
         const categoryMatches =
           activeCategory === "all" || itemCategory === activeCategory;
         const searchMatches = searchText.includes(input);
-        const shouldShow = categoryMatches && searchMatches;
+        const shouldShow = input ? searchMatches : categoryMatches;
 
         item.style.display = shouldShow ? "" : "none";
 
