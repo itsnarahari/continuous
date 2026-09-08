@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Basic Coding Practice</title>
+
+  <!-- Bootstrap & Prism.js for Syntax Highlighting -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+
+  <style>
+    body {
+      background-color: #121212;
+      color: white;
+    }
+
+    .container {
+      max-width: 900px;
+      margin-top: 20px;
+    }
+
+    .accordion-button {
+      background-color: #343a40;
+      color: white;
+    }
+
+    .accordion-button:focus {
+      box-shadow: none;
+    }
+
+    .accordion-button:not(.collapsed) {
+      background-color: #007bff;
+      color: white;
+    }
+
+    .accordion-body {
+      background-color: #1e1e1e;
+      color: white;
+    }
+
+    .highlight-yellow {
+      color: #ffcc00;
+      font-weight: bold;
+    }
+
+    .highlight-blue {
+      color: #4db8ff;
+      font-weight: bold;
+    }
+
+    pre[class*="language-"] {
+      background: #1e1e1e !important;
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .search-container {
+      margin-bottom: 15px;
+      text-align: center;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #666;
+      background: #222;
+      color: white;
+      outline: none;
+      font-size: 16px;
+    }
+
+    .search-input::placeholder {
+      color: #aaa;
+    }
+
+    .note-box {
+      border-left: 4px solid #4db8ff;
+      background: #222;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+
+    .complexity-table {
+      color: white;
+    }
+  </style>
+</head>
+
+<body class="bg-dark text-light">
+  <div class="container">
+    <div class="header fw-bold text-center mb-4">Basic Coding Practice</div>
+    <div class="text-center mb-3">
+      <button class="btn btn-outline-light btn-sm" onclick="location.href='home.html'">Home</button>
+      <button class="btn btn-primary btn-sm" onclick="location.href='java8.html'">Java 8</button>
+    </div>
+    <div id="questionCount" class="text-center text-info mb-3"></div>
+    <div class="search-container">
+      <input type="text" class="search-input form-control" id="searchBox" placeholder="Search coding questions..."
+        onkeyup="searchQuestions()" />
+    </div>
+
+    <div class="accordion" id="hariPrep">
+
+      <!-- 1) Palindrome: Theory -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q1-h">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#q1">
+            What is a palindrome?
+            <span class="badge bg-warning ms-2">theory</span>
+          </button>
+        </h2>
+        <div id="q1" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <div class="note-box">
+              A <span class="highlight-yellow">palindrome</span> is a value that reads the same from left to right and
+              right to left.
+            </div>
+            <p><span class="highlight-blue">String examples:</span> madam, racecar, level, noon</p>
+            <p><span class="highlight-blue">Number examples:</span> 121, 1331, 12321</p>
+            <p>
+              In interviews, first clarify whether the check should be exact or normalized. Exact check means
+              <code>Madam</code> is not same as <code>madam</code>. Normalized check usually ignores case, spaces, and
+              punctuation.
+            </p>
+            <pre class="language-java"><code>// Exact palindrome idea
+"madam"  -&gt; true
+"hello"  -&gt; false
+"Madam"  -&gt; false
+
+// Normalized palindrome idea
+"A man, a plan, a canal: Panama" -&gt; true</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2) Palindrome: Brute force reverse -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q2-h">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#q2">
+            Palindrome using reverse string - brute force
+            <span class="badge bg-info ms-2">StringBuilder</span>
+          </button>
+        </h2>
+        <div id="q2" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <p>
+              Reverse the complete string and compare it with the original string. This is easy to write and good for
+              revision, but it uses extra memory for the reversed copy.
+            </p>
+            <pre class="language-java"><code>public class PalindromeBruteForce {
+  public static boolean isPalindrome(String str) {
+    if (str == null) {
+      return false;
+    }
+
+    String reversed = new StringBuilder(str).reverse().toString();
+    return str.equals(reversed);
+  }
+
+  public static void main(String[] args) {
+    System.out.println(isPalindrome("madam")); // true
+    System.out.println(isPalindrome("hello")); // false
+  }
+}</code></pre>
+            <table class="table table-dark table-bordered complexity-table">
+              <tbody>
+                <tr>
+                  <th>Time Complexity</th>
+                  <td>O(n), because every character is copied/reversed once.</td>
+                </tr>
+                <tr>
+                  <th>Space Complexity</th>
+                  <td>O(n), because a reversed string is created.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3) Palindrome: Optimized two pointer -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q3-h">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#q3">
+            Palindrome using two pointers - optimized
+            <span class="badge bg-success ms-2">two pointer</span>
+          </button>
+        </h2>
+        <div id="q3" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <p>
+              Keep one pointer at the start and one pointer at the end. Compare both characters, then move inward.
+              Stop early as soon as a mismatch is found.
+            </p>
+            <pre class="language-java"><code>public class PalindromeTwoPointer {
+  public static boolean isPalindrome(String str) {
+    if (str == null) {
+      return false;
+    }
+
+    int left = 0;
+    int right = str.length() - 1;
+
+    while (left &lt; right) {
+      if (str.charAt(left) != str.charAt(right)) {
+        return false;
+      }
+      left++;
+      right--;
+    }
+
+    return true;
+  }
+
+  public static void main(String[] args) {
+    System.out.println(isPalindrome("racecar")); // true
+    System.out.println(isPalindrome("java"));    // false
+  }
+}</code></pre>
+            <table class="table table-dark table-bordered complexity-table">
+              <tbody>
+                <tr>
+                  <th>Time Complexity</th>
+                  <td>O(n), because at most every character is checked once.</td>
+                </tr>
+                <tr>
+                  <th>Space Complexity</th>
+                  <td>O(1), because no extra string is created.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4) Palindrome: Normalized two pointer -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q4-h">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#q4">
+            Palindrome ignoring case, spaces, and punctuation
+            <span class="badge bg-primary ms-2">interview</span>
+          </button>
+        </h2>
+        <div id="q4" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <p>
+              This version is useful when the question says alphanumeric palindrome or sentence palindrome. Skip
+              non-alphanumeric characters and compare lowercase values.
+            </p>
+            <pre class="language-java"><code>public class ValidPalindrome {
+  public static boolean isPalindrome(String str) {
+    if (str == null) {
+      return false;
+    }
+
+    int left = 0;
+    int right = str.length() - 1;
+
+    while (left &lt; right) {
+      while (left &lt; right &amp;&amp; !Character.isLetterOrDigit(str.charAt(left))) {
+        left++;
+      }
+
+      while (left &lt; right &amp;&amp; !Character.isLetterOrDigit(str.charAt(right))) {
+        right--;
+      }
+
+      char start = Character.toLowerCase(str.charAt(left));
+      char end = Character.toLowerCase(str.charAt(right));
+
+      if (start != end) {
+        return false;
+      }
+
+      left++;
+      right--;
+    }
+
+    return true;
+  }
+
+  public static void main(String[] args) {
+    System.out.println(isPalindrome("A man, a plan, a canal: Panama")); // true
+    System.out.println(isPalindrome("race a car"));                     // false
+  }
+}</code></pre>
+            <table class="table table-dark table-bordered complexity-table">
+              <tbody>
+                <tr>
+                  <th>Time Complexity</th>
+                  <td>O(n), because each character is visited at most once.</td>
+                </tr>
+                <tr>
+                  <th>Space Complexity</th>
+                  <td>O(1), because checking happens in place using pointers.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5) Number palindrome -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q5-h">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#q5">
+            Number palindrome using reverse number
+            <span class="badge bg-secondary ms-2">number</span>
+          </button>
+        </h2>
+        <div id="q5" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <p>
+              For a number, reverse the digits and compare with the original number. Negative numbers are usually not
+              considered palindrome because of the minus sign.
+            </p>
+            <pre class="language-java"><code>public class NumberPalindrome {
+  public static boolean isPalindrome(int number) {
+    if (number &lt; 0) {
+      return false;
+    }
+
+    int original = number;
+    int reversed = 0;
+
+    while (number != 0) {
+      int digit = number % 10;
+      reversed = reversed * 10 + digit;
+      number = number / 10;
+    }
+
+    return original == reversed;
+  }
+
+  public static void main(String[] args) {
+    System.out.println(isPalindrome(121));  // true
+    System.out.println(isPalindrome(123));  // false
+  }
+}</code></pre>
+            <table class="table table-dark table-bordered complexity-table">
+              <tbody>
+                <tr>
+                  <th>Time Complexity</th>
+                  <td>O(d), where d is the number of digits.</td>
+                </tr>
+                <tr>
+                  <th>Space Complexity</th>
+                  <td>O(1), because only numeric variables are used.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6) Prime Numbers: Theory -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q6-h">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#q6">
+            What is a prime number?
+            <span class="badge bg-warning ms-2">theory</span>
+          </button>
+        </h2>
+        <div id="q6" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <div class="note-box">
+              A <span class="highlight-yellow">prime number</span> is a number greater than 1 that has exactly two
+              factors: <span class="highlight-blue">1 and itself</span>.
+            </div>
+            <p><span class="highlight-blue">Prime examples:</span> 2, 3, 5, 7, 11, 13, 17, 19</p>
+            <p><span class="highlight-blue">Not prime examples:</span> 1, 4, 6, 8, 9, 10, 12</p>
+            <p>
+              <code>2</code> is the smallest prime number and the only even prime number. Any even number greater than
+              <code>2</code> is not prime because it is divisible by <code>2</code>.
+            </p>
+            <pre class="language-java"><code>2  -&gt; prime
+3  -&gt; prime
+4  -&gt; not prime, because 4 = 2 * 2
+9  -&gt; not prime, because 9 = 3 * 3
+11 -&gt; prime</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- 7) Prime Numbers: Why n / 2 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q7-h">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#q7">
+            Why do we check until n / 2 for prime number?
+            <span class="badge bg-info ms-2">logic</span>
+          </button>
+        </h2>
+        <div id="q7" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <p>
+              To check whether <code>n</code> is prime, we try to find a divisor between <code>2</code> and
+              <code>n - 1</code>. But no number greater than <code>n / 2</code> can divide <code>n</code> exactly,
+              except <code>n</code> itself.
+            </p>
+            <div class="note-box">
+              Example: For <code>20</code>, half is <code>10</code>. Numbers greater than <code>10</code>, like
+              <code>11</code>, <code>12</code>, or <code>15</code>, cannot divide <code>20</code> exactly because the
+              quotient would be less than <code>2</code>.
+            </div>
+            <p>
+              So checking until <code>n / 2</code> is better than checking until <code>n - 1</code>. But for interviews,
+              the more optimized check is until <code>sqrt(n)</code>.
+            </p>
+            <pre class="language-java"><code>// Better than checking i &lt; n
+for (int i = 2; i &lt;= n / 2; i++) {
+  if (n % i == 0) {
+    return false;
+  }
+}</code></pre>
+            <table class="table table-dark table-bordered complexity-table">
+              <tbody>
+                <tr>
+                  <th>Time Complexity</th>
+                  <td>O(n), but it checks only about half of the numbers.</td>
+                </tr>
+                <tr>
+                  <th>Space Complexity</th>
+                  <td>O(1)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 8) Prime Check: Basic n / 2 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q8-h">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#q8">
+            Check prime number using n / 2
+            <span class="badge bg-primary ms-2">basic</span>
+          </button>
+        </h2>
+        <div id="q8" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <p>
+              This version is simple and easy to remember. It is good for beginners, but not the best optimized
+              approach.
+            </p>
+            <pre class="language-java"><code>public class PrimeBasic {
+  public static boolean isPrime(int n) {
+    if (n &lt;= 1) {
+      return false;
+    }
+
+    for (int i = 2; i &lt;= n / 2; i++) {
+      if (n % i == 0) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  public static void main(String[] args) {
+    System.out.println(isPrime(2));  // true
+    System.out.println(isPrime(7));  // true
+    System.out.println(isPrime(10)); // false
+  }
+}</code></pre>
+            <table class="table table-dark table-bordered complexity-table">
+              <tbody>
+                <tr>
+                  <th>Time Complexity</th>
+                  <td>O(n)</td>
+                </tr>
+                <tr>
+                  <th>Space Complexity</th>
+                  <td>O(1)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 9) Prime Check: Optimized sqrt -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q9-h">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#q9">
+            Check prime number using sqrt(n) - optimized
+            <span class="badge bg-success ms-2">optimized</span>
+          </button>
+        </h2>
+        <div id="q9" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <p>
+              If <code>n</code> has a factor bigger than <code>sqrt(n)</code>, it must also have a matching factor
+              smaller than <code>sqrt(n)</code>. So checking after <code>sqrt(n)</code> is unnecessary.
+            </p>
+            <div class="note-box">
+              Example: <code>36</code> factors are <code>1 * 36</code>, <code>2 * 18</code>, <code>3 * 12</code>,
+              <code>4 * 9</code>, <code>6 * 6</code>. After <code>6</code>, factors repeat in reverse order.
+            </div>
+            <pre class="language-java"><code>public class PrimeOptimized {
+  public static boolean isPrime(int n) {
+    if (n &lt;= 1) {
+      return false;
+    }
+
+    if (n == 2) {
+      return true;
+    }
+
+    if (n % 2 == 0) {
+      return false;
+    }
+
+    for (int i = 3; i * i &lt;= n; i += 2) {
+      if (n % i == 0) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  public static void main(String[] args) {
+    System.out.println(isPrime(29)); // true
+    System.out.println(isPrime(49)); // false
+  }
+}</code></pre>
+            <table class="table table-dark table-bordered complexity-table">
+              <tbody>
+                <tr>
+                  <th>Time Complexity</th>
+                  <td>O(sqrt(n))</td>
+                </tr>
+                <tr>
+                  <th>Space Complexity</th>
+                  <td>O(1)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 10) Print prime numbers up to max -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q10-h">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#q10">
+            Print prime numbers up to given max
+            <span class="badge bg-secondary ms-2">loop</span>
+          </button>
+        </h2>
+        <div id="q10" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <p>
+              Reuse the optimized <code>isPrime</code> method and call it for each number from <code>2</code> to
+              <code>max</code>.
+            </p>
+            <pre class="language-java"><code>public class PrintPrimes {
+  public static boolean isPrime(int n) {
+    if (n &lt;= 1) {
+      return false;
+    }
+
+    if (n == 2) {
+      return true;
+    }
+
+    if (n % 2 == 0) {
+      return false;
+    }
+
+    for (int i = 3; i * i &lt;= n; i += 2) {
+      if (n % i == 0) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  public static void printPrimesUpTo(int max) {
+    for (int i = 2; i &lt;= max; i++) {
+      if (isPrime(i)) {
+        System.out.print(i + " ");
+      }
+    }
+  }
+
+  public static void main(String[] args) {
+    int max = 30;
+    printPrimesUpTo(max); // 2 3 5 7 11 13 17 19 23 29
+  }
+}</code></pre>
+            <table class="table table-dark table-bordered complexity-table">
+              <tbody>
+                <tr>
+                  <th>Time Complexity</th>
+                  <td>O(max * sqrt(max)), because each number is checked using optimized prime logic.</td>
+                </tr>
+                <tr>
+                  <th>Space Complexity</th>
+                  <td>O(1), excluding printed output.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 11) Print prime numbers up to max using Sieve -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q11-h">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#q11">
+            Print prime numbers using Sieve of Eratosthenes
+            <span class="badge bg-danger ms-2">best for range</span>
+          </button>
+        </h2>
+        <div id="q11" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <p>
+              If the question asks for all prime numbers up to a large max, Sieve of Eratosthenes is better. Mark
+              multiples of every prime as not prime, then print the remaining numbers.
+            </p>
+            <pre class="language-java"><code>import java.util.Arrays;
+
+public class PrimeSieve {
+  public static void printPrimesUpTo(int max) {
+    if (max &lt; 2) {
+      return;
+    }
+
+    boolean[] prime = new boolean[max + 1];
+    Arrays.fill(prime, true);
+
+    prime[0] = false;
+    prime[1] = false;
+
+    for (int i = 2; i * i &lt;= max; i++) {
+      if (prime[i]) {
+        for (int multiple = i * i; multiple &lt;= max; multiple += i) {
+          prime[multiple] = false;
+        }
+      }
+    }
+
+    for (int i = 2; i &lt;= max; i++) {
+      if (prime[i]) {
+        System.out.print(i + " ");
+      }
+    }
+  }
+
+  public static void main(String[] args) {
+    printPrimesUpTo(30); // 2 3 5 7 11 13 17 19 23 29
+  }
+}</code></pre>
+            <table class="table table-dark table-bordered complexity-table">
+              <tbody>
+                <tr>
+                  <th>Time Complexity</th>
+                  <td>O(n log log n), where n is max.</td>
+                </tr>
+                <tr>
+                  <th>Space Complexity</th>
+                  <td>O(n), because a boolean array is used.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 12) Real system uses of prime numbers -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q12-h">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#q12">
+            Why are prime numbers used in real systems?
+            <span class="badge bg-dark ms-2">real system</span>
+          </button>
+        </h2>
+        <div id="q12" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <p>
+              Prime numbers are important because they do not divide cleanly by many other numbers. That property helps
+              in systems where we need distribution, uniqueness, or hard-to-break mathematical behavior.
+            </p>
+            <ul>
+              <li><span class="highlight-blue">Cryptography:</span> Large primes are used in algorithms like RSA for
+                secure communication.</li>
+              <li><span class="highlight-blue">Hashing:</span> Prime table sizes or prime multipliers can reduce
+                collision patterns in hash-based logic.</li>
+              <li><span class="highlight-blue">Randomization:</span> Prime-based modular arithmetic helps create better
+                cycles in some algorithms.</li>
+              <li><span class="highlight-blue">Load distribution:</span> Prime modulo values can help spread values more
+                evenly in simple bucketing strategies.</li>
+              <li><span class="highlight-blue">Coding interviews:</span> Prime checks test loops, divisibility,
+                optimization, edge cases, and complexity thinking.</li>
+            </ul>
+            <div class="note-box">
+              For normal application work, we usually use library implementations for cryptography and hashing. We learn
+              prime programs mainly to understand algorithmic thinking and interview patterns.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 13) Sum of digits -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q13-h">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#q13">
+            Sum of digits
+            <span class="badge bg-primary ms-2">number</span>
+          </button>
+        </h2>
+        <div id="q13" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <p>
+              Add every digit of a number. Use <code>% 10</code> to get the last digit and <code>/ 10</code> to remove
+              the last digit.
+            </p>
+            <pre class="language-java"><code>public class SumOfDigits {
+  public static int sumOfDigits(int number) {
+    number = Math.abs(number);
+    int sum = 0;
+
+    while (number != 0) {
+      int digit = number % 10;
+      sum = sum + digit;
+      number = number / 10;
+    }
+
+    return sum;
+  }
+
+  public static void main(String[] args) {
+    System.out.println(sumOfDigits(1234)); // 10
+  }
+}</code></pre>
+            <table class="table table-dark table-bordered complexity-table">
+              <tbody>
+                <tr>
+                  <th>Time Complexity</th>
+                  <td>O(d), where d is the number of digits.</td>
+                </tr>
+                <tr>
+                  <th>Space Complexity</th>
+                  <td>O(1)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 14) Count digits -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q14-h">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#q14">
+            Count digits
+            <span class="badge bg-info ms-2">number</span>
+          </button>
+        </h2>
+        <div id="q14" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <p>
+              Count how many times we can divide the number by <code>10</code> before it becomes <code>0</code>. Special
+              case: <code>0</code> has one digit.
+            </p>
+            <pre class="language-java"><code>public class CountDigits {
+  public static int countDigits(int number) {
+    number = Math.abs(number);
+
+    if (number == 0) {
+      return 1;
+    }
+
+    int count = 0;
+    while (number != 0) {
+      count++;
+      number = number / 10;
+    }
+
+    return count;
+  }
+
+  public static void main(String[] args) {
+    System.out.println(countDigits(12345)); // 5
+  }
+}</code></pre>
+            <table class="table table-dark table-bordered complexity-table">
+              <tbody>
+                <tr>
+                  <th>Time Complexity</th>
+                  <td>O(d)</td>
+                </tr>
+                <tr>
+                  <th>Space Complexity</th>
+                  <td>O(1)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 15) Armstrong number -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q15-h">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#q15">
+            Check Armstrong number
+            <span class="badge bg-warning ms-2">number</span>
+          </button>
+        </h2>
+        <div id="q15" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <div class="note-box">
+              An <span class="highlight-yellow">Armstrong number</span> is a number where the sum of each digit raised
+              to the power of total digits is equal to the original number.
+            </div>
+            <p>Example: <code>153 = 1^3 + 5^3 + 3^3 = 153</code></p>
+            <p>Another example: <code>9474 = 9^4 + 4^4 + 7^4 + 4^4 = 9474</code></p>
+            <pre class="language-java"><code>public class ArmstrongNumber {
+  public static boolean isArmstrong(int number) {
+    if (number &lt; 0) {
+      return false;
+    }
+
+    int original = number;
+    int digits = countDigits(number);
+    int sum = 0;
+
+    while (number != 0) {
+      int digit = number % 10;
+      sum = sum + power(digit, digits);
+      number = number / 10;
+    }
+
+    return original == sum;
+  }
+
+  private static int countDigits(int number) {
+    if (number == 0) {
+      return 1;
+    }
+
+    int count = 0;
+    while (number != 0) {
+      count++;
+      number = number / 10;
+    }
+    return count;
+  }
+
+  private static int power(int base, int exponent) {
+    int result = 1;
+    for (int i = 1; i &lt;= exponent; i++) {
+      result = result * base;
+    }
+    return result;
+  }
+
+  public static void main(String[] args) {
+    System.out.println(isArmstrong(153)); // true
+    System.out.println(isArmstrong(123)); // false
+  }
+}</code></pre>
+            <table class="table table-dark table-bordered complexity-table">
+              <tbody>
+                <tr>
+                  <th>Time Complexity</th>
+                  <td>O(d * d), because for each digit we calculate power using a loop.</td>
+                </tr>
+                <tr>
+                  <th>Space Complexity</th>
+                  <td>O(1)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 16) Perfect number -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q16-h">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#q16">
+            Check perfect number
+            <span class="badge bg-success ms-2">number</span>
+          </button>
+        </h2>
+        <div id="q16" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <div class="note-box">
+              A <span class="highlight-yellow">perfect number</span> is a positive number where the sum of its proper
+              divisors is equal to the number.
+            </div>
+            <p>Example: <code>6</code> is perfect because <code>1 + 2 + 3 = 6</code>.</p>
+            <pre class="language-java"><code>public class PerfectNumber {
+  public static boolean isPerfect(int number) {
+    if (number &lt;= 1) {
+      return false;
+    }
+
+    int sum = 1;
+
+    for (int i = 2; i * i &lt;= number; i++) {
+      if (number % i == 0) {
+        sum = sum + i;
+
+        int pairDivisor = number / i;
+        if (pairDivisor != i) {
+          sum = sum + pairDivisor;
+        }
+      }
+    }
+
+    return sum == number;
+  }
+
+  public static void main(String[] args) {
+    System.out.println(isPerfect(6));  // true
+    System.out.println(isPerfect(28)); // true
+    System.out.println(isPerfect(10)); // false
+  }
+}</code></pre>
+            <table class="table table-dark table-bordered complexity-table">
+              <tbody>
+                <tr>
+                  <th>Time Complexity</th>
+                  <td>O(sqrt(n)), because divisors are checked in pairs.</td>
+                </tr>
+                <tr>
+                  <th>Space Complexity</th>
+                  <td>O(1)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 17) Factorial -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q17-h">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#q17">
+            Factorial of a number
+            <span class="badge bg-secondary ms-2">loop</span>
+          </button>
+        </h2>
+        <div id="q17" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <p>
+              Factorial means multiplying all numbers from <code>1</code> to <code>n</code>. Example:
+              <code>5! = 5 * 4 * 3 * 2 * 1 = 120</code>.
+            </p>
+            <pre class="language-java"><code>public class Factorial {
+  public static long factorial(int n) {
+    if (n &lt; 0) {
+      throw new IllegalArgumentException("Factorial is not defined for negative numbers");
+    }
+
+    long result = 1;
+    for (int i = 2; i &lt;= n; i++) {
+      result = result * i;
+    }
+
+    return result;
+  }
+
+  public static void main(String[] args) {
+    System.out.println(factorial(5)); // 120
+  }
+}</code></pre>
+            <table class="table table-dark table-bordered complexity-table">
+              <tbody>
+                <tr>
+                  <th>Time Complexity</th>
+                  <td>O(n)</td>
+                </tr>
+                <tr>
+                  <th>Space Complexity</th>
+                  <td>O(1)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 18) Fibonacci series -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q18-h">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#q18">
+            Fibonacci series
+            <span class="badge bg-primary ms-2">series</span>
+          </button>
+        </h2>
+        <div id="q18" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <p>
+              Fibonacci series starts with <code>0</code> and <code>1</code>. Every next number is the sum of the
+              previous two numbers.
+            </p>
+            <pre class="language-java"><code>public class FibonacciSeries {
+  public static void printFibonacci(int terms) {
+    int first = 0;
+    int second = 1;
+
+    for (int i = 1; i &lt;= terms; i++) {
+      System.out.print(first + " ");
+
+      int next = first + second;
+      first = second;
+      second = next;
+    }
+  }
+
+  public static void main(String[] args) {
+    printFibonacci(8); // 0 1 1 2 3 5 8 13
+  }
+}</code></pre>
+            <table class="table table-dark table-bordered complexity-table">
+              <tbody>
+                <tr>
+                  <th>Time Complexity</th>
+                  <td>O(n), where n is the number of terms.</td>
+                </tr>
+                <tr>
+                  <th>Space Complexity</th>
+                  <td>O(1), excluding printed output.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 19) GCD / HCF -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q19-h">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#q19">
+            GCD / HCF using Euclidean algorithm
+            <span class="badge bg-info ms-2">math</span>
+          </button>
+        </h2>
+        <div id="q19" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <p>
+              <span class="highlight-yellow">GCD</span> or <span class="highlight-yellow">HCF</span> is the greatest
+              number that divides both numbers exactly.
+            </p>
+            <p>Example: GCD of <code>12</code> and <code>18</code> is <code>6</code>.</p>
+            <pre class="language-java"><code>public class GcdHcf {
+  public static int gcd(int a, int b) {
+    a = Math.abs(a);
+    b = Math.abs(b);
+
+    while (b != 0) {
+      int remainder = a % b;
+      a = b;
+      b = remainder;
+    }
+
+    return a;
+  }
+
+  public static void main(String[] args) {
+    System.out.println(gcd(12, 18)); // 6
+  }
+}</code></pre>
+            <table class="table table-dark table-bordered complexity-table">
+              <tbody>
+                <tr>
+                  <th>Time Complexity</th>
+                  <td>O(log(min(a, b)))</td>
+                </tr>
+                <tr>
+                  <th>Space Complexity</th>
+                  <td>O(1)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 20) LCM -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q20-h">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#q20">
+            LCM using GCD
+            <span class="badge bg-success ms-2">math</span>
+          </button>
+        </h2>
+        <div id="q20" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <p>
+              <span class="highlight-yellow">LCM</span> is the smallest positive number that is divisible by both given
+              numbers.
+            </p>
+            <p>Formula: <code>LCM(a, b) = abs(a * b) / GCD(a, b)</code></p>
+            <pre class="language-java"><code>public class LcmUsingGcd {
+  public static int gcd(int a, int b) {
+    a = Math.abs(a);
+    b = Math.abs(b);
+
+    while (b != 0) {
+      int remainder = a % b;
+      a = b;
+      b = remainder;
+    }
+
+    return a;
+  }
+
+  public static int lcm(int a, int b) {
+    if (a == 0 || b == 0) {
+      return 0;
+    }
+
+    return Math.abs(a / gcd(a, b) * b);
+  }
+
+  public static void main(String[] args) {
+    System.out.println(lcm(12, 18)); // 36
+  }
+}</code></pre>
+            <table class="table table-dark table-bordered complexity-table">
+              <tbody>
+                <tr>
+                  <th>Time Complexity</th>
+                  <td>O(log(min(a, b))), because it uses GCD.</td>
+                </tr>
+                <tr>
+                  <th>Space Complexity</th>
+                  <td>O(1)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 21) Power of a number -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q21-h">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#q21">
+            Power of a number
+            <span class="badge bg-warning ms-2">math</span>
+          </button>
+        </h2>
+        <div id="q21" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <p>
+              Power means multiplying the base by itself exponent times. Example:
+              <code>2^5 = 2 * 2 * 2 * 2 * 2 = 32</code>.
+            </p>
+            <pre class="language-java"><code>public class PowerOfNumber {
+  public static long power(int base, int exponent) {
+    if (exponent &lt; 0) {
+      throw new IllegalArgumentException("Use double return type for negative exponent");
+    }
+
+    long result = 1;
+    for (int i = 1; i &lt;= exponent; i++) {
+      result = result * base;
+    }
+
+    return result;
+  }
+
+  public static void main(String[] args) {
+    System.out.println(power(2, 5)); // 32
+  }
+}</code></pre>
+            <table class="table table-dark table-bordered complexity-table">
+              <tbody>
+                <tr>
+                  <th>Time Complexity</th>
+                  <td>O(exponent)</td>
+                </tr>
+                <tr>
+                  <th>Space Complexity</th>
+                  <td>O(1)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 22) Count occurrence of a digit -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="q22-h">
+          <button class="accordion-button collapsed search-item" type="button" data-bs-toggle="collapse"
+            data-bs-target="#q22">
+            Count the occurrence of a digit
+            <span class="badge bg-secondary ms-2">number</span>
+          </button>
+        </h2>
+        <div id="q22" class="accordion-collapse collapse">
+          <div class="accordion-body">
+            <p>
+              Check each digit using <code>% 10</code>. If it is equal to the target digit, increase the count. Then
+              remove the last digit using <code>/ 10</code>.
+            </p>
+            <pre class="language-java"><code>public class CountDigitOccurrence {
+  public static int countDigit(int number, int targetDigit) {
+    if (targetDigit &lt; 0 || targetDigit &gt; 9) {
+      throw new IllegalArgumentException("Target digit must be from 0 to 9");
+    }
+
+    number = Math.abs(number);
+
+    if (number == 0) {
+      return targetDigit == 0 ? 1 : 0;
+    }
+
+    int count = 0;
+    while (number != 0) {
+      int digit = number % 10;
+      if (digit == targetDigit) {
+        count++;
+      }
+      number = number / 10;
+    }
+
+    return count;
+  }
+
+  public static void main(String[] args) {
+    System.out.println(countDigit(122333, 3)); // 3
+    System.out.println(countDigit(10010, 0));  // 3
+  }
+}</code></pre>
+            <table class="table table-dark table-bordered complexity-table">
+              <tbody>
+                <tr>
+                  <th>Time Complexity</th>
+                  <td>O(d), where d is the number of digits.</td>
+                </tr>
+                <tr>
+                  <th>Space Complexity</th>
+                  <td>O(1)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Bootstrap & Search Script -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const questionCount = document.querySelectorAll(".accordion-item").length;
+      document.getElementById("questionCount").innerHTML = `<strong>Total Questions: ${questionCount}</strong>`;
+    });
+
+    document.addEventListener("DOMContentLoaded", function () {
+      const items = document.querySelectorAll(".accordion-item");
+
+      items.forEach((item, index) => {
+        const button = item.querySelector(".accordion-button");
+        if (button) {
+          button.innerHTML = `<span class="fw-bold me-2">${index + 1}.</span> ` + button.innerHTML;
+        }
+      });
+    });
+
+    function searchQuestions() {
+      const input = document.getElementById("searchBox").value.toLowerCase();
+      const items = document.querySelectorAll(".accordion-item");
+
+      items.forEach((item) => {
+        const buttonText = item.querySelector(".accordion-button")?.textContent.toLowerCase() || "";
+        const bodyText = item.querySelector(".accordion-body")?.textContent.toLowerCase() || "";
+        const combinedText = buttonText + " " + bodyText;
+
+        if (combinedText.includes(input)) {
+          item.style.display = "";
+        } else {
+          item.style.display = "none";
+        }
+      });
+    }
+
+    function copyToClipboard(text) {
+      navigator.clipboard
+        .writeText(text)
+        .then(() => {
+          alert("Copied: " + text);
+        })
+        .catch((err) => {
+          console.error("Failed to copy:", err);
+        });
+    }
+  </script>
+</body>
+
+</html>
