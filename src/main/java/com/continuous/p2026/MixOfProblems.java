@@ -18,7 +18,9 @@ public class MixOfProblems {
 //        System.out.println(factorial(1));
 //        System.out.println(factorial(-1));
         fibonacciSeries(20);
-
+        test1(new Object());
+        test1("hari");
+        test1(324324);
 
     }
 
@@ -159,6 +161,19 @@ public class MixOfProblems {
             first = second;
             second = next;
         }
+        System.out.println();
+    }
+
+    public static void test1(Object obj){
+        System.out.println("Object");
+    }
+
+    public static void test1(String obj){
+        System.out.println("String");
+    }
+
+    public static void test1(Integer obj){
+        System.out.println("Integer");
     }
 
 

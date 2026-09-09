@@ -178,6 +178,1602 @@
     </div>
     <div class="accordion" id="accordionSeniorJava">
 
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="javaExecutionOrderStaticInstanceConstructorTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#javaExecutionOrderStaticInstanceConstructorTopBody">
+            What is the execution priority of static methods, instance methods, and constructors?
+          </button>
+        </h2>
+        <div id="javaExecutionOrderStaticInstanceConstructorTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Object creation and method calls are different operations. During the first use of a class, Java runs the
+              static initialization once. Every <code>new</code> object then runs instance initialization and the
+              constructor. Static and instance methods run only when they are explicitly called.
+            </p>
+
+            <h5 class="text-warning">Example with two objects</h5>
+            <pre><code class="language-java">class Demo {
+    static {
+        System.out.println("1. Static block");
+    }
+
+    {
+        System.out.println("2. Instance block");
+    }
+
+    Demo() {
+        System.out.println("3. Constructor");
+    }
+
+    static void staticMethod() {
+        System.out.println("4. Static method");
+    }
+
+    void instanceMethod() {
+        System.out.println("5. Instance method");
+    }
+
+    public static void main(String[] args) {
+        System.out.println("main started");
+
+        Demo.staticMethod();
+
+        Demo first = new Demo();
+        first.instanceMethod();
+
+        Demo second = new Demo();
+        second.instanceMethod();
+    }
+}</code></pre>
+
+            <h5 class="text-warning">Output</h5>
+            <pre><code class="language-text">1. Static block
+main started
+4. Static method
+2. Instance block
+3. Constructor
+5. Instance method
+2. Instance block
+3. Constructor
+5. Instance method</code></pre>
+
+            <h5 class="text-warning">Why is this the output?</h5>
+            <ol>
+              <li><strong>Static block:</strong> runs once when the class is initialized, before the first active use of the class. In this example, calling the static method triggers class initialization before the method body runs.</li>
+              <li><strong>main:</strong> starts after the class has been initialized.</li>
+              <li><strong>Static method:</strong> runs when called through the class. It is not automatically executed for every object.</li>
+              <li><strong>Instance block:</strong> runs every time a new object is created, before the constructor body.</li>
+              <li><strong>Constructor:</strong> runs once for each object created with <code>new</code>.</li>
+              <li><strong>Instance method:</strong> runs only when called on an object, and it uses that object's state.</li>
+            </ol>
+
+            <h5 class="text-warning">Important point about two new objects</h5>
+            <pre><code class="language-java">Demo first = new Demo();
+Demo second = new Demo();
+
+System.out.println(first == second); // false</code></pre>
+            <p>
+              Two <code>new</code> expressions create two separate objects. The instance block and constructor run twice.
+              The static block belongs to the class, so it runs only once. A static field is shared by both objects,
+              while each object has its own instance fields.
+            </p>
+
+            <h5 class="text-warning">Static method called through an object</h5>
+            <pre><code class="language-java">Demo demo = new Demo();
+demo.staticMethod(); // Compiles, but avoid this style
+Demo.staticMethod(); // Preferred style</code></pre>
+            <p>
+              Java permits calling a static method through an object reference, but the method belongs to the class, not
+              the object. Use the class name to make the intent clear. The reference's runtime object does not control
+              static method selection.
+            </p>
+
+            <h5 class="text-warning">Initialization order with inheritance</h5>
+            <pre><code class="language-text">1. Parent static fields and static blocks
+2. Child static fields and static blocks
+3. Parent instance fields and instance blocks
+4. Parent constructor
+5. Child instance fields and instance blocks
+6. Child constructor</code></pre>
+
+            <h5 class="text-warning">Common mistake</h5>
+            <p>
+              Do not assume that declaring a method earlier in the source file makes it run earlier. Methods run only
+              when invoked. Static and instance blocks participate in initialization order; constructors participate in
+              object creation order.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Static initialization happens once per class, before the first active use. For every new object, instance
+              field initialization and instance blocks run, followed by the constructor. Static and instance methods do
+              not run automatically; they execute only when called. With two new objects, the static block runs once,
+              while the instance block and constructor run twice. Each explicit instance method call then runs on its
+              selected object."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="httpQueryMethodTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#httpQueryMethodTopBody">
+            What is the HTTP QUERY method, and why do we need it when POST can perform queries?
+          </button>
+        </h2>
+        <div id="httpQueryMethodTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>QUERY</strong> is a newer HTTP method standardized in RFC 10008. It is intended for a safe,
+              idempotent server-side query where the query definition is sent in the request body. It fills the gap
+              between GET, whose query data is normally placed in the URI, and POST, which can carry a body but does not
+              communicate that the operation is a safe read query.
+            </p>
+
+            <h5 class="text-warning">Why not always use GET?</h5>
+            <p>
+              GET is ideal for simple reads such as filters and pagination in the URL:
+            </p>
+            <pre><code class="language-http">GET /users?ageGreaterThan=30&amp;country=IN&amp;page=1&amp;size=20</code></pre>
+            <p>
+              But complex filters, large lists of IDs, nested search expressions, geospatial conditions, or analytics
+              queries can make the URL too long, difficult to encode, exposed in logs, and hard to represent cleanly.
+            </p>
+
+            <h5 class="text-warning">Why not always use POST?</h5>
+            <p>
+              POST can carry a large JSON query body and is widely supported:
+            </p>
+            <pre><code class="language-http">POST /users/search
+Content-Type: application/json
+
+{
+  "age": { "greaterThan": 30 },
+  "countries": ["IN", "US"],
+  "roles": ["ADMIN", "SUPPORT"],
+  "sort": ["lastLogin:desc"]
+}</code></pre>
+            <p>
+              The problem is semantic: POST is not idempotent by default and is commonly associated with creating a
+              resource or triggering a state-changing action. A query implemented with POST may be safe in application
+              code, but HTTP infrastructure and clients cannot infer that as clearly as they can with a safe method.
+            </p>
+
+            <h5 class="text-warning">QUERY example</h5>
+            <pre><code class="language-http">QUERY /users
+Content-Type: application/json
+
+{
+  "age": { "greaterThan": 30 },
+  "countries": ["IN", "US"],
+  "roles": ["ADMIN", "SUPPORT"],
+  "page": 1,
+  "size": 20
+}</code></pre>
+            <p>
+              The target resource processes the request body as a query and returns the result. QUERY is intended to be
+              safe and idempotent, so automatic retries or restarts are safer than for a state-changing POST, assuming the
+              server implementation really has no side effects.
+            </p>
+
+            <h5 class="text-warning">GET versus QUERY versus POST</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Method</th>
+                  <th>Best use</th>
+                  <th>Body and semantics</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>GET</code></td>
+                  <td>Simple, cacheable resource reads</td>
+                  <td>Query is normally in the URI; safe and idempotent.</td>
+                </tr>
+                <tr>
+                  <td><code>QUERY</code></td>
+                  <td>Complex or large read queries</td>
+                  <td>Query definition is in the body; safe and idempotent by method intent.</td>
+                </tr>
+                <tr>
+                  <td><code>POST</code></td>
+                  <td>Create resources or submit actions; also a compatibility fallback for complex searches</td>
+                  <td>Body is supported; not idempotent by default.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Does QUERY work with all servers and clients?</h5>
+            <p>
+              <strong>No, not yet.</strong> HTTP allows extensible methods, but every component in the request path must
+              accept and correctly forward QUERY. Older browsers, SDKs, reverse proxies, API gateways, load balancers,
+              WAFs, CDNs, service meshes, application servers, and monitoring tools may reject it, route it incorrectly,
+              omit a body, or fail to cache it. Test the complete path before exposing it publicly.
+            </p>
+            <p>
+              For a public API, use GET for normal filters and POST for complex searches until your required clients and
+              infrastructure officially support QUERY. You can expose QUERY internally behind a controlled gateway when
+              the whole platform is known to support it.
+            </p>
+
+            <h5 class="text-warning">Spring Boot consideration</h5>
+            <p>
+              Support depends on the Spring Framework, embedded server, HTTP client, and proxy versions in use. Do not
+              assume an older <code>RequestMethod</code> enum or gateway configuration recognizes QUERY. Verify framework
+              support and configure the method explicitly, or keep a POST search endpoint as a compatibility fallback.
+            </p>
+            <pre><code class="language-text">Public compatibility:
+GET  /users?simpleFilters...
+POST /users/search   complex body query
+
+Controlled internal platform:
+QUERY /users         complex body query, after end-to-end support testing</code></pre>
+
+            <h5 class="text-warning">Important design rules</h5>
+            <ul>
+              <li>Keep QUERY genuinely read-only; do not create orders, charge payments, or mutate state from it.</li>
+              <li>Validate and authorize the query body just like any other API input.</li>
+              <li>Use pagination, maximum result limits, timeouts, and query-cost controls to prevent expensive searches.</li>
+              <li>Do not put secrets in a URL; QUERY bodies reduce URL exposure but request bodies can still be logged if logging is unsafe.</li>
+              <li>Use a stable query schema and version it when the query language evolves.</li>
+              <li>Check caching, observability, CORS, WAF, proxy, and load-balancer behavior before production use.</li>
+            </ul>
+
+            <h5 class="text-warning">When should we use which?</h5>
+            <ul>
+              <li><strong>GET:</strong> normal resource reads, simple filters, bookmarkable URLs, and broad compatibility.</li>
+              <li><strong>QUERY:</strong> complex, large, safe, idempotent searches when all infrastructure supports the method.</li>
+              <li><strong>POST search:</strong> complex read queries where compatibility is more important than expressing safe-query semantics through the HTTP method.</li>
+              <li><strong>POST command:</strong> state-changing operations such as creating an order or charging a payment.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "QUERY is a new safe and idempotent HTTP method for sending a complex query in the request body. GET is
+              better for simple URL-based reads, while POST remains widely supported and can carry complex search bodies
+              but is not idempotent by default. QUERY is useful when the query is too large or expressive for a URL, but
+              it will not work automatically through every server, proxy, gateway, client, or framework. I would use it
+              only after end-to-end support testing and keep GET or POST as a compatibility option."
+            </p>
+            <p>
+              Reference: <a href="https://www.rfc-editor.org/rfc/rfc10008.html" target="_blank" rel="noopener">RFC 10008 - The HTTP QUERY Method</a>.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="microservices">
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="methodOverloadingNullAmbiguityTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#methodOverloadingNullAmbiguityTopBody">
+            Which overloaded test1 method is called, and why is test1(null) ambiguous?
+          </button>
+        </h2>
+        <div id="methodOverloadingNullAmbiguityTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              These methods demonstrate <strong>method overloading</strong>, not method overriding. The methods have the
+              same name but different parameter types. Java chooses the overloaded method at <strong>compile time</strong>
+              based on the compile-time type of the argument.
+            </p>
+
+            <pre><code class="language-java">static void test1(Object obj) {
+    System.out.println("Object");
+}
+
+static void test1(String obj) {
+    System.out.println("String");
+}
+
+static void test1(Integer obj) {
+    System.out.println("Integer");
+}
+
+test1(new Object()); // Object
+test1("hari");       // String
+test1(324324);       // Integer
+test1(null);         // Compilation error</code></pre>
+
+            <h5 class="text-warning">1. test1(new Object())</h5>
+            <p>
+              The argument's compile-time type is <code>Object</code>, so only <code>test1(Object)</code> is applicable.
+              Output:
+            </p>
+            <pre><code class="language-text">Object</code></pre>
+
+            <h5 class="text-warning">2. test1("hari")</h5>
+            <p>
+              A string literal has type <code>String</code>. Since <code>String</code> is a subclass of
+              <code>Object</code>, both methods could technically accept it, but Java chooses the most specific
+              applicable overload: <code>test1(String)</code>.
+            </p>
+            <pre><code class="language-text">String</code></pre>
+            <p>
+              Java does not choose <code>test1(Object)</code> merely because every String is an Object. It prefers the
+              exact, more specific parameter type.
+            </p>
+
+            <h5 class="text-warning">3. test1(324324)</h5>
+            <p>
+              The literal <code>324324</code> has primitive type <code>int</code>. There is no
+              <code>test1(int)</code>, so Java can box the value into an <code>Integer</code> and call
+              <code>test1(Integer)</code>. The Integer overload is more specific than converting the value to
+              <code>Object</code>.
+            </p>
+            <pre><code class="language-text">Integer</code></pre>
+            <p>
+              If an exact primitive overload existed, it would be preferred:
+            </p>
+            <pre><code class="language-java">static void test1(int obj) {
+    System.out.println("int");
+}
+
+test1(324324); // int</code></pre>
+
+            <h5 class="text-warning">4. test1(null)</h5>
+            <p>
+              <code>null</code> can be assigned to any reference type, so all three overloads are initially applicable:
+              <code>Object</code>, <code>String</code>, and <code>Integer</code>. Java removes
+              <code>Object</code> because both String and Integer are more specific. But String and Integer are unrelated
+              sibling types, so neither is more specific than the other.
+            </p>
+            <pre><code class="language-text">reference to test1 is ambiguous
+both test1(String) and test1(Integer) match</code></pre>
+            <p>
+              Therefore the complete program does not compile, and no output is produced from any call until the error is
+              fixed. This is a compile-time error, not a runtime exception.
+            </p>
+
+            <h5 class="text-warning">How to fix the null call</h5>
+            <pre><code class="language-java">test1((String) null);  // String
+test1((Integer) null); // Integer
+test1((Object) null);  // Object
+
+Object value = null;
+test1(value);          // Object, because the variable type is Object</code></pre>
+
+            <h5 class="text-warning">Compile-time type versus runtime object</h5>
+            <pre><code class="language-java">Object value = "hari";
+test1(value); // Object
+
+test1((String) value); // String</code></pre>
+            <p>
+              Overload selection uses the declared type of the variable, <code>Object</code>, not the runtime object,
+              even though the object currently contains a String. Runtime polymorphism applies to overridden instance
+              methods, not to choosing between overloaded methods.
+            </p>
+
+            <h5 class="text-warning">Overloading versus overriding</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Concept</th>
+                  <th>How Java chooses</th>
+                  <th>Example</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Overloading</strong></td>
+                  <td>Compile time, based on argument count, types, and conversions.</td>
+                  <td><code>test1(String)</code> versus <code>test1(Integer)</code></td>
+                </tr>
+                <tr>
+                  <td><strong>Overriding</strong></td>
+                  <td>Runtime, based on the actual object for an instance method.</td>
+                  <td>Child implementation replacing a parent implementation.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "This is method overloading, also called compile-time polymorphism. test1(new Object()) selects Object,
+              test1(\"hari\") selects String because it is the most specific applicable type, and test1(324324) selects
+              Integer through autoboxing because there is no int overload. test1(null) fails at compile time because both
+              String and Integer accept null and neither is more specific than the other. Casting null resolves the
+              ambiguity."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="springboot">
+        <h2 class="accordion-header" id="genericKeyValueDtoTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#genericKeyValueDtoTopBody">
+            How do we create a generic Key-Value DTO for different key and value types?
+          </button>
+        </h2>
+        <div id="genericKeyValueDtoTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Use a generic class with two independent type parameters, such as <code>K</code> for the key and
+              <code>V</code> for the value. This allows the key and value to have different types, for example
+              <code>Integer</code> and <code>String</code>, while preserving compile-time type safety.
+            </p>
+
+            <h5 class="text-warning">Reusable DTO</h5>
+            <pre><code class="language-java">public record KeyValue&lt;K, V&gt;(K key, V value) {
+}</code></pre>
+            <p>
+              A Java record is a concise immutable DTO. For projects that do not use records, use a normal class with
+              private final fields, a constructor, getters, and optionally setters.
+            </p>
+
+            <h5 class="text-warning">Different key and value types</h5>
+            <pre><code class="language-java">KeyValue&lt;Integer, String&gt; active =
+    new KeyValue&lt;&gt;(1, "Active");
+
+KeyValue&lt;Integer, String&gt; inactive =
+    new KeyValue&lt;&gt;(2, "Inactive");
+
+KeyValue&lt;String, String&gt; country =
+    new KeyValue&lt;&gt;("IN", "India");
+
+KeyValue&lt;String, Integer&gt; priority =
+    new KeyValue&lt;&gt;("HIGH", 10);</code></pre>
+            <p>
+              The two type arguments are independent. <code>KeyValue&lt;Integer, String&gt;</code> does not mean both
+              fields have the same type; it means the key is Integer and the value is String.
+            </p>
+
+            <h5 class="text-warning">Spring Boot dropdown API</h5>
+            <pre><code class="language-java">@RestController
+@RequestMapping("/api/options")
+class OptionController {
+
+    @GetMapping("/statuses")
+    List&lt;KeyValue&lt;Integer, String&gt;&gt; statuses() {
+        return List.of(
+            new KeyValue&lt;&gt;(1, "Active"),
+            new KeyValue&lt;&gt;(2, "Inactive"),
+            new KeyValue&lt;&gt;(3, "Suspended")
+        );
+    }
+
+    @GetMapping("/countries")
+    List&lt;KeyValue&lt;String, String&gt;&gt; countries() {
+        return List.of(
+            new KeyValue&lt;&gt;("IN", "India"),
+            new KeyValue&lt;&gt;("US", "United States")
+        );
+    }
+}</code></pre>
+
+            <h5 class="text-warning">JSON returned to the UI</h5>
+            <pre><code class="language-json">[
+  { "key": 1, "value": "Active" },
+  { "key": 2, "value": "Inactive" },
+  { "key": 3, "value": "Suspended" }
+]</code></pre>
+            <p>
+              The UI displays <code>value</code> but submits <code>key</code>. For example, it displays
+              <code>Active</code> while sending status ID <code>1</code> to the backend.
+            </p>
+
+            <h5 class="text-warning">Normal class alternative</h5>
+            <pre><code class="language-java">public final class KeyValue&lt;K, V&gt; {
+    private final K key;
+    private final V value;
+
+    public KeyValue(K key, V value) {
+        this.key = key;
+        this.value = value;
+    }
+
+    public K getKey() {
+        return key;
+    }
+
+    public V getValue() {
+        return value;
+    }
+}</code></pre>
+
+            <h5 class="text-warning">Factory method for cleaner creation</h5>
+            <pre><code class="language-java">public final class KeyValues {
+    private KeyValues() {
+    }
+
+    public static &lt;K, V&gt; KeyValue&lt;K, V&gt; of(K key, V value) {
+        return new KeyValue&lt;&gt;(key, value);
+    }
+}
+
+KeyValue&lt;Integer, String&gt; option = KeyValues.of(1, "Active");</code></pre>
+
+            <h5 class="text-warning">DTO versus Map</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Approach</th>
+                  <th>Benefit</th>
+                  <th>Trade-off</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>KeyValue&lt;K,V&gt;</code></td>
+                  <td>Type-safe, documented, reusable API contract.</td>
+                  <td>Uses a small DTO type.</td>
+                </tr>
+                <tr>
+                  <td><code>Map&lt;Object,Object&gt;</code></td>
+                  <td>Quick for ad-hoc data.</td>
+                  <td>Weak type safety, unclear contract, accidental key collisions.</td>
+                </tr>
+                <tr>
+                  <td>Specific DTO such as <code>StatusOption</code></td>
+                  <td>Most expressive when fields have business meaning.</td>
+                  <td>More classes for every option type.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">When should we use a specific DTO?</h5>
+            <p>
+              Use the generic DTO for simple reusable dropdowns or lookup options. Use a domain-specific DTO when the
+              UI needs more fields, such as <code>disabled</code>, <code>displayOrder</code>, <code>group</code>,
+              <code>description</code>, or localization metadata.
+            </p>
+            <pre><code class="language-java">public record StatusOption(
+    Integer key,
+    String value,
+    boolean disabled,
+    int displayOrder) {
+}</code></pre>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "I would create a generic <code>KeyValue&lt;K,V&gt;</code> DTO. K and V are independent type parameters, so
+              the same class can represent Integer/String status options, String/String country options, or
+              String/Integer priorities. In Spring Boot, the controller returns a list of this DTO, Jackson serializes
+              it as key/value JSON, and the UI displays the value while submitting the key. For richer business data, I
+              would use a specific DTO instead of a generic one."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="hashSetConstantHashCodeTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#hashSetConstantHashCodeTopBody">
+            What happens if every Employee returns the same hashCode in a HashSet?
+          </button>
+        </h2>
+        <div id="hashSetConstantHashCodeTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              If every <code>Employee</code> returns <code>1</code> from <code>hashCode()</code>, all employees are
+              placed in the same hash bucket. This is a valid collision scenario, so it does not automatically mean
+              that the set contains only one employee. <code>HashSet</code> uses <code>hashCode()</code> to find a
+              bucket and then uses <code>equals()</code> to decide whether an existing equal element is already there.
+            </p>
+
+            <h5 class="text-warning">Example: same hash code, different employees</h5>
+            <pre><code class="language-java">class Employee {
+    private final int id;
+    private final String name;
+
+    Employee(int id, String name) {
+        this.id = id;
+        this.name = name;
+    }
+
+    @Override
+    public int hashCode() {
+        return 1; // Intentional collision
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (!(other instanceof Employee employee)) {
+            return false;
+        }
+        return id == employee.id;
+    }
+}
+
+Set&lt;Employee&gt; employees = new HashSet&lt;&gt;();
+employees.add(new Employee(1, "Anu"));
+employees.add(new Employee(2, "Bala"));
+employees.add(new Employee(3, "Charan"));
+
+System.out.println(employees.size()); // 3</code></pre>
+            <p>
+              The size is <strong>3</strong> because the employees have different IDs, so
+              <code>equals()</code> returns false for each pair. They all remain in the same bucket, but they are still
+              distinct set elements.
+            </p>
+
+            <h5 class="text-warning">Example: same hash code and equal employees</h5>
+            <pre><code class="language-java">Set&lt;Employee&gt; employees = new HashSet&lt;&gt;();
+
+employees.add(new Employee(1, "Anu"));
+employees.add(new Employee(1, "Anu - duplicate"));
+
+System.out.println(employees.size()); // 1</code></pre>
+            <p>
+              Both objects have the same hash code and the same equality key, so the second add is rejected. A Set
+              prevents duplicates according to <code>equals()</code>, not according to hash code alone.
+            </p>
+
+            <h5 class="text-warning">What if equals() is not overridden?</h5>
+            <pre><code class="language-java">class Employee {
+    private final int id;
+
+    Employee(int id) {
+        this.id = id;
+    }
+
+    @Override
+    public int hashCode() {
+        return 1;
+    }
+
+    // No equals override: Object.equals() compares references
+}
+
+Set&lt;Employee&gt; employees = new HashSet&lt;&gt;();
+employees.add(new Employee(1));
+employees.add(new Employee(1));
+
+System.out.println(employees.size()); // 2</code></pre>
+            <p>
+              Without overriding <code>equals()</code>, two separate employee objects are not equal even if their IDs
+              match, so both remain in the set. In a real entity, implement <code>equals()</code> and
+              <code>hashCode()</code> consistently using a stable identity key.
+            </p>
+
+            <h5 class="text-warning">Performance impact</h5>
+            <p>
+              A good hash function distributes elements across buckets, giving average near-constant-time
+              <code>add</code>, <code>contains</code>, and <code>remove</code>. If every element returns
+              <code>1</code>, all operations repeatedly inspect the same bucket. Performance can degrade toward
+              <code>O(n)</code>. Modern Java may treeify a heavily populated bucket under suitable conditions, but a
+              constant hash still creates poor distribution and should not be used intentionally.
+            </p>
+
+            <h5 class="text-warning">The hashCode and equals contract</h5>
+            <ul>
+              <li>If two objects are equal according to <code>equals()</code>, they must return the same hash code.</li>
+              <li>Two unequal objects may have the same hash code; this is called a collision.</li>
+              <li>Changing fields used by <code>equals()</code> or <code>hashCode()</code> after insertion can make an element difficult to find or remove.</li>
+              <li>Hash codes should be based on stable fields while the object is inside the set.</li>
+            </ul>
+
+            <h5 class="text-warning">Correct implementation</h5>
+            <pre><code class="language-java">@Override
+public boolean equals(Object other) {
+    if (this == other) return true;
+    if (!(other instanceof Employee employee)) return false;
+    return id == employee.id;
+}
+
+@Override
+public int hashCode() {
+    return Integer.hashCode(id);
+}</code></pre>
+            <p>
+              With this implementation, employees with the same ID are treated as duplicates, while different IDs are
+              normally distributed across buckets.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "If every Employee returns hash code 1, all objects go to the same HashSet bucket. HashSet then calls
+              equals() to distinguish them. If three employees have different IDs and equals() uses ID, set.size() is
+              3. If two employees are equal, the duplicate is rejected and the size is 1 for those two. The constant
+              hash code is legal but causes collisions and poor performance, potentially approaching O(n)."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="javaGenericsOverviewTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#javaGenericsOverviewTopBody">
+            What are Java Generics and why do we use them?
+          </button>
+        </h2>
+        <div id="javaGenericsOverviewTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>Generics</strong> allow classes, interfaces, and methods to work with a type parameter instead of
+              a fixed type. They provide compile-time type safety, reduce explicit casts, and make reusable APIs clearer.
+            </p>
+
+            <h5 class="text-warning">Without generics</h5>
+            <pre><code class="language-java">List values = new ArrayList();
+values.add("Java");
+values.add(10);
+
+String text = (String) values.get(0); // Explicit cast
+String bad = (String) values.get(1);   // ClassCastException at runtime</code></pre>
+
+            <h5 class="text-warning">With generics</h5>
+            <pre><code class="language-java">List&lt;String&gt; values = new ArrayList&lt;&gt;();
+values.add("Java");
+// values.add(10); // Compilation error
+
+String text = values.get(0); // No cast required</code></pre>
+            <p>
+              The compiler knows that this list contains only Strings. A type mistake is reported earlier, before the
+              application reaches production.
+            </p>
+
+            <h5 class="text-warning">Generic class</h5>
+            <pre><code class="language-java">class Box&lt;T&gt; {
+    private final T value;
+
+    Box(T value) {
+        this.value = value;
+    }
+
+    T get() {
+        return value;
+    }
+}
+
+Box&lt;String&gt; name = new Box&lt;&gt;("Anu");
+Box&lt;Integer&gt; count = new Box&lt;&gt;(10);</code></pre>
+            <p>
+              <code>T</code> is a type parameter. By convention, <code>T</code> means type,
+              <code>E</code> element, <code>K</code> key, <code>V</code> value, and <code>N</code> number.
+            </p>
+
+            <h5 class="text-warning">Generic method</h5>
+            <pre><code class="language-java">static &lt;T&gt; T first(List&lt;T&gt; values) {
+    return values.get(0);
+}
+
+String name = first(List.of("A", "B"));
+Integer number = first(List.of(1, 2));</code></pre>
+            <p>
+              The method type parameter appears before the return type. Java can often infer it from the arguments, or it
+              can be supplied explicitly such as <code>Generic.&lt;String&gt;first(values)</code>.
+            </p>
+
+            <h5 class="text-warning">Generic interface</h5>
+            <pre><code class="language-java">interface Repository&lt;ID, T&gt; {
+    T findById(ID id);
+    void save(T value);
+}
+
+class UserRepository implements Repository&lt;Long, User&gt; {
+    public User findById(Long id) {
+        return new User(id);
+    }
+
+    public void save(User user) {
+    }
+}</code></pre>
+
+            <h5 class="text-warning">Bounded type parameters</h5>
+            <pre><code class="language-java">static &lt;T extends Number&gt; double sum(T left, T right) {
+    return left.doubleValue() + right.doubleValue();
+}
+
+double result = sum(10, 20.5);</code></pre>
+            <p>
+              <code>T extends Number</code> allows Number or its subclasses and lets the method use Number methods.
+              Multiple bounds are possible, with a class first:
+              <code>&lt;T extends BaseEntity &amp; Serializable&gt;</code>.
+            </p>
+
+            <h5 class="text-warning">Wildcards</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Syntax</th>
+                  <th>Meaning</th>
+                  <th>Typical use</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>List&lt;?&gt;</code></td>
+                  <td>List of an unknown type</td>
+                  <td>Inspect values as Object; do not add arbitrary non-null values.</td>
+                </tr>
+                <tr>
+                  <td><code>List&lt;? extends Number&gt;</code></td>
+                  <td>List of Number or one unknown subtype</td>
+                  <td>Read numbers safely; do not add Number values.</td>
+                </tr>
+                <tr>
+                  <td><code>List&lt;? super Integer&gt;</code></td>
+                  <td>List of Integer or a supertype</td>
+                  <td>Add Integer values safely; read as Object.</td>
+                </tr>
+              </tbody>
+            </table>
+            <p>
+              Remember <strong>PECS</strong>: Producer Extends, Consumer Super. Use
+              <code>? extends T</code> when reading from a producer and <code>? super T</code> when writing to a
+              consumer.
+            </p>
+
+            <h5 class="text-warning">Why List&lt;Integer&gt; is not List&lt;Number&gt;</h5>
+            <pre><code class="language-java">List&lt;Integer&gt; integers = new ArrayList&lt;&gt;();
+
+// Compilation error because generics are invariant:
+// List&lt;Number&gt; numbers = integers;
+
+// Otherwise numbers.add(3.14) could put a Double into integers.</code></pre>
+            <p>
+              Generic types are invariant. Wildcards provide controlled producer and consumer relationships without
+              allowing unsafe values.
+            </p>
+
+            <h5 class="text-warning">Type erasure</h5>
+            <p>
+              Java generics are mainly a compile-time feature. The compiler checks types and then erases most type
+              arguments from the generated bytecode, inserting casts where required. This preserves compatibility with
+              older Java code.
+            </p>
+            <pre><code class="language-java">List&lt;String&gt; names = new ArrayList&lt;&gt;();
+// Runtime generally sees an ArrayList, not a separate ArrayList&lt;String&gt; class.</code></pre>
+            <p>
+              Because of erasure, these operations are not allowed:
+            </p>
+            <ul>
+              <li><code>new T()</code> when T is an unknown type.</li>
+              <li><code>new T[10]</code> for a generic array.</li>
+              <li><code>obj instanceof List&lt;String&gt;</code>; use <code>instanceof List&lt;?&gt;</code>.</li>
+              <li>Static fields whose type depends on the class type parameter.</li>
+              <li>Overloading methods that differ only by generic type arguments, such as <code>process(List&lt;String&gt;)</code> and <code>process(List&lt;Integer&gt;)</code>.</li>
+            </ul>
+
+            <h5 class="text-warning">Raw types</h5>
+            <pre><code class="language-java">List raw = new ArrayList(); // Compiles with a warning
+raw.add("text");
+raw.add(10);
+
+List&lt;String&gt; names = raw; // Unsafe unchecked conversion</code></pre>
+            <p>
+              Avoid raw types in new code. They remove compile-time safety and can cause runtime
+              <code>ClassCastException</code>. Use a parameterized type or <code>List&lt;?&gt;</code> when the element type
+              is intentionally unknown.
+            </p>
+
+            <h5 class="text-warning">Generics are not reified</h5>
+            <p>
+              You cannot use primitive type arguments directly, so use wrapper types such as
+              <code>List&lt;Integer&gt;</code> instead of <code>List&lt;int&gt;</code>. Autoboxing and unboxing convert
+              between primitives and wrappers, although specialized primitive streams can avoid some boxing overhead.
+            </p>
+
+            <h5 class="text-warning">Real-world Spring example</h5>
+            <pre><code class="language-java">interface ApiResponse&lt;T&gt; {
+    T data();
+    List&lt;String&gt; errors();
+}
+
+record UserResponse(Long id, String name) implements ApiResponse&lt;UserResponse&gt; {
+    public UserResponse data() {
+        return this;
+    }
+
+    public List&lt;String&gt; errors() {
+        return List.of();
+    }
+}
+
+List&lt;? extends Number&gt; ids = List.of(10L, 20L);
+Map&lt;String, Object&gt; attributes = new HashMap&lt;&gt;();</code></pre>
+            <p>
+              Generic DTOs, repositories, event envelopes, and collections make Spring APIs reusable while retaining
+              compile-time contracts.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Java Generics provide compile-time type safety and reusable type-parameterized classes, methods, and
+              interfaces. They prevent unsafe casts and document API intent. Generics are invariant, so
+              List&lt;Integer&gt; is not List&lt;Number&gt;; use bounded wildcards with PECS for safe reading and writing.
+              Java implements generics through type erasure, which explains raw types, generic-array restrictions, and
+              some reflection limitations."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="covariantReturnTypeTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#covariantReturnTypeTopBody">
+            What is a covariant return type in Java?
+          </button>
+        </h2>
+        <div id="covariantReturnTypeTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              A <strong>covariant return type</strong> allows an overriding method in a child class to return a more
+              specific subtype of the return type declared by the parent method. The child return type must be the same
+              type or a subclass of the parent return type.
+            </p>
+
+            <h5 class="text-warning">Basic example</h5>
+            <pre><code class="language-java">class Animal {
+}
+
+class Dog extends Animal {
+}
+
+class AnimalFactory {
+    Animal create() {
+        return new Animal();
+    }
+}
+
+class DogFactory extends AnimalFactory {
+    @Override
+    Dog create() { // Dog is a subtype of Animal
+        return new Dog();
+    }
+}</code></pre>
+            <p>
+              The parent promises an <code>Animal</code>. The child returns a <code>Dog</code>, which satisfies the
+              parent contract because every Dog is an Animal.
+            </p>
+
+            <h5 class="text-warning">Runtime behavior with parent reference</h5>
+            <pre><code class="language-java">AnimalFactory factory = new DogFactory();
+Animal result = factory.create(); // Runtime object is Dog
+
+DogFactory dogFactory = new DogFactory();
+Dog dog = dogFactory.create(); // No cast needed</code></pre>
+            <p>
+              Dynamic dispatch invokes <code>DogFactory.create()</code> at runtime. When the result is viewed through an
+              <code>AnimalFactory</code> reference, the compile-time return type is still <code>Animal</code>. When the
+              child type is used directly, the more specific <code>Dog</code> return type is available.
+            </p>
+
+            <h5 class="text-warning">Common real-world example: clone or builder methods</h5>
+            <pre><code class="language-java">class Employee {
+    Employee copy() {
+        return new Employee();
+    }
+}
+
+class Manager extends Employee {
+    @Override
+    Manager copy() {
+        return new Manager();
+    }
+
+    Manager withTeamSize(int size) {
+        return this;
+    }
+}</code></pre>
+            <p>
+              Covariant returns make fluent APIs and factory methods easier to use because callers of the child type do
+              not need an explicit cast.
+            </p>
+
+            <h5 class="text-warning">What is not allowed?</h5>
+            <pre><code class="language-java">class Parent {
+    Number value() {
+        return 1;
+    }
+}
+
+class Child extends Parent {
+    // Compilation error: String is not a subtype of Number
+    // String value() {
+    //     return "one";
+    // }
+}</code></pre>
+            <p>
+              The child cannot return an unrelated type, a broader type, or a primitive type when the parent returns a
+              reference type.
+            </p>
+
+            <h5 class="text-warning">Primitive return types</h5>
+            <pre><code class="language-java">class Parent {
+    int count() {
+        return 1;
+    }
+}
+
+class Child extends Parent {
+    // Compilation error: long is not a covariant return type for int
+    // long count() {
+    //     return 1L;
+    // }
+}</code></pre>
+            <p>
+              Covariant returns apply to reference types, not primitive widening. An <code>int</code> return cannot be
+              overridden by <code>long</code>.
+            </p>
+
+            <h5 class="text-warning">Rules</h5>
+            <ul>
+              <li>The child method must actually override the parent method; use <code>@Override</code> to catch mistakes.</li>
+              <li>The return type must be identical or a subtype of the parent reference return type.</li>
+              <li>Access cannot be reduced, and checked-exception rules still apply independently.</li>
+              <li>Static methods are hidden, not overridden, so covariant return behavior does not apply in the same dynamic way.</li>
+              <li>Covariant returns do not change method parameters; changing parameters creates overloading instead.</li>
+            </ul>
+
+            <h5 class="text-warning">Covariant return versus overloading</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Concept</th>
+                  <th>Decision time</th>
+                  <th>Example</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Covariant overriding</td>
+                  <td>Runtime implementation selection; same method parameters</td>
+                  <td><code>Animal create()</code> -> <code>Dog create()</code></td>
+                </tr>
+                <tr>
+                  <td>Overloading</td>
+                  <td>Compile-time selection; different parameter list</td>
+                  <td><code>create()</code> and <code>create(String name)</code></td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "A covariant return type allows an overriding child method to return a subtype of the parent's reference
+              return type. If the parent returns Animal, the child can return Dog. This preserves substitutability while
+              giving callers of the child type a more specific result without casting. It applies to reference types,
+              not primitives, and is different from overloading because the parameter list remains the same."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="javaGenericsInvarianceTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#javaGenericsInvarianceTopBody">
+            What is invariance in Java generics?
+          </button>
+        </h2>
+        <div id="javaGenericsInvarianceTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>Invariance</strong> means that even when one type is a subtype of another, the corresponding
+              generic types are not automatically related. Although <code>Integer</code> extends
+              <code>Number</code>, <code>List&lt;Integer&gt;</code> is not a subtype of
+              <code>List&lt;Number&gt;</code>.
+            </p>
+
+            <h5 class="text-warning">Example</h5>
+            <pre><code class="language-java">List&lt;Integer&gt; integers = new ArrayList&lt;&gt;();
+
+// Compilation error: generics are invariant
+// List&lt;Number&gt; numbers = integers;</code></pre>
+
+            <h5 class="text-warning">Why does Java use invariance?</h5>
+            <p>
+              If the assignment were allowed, code using the <code>List&lt;Number&gt;</code> reference could insert a
+              <code>Double</code> into the original list of Integers.
+            </p>
+            <pre><code class="language-java">List&lt;Integer&gt; integers = new ArrayList&lt;&gt;();
+
+// If this were allowed:
+// List&lt;Number&gt; numbers = integers;
+// numbers.add(3.14); // Double enters a list of Integer values
+
+// Later, this becomes unsafe:
+Integer value = integers.get(0);</code></pre>
+            <p>
+              Invariance prevents this type-safety problem at compile time. The same rule applies to most generic
+              classes, interfaces, and collections.
+            </p>
+
+            <h5 class="text-warning">How do wildcards help?</h5>
+            <pre><code class="language-java">// Covariant-style reading: Integer, Double, etc.
+static double sum(List&lt;? extends Number&gt; values) {
+    return values.stream()
+        .mapToDouble(Number::doubleValue)
+        .sum();
+}
+
+List&lt;Integer&gt; integers = List.of(10, 20, 30);
+double total = sum(integers); // Valid</code></pre>
+            <p>
+              <code>? extends Number</code> means a list of some unknown subtype of Number. It is safe to read values as
+              <code>Number</code>, but it is not safe to add a Number because the actual list might be
+              <code>List&lt;Integer&gt;</code> or <code>List&lt;Double&gt;</code>.
+            </p>
+
+            <pre><code class="language-java">// Contravariant-style writing
+static void addIntegers(List&lt;? super Integer&gt; values) {
+    values.add(10);
+    values.add(20);
+}
+
+List&lt;Number&gt; numbers = new ArrayList&lt;&gt;();
+addIntegers(numbers); // Valid</code></pre>
+            <p>
+              <code>? super Integer</code> accepts a list of Integer, Number, or Object. It is safe to add Integers, but
+              values can be read only as <code>Object</code>.
+            </p>
+
+            <h5 class="text-warning">Three generic relationships</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Relationship</th>
+                  <th>Java syntax</th>
+                  <th>Meaning</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Invariant</td>
+                  <td><code>List&lt;Integer&gt;</code> and <code>List&lt;Number&gt;</code></td>
+                  <td>Neither generic type is a subtype of the other.</td>
+                </tr>
+                <tr>
+                  <td>Covariant-style view</td>
+                  <td><code>List&lt;? extends Number&gt;</code></td>
+                  <td>Read from a collection of Number or any subtype.</td>
+                </tr>
+                <tr>
+                  <td>Contravariant-style view</td>
+                  <td><code>List&lt;? super Integer&gt;</code></td>
+                  <td>Write Integer values to a collection of Integer or a supertype.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Arrays are different</h5>
+            <pre><code class="language-java">Integer[] integers = new Integer[2];
+Number[] numbers = integers; // Compiles: arrays are covariant
+
+// Runtime ArrayStoreException:
+numbers[0] = 3.14;</code></pre>
+            <p>
+              Arrays are covariant and therefore can fail at runtime. Generics are invariant and catch the unsafe
+              assignment earlier at compile time. This is one reason generic collections are safer for many APIs.
+            </p>
+
+            <h5 class="text-warning">PECS memory rule</h5>
+            <p>
+              Remember <strong>PECS</strong>: <strong>Producer Extends</strong>, <strong>Consumer Super</strong>.
+              Use <code>? extends T</code> when a structure produces values for you to read, and
+              <code>? super T</code> when a structure consumes values that you want to write.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Java generics are invariant. Even though Integer extends Number, List&lt;Integer&gt; cannot be assigned to
+              List&lt;Number&gt;, because that would allow a Double to enter a list of Integers. Use
+              <code>? extends Number</code> for safe reading and <code>? super Integer</code> for safe writing. This is
+              summarized by PECS: Producer Extends, Consumer Super."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="java17ModulesTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#java17ModulesTopBody">
+            Is Java 17 modular? What is the Java Module System and what benefits does it provide?
+          </button>
+        </h2>
+        <div id="java17ModulesTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>Yes.</strong> Java has a module system since Java 9, and Java 17 is a modular JDK. The Java
+              Platform Module System (JPMS) groups packages into named modules and makes dependencies and accessible
+              packages explicit. Java 17 can run modular applications, traditional classpath applications, or a mixture
+              of both.
+            </p>
+
+            <h5 class="text-warning">What is a module?</h5>
+            <p>
+              A module is a named, version-independent group of packages, classes, resources, and a
+              <code>module-info.java</code> descriptor. The descriptor declares what the module requires and which
+              packages it exports or opens.
+            </p>
+            <pre><code class="language-text">com.example.orders
+  +-- module-info.java
+  +-- com.example.orders.api
+  +-- com.example.orders.internal</code></pre>
+
+            <h5 class="text-warning">Basic module-info.java</h5>
+            <pre><code class="language-java">module com.example.orders {
+    requires java.net.http;
+    requires com.example.users;
+
+    exports com.example.orders.api;
+    opens com.example.orders.model to com.fasterxml.jackson.databind;
+}</code></pre>
+            <ul>
+              <li><code>requires</code> declares a dependency on another module.</li>
+              <li><code>exports</code> makes a package available for normal compile-time and runtime access.</li>
+              <li><code>opens</code> allows deep reflection, usually for frameworks such as Jackson, Hibernate, or Spring.</li>
+              <li><code>requires transitive</code> exposes a dependency to consumers of the current module.</li>
+              <li><code>requires static</code> is needed at compile time but optional at runtime.</li>
+              <li><code>exports package to module</code> provides qualified access to selected modules.</li>
+            </ul>
+
+            <h5 class="text-warning">Exports versus opens</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Directive</th>
+                  <th>Purpose</th>
+                  <th>Typical example</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>exports</code></td>
+                  <td>Normal public access to types in a package.</td>
+                  <td>Expose a service API package to other modules.</td>
+                </tr>
+                <tr>
+                  <td><code>opens</code></td>
+                  <td>Deep reflection into non-public members at runtime.</td>
+                  <td>Allow Jackson or Hibernate to inspect model fields.</td>
+                </tr>
+                <tr>
+                  <td><code>open module</code></td>
+                  <td>Opens every package for reflection without exporting them for normal access.</td>
+                  <td>Migration option for reflection-heavy applications; less strict.</td>
+                </tr>
+              </tbody>
+            </table>
+            <p>
+              An exported package is not automatically open for deep reflection. This is a common source of
+              <code>InaccessibleObjectException</code> after migrating older applications to Java 17.
+            </p>
+
+            <h5 class="text-warning">Module categories</h5>
+            <ul>
+              <li><strong>Named module:</strong> has a module descriptor and participates in the module graph.</li>
+              <li><strong>Platform module:</strong> supplied by the JDK, such as <code>java.base</code>,
+                <code>java.sql</code>, and <code>java.net.http</code>.</li>
+              <li><strong>Automatic module:</strong> a normal JAR placed on the module path without
+                <code>module-info.java</code>; its name is derived from the JAR metadata or filename.</li>
+              <li><strong>Unnamed module:</strong> classpath code. It reads named modules but does not provide a strict
+                named module contract.</li>
+            </ul>
+
+            <h5 class="text-warning">Java module graph</h5>
+            <pre><code class="language-text">com.example.orders
+       | requires
+       v
+com.example.users
+
+com.example.orders
+       | requires
+       v
+java.net.http
+       |
+       v
+java.base</code></pre>
+            <p>
+              Every module implicitly depends on <code>java.base</code>. The module resolver validates that required
+              modules are present and builds a readable dependency graph before starting the application.
+            </p>
+
+            <h5 class="text-warning">Services and dependency inversion</h5>
+            <p>
+              JPMS supports service providers without the consumer depending on a concrete implementation. The consumer
+              declares <code>uses</code>, while an implementation declares <code>provides ... with</code>.
+            </p>
+            <pre><code class="language-java">// Consumer module
+module com.example.checkout {
+    uses com.example.payment.PaymentProvider;
+}
+
+// Provider module
+module com.example.stripe {
+    requires com.example.checkout;
+
+    provides com.example.payment.PaymentProvider
+        with com.example.stripe.StripePaymentProvider;
+}</code></pre>
+            <pre><code class="language-java">ServiceLoader.load(PaymentProvider.class)
+    .stream()
+    .map(ServiceLoader.Provider::get)
+    .forEach(PaymentProvider::healthCheck);</code></pre>
+
+            <h5 class="text-warning">Benefits</h5>
+            <ul>
+              <li><strong>Strong encapsulation:</strong> internal packages can remain inaccessible even when classes are public.</li>
+              <li><strong>Reliable configuration:</strong> dependencies and exposed packages are declared explicitly.</li>
+              <li><strong>Better maintainability:</strong> boundaries make accidental coupling easier to detect.</li>
+              <li><strong>Smaller runtime images:</strong> <code>jlink</code> can build a custom runtime containing only required modules.</li>
+              <li><strong>Improved startup and footprint:</strong> smaller images can reduce deployment size and attack surface.</li>
+              <li><strong>Service abstraction:</strong> <code>uses</code> and <code>provides</code> support pluggable implementations.</li>
+              <li><strong>JDK internals protection:</strong> applications cannot freely depend on non-public JDK internals.</li>
+            </ul>
+
+            <h5 class="text-warning">Useful commands</h5>
+            <pre><code class="language-bash"># Compile a module
+javac -d out --module-source-path src \
+  -m com.example.orders
+
+# Run a module
+java --module-path out \
+  -m com.example.orders/com.example.orders.Main
+
+# Inspect a JAR's module information
+jar --describe-module --file orders.jar
+
+# Build a smaller runtime image
+jlink --module-path $JAVA_HOME/jmods:out \
+  --add-modules com.example.orders \
+  --output runtime-image</code></pre>
+
+            <h5 class="text-warning">Migration challenges in Java 17</h5>
+            <ul>
+              <li>Old code that accesses JDK internals may fail because strong encapsulation is enforced.</li>
+              <li>Reflection-heavy libraries may require <code>opens</code> directives or library upgrades.</li>
+              <li>Automatic module names can change if a dependency JAR is renamed.</li>
+              <li>Split packages, where the same package exists in multiple modules, are not allowed on the module path.</li>
+              <li>Classpath and module-path behavior differ, so build plugins and test configuration must be verified.</li>
+              <li>Using many <code>--add-opens</code> flags can unblock a migration but should not replace a proper module or library fix.</li>
+            </ul>
+
+            <h5 class="text-warning">Do Spring Boot applications have to use modules?</h5>
+            <p>
+              No. A Spring Boot application can remain on the classpath and still run on Java 17. JPMS is optional for
+              application modularization, although the JDK itself is modular. Before modularizing a large Spring
+              application, upgrade Spring and libraries, test reflection and proxy behavior, and define the required
+              <code>opens</code> directives.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Java 17 is modular because Java 9 introduced JPMS. A module has a name and a module-info.java descriptor
+              that declares requires, exports, opens, and services. Modules provide strong encapsulation, explicit
+              dependencies, better maintainability, smaller jlink runtime images, and protection from JDK internals.
+              Applications can still use the classpath. During migration, reflection, split packages, automatic module
+              names, and classpath versus module-path behavior are the main issues; opens should be granted narrowly for
+              frameworks that need deep reflection."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="exceptionOverridingHierarchyTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#exceptionOverridingHierarchyTopBody">
+            Exception hierarchy in method overriding: compile-time and runtime behavior
+          </button>
+        </h2>
+        <div id="exceptionOverridingHierarchyTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              When a child class overrides a parent method, Java applies exception rules at <strong>compile time</strong>
+              based on the declared method signatures. At <strong>runtime</strong>, dynamic dispatch chooses the actual
+              child implementation, but the checked-exception contract visible through the reference type still matters.
+            </p>
+
+            <h5 class="text-warning">Exception hierarchy</h5>
+            <pre><code class="language-text">Throwable
++-- Error                    Usually serious JVM/system failures
++-- Exception
+    +-- RuntimeException     Unchecked exceptions
+    +-- Other Exception      Checked exceptions</code></pre>
+            <p>
+              Checked exceptions must be caught or declared with <code>throws</code>. Unchecked exceptions, which extend
+              <code>RuntimeException</code>, do not have that compile-time requirement. Errors are generally not business
+              exceptions that an application should catch.
+            </p>
+
+            <h5 class="text-warning">Basic overriding rule</h5>
+            <p>
+              An overriding method cannot declare a broader checked exception than the parent method. It may declare the
+              same checked exception, a narrower checked exception, no checked exception, or any unchecked exception.
+            </p>
+            <pre><code class="language-java">class Parent {
+    void read() throws IOException {
+    }
+}
+
+class Child extends Parent {
+    @Override
+    void read() throws FileNotFoundException { // Narrower: valid
+    }
+
+    // Also valid:
+    // void read() { }
+    // void read() throws RuntimeException { }
+}</code></pre>
+
+            <h5 class="text-warning">Compilation errors</h5>
+            <pre><code class="language-java">class Parent {
+    void save() throws IOException {
+    }
+}
+
+class Child extends Parent {
+    @Override
+    void save() throws Exception { // Compilation error: broader checked exception
+    }
+}</code></pre>
+            <p>
+              The error occurs because callers using a <code>Parent</code> reference are prepared for
+              <code>IOException</code>, not every checked <code>Exception</code>. Allowing the child to throw the broader
+              type would break the parent contract.
+            </p>
+
+            <h5 class="text-warning">No checked exception in the parent</h5>
+            <p>
+              If the parent method declares no checked exception, the child cannot add a new checked exception, because
+              code written against the parent type has no obligation to catch it.
+            </p>
+            <pre><code class="language-java">class Parent {
+    void process() {
+    }
+}
+
+class Child extends Parent {
+    // Compilation error:
+    // void process() throws IOException { }
+}</code></pre>
+            <p>
+              The child may still throw unchecked exceptions:
+            </p>
+            <pre><code class="language-java">class Child extends Parent {
+    @Override
+    void process() throws IllegalStateException { // Valid
+        throw new IllegalStateException();
+    }
+}</code></pre>
+
+            <h5 class="text-warning">Parent declares a narrower checked exception</h5>
+            <pre><code class="language-java">class Parent {
+    void load() throws FileNotFoundException {
+    }
+}
+
+class Child extends Parent {
+    // Compilation error:
+    // void load() throws IOException { } // Broader than parent
+
+    @Override
+    void load() throws FileNotFoundException { // Same: valid
+    }
+}</code></pre>
+            <p>
+              The child can throw <code>FileNotFoundException</code>, because it is a subtype of
+              <code>IOException</code>, but it cannot throw the broader <code>IOException</code> if the parent contract
+              only declares <code>FileNotFoundException</code>.
+            </p>
+
+            <h5 class="text-warning">Multiple exceptions</h5>
+            <pre><code class="language-java">class Parent {
+    void execute() throws IOException, SQLException {
+    }
+}
+
+class Child extends Parent {
+    @Override
+    void execute() throws FileNotFoundException, SQLTimeoutException {
+        // Valid: both are narrower subtypes
+    }
+}</code></pre>
+            <p>
+              The child may declare any subset of the parent's checked exceptions, or narrower subtypes. It cannot add an
+              unrelated checked exception such as <code>ClassNotFoundException</code>.
+            </p>
+
+            <h5 class="text-warning">Runtime behavior with parent and child references</h5>
+            <pre><code class="language-java">class Parent {
+    void work() throws IOException {
+        throw new IOException("parent failure");
+    }
+}
+
+class Child extends Parent {
+    @Override
+    void work() throws FileNotFoundException {
+        throw new FileNotFoundException("child failure");
+    }
+}
+
+Parent value = new Child();
+try {
+    value.work();
+} catch (IOException error) {
+    // Compiles because Parent.work() declares IOException.
+    // At runtime, Child.work() actually executes.
+}</code></pre>
+            <p>
+              Compile-time exception checking uses the declared type of the reference, <code>Parent</code>. Runtime
+              dispatch uses the actual object, <code>Child</code>. The child exception is still caught because
+              <code>FileNotFoundException</code> is an <code>IOException</code>.
+            </p>
+
+            <h5 class="text-warning">What if the child throws an unchecked exception?</h5>
+            <pre><code class="language-java">class Parent {
+    void work() {
+    }
+}
+
+class Child extends Parent {
+    @Override
+    void work() throws IllegalArgumentException {
+        throw new IllegalArgumentException("invalid input");
+    }
+}
+
+Parent value = new Child();
+value.work(); // Compiles; runtime may throw IllegalArgumentException</code></pre>
+            <p>
+              Unchecked exceptions are not checked by the compiler, so they can appear in an overriding method even when
+              the parent method declares none. The caller should still handle them when the business contract requires it.
+            </p>
+
+            <h5 class="text-warning">Catch order and compilation</h5>
+            <pre><code class="language-java">try {
+    service.read();
+} catch (IOException error) {
+    // Specific checked exception
+} catch (Exception error) {
+    // Broader exception
+}</code></pre>
+            <p>
+              Catch the most specific type first. Reversing the order causes a compilation error because the broader
+              <code>Exception</code> catch would make the later <code>IOException</code> catch unreachable.
+            </p>
+            <pre><code class="language-java">// Compilation error: unreachable catch
+try {
+    service.read();
+} catch (Exception error) {
+} catch (IOException error) {
+}</code></pre>
+
+            <h5 class="text-warning">Constructors are different</h5>
+            <p>
+              Constructors are not overridden, but a child constructor must handle or declare checked exceptions thrown
+              by the parent constructor call. A constructor may declare broader checked exceptions subject to normal
+              constructor rules because it is not an overriding method.
+            </p>
+
+            <h5 class="text-warning">Other overriding rules often asked together</h5>
+            <ul>
+              <li>Return types must be the same or covariant; a child may return a subtype of the parent return type.</li>
+              <li>Access cannot be reduced: public cannot become protected or private.</li>
+              <li>A final method cannot be overridden.</li>
+              <li>A static method is hidden, not overridden, so selection is based on the reference type.</li>
+              <li>Private methods are not inherited and therefore are not overridden.</li>
+              <li>Generic overriding can involve type erasure and bridge methods generated by the compiler.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "An overriding method cannot throw a broader checked exception than the parent method. It may throw the
+              same checked exception, a narrower subtype, no checked exception, or any unchecked exception. The compiler
+              checks checked exceptions using the declared reference type, while runtime dispatch invokes the actual
+              child implementation. If the parent declares no checked exception, the child cannot add one. Catch
+              specific exceptions before broader ones, and remember that constructors, static methods, private methods,
+              and final methods follow different rules."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
       <!-- Transactional outbox pattern -->
       <div class="accordion-item" data-manual-category="microservices">
         <h2 class="accordion-header" id="transactionalOutboxPattern">
@@ -10389,22 +11985,6 @@ public Cache&lt;String, ProductDto&gt; productCache() {
           </div>
         </div>
       </div>
-
-        <!-- Q10 -->
-        <div class="accordion-item">
-          <h2 class="accordion-header" id="q10">
-            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c10">🔟
-              Explain Distributed Transactions (2PC vs Saga Pattern)</button>
-          </h2>
-        <div id="c10" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
-          <div class="accordion-body bg-dark text-light">
-              2PC → strong consistency; slow, blocking.
-              Saga → sequence of local transactions + compensating transactions.
-              Used in payments, booking systems.
-            </div>
-          </div>
-        </div>
-
         <div class="accordion-item">
           <h2 class="accordion-header" id="qJvmInternals">
             <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#cJvmInternals">
@@ -49034,10 +50614,9 @@ public class OrderController {
         const itemCategory = item.dataset.category || "other";
         const searchText = (item.dataset.searchText || item.textContent || "").toLowerCase();
 
-        const categoryMatches =
-          activeCategory === "all" || itemCategory === activeCategory;
+        const categoryMatches = matchesCategory(itemCategory, activeCategory);
         const searchMatches = searchText.includes(input);
-        const shouldShow = input ? searchMatches : categoryMatches;
+        const shouldShow = categoryMatches && (!input || searchMatches);
 
         item.style.display = shouldShow ? "" : "none";
 
@@ -49054,9 +50633,23 @@ public class OrderController {
         ? visibleCount
         : activeCategory === "all"
           ? allItems.length
-          : allItems.filter((item) => item.dataset.category === activeCategory).length;
+          : allItems.filter((item) =>
+              matchesCategory(item.dataset.category || "other", activeCategory)
+            ).length;
 
       updateQuestionCount(count);
+    }
+
+    function matchesCategory(itemCategory, selectedCategory) {
+      if (selectedCategory === "all") return true;
+
+      // Java 8 questions are also Java questions, while the Java 8 Coding
+      // filter remains available when only that subset is needed.
+      if (selectedCategory === "java") {
+        return itemCategory === "java" || itemCategory === "java8";
+      }
+
+      return itemCategory === selectedCategory;
     }
 
     function speakAccordionText(button) {
