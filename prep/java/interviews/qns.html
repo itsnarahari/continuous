@@ -178,6 +178,959 @@
     </div>
     <div class="accordion" id="accordionSeniorJava">
 
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="javaMathClassMethodsTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#javaMathClassMethodsTopBody">
+            What are the important methods of the Java Math class?
+          </button>
+        </h2>
+        <div id="javaMathClassMethodsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <code>java.lang.Math</code> is a utility class containing static methods for numeric operations.
+              It cannot be instantiated. The methods below list the Java 8+ API families; overloaded
+              <code>int</code>, <code>long</code>, <code>float</code>, and <code>double</code> versions are
+              grouped together where applicable.
+            </p>
+
+            <h5 class="text-warning">Constants</h5>
+            <pre><code class="language-java">Math.PI // 3.141592653589793
+Math.E  // 2.718281828459045</code></pre>
+
+            <h5 class="text-warning">1. Absolute value, sign, maximum, and minimum</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead><tr><th>Methods</th><th>Use</th><th>Example</th></tr></thead>
+              <tbody>
+                <tr><td><code>abs</code></td><td>Absolute value for <code>int</code>, <code>long</code>, <code>float</code>, and <code>double</code></td><td><code>Math.abs(-12)</code> -&gt; 12</td></tr>
+                <tr><td><code>max</code>, <code>min</code></td><td>Greater or smaller of two numeric values</td><td><code>Math.max(10, 20)</code> -&gt; 20</td></tr>
+                <tr><td><code>signum</code></td><td>Returns -1, 0, or 1 with the sign of a value</td><td><code>Math.signum(-4.5)</code> -&gt; -1.0</td></tr>
+                <tr><td><code>copySign</code></td><td>Copies the sign of one floating-point value to another</td><td><code>Math.copySign(10.0, -2.0)</code> -&gt; -10.0</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">2. Exact integer arithmetic</h5>
+            <p>
+              Normal integer arithmetic silently overflows. The <code>*Exact</code> methods throw
+              <code>ArithmeticException</code> instead, which is safer for IDs, money units, counters, and
+              limits.
+            </p>
+            <pre><code class="language-java">Math.addExact(2_000_000_000, 2_000_000_000); // ArithmeticException
+Math.subtractExact(10, 4);                    // 6
+Math.multiplyExact(20, 5);                    // 100
+Math.incrementExact(9);                       // 10
+Math.decrementExact(9);                       // 8
+Math.negateExact(-9);                         // 9
+Math.toIntExact(100L);                        // 100, throws if long does not fit int</code></pre>
+            <p>Methods: <code>addExact</code>, <code>subtractExact</code>, <code>multiplyExact</code>,
+              <code>incrementExact</code>, <code>decrementExact</code>, <code>negateExact</code>, and
+              <code>toIntExact</code>.</p>
+
+            <h5 class="text-warning">3. Division and remainder</h5>
+            <pre><code class="language-java">Math.floorDiv(7, 3);   // 2
+Math.floorDiv(-7, 3);  // -3, mathematical floor
+Math.floorMod(-7, 3);  // 2
+Math.floorMod(7, 3);   // 1
+Math.IEEEremainder(7.0, 3.0); // IEEE 754 remainder</code></pre>
+            <ul>
+              <li><code>floorDiv</code> and <code>floorMod</code> are useful when negative values must follow mathematical floor division rather than Java's truncation toward zero.</li>
+              <li><code>IEEEremainder</code> is different from the Java <code>%</code> remainder operator and is mainly used for IEEE 754 floating-point calculations.</li>
+            </ul>
+
+            <h5 class="text-warning">4. Rounding and conversion</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <tbody>
+                <tr><td><code>ceil</code></td><td>Smallest integer-valued double greater than or equal to a value</td><td><code>Math.ceil(4.2)</code> -&gt; 5.0</td></tr>
+                <tr><td><code>floor</code></td><td>Largest integer-valued double less than or equal to a value</td><td><code>Math.floor(4.8)</code> -&gt; 4.0</td></tr>
+                <tr><td><code>rint</code></td><td>Nearest integer-valued double, ties follow round-to-even</td><td><code>Math.rint(4.5)</code> -&gt; 4.0</td></tr>
+                <tr><td><code>round</code></td><td>Nearest <code>int</code> or <code>long</code></td><td><code>Math.round(4.6)</code> -&gt; 5</td></tr>
+                <tr><td><code>toDegrees</code></td><td>Radians to degrees</td><td><code>Math.toDegrees(Math.PI)</code> -&gt; 180.0</td></tr>
+                <tr><td><code>toRadians</code></td><td>Degrees to radians</td><td><code>Math.toRadians(180)</code> -&gt; PI</td></tr>
+              </tbody>
+            </table>
+            <p>
+              These methods return numeric values, not formatted strings. For currency rounding, prefer
+              <code>BigDecimal.setScale()</code> with an explicit <code>RoundingMode</code>.
+            </p>
+
+            <h5 class="text-warning">5. Powers, roots, exponential, and logarithms</h5>
+            <pre><code class="language-java">Math.pow(2, 3);       // 8.0
+Math.sqrt(81);        // 9.0
+Math.cbrt(27);        // 3.0
+Math.hypot(3, 4);      // 5.0, without intermediate overflow in common cases
+
+Math.exp(1);           // e
+Math.expm1(0.001);     // exp(x) - 1, accurate for small x
+Math.log(Math.E);      // natural logarithm
+Math.log10(1000);      // 3.0
+Math.log1p(0.001);     // log(1 + x), accurate for small x</code></pre>
+            <p>Methods: <code>pow</code>, <code>sqrt</code>, <code>cbrt</code>, <code>hypot</code>,
+              <code>exp</code>, <code>expm1</code>, <code>log</code>, <code>log10</code>, and
+              <code>log1p</code>.</p>
+
+            <h5 class="text-warning">6. Trigonometric methods</h5>
+            <pre><code class="language-java">double angle = Math.toRadians(30);
+
+Math.sin(angle);       // sine
+Math.cos(angle);       // cosine
+Math.tan(angle);       // tangent
+Math.asin(0.5);        // inverse sine
+Math.acos(0.5);        // inverse cosine
+Math.atan(1.0);        // inverse tangent
+Math.atan2(y, x);      // angle from x-axis, preserves quadrant</code></pre>
+            <p>
+              Trigonometric methods use radians. Prefer <code>atan2(y, x)</code> over
+              <code>atan(y / x)</code> when coordinates are involved because it handles quadrants and zero
+              values correctly.
+            </p>
+
+            <h5 class="text-warning">7. Hyperbolic methods</h5>
+            <pre><code class="language-java">Math.sinh(x); // hyperbolic sine
+Math.cosh(x); // hyperbolic cosine
+Math.tanh(x); // hyperbolic tangent</code></pre>
+
+            <h5 class="text-warning">8. Floating-point and bit-related helpers</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <tbody>
+                <tr><td><code>getExponent</code></td><td>Returns the unbiased exponent used by a floating-point value</td><td><code>Math.getExponent(8.0f)</code></td></tr>
+                <tr><td><code>nextAfter</code></td><td>Returns the floating-point value adjacent to the first argument in the direction of the second</td><td><code>Math.nextAfter(1.0, 2.0)</code></td></tr>
+                <tr><td><code>nextUp</code></td><td>Next representable floating-point value toward positive infinity</td><td><code>Math.nextUp(1.0)</code></td></tr>
+                <tr><td><code>nextDown</code></td><td>Next representable floating-point value toward negative infinity</td><td><code>Math.nextDown(1.0)</code></td></tr>
+                <tr><td><code>scalb</code></td><td>Multiplies by 2 raised to an integer scale factor</td><td><code>Math.scalb(3.0, 2)</code> -&gt; 12.0</td></tr>
+                <tr><td><code>ulp</code></td><td>Distance to the adjacent floating-point value at that magnitude</td><td><code>Math.ulp(1.0)</code></td></tr>
+                <tr><td><code>fma</code></td><td>Fused multiply-add: <code>(a * b) + c</code> with one rounding step</td><td><code>Math.fma(a, b, c)</code></td></tr>
+              </tbody>
+            </table>
+            <p>
+              <code>fma</code> was added in Java 9. These methods are for numerical and floating-point
+              algorithms; most business code should not need them directly.
+            </p>
+
+            <h5 class="text-warning">9. Random values</h5>
+            <pre><code class="language-java">double fraction = Math.random(); // 0.0 inclusive to 1.0 exclusive
+int dice = (int) (Math.random() * 6) + 1; // 1 to 6</code></pre>
+            <p>
+              <code>Math.random()</code> uses a shared pseudo-random generator and is not suitable for
+              security tokens, passwords, or cryptographic keys. Use <code>SecureRandom</code> for security
+              and <code>RandomGenerator</code> APIs for modern general-purpose random generation.
+            </p>
+
+            <h5 class="text-warning">Common special-value behavior</h5>
+            <ul>
+              <li>Floating-point methods may return <code>NaN</code>, positive infinity, or negative infinity according to IEEE 754 rules.</li>
+              <li><code>Math.abs(Integer.MIN_VALUE)</code> remains negative because its positive value cannot fit in an <code>int</code>; use a wider type when necessary.</li>
+              <li>Integer exact methods throw <code>ArithmeticException</code> on overflow; normal operators do not.</li>
+              <li>Math methods are static and generally thread-safe because they do not maintain mutable per-call state.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview summary</h5>
+            <p>
+              The most frequently used Math methods are <code>abs</code>, <code>max</code>, <code>min</code>,
+              <code>round</code>, <code>ceil</code>, <code>floor</code>, <code>pow</code>,
+              <code>sqrt</code>, <code>random</code>, and the trigonometric methods. Use the
+              <code>*Exact</code> methods when integer overflow must be detected, <code>BigDecimal</code>
+              for exact financial rounding, and <code>SecureRandom</code> rather than
+              <code>Math.random()</code> for security-sensitive randomness.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="sql">
+        <h2 class="accordion-header" id="databaseTwoDecimalPlacesTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#databaseTwoDecimalPlacesTopBody">
+            How do we always keep two decimal places for database values?
+          </button>
+        </h2>
+        <div id="databaseTwoDecimalPlacesTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Use a fixed-scale decimal type in the database, normally <strong><code>DECIMAL(p, 2)</code>
+              </strong> or <code>NUMERIC(p, 2)</code>. The second number, <code>2</code>, means two digits
+              after the decimal point. For example, <code>DECIMAL(12, 2)</code> allows up to 10 digits before
+              the decimal and exactly 2 fractional digits in the stored numeric value.
+            </p>
+
+            <h5 class="text-warning">Database definition</h5>
+            <pre><code class="language-sql">CREATE TABLE invoice (
+    id BIGINT PRIMARY KEY,
+    amount DECIMAL(12, 2) NOT NULL
+);
+
+INSERT INTO invoice(amount) VALUES (1232.00);
+INSERT INTO invoice(amount) VALUES (1234.12);
+INSERT INTO invoice(amount) VALUES (1234);
+INSERT INTO invoice(amount) VALUES (1234.1);
+
+-- Numerically, the database stores values at scale 2:
+-- 1232.00, 1234.12, 1234.00, 1234.10</code></pre>
+            <p>
+              The database may display <code>1234</code> as <code>1234</code> in a client tool depending on
+              that tool's formatting. The column precision and scale protect the numeric value, but the
+              visible trailing zeros are ultimately a formatting concern in many database clients.
+            </p>
+
+            <h5 class="text-warning">Existing column migration</h5>
+            <pre><code class="language-sql">-- PostgreSQL, MySQL, and many compatible databases
+ALTER TABLE invoice
+ALTER COLUMN amount TYPE DECIMAL(12, 2);
+
+-- MySQL syntax can be:
+ALTER TABLE invoice
+MODIFY amount DECIMAL(12, 2) NOT NULL;</code></pre>
+            <p>
+              Before changing a production column, check values with more than two fractional digits and
+              decide whether they should be rounded or rejected. A scale of 2 may round or fail according to
+              database rules and SQL mode.
+            </p>
+
+            <h5 class="text-warning">Spring Data JPA entity mapping</h5>
+            <pre><code class="language-java">@Entity
+public class Invoice {
+    @Id
+    private Long id;
+
+    @Column(precision = 12, scale = 2, nullable = false)
+    private BigDecimal amount;
+}
+
+Invoice invoice = new Invoice();
+invoice.setAmount(new BigDecimal("1234.1").setScale(2, RoundingMode.HALF_UP));
+// value is 1234.10</code></pre>
+            <p>
+              <code>precision</code> is the total number of digits and <code>scale</code> is the number of
+              fractional digits. JPA annotations influence schema generation, but in production the actual
+              database migration should be verified and managed with Flyway or Liquibase.
+            </p>
+
+            <h5 class="text-warning">Use BigDecimal, not double</h5>
+            <pre><code class="language-java">BigDecimal a = new BigDecimal("1234");
+BigDecimal b = new BigDecimal("1234.1");
+BigDecimal c = new BigDecimal("1234.12");
+
+BigDecimal normalizedA = a.setScale(2, RoundingMode.HALF_UP); // 1234.00
+BigDecimal normalizedB = b.setScale(2, RoundingMode.HALF_UP); // 1234.10
+BigDecimal normalizedC = c.setScale(2, RoundingMode.HALF_UP); // 1234.12</code></pre>
+            <p>
+              For money and exact decimal values, use <code>BigDecimal</code>. Avoid
+              <code>new BigDecimal(1234.1)</code> because the binary floating-point value may already contain
+              an approximation. Use a string or <code>BigDecimal.valueOf(double)</code> when appropriate.
+            </p>
+
+            <h5 class="text-warning">Storage versus display</h5>
+            <p>
+              These are separate requirements. The database column controls the numeric precision and scale;
+              formatting controls whether users see trailing zeros.
+            </p>
+            <pre><code class="language-java">BigDecimal amount = new BigDecimal("1234");
+
+String display = amount.setScale(2, RoundingMode.HALF_UP).toPlainString();
+System.out.println(display); // 1234.00
+
+NumberFormat currency = NumberFormat.getNumberInstance(Locale.US);
+currency.setMinimumFractionDigits(2);
+currency.setMaximumFractionDigits(2);
+System.out.println(currency.format(amount)); // 1,234.00</code></pre>
+            <p>
+              For JSON APIs, configure the response contract or serialize a normalized
+              <code>BigDecimal</code>. Be aware that JSON numeric consumers may treat <code>1234.00</code>
+              and <code>1234</code> as the same number and may not preserve visual scale. If the exact visual
+              format is contractual, return a formatted string such as <code>"1234.00"</code>, while keeping
+              the database value numeric.
+            </p>
+
+            <h5 class="text-warning">Rounding example</h5>
+            <pre><code class="language-java">BigDecimal amount = new BigDecimal("1234.126");
+BigDecimal rounded = amount.setScale(2, RoundingMode.HALF_UP);
+System.out.println(rounded); // 1234.13
+
+BigDecimal rejected = amount.setScale(2, RoundingMode.UNNECESSARY);
+// throws ArithmeticException because a third decimal digit exists</code></pre>
+            <ul>
+              <li><strong>HALF_UP:</strong> common business rounding, for example 1234.126 becomes 1234.13.</li>
+              <li><strong>HALF_EVEN:</strong> reduces cumulative rounding bias in some calculations.</li>
+              <li><strong>UNNECESSARY:</strong> rejects values that cannot already be represented at scale 2.</li>
+              <li>Choose the rounding policy explicitly; never silently truncate financial values.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview summary</h5>
+            <p>
+              Define the column as <code>DECIMAL(p, 2)</code> or <code>NUMERIC(p, 2)</code>, map it to
+              <code>BigDecimal</code>, and normalize application values with
+              <code>setScale(2, roundingMode)</code>. Use formatting such as
+              <code>toPlainString()</code> or <code>NumberFormat</code> when the UI/API must visibly show
+              trailing zeros. Database scale protects numeric storage; it does not guarantee every client
+              displays trailing zeros.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="treeSetAllNullTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#treeSetAllNullTopBody">
+            What is TreeSet, how does it work, and does it accept null?
+          </button>
+        </h2>
+        <div id="treeSetAllNullTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <code>TreeSet</code> is a sorted implementation of <code>SortedSet</code> and
+              <code>NavigableSet</code>. It stores unique elements in a balanced tree, commonly a
+              red-black tree through its backing <code>TreeMap</code>. Elements are ordered by natural
+              ordering or by a supplied <code>Comparator</code>.
+            </p>
+            <pre><code class="language-java">TreeSet&lt;Integer&gt; numbers = new TreeSet&lt;&gt;();
+numbers.add(40);
+numbers.add(10);
+numbers.add(30);
+numbers.add(30); // ignored: duplicate according to ordering
+
+System.out.println(numbers); // [10, 30, 40]
+System.out.println(numbers.first()); // 10
+System.out.println(numbers.last());  // 40</code></pre>
+            <p>
+              TreeSet does not preserve insertion order. It returns elements according to its comparator or
+              natural ordering. A duplicate is rejected when comparison returns zero, even if the objects are
+              not equal according to <code>equals()</code>.
+            </p>
+
+            <h5 class="text-warning">How TreeSet works internally</h5>
+            <ul>
+              <li>Each element is stored in a node in a balanced search tree.</li>
+              <li>Insertion, lookup, and removal compare values while traversing the tree.</li>
+              <li>Rotations and recoloring keep the red-black tree approximately balanced.</li>
+              <li><code>add</code>, <code>contains</code>, and <code>remove</code> are generally O(log n); sorted iteration is O(n).</li>
+              <li>Navigation methods such as <code>floor</code> and <code>ceiling</code> are generally O(log n).</li>
+            </ul>
+
+            <h5 class="text-warning">Natural and custom ordering</h5>
+            <pre><code class="language-java">TreeSet&lt;String&gt; names = new TreeSet&lt;&gt;();
+names.add("Ravi");
+names.add("Anu");
+names.add("Hari");
+System.out.println(names); // [Anu, Hari, Ravi]
+
+TreeSet&lt;String&gt; byLength = new TreeSet&lt;&gt;(
+    Comparator.comparingInt(String::length)
+              .thenComparing(Comparator.naturalOrder())
+);
+byLength.add("Java");
+byLength.add("Go");
+byLength.add("Spring");
+System.out.println(byLength); // [Go, Java, Spring]</code></pre>
+            <p>
+              Without a comparator, the element type should implement <code>Comparable</code>. With a custom
+              comparator, a result of zero means “duplicate” to TreeSet. Therefore, a comparator based only
+              on string length stores at most one string of each length.
+            </p>
+
+            <h5 class="text-warning">Does TreeSet accept null?</h5>
+            <p>
+              A natural-order TreeSet normally rejects <code>null</code> with
+              <code>NullPointerException</code>, because it must call <code>compareTo()</code> and null has no
+              instance method to compare.
+            </p>
+            <pre><code class="language-java">TreeSet&lt;String&gt; natural = new TreeSet&lt;&gt;();
+natural.add(null); // NullPointerException
+
+TreeSet&lt;String&gt; nullsFirst = new TreeSet&lt;&gt;(
+    Comparator.nullsFirst(Comparator.naturalOrder())
+);
+nullsFirst.add(null);
+nullsFirst.add("Hari");
+nullsFirst.add("Anu");
+System.out.println(nullsFirst); // [null, Anu, Hari]</code></pre>
+            <p>
+              A comparator that explicitly uses <code>nullsFirst</code> or <code>nullsLast</code> can accept
+              one null element. The comparator must consistently handle null; otherwise it will still throw
+              <code>NullPointerException</code>. For clarity, many applications avoid null elements entirely.
+            </p>
+
+            <h5 class="text-warning">Important navigation methods</h5>
+            <pre><code class="language-java">NavigableSet&lt;Integer&gt; set = new TreeSet&lt;&gt;(
+    List.of(10, 20, 30, 40, 50)
+);
+
+set.lower(30);      // 20: strictly less
+set.floor(30);      // 30: less than or equal
+set.ceiling(35);    // 40: greater than or equal
+set.higher(30);     // 40: strictly greater
+set.headSet(30);    // [10, 20]
+set.tailSet(30);    // [30, 40, 50]
+set.subSet(20, 50); // [20, 30, 40]
+set.pollFirst();    // removes and returns smallest
+set.pollLast();     // removes and returns largest
+set.descendingSet();// reverse-order view</code></pre>
+
+            <h5 class="text-warning">TreeSet compared with other sets</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead><tr><th>Set</th><th>Order</th><th>Typical lookup</th><th>Thread-safe?</th></tr></thead>
+              <tbody>
+                <tr><td><code>HashSet</code></td><td>No guaranteed order</td><td>Average O(1)</td><td>No</td></tr>
+                <tr><td><code>LinkedHashSet</code></td><td>Insertion order</td><td>Average O(1)</td><td>No</td></tr>
+                <tr><td><code>TreeSet</code></td><td>Sorted order</td><td>O(log n)</td><td>No</td></tr>
+                <tr><td><code>ConcurrentSkipListSet</code></td><td>Sorted order</td><td>Expected O(log n)</td><td>Yes</td></tr>
+              </tbody>
+            </table>
+            <ul>
+              <li>Use <code>TreeSet</code> for sorted values, range queries, and nearest-value lookups.</li>
+              <li>Use <code>HashSet</code> when only membership and uniqueness matter.</li>
+              <li>Use <code>ConcurrentSkipListSet</code> when multiple threads require a concurrent sorted set.</li>
+              <li>Use <code>Collections.synchronizedSortedSet</code> only when a synchronized wrapper is sufficient; iteration still needs correct external synchronization.</li>
+            </ul>
+
+            <h5 class="text-warning">Important cautions</h5>
+            <ul>
+              <li>Changing fields used by comparison after insertion can make an element difficult to find or remove.</li>
+              <li>Comparator consistency with <code>equals()</code> is strongly recommended to avoid surprising duplicate behavior.</li>
+              <li>TreeSet is not thread-safe; protect it externally when multiple threads modify it.</li>
+              <li>Null support is a comparator decision, not a general guarantee of TreeSet.</li>
+            </ul>
+            <p>
+              <strong>Interview summary:</strong> TreeSet is a sorted, unique, tree-backed set with O(log n)
+              add, search, and remove operations. Natural-order TreeSet rejects null because null cannot be
+              compared. A comparator using <code>nullsFirst</code> or <code>nullsLast</code> can deliberately
+              support one null element.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="arrayListResizeExistingArrayTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#arrayListResizeExistingArrayTopBody">
+            Does ArrayList resize the existing array or create a new array when capacity is exceeded?
+          </button>
+        </h2>
+        <div id="arrayListResizeExistingArrayTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              When an <code>ArrayList</code> reaches its capacity, it <strong>does not resize the existing
+              array in place</strong>. It creates a larger internal array, copies the existing element
+              references into the new array, and then uses the new array. The old array becomes eligible for
+              garbage collection when no reference points to it.
+            </p>
+
+            <h5 class="text-warning">Default capacity example</h5>
+            <pre><code class="language-java">List&lt;String&gt; names = new ArrayList&lt;&gt;();
+
+// In modern JDK implementations, the no-argument list is lazily allocated.
+// The backing array is created when the first element is added.
+// Its default capacity is commonly 10.
+
+for (int i = 1; i &lt;= 11; i++) {
+    names.add("user-" + i);
+}
+
+// Adding the 11th element exceeds the capacity of 10:
+// 1. Allocate a larger Object[]
+// 2. Copy the first 10 references
+// 3. Add user-11 to the new array</code></pre>
+            <p>
+              The capacity is different from <code>size()</code>. <code>size()</code> is the number of
+              elements currently stored; capacity is the number of elements the current backing array can
+              hold before another allocation is needed.
+            </p>
+
+            <h5 class="text-warning">Custom initial capacity example</h5>
+            <pre><code class="language-java">List&lt;Integer&gt; numbers = new ArrayList&lt;&gt;(20);
+
+for (int i = 1; i &lt;= 20; i++) {
+    numbers.add(i); // no resize needed
+}
+
+numbers.add(21); // capacity is exceeded, so a new larger array is created</code></pre>
+            <p>
+              Passing <code>20</code> gives the list an initial capacity of at least 20; it does not limit
+              the list to 20 elements. The list can keep growing after that point.
+            </p>
+
+            <h5 class="text-warning">How much does it grow?</h5>
+            <p>
+              In common OpenJDK implementations, the new capacity grows by about 50%:
+              <code>newCapacity = oldCapacity + oldCapacity / 2</code>. For example, a capacity of 10 may
+              grow to 15, then 22, then 33. This is an implementation detail rather than a rule application
+              code should depend on; the important guarantee is that the capacity grows enough to continue
+              storing elements.
+            </p>
+            <pre><code class="language-text">old capacity: 10
+new capacity: 10 + (10 / 2) = 15
+
+old capacity: 15
+new capacity: 15 + (15 / 2) = 22</code></pre>
+
+            <h5 class="text-warning">What is copied?</h5>
+            <p>
+              ArrayList copies element references, not the objects themselves. The operation is an array copy
+              with O(n) cost, but the cost is occasional rather than paid for every insertion. Appending is
+              therefore amortized O(1), while inserting or removing in the middle remains O(n) because later
+              references must shift.
+            </p>
+            <pre><code class="language-java">Employee employee = new Employee("Hari");
+List&lt;Employee&gt; employees = new ArrayList&lt;&gt;(1);
+employees.add(employee);
+
+// After resize, both the old and new arrays would point to the same Employee object.
+// ArrayList does not clone employee.</code></pre>
+
+            <h5 class="text-warning">Avoiding repeated resizing</h5>
+            <pre><code class="language-java">int expectedEmployees = 10_000;
+List&lt;Employee&gt; employees = new ArrayList&lt;&gt;(expectedEmployees);
+
+// Or increase capacity before a known bulk load:
+employees.ensureCapacity(expectedEmployees);
+employees.addAll(loadEmployees());</code></pre>
+            <p>
+              Pre-sizing reduces repeated allocations and copies when the approximate number of elements is
+              known. It can waste memory if the estimate is much larger than the actual list size, so choose a
+              reasonable estimate.
+            </p>
+
+            <h5 class="text-warning">Important points</h5>
+            <ul>
+              <li>The default no-argument list is commonly backed by a capacity-10 array after the first add, but allocation is lazy in modern JDK implementations.</li>
+              <li>A custom capacity such as <code>new ArrayList&lt;&gt;(20)</code> avoids resizing until more than 20 elements are stored.</li>
+              <li>Resizing creates a new array and copies references; it does not copy the objects.</li>
+              <li>Capacity is not directly exposed by the public API; <code>size()</code> reports only the number of stored elements.</li>
+              <li>ArrayList is not thread-safe; use external synchronization or a suitable concurrent collection when multiple threads modify it.</li>
+            </ul>
+            <p>
+              <strong>Interview summary:</strong> when capacity is exceeded, ArrayList allocates a larger
+              array and copies the old references into it. A default list commonly starts with capacity 10
+              on first use; a list created with capacity 20 starts with room for about 20 elements. The
+              occasional O(n) copy makes normal append operations amortized O(1).
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="hashMapIndexHashResizeTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#hashMapIndexHashResizeTopBody">
+            How does HashMap calculate the hash, bucket index, and resize threshold?
+          </button>
+        </h2>
+        <div id="hashMapIndexHashResizeTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              In Java 8+, <code>HashMap</code> uses a power-of-two table length. For a key, it first gets
+              <code>key.hashCode()</code>, spreads the high bits into the low bits, and then calculates the
+              bucket index with a fast bit operation:
+            </p>
+            <pre><code class="language-java">static final int spread(int hashCode) {
+    return hashCode ^ (hashCode &gt;&gt;&gt; 16);
+}
+
+int hash = spread(key.hashCode());
+int index = (table.length - 1) &amp; hash;</code></pre>
+            <p>
+              The spread step matters because the index uses only the lower bits. Mixing the upper 16 bits
+              helps keys whose original hash codes differ mainly in their upper bits distribute across more
+              buckets.
+            </p>
+
+            <h5 class="text-warning">Worked index example</h5>
+            <pre><code class="language-text">table length = 16
+mask         = table length - 1 = 15 = 0000 1111
+hash         = 34 = 0010 0010
+
+index = mask &amp; hash
+      = 0000 1111 &amp; 0010 0010
+      = 0000 0010
+      = bucket 2</code></pre>
+            <p>
+              The equivalent mathematical operation for a power-of-two capacity is
+              <code>hash % table.length</code>, but <code>(length - 1) &amp; hash</code> is faster. This is
+              one reason HashMap capacities are maintained as powers of two.
+            </p>
+
+            <h5 class="text-warning">How the key hash is calculated</h5>
+            <pre><code class="language-java">String key = "ABC";
+int originalHash = key.hashCode();
+int hash = originalHash ^ (originalHash &gt;&gt;&gt; 16);
+int index = (capacity - 1) &amp; hash;</code></pre>
+            <p>
+              For an object key, Java calls its overridden <code>hashCode()</code>. If the key does not
+              override it, <code>Object.hashCode()</code> is used. HashMap then applies its internal spread
+              function. The exact numeric value for a string is determined by Java's String hash algorithm;
+              you should not hard-code it in application logic.
+            </p>
+            <pre><code class="language-java">final class EmployeeKey {
+    private final Long id;
+
+    EmployeeKey(Long id) {
+        this.id = id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (!(other instanceof EmployeeKey that)) return false;
+        return Objects.equals(id, that.id);
+    }
+}</code></pre>
+            <p>
+              Equal keys must always return the same hash code. A key must also not change fields used by
+              <code>hashCode()</code> or <code>equals()</code> while it is inside a HashMap; otherwise the
+              entry may be stored in one bucket but searched for in another.
+            </p>
+
+            <h5 class="text-warning">Capacity, load factor, and threshold</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead><tr><th>Term</th><th>Meaning</th><th>Typical default</th></tr></thead>
+              <tbody>
+                <tr><td>Capacity</td><td>Number of buckets in the internal table</td><td>16 after first allocation</td></tr>
+                <tr><td>Load factor</td><td>How full the map is allowed to become before resizing</td><td>0.75</td></tr>
+                <tr><td>Threshold</td><td>Capacity multiplied by load factor</td><td>16 x 0.75 = 12</td></tr>
+                <tr><td>Size</td><td>Number of key-value mappings currently stored</td><td>Compared with threshold</td></tr>
+              </tbody>
+            </table>
+            <pre><code class="language-java">Map&lt;String, Integer&gt; map = new HashMap&lt;&gt;();
+// Default initial capacity setting: 16
+// Default load factor: 0.75
+// Resize threshold after allocation: 16 * 0.75 = 12</code></pre>
+            <p>
+              The no-argument constructor is lazy: it does not necessarily allocate the table immediately.
+              The table is created on the first insertion. With the default settings, an insertion that makes
+              the map exceed the current threshold triggers a resize.
+            </p>
+
+            <h5 class="text-warning">What happens during resize?</h5>
+            <ol>
+              <li>The table capacity normally doubles: 16 becomes 32, then 64.</li>
+              <li>The threshold is recalculated using the new capacity and load factor: 32 x 0.75 = 24.</li>
+              <li>Existing entries are redistributed into the new table.</li>
+              <li>Because the capacity doubles, each old entry usually either stays at its old index or moves to <code>oldIndex + oldCapacity</code>.</li>
+            </ol>
+            <pre><code class="language-text">Old capacity = 16, old bucket index = 2
+New capacity = 32
+
+If the relevant hash bit is 0: new index = 2
+If the relevant hash bit is 1: new index = 2 + 16 = 18</code></pre>
+            <p>
+              This avoids recomputing a full modulo operation for every entry. Resizing is expensive because
+              entries must be transferred, so if the approximate number of entries is known, choose a suitable
+              initial capacity.
+            </p>
+
+            <h5 class="text-warning">Choosing initial capacity</h5>
+            <pre><code class="language-java">int expectedEntries = 100;
+float loadFactor = 0.75f;
+int initialCapacity = (int) Math.ceil(expectedEntries / loadFactor);
+
+Map&lt;String, String&gt; map = new HashMap&lt;&gt;(initialCapacity, loadFactor);</code></pre>
+            <p>
+              HashMap rounds its internal table to a suitable power of two. The goal is to avoid repeated
+              resizing, not to make the map exactly the requested number of buckets.
+            </p>
+
+            <h5 class="text-warning">Collision handling</h5>
+            <p>
+              Different keys can calculate the same index. HashMap stores colliding entries in a linked list
+              within the bucket. In Java 8+, when a bin becomes sufficiently large and the table has reached
+              a suitable minimum capacity, it can be treeified into a red-black tree. This improves a badly
+              colliding lookup from approximately O(n) toward O(log n), although good hash distribution is
+              still important.
+            </p>
+
+            <h5 class="text-warning">Important interview points</h5>
+            <ul>
+              <li>Default load factor is <code>0.75</code>; it balances memory usage and lookup performance.</li>
+              <li>Capacity is a power of two so the bit-mask index calculation works efficiently.</li>
+              <li>HashMap uses <code>equals()</code> after the hash/index match to identify the exact key.</li>
+              <li>Changing a key after insertion can make the entry effectively unreachable.</li>
+              <li>Too low a load factor uses more memory; too high a load factor increases collisions and lookup work.</li>
+              <li>HashMap is not thread-safe. Concurrent writes require external synchronization or a collection such as <code>ConcurrentHashMap</code>.</li>
+            </ul>
+            <p>
+              <strong>Summary:</strong> HashMap calculates <code>hashCode()</code>, spreads it with
+              <code>hash ^ (hash &gt;&gt;&gt; 16)</code>, selects a bucket using
+              <code>(capacity - 1) &amp; hash</code>, and resizes when size exceeds
+              <code>capacity x loadFactor</code>. With the defaults, a 16-bucket map resizes after its
+              threshold of 12 is exceeded and normally grows to 32 buckets.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="concurrentHashMapInternalsTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#concurrentHashMapInternalsTopBody">
+            How does ConcurrentHashMap work internally?
+          </button>
+        </h2>
+        <div id="concurrentHashMapInternalsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <code>ConcurrentHashMap</code> is a thread-safe hash table designed for high concurrency. In
+              Java 8 and later it does not use one global lock for every operation. It combines volatile
+              reads, CAS (Compare-And-Set), short synchronized sections on individual buckets, and cooperative
+              resizing so many threads can read and update different parts of the map concurrently.
+            </p>
+
+            <h5 class="text-warning">Internal structure</h5>
+            <pre><code class="language-text">ConcurrentHashMap
+  table[]
+    bucket 0 -> Node -> Node
+    bucket 1 -> Node
+    bucket 2 -> TreeBin (when a bin becomes large)
+    bucket 3 -> empty</code></pre>
+            <ul>
+              <li><strong>table:</strong> a volatile array of bins/buckets. Each bin is initially a linked list of nodes.</li>
+              <li><strong>Node:</strong> stores the hash, key, value, and next reference.</li>
+              <li><strong>TreeBin:</strong> a red-black tree used for a heavily-colliding bin, improving lookup from approximately O(n) to O(log n).</li>
+              <li><strong>Volatile fields:</strong> make published table and node values visible across threads.</li>
+              <li><strong>CAS:</strong> atomically installs a new node when an empty bucket is being updated.</li>
+            </ul>
+
+            <h5 class="text-warning">How a read works</h5>
+            <pre><code class="language-java">ConcurrentMap&lt;String, Integer&gt; counts = new ConcurrentHashMap&lt;&gt;();
+Integer value = counts.get("orders");</code></pre>
+            <ol>
+              <li>Hash the key and spread the hash bits to reduce collisions.</li>
+              <li>Calculate the bucket index from the table length.</li>
+              <li>Read the bucket and follow the linked list or search the tree bin.</li>
+              <li>Return the value without taking a map-wide read lock.</li>
+            </ol>
+            <p>
+              Reads are designed to be non-blocking in normal cases. A reader can observe a value that was
+              valid during the operation, but methods such as <code>size()</code> and iteration are not a
+              frozen snapshot of the entire map while other threads are changing it.
+            </p>
+
+            <h5 class="text-warning">How put works</h5>
+            <pre><code class="language-java">counts.put("orders", 1);</code></pre>
+            <ol>
+              <li>Compute the bucket index.</li>
+              <li>If the bucket is empty, use CAS to install the first node without locking.</li>
+              <li>If the bucket already has nodes, synchronize only on that bin's first node while searching or changing that bucket.</li>
+              <li>If the key exists, replace its value; otherwise append a new node or insert into the tree bin.</li>
+              <li>If the load threshold is exceeded, start or help with resizing.</li>
+            </ol>
+            <p>
+              Two threads updating different buckets can proceed concurrently. Two threads updating the same
+              bucket may briefly contend, but the critical section is much smaller than locking the whole map.
+            </p>
+
+            <h5 class="text-warning">Collision handling and treeification</h5>
+            <p>
+              Different keys can produce the same bucket index. Initially, colliding entries form a linked
+              list. When a bin becomes sufficiently long and the table is large enough, Java 8 can convert
+              the bin into a red-black tree. If the table is still small, resizing is preferred first. When
+              the tree becomes small again, it can be converted back to a list.
+            </p>
+
+            <h5 class="text-warning">Resizing</h5>
+            <p>
+              When the table reaches its load threshold, one thread can start a resize. Other threads that
+              encounter the resize can help transfer bins to the new table. This cooperative approach avoids
+              requiring one thread to perform all rehashing while other operations wait. During transfer,
+              forwarding nodes tell operations where to continue in the new table.
+            </p>
+
+            <h5 class="text-warning">Atomic compound operations</h5>
+            <pre><code class="language-java">ConcurrentMap&lt;Long, String&gt; cache = new ConcurrentHashMap&lt;&gt;();
+
+cache.putIfAbsent(1L, "new");
+cache.computeIfAbsent(2L, id -&gt; loadFromDatabase(id));
+cache.compute(3L, (id, oldValue) -&gt; oldValue == null ? "1" : oldValue + "1");
+cache.replace(4L, "old", "new");
+cache.remove(5L, "expected-value");</code></pre>
+            <p>
+              These methods provide atomic behavior for the particular key operation. In contrast, this is
+              not atomic because another thread can change the value between the two calls:
+            </p>
+            <pre><code class="language-java">if (!cache.containsKey(id)) {
+    cache.put(id, value); // race: another thread can insert here
+}
+
+// Prefer:
+cache.putIfAbsent(id, value);</code></pre>
+
+            <h5 class="text-warning">Why null keys and values are prohibited</h5>
+            <p>
+              <code>ConcurrentHashMap</code> rejects null keys and values. A missing key returns
+              <code>null</code>; allowing a stored null would make it impossible to distinguish “no mapping”
+              from “mapping exists with null value” during concurrent operations. Use a sentinel value or
+              another representation when null has business meaning.
+            </p>
+
+            <h5 class="text-warning">Iterators and size</h5>
+            <ul>
+              <li>Iterators are <strong>weakly consistent</strong>: they do not throw <code>ConcurrentModificationException</code> and may reflect some updates made after iteration begins.</li>
+              <li>Iteration is not a consistent snapshot. Use an explicit snapshot such as <code>new HashMap&lt;&gt;(map)</code> only when the application can tolerate the copying and coordinates the required consistency.</li>
+              <li><code>size()</code> is useful for an approximate/current observation but should not be used alone for a cross-thread decision such as “if size is zero, then insert.” Use an atomic map method or an external lock for the whole invariant.</li>
+            </ul>
+
+            <h5 class="text-warning">Comparison</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead><tr><th>Map</th><th>Concurrency model</th><th>Typical use</th></tr></thead>
+              <tbody>
+                <tr><td><code>HashMap</code></td><td>Not thread-safe</td><td>Single-threaded or externally synchronized access</td></tr>
+                <tr><td><code>Collections.synchronizedMap</code></td><td>One wrapper lock for operations</td><td>Simple compatibility; lower concurrency</td></tr>
+                <tr><td><code>Hashtable</code></td><td>Legacy synchronized methods</td><td>Usually avoid in new code</td></tr>
+                <tr><td><code>ConcurrentHashMap</code></td><td>CAS, volatile reads, and bucket-level coordination</td><td>High-concurrency shared key-value data</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Interview summary</h5>
+            <p>
+              Java 8+ <code>ConcurrentHashMap</code> avoids a single global lock. Reads mostly use volatile
+              access, empty-bucket inserts use CAS, collisions use short bin-level synchronization or a
+              tree bin, and resize work can be shared by multiple threads. Use atomic methods such as
+              <code>computeIfAbsent</code> for compound per-key operations, but use an external lock or a
+              different design when an invariant spans multiple keys.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="hashMapReadWriteLockTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#hashMapReadWriteLockTopBody">
+            Can HashMap use a read lock only for writes and no lock for reads?
+          </button>
+        </h2>
+        <div id="hashMapReadWriteLockTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Use <strong><code>ReadWriteLock</code></strong>, usually
+              <code>ReentrantReadWriteLock</code>, when many readers may run together but every write must
+              be exclusive. Readers should still acquire the <strong>read lock</strong>. If writers use a
+              lock but readers access a mutable <code>HashMap</code> without that same lock, the map is not
+              safely coordinated and readers can observe inconsistent state.
+            </p>
+
+            <h5 class="text-warning">Correct HashMap + ReadWriteLock example</h5>
+            <pre><code class="language-java">public class UserCache {
+    private final Map&lt;Long, String&gt; users = new HashMap&lt;&gt;();
+    private final ReadWriteLock lock = new ReentrantReadWriteLock();
+
+    public String get(Long id) {
+        lock.readLock().lock();
+        try {
+            return users.get(id);
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    public void put(Long id, String name) {
+        lock.writeLock().lock();
+        try {
+            users.put(id, name);
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    public void remove(Long id) {
+        lock.writeLock().lock();
+        try {
+            users.remove(id);
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+}</code></pre>
+            <p>
+              Multiple <code>get()</code> calls can run concurrently. A <code>put()</code> or
+              <code>remove()</code> waits until readers finish, then blocks new readers while the write is
+              in progress. This prevents a reader from observing a resize or partially completed update.
+            </p>
+
+            <h5 class="text-warning">What if reads take no lock?</h5>
+            <pre><code class="language-java">public String unsafeGet(Long id) {
+    return users.get(id); // no coordination with writers
+}</code></pre>
+            <p>
+              This is not a safe design for a mutable <code>HashMap</code>. A concurrent write can resize
+              buckets while a reader is traversing them. The result can be stale data, visibility problems,
+              missing values, or unsafe behavior. A volatile reference to the map also does not make mutations
+              inside the map thread-safe.
+            </p>
+
+            <h5 class="text-warning">Read lock versus write lock</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead><tr><th>Operation</th><th>Lock</th><th>Can run concurrently with</th></tr></thead>
+              <tbody>
+                <tr><td>Read-only access</td><td><code>readLock()</code></td><td>Other readers</td></tr>
+                <tr><td>Put, remove, resize, clear</td><td><code>writeLock()</code></td><td>No readers or writers</td></tr>
+                <tr><td>Read-modify-write</td><td><code>writeLock()</code></td><td>No other access during the whole operation</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Atomic read-modify-write example</h5>
+            <pre><code class="language-java">public String getOrLoad(Long id, Supplier&lt;String&gt; loader) {
+    lock.readLock().lock();
+    try {
+        String value = users.get(id);
+        if (value != null) return value;
+    } finally {
+        lock.readLock().unlock();
+    }
+
+    // Read-to-write upgrade is not automatic: release and acquire again.
+    lock.writeLock().lock();
+    try {
+        String value = users.get(id); // check again after waiting
+        if (value == null) {
+            value = loader.get();
+            users.put(id, value);
+        }
+        return value;
+    } finally {
+        lock.writeLock().unlock();
+    }
+}</code></pre>
+            <p>
+              Do not hold a read lock and directly acquire the write lock. That upgrade can deadlock when
+              another reader is also waiting to upgrade. Release the read lock first, acquire the write lock,
+              and check again because another writer may have filled the value while this thread waited.
+            </p>
+
+            <h5 class="text-warning">Should we use ConcurrentHashMap instead?</h5>
+            <pre><code class="language-java">private final ConcurrentMap&lt;Long, String&gt; users = new ConcurrentHashMap&lt;&gt;();
+
+users.putIfAbsent(id, name);
+users.computeIfAbsent(id, key -&gt; loadUser(key));
+users.remove(id, expectedName);</code></pre>
+            <p>
+              For a normal concurrent key-value cache, <code>ConcurrentHashMap</code> is usually the better
+              default. It supports concurrent reads and safe individual map operations without manually
+              managing a lock. Its methods such as <code>computeIfAbsent</code> and
+              <code>putIfAbsent</code> make common compound operations atomic.
+            </p>
+            <p>
+              Choose <code>ReentrantReadWriteLock</code> around a <code>HashMap</code> when a larger operation
+              must be protected as one unit, such as rebuilding the whole map, iterating over a consistent
+              snapshot, or maintaining several structures together. Choose <code>StampedLock</code> only when
+              optimistic reads have been measured to help; it is more complex and not reentrant.
+            </p>
+
+            <h5 class="text-warning">Interview summary</h5>
+            <p>
+              A <code>ReadWriteLock</code> is not “lock only writes.” Writers use the write lock, while
+              readers use the read lock so both sides follow the same synchronization protocol. Multiple
+              readers can proceed together, but a writer is exclusive. If you deliberately skip the read
+              lock, use a collection designed for concurrency such as <code>ConcurrentHashMap</code>; do not
+              do that with a mutable ordinary <code>HashMap</code>.
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div class="accordion-item" data-manual-category="springboot">
         <h2 class="accordion-header" id="springReflectionApiUsageTop">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"

@@ -1,5 +1,6 @@
 package com.continuous;
 
+import com.continuous.boot.models.Address;
 import jakarta.persistence.Column;
 import jakarta.persistence.Id;
 
