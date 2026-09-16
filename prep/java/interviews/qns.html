@@ -178,6 +178,1683 @@
     </div>
     <div class="accordion" id="accordionSeniorJava">
 
+      <div class="accordion-item" data-manual-category="springboot">
+        <h2 class="accordion-header" id="springReflectionApiUsageTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#springReflectionApiUsageTopBody">
+            Does Spring use the Reflection API? How is reflection used inside Spring?
+          </button>
+        </h2>
+        <div id="springReflectionApiUsageTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>Yes.</strong> Spring uses reflection extensively at startup and during framework
+              infrastructure work. It inspects classes and annotations, creates objects, resolves
+              constructors, injects dependencies, invokes lifecycle methods, and reads method metadata.
+              Spring does not use reflection for every normal business method call; it often creates a
+              proxy or generated class and invokes the target through an optimized framework path.
+            </p>
+
+            <h5 class="text-warning">1. Component scanning</h5>
+            <pre><code class="language-java">@Service
+public class PaymentService {
+}
+
+@Repository
+public class PaymentRepository {
+}</code></pre>
+            <p>
+              During application startup, Spring scans configured packages, loads candidate classes, and
+              checks annotations such as <code>@Component</code>, <code>@Service</code>,
+              <code>@Repository</code>, and <code>@Controller</code>. It creates bean definitions containing
+              the class, bean name, scope, dependencies, and lifecycle metadata.
+            </p>
+            <pre><code class="language-java">// Simplified idea, not Spring's full implementation
+Class&lt;?&gt; type = Class.forName("com.example.PaymentService");
+
+if (type.isAnnotationPresent(Service.class)) {
+    BeanDefinition definition = new BeanDefinition(type);
+    registry.register(definition);
+}</code></pre>
+
+            <h5 class="text-warning">2. Creating and injecting beans</h5>
+            <pre><code class="language-java">@Service
+public class OrderService {
+    private final PaymentService paymentService;
+
+    public OrderService(PaymentService paymentService) {
+        this.paymentService = paymentService;
+    }
+}
+
+// Simplified constructor resolution
+Constructor&lt;?&gt; constructor = OrderService.class
+    .getDeclaredConstructor(PaymentService.class);
+Object bean = constructor.newInstance(paymentServiceBean);</code></pre>
+            <p>
+              Spring inspects constructors and parameter types, resolves matching beans from the
+              <code>ApplicationContext</code>, and creates the object. Constructor injection is preferred
+              because dependencies are explicit and the object can be fully initialized at construction.
+            </p>
+
+            <h5 class="text-warning">3. Field and setter injection</h5>
+            <pre><code class="language-java">@Service
+public class EmailService {
+    @Autowired
+    private EmailClient emailClient;
+}
+
+// Simplified idea
+for (Field field : EmailService.class.getDeclaredFields()) {
+    if (field.isAnnotationPresent(Autowired.class)) {
+        Object dependency = context.getBean(field.getType());
+        field.setAccessible(true);
+        field.set(emailService, dependency);
+    }
+}</code></pre>
+            <p>
+              Spring can use reflection to write a private field or call an annotated setter. This is why
+              field injection can work even though the field is private. In application code, constructor
+              injection is usually safer and easier to test than reflective field injection.
+            </p>
+
+            <h5 class="text-warning">4. Lifecycle callbacks and configuration</h5>
+            <pre><code class="language-java">@Component
+public class CacheLoader {
+    @PostConstruct
+    void load() { }
+
+    @PreDestroy
+    void close() { }
+}
+
+// Spring discovers the annotations and invokes the methods
+for (Method method : bean.getClass().getDeclaredMethods()) {
+    if (method.isAnnotationPresent(PostConstruct.class)) {
+        method.setAccessible(true);
+        method.invoke(bean);
+    }
+}</code></pre>
+            <p>
+              Spring also uses reflection-like metadata processing for <code>@Value</code>,
+              <code>@ConfigurationProperties</code>, <code>@Bean</code>, profiles, conditional annotations,
+              and custom bean post-processors.
+            </p>
+
+            <h5 class="text-warning">5. Controller request handling</h5>
+            <pre><code class="language-java">@RestController
+class UserController {
+    @GetMapping("/users/{id}")
+    UserResponse find(@PathVariable Long id) {
+        return service.find(id);
+    }
+}</code></pre>
+            <p>
+              Spring MVC inspects controller classes and mapping annotations to build a handler-method
+              registry. When a request arrives, <code>DispatcherServlet</code> selects the matching method,
+              resolves arguments such as <code>@PathVariable</code> and <code>@RequestBody</code>, and invokes
+              the method. The request mapping is discovered through reflection at startup and reused for
+              requests.
+            </p>
+
+            <h5 class="text-warning">6. AOP and transactional annotations</h5>
+            <pre><code class="language-java">@Transactional
+public void transferMoney() {
+    // business logic
+}</code></pre>
+            <p>
+              Spring reads annotations such as <code>@Transactional</code>, <code>@Cacheable</code>,
+              <code>@Async</code>, and custom aspect annotations. It then creates a JDK proxy or CGLIB
+              subclass that intercepts calls and applies transaction, caching, security, or async behavior.
+              Reflection may inspect the method and invoke the target, but the proxy mechanism itself is
+              separate from the Reflection API.
+            </p>
+            <pre><code class="language-text">caller
+  -> Spring proxy
+      -> transaction interceptor
+          -> target method
+      -> commit or rollback</code></pre>
+
+            <h5 class="text-warning">7. Spring Boot auto-configuration</h5>
+            <p>
+              Spring Boot discovers auto-configuration classes and evaluates annotations such as
+              <code>@ConditionalOnClass</code>, <code>@ConditionalOnMissingBean</code>, and
+              <code>@ConditionalOnProperty</code>. It inspects the classpath and environment, then creates
+              only the matching beans. This is why adding a starter can configure a large amount of behavior
+              without manually creating every object.
+            </p>
+
+            <h5 class="text-warning">Impact and limitations</h5>
+            <ul>
+              <li><strong>Startup cost:</strong> scanning classes and annotations increases startup work; Spring caches metadata and modern Spring Boot can use AOT processing.</li>
+              <li><strong>Runtime cost:</strong> reflective calls are slower than direct calls, so framework metadata and invocation paths are reused where possible.</li>
+              <li><strong>Encapsulation:</strong> private access may require accessibility changes and can be restricted by the Java module system.</li>
+              <li><strong>Native images:</strong> dynamically accessed constructors, fields, and methods may need reflection hints; Spring AOT generates metadata to make supported patterns work.</li>
+              <li><strong>Debugging:</strong> a wrong bean name, missing annotation, ambiguous dependency, or inaccessible constructor can cause startup errors instead of compile-time errors.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview summary</h5>
+            <p>
+              Spring uses reflection mainly during startup to discover components and annotations, construct
+              beans, inject dependencies, register controller methods, and invoke lifecycle callbacks. For
+              cross-cutting behavior such as transactions and security, Spring generally combines metadata
+              inspection with proxies and interceptors. Reflection gives Spring flexibility and loose
+              coupling, but it has startup, performance, encapsulation, security, and native-image impacts.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="javaReflectionApiTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#javaReflectionApiTopBody">
+            What is the Java Reflection API, when do we use it, and what is its impact?
+          </button>
+        </h2>
+        <div id="javaReflectionApiTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              The <strong>Reflection API</strong> lets a Java program inspect and interact with classes,
+              constructors, methods, fields, annotations, interfaces, and generic metadata at runtime,
+              instead of requiring every type and member to be known at compile time. The main types are in
+              <code>java.lang</code> and <code>java.lang.reflect</code>, including <code>Class</code>,
+              <code>Constructor</code>, <code>Method</code>, <code>Field</code>, and <code>Modifier</code>.
+            </p>
+
+            <h5 class="text-warning">Basic example</h5>
+            <pre><code class="language-java">class UserService {
+    private String serviceName = "users";
+
+    public String findUser(Long id) {
+        return "user-" + id;
+    }
+}
+
+Class&lt;?&gt; type = UserService.class;
+
+// Inspect metadata
+System.out.println(type.getName());
+for (Method method : type.getDeclaredMethods()) {
+    System.out.println(method.getName());
+}
+
+// Create and invoke dynamically
+Object service = type.getDeclaredConstructor().newInstance();
+Method findUser = type.getDeclaredMethod("findUser", Long.class);
+Object result = findUser.invoke(service, 101L);
+
+// Access a private field only when there is a valid framework-level reason
+Field field = type.getDeclaredField("serviceName");
+field.setAccessible(true);
+System.out.println(field.get(service));</code></pre>
+
+            <h5 class="text-warning">What can reflection do?</h5>
+            <ul>
+              <li>Discover class name, superclass, interfaces, constructors, methods, fields, modifiers, and annotations.</li>
+              <li>Create objects when the concrete class is selected from configuration or a class name.</li>
+              <li>Invoke methods dynamically and read or update fields.</li>
+              <li>Inspect runtime annotations such as <code>@Component</code>, <code>@Transactional</code>, or custom annotations.</li>
+              <li>Build generic frameworks that operate on many unrelated classes without hard-coded type checks.</li>
+            </ul>
+
+            <h5 class="text-warning">Where is reflection used in real applications?</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead><tr><th>Framework/use case</th><th>How reflection helps</th></tr></thead>
+              <tbody>
+                <tr><td>Spring</td><td>Scans classes and annotations, creates beans, injects dependencies, and invokes lifecycle methods.</td></tr>
+                <tr><td>Spring AOP</td><td>Reads method metadata and invokes target methods through proxies/interceptors.</td></tr>
+                <tr><td>Hibernate/JPA</td><td>Inspects entity fields, annotations, constructors, relationships, and persistent state.</td></tr>
+                <tr><td>Jackson</td><td>Discovers properties, constructors, getters/setters, fields, and JSON annotations for serialization/deserialization.</td></tr>
+                <tr><td>JUnit/Mockito</td><td>Finds test methods and annotations, creates test instances, and injects mocks.</td></tr>
+                <tr><td>Dependency injection containers</td><td>Reads a configured implementation class and constructs it without compile-time coupling.</td></tr>
+                <tr><td>Plugin systems</td><td>Loads classes by name from a JAR and calls a known interface or annotated entry point.</td></tr>
+                <tr><td>Serialization/tools</td><td>Maps object fields to JSON, XML, database columns, command-line options, or UI forms.</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Example with a custom annotation</h5>
+            <pre><code class="language-java">@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+@interface Audited { }
+
+class PaymentService {
+    @Audited
+    public void pay() { }
+}
+
+for (Method method : PaymentService.class.getDeclaredMethods()) {
+    if (method.isAnnotationPresent(Audited.class)) {
+        System.out.println("Create audit event for: " + method.getName());
+    }
+}</code></pre>
+
+            <h5 class="text-warning">Reflection in Spring</h5>
+            <pre><code class="language-java">@Component
+class EmailService {
+    @Autowired
+    private EmailClient client;
+}
+
+// Simplified framework idea:
+for (Field field : EmailService.class.getDeclaredFields()) {
+    if (field.isAnnotationPresent(Autowired.class)) {
+        Object dependency = container.getBean(field.getType());
+        field.setAccessible(true);
+        field.set(emailService, dependency);
+    }
+}</code></pre>
+            <p>
+              Real Spring uses much more than this simplified loop: bean definitions, lifecycle callbacks,
+              proxy creation, constructor resolution, module access rules, caching, and optimized invocation
+              paths. Reflection is one mechanism used by the framework, not the whole Spring container.
+            </p>
+
+            <h5 class="text-warning">Impact of reflection</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead><tr><th>Impact</th><th>Explanation</th><th>How to reduce it</th></tr></thead>
+              <tbody>
+                <tr><td>Performance</td><td>Dynamic lookup, access checks, boxing, and reflective invocation are generally slower than direct calls.</td><td>Resolve metadata once, cache <code>Method</code>/<code>Field</code> objects, use direct calls in hot loops, or use method handles/code generation.</td></tr>
+                <tr><td>Type safety</td><td>Names and argument types are checked at runtime, so errors become exceptions rather than compile-time errors.</td><td>Keep a typed interface at the boundary and validate configuration early.</td></tr>
+                <tr><td>Encapsulation</td><td>Private members can potentially be accessed, weakening class boundaries.</td><td>Prefer public APIs, avoid <code>setAccessible(true)</code>, and expose explicit framework hooks.</td></tr>
+                <tr><td>Maintainability</td><td>Renaming a method or field can break a string-based lookup without compiler help.</td><td>Use constants, typed APIs, annotation processors, or tests that validate reflective configuration.</td></tr>
+                <tr><td>Startup time</td><td>Classpath scanning and metadata inspection can slow application startup.</td><td>Limit scanning, cache metadata, use indexes, or use Spring AOT/native-image processing.</td></tr>
+                <tr><td>Native images</td><td>GraalVM native images need reflective classes, constructors, and members known at build time.</td><td>Register reflection metadata or prefer AOT-supported patterns.</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Reflection and security</h5>
+            <ul>
+              <li>Never accept an arbitrary class name, method name, or field name from an untrusted user and invoke it directly.</li>
+              <li>Do not use reflection to bypass authorization, validation, or business invariants.</li>
+              <li>Restrict plugin class loaders and validate allowed packages/classes.</li>
+              <li>Modern Java modules can block access to non-exported packages; <code>setAccessible(true)</code> is not a universal bypass.</li>
+              <li>Use least privilege and avoid exposing secrets through reflective field dumps or generic logging.</li>
+            </ul>
+
+            <h5 class="text-warning">Reflection versus alternatives</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <tbody>
+                <tr><td><strong>Direct method call</strong></td><td>Fastest and compile-time safe; use when the type is known.</td></tr>
+                <tr><td><strong>Interface/polymorphism</strong></td><td>Preferred for normal application extensibility and dependency inversion.</td></tr>
+                <tr><td><strong>MethodHandle</strong></td><td>Typed, optimizable dynamic invocation for advanced runtime infrastructure.</td></tr>
+                <tr><td><strong>Annotation processing</strong></td><td>Generates code at compile time and avoids some runtime scanning; useful for build-time frameworks.</td></tr>
+                <tr><td><strong>Reflection</strong></td><td>Best when types, annotations, or plugins genuinely need to be discovered at runtime.</td></tr>
+              </tbody>
+            </table>
+            <p>
+              <strong>Interview summary:</strong> Reflection provides runtime inspection and dynamic access
+              to Java types. Spring, Hibernate, Jackson, JUnit, and plugin systems use it heavily. It gives
+              flexibility, but costs performance, compile-time safety, encapsulation, startup simplicity, and
+              native-image compatibility. Use it at framework/configuration boundaries, cache the metadata,
+              validate inputs, and prefer normal typed code in business-critical hot paths.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="hibernate">
+        <h2 class="accordion-header" id="jpaManyToManyStudentCourseTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#jpaManyToManyStudentCourseTopBody">
+            How do we map a Many-to-Many relationship between Students and Courses?
+          </button>
+        </h2>
+        <div id="jpaManyToManyStudentCourseTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              A student can enroll in many courses, and a course can contain many students. Relational
+              databases do not store a collection directly in one column, so JPA represents this relationship
+              using a third <strong>join table</strong>. The join table contains one row for each enrollment.
+            </p>
+            <pre><code class="language-text">Student 1  ---- many enrollments ----  Course 1
+Student 1  ---- many enrollments ----  Course 2
+Student 2  ---- many enrollments ----  Course 1</code></pre>
+
+            <h5 class="text-warning">Entity mapping</h5>
+            <pre><code class="language-java">@Entity
+public class Student {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+
+    @ManyToMany
+    @JoinTable(
+        name = "student_course",
+        joinColumns = @JoinColumn(name = "student_id"),
+        inverseJoinColumns = @JoinColumn(name = "course_id")
+    )
+    private Set&lt;Course&gt; courses = new HashSet&lt;&gt;();
+
+    protected Student() { }
+
+    public Student(String name) {
+        this.name = name;
+    }
+
+    public void enroll(Course course) {
+        courses.add(course);
+        course.getStudents().add(this);
+    }
+
+    public void drop(Course course) {
+        courses.remove(course);
+        course.getStudents().remove(this);
+    }
+
+    public Set&lt;Course&gt; getCourses() {
+        return courses;
+    }
+}
+
+@Entity
+public class Course {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String title;
+
+    @ManyToMany(mappedBy = "courses")
+    private Set&lt;Student&gt; students = new HashSet&lt;&gt;();
+
+    protected Course() { }
+
+    public Course(String title) {
+        this.title = title;
+    }
+
+    public Set&lt;Student&gt; getStudents() {
+        return students;
+    }
+}</code></pre>
+
+            <h5 class="text-warning">Owning side and inverse side</h5>
+            <ul>
+              <li><strong>Owning side:</strong> <code>Student.courses</code> owns the relationship because it declares <code>@JoinTable</code>. Changes to this collection update the join table.</li>
+              <li><strong>Inverse side:</strong> <code>Course.students</code> uses <code>mappedBy = "courses"</code>. It mirrors the relationship and does not define another join table.</li>
+              <li><strong>mappedBy value:</strong> it must exactly match the Java field name on the owning entity, not the database column name.</li>
+              <li><strong>Both sides in memory:</strong> helper methods should update both collections so the Java object graph remains consistent during the current transaction.</li>
+            </ul>
+            <p>
+              If both entities declare <code>@JoinTable</code>, Hibernate may create two independent join
+              table mappings. If the owning side is not updated, adding a course only to
+              <code>course.getStudents()</code> may not insert a row into the join table.
+            </p>
+
+            <h5 class="text-warning">Database tables</h5>
+            <pre><code class="language-sql">CREATE TABLE student (
+    id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    name VARCHAR(200) NOT NULL
+);
+
+CREATE TABLE course (
+    id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    title VARCHAR(200) NOT NULL
+);
+
+CREATE TABLE student_course (
+    student_id BIGINT NOT NULL,
+    course_id BIGINT NOT NULL,
+    PRIMARY KEY (student_id, course_id),
+    FOREIGN KEY (student_id) REFERENCES student(id),
+    FOREIGN KEY (course_id) REFERENCES course(id)
+);</code></pre>
+            <p>
+              The composite primary key prevents the same student from being enrolled in the same course
+              twice. Hibernate can generate equivalent constraints when schema generation is enabled, but
+              production schemas should normally be managed with Flyway or Liquibase.
+            </p>
+
+            <h5 class="text-warning">Persisting the relationship</h5>
+            <pre><code class="language-java">@Transactional
+public void enrollStudent() {
+    Student student = new Student("Hari");
+    Course java = new Course("Java");
+    Course spring = new Course("Spring Boot");
+
+    student.enroll(java);
+    student.enroll(spring);
+
+    studentRepository.save(student);
+    courseRepository.save(java);
+    courseRepository.save(spring);
+}
+
+// Result:
+// student: (1, "Hari")
+// course:  (1, "Java"), (2, "Spring Boot")
+// student_course: (1, 1), (1, 2)</code></pre>
+            <p>
+              If you intentionally want saving a new student to cascade persistence to new courses, you
+              could use <code>cascade = CascadeType.PERSIST</code> or <code>ALL</code>. Be cautious with
+              <code>REMOVE</code>: deleting a student should not normally delete a shared course.
+            </p>
+
+            <h5 class="text-warning">Recommended cascade and fetch settings</h5>
+            <pre><code class="language-java">@ManyToMany
+@JoinTable(
+    name = "student_course",
+    joinColumns = @JoinColumn(name = "student_id"),
+    inverseJoinColumns = @JoinColumn(name = "course_id")
+)
+private Set&lt;Course&gt; courses = new HashSet&lt;&gt;();
+
+// Often avoid CascadeType.REMOVE for shared Course entities.
+// Many-to-many is LAZY by default in JPA; fetch intentionally inside a transaction.</code></pre>
+            <ul>
+              <li><strong>Use <code>Set</code>:</strong> it models unique enrollment pairs and avoids duplicate entries better than <code>List</code>.</li>
+              <li><strong>Keep it lazy:</strong> eager loading can load every course for every student and create large joins.</li>
+              <li><strong>Do not blindly use <code>CascadeType.ALL</code>:</strong> courses are usually shared by many students.</li>
+              <li><strong>Control JSON serialization:</strong> bidirectional collections can cause infinite recursion. Use DTOs, or carefully use Jackson annotations such as <code>@JsonManagedReference</code>/<code>@JsonBackReference</code>.</li>
+              <li><strong>Implement equality carefully:</strong> avoid using mutable collections in <code>equals()</code>/<code>hashCode()</code>; this is especially important for entities stored in a <code>HashSet</code>.</li>
+            </ul>
+
+            <h5 class="text-warning">When Many-to-Many is not the best design</h5>
+            <p>
+              If the relationship has its own data, model the join table as an entity. For example,
+              enrollment may need <code>enrolledAt</code>, <code>grade</code>, or <code>status</code>. Then use
+              <code>Student</code> -&gt; <code>Enrollment</code> &lt;- <code>Course</code> with two
+              <code>@ManyToOne</code> relationships instead of a direct <code>@ManyToMany</code>.
+            </p>
+            <pre><code class="language-java">@Entity
+public class Enrollment {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    private Student student;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    private Course course;
+
+    private String grade;
+    private LocalDate enrolledAt;
+}</code></pre>
+            <p>
+              <strong>Interview summary:</strong> put <code>@ManyToMany</code> and
+              <code>@JoinTable</code> on one owning side, use <code>mappedBy</code> on the other side, and
+              store the relationship in a join table with foreign keys. Use a separate join entity when the
+              relationship itself has attributes or needs its own lifecycle.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="hibernate">
+        <h2 class="accordion-header" id="jpaGenerationTypeAllTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#jpaGenerationTypeAllTopBody">
+            @GeneratedValue strategies: AUTO, IDENTITY, SEQUENCE, TABLE, and UUID
+          </button>
+        </h2>
+        <div id="jpaGenerationTypeAllTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <code>@GeneratedValue</code> tells JPA/Hibernate that the primary-key value is generated
+              instead of being assigned by application code. The application field is usually
+              <code>Long</code>, <code>Integer</code>, or <code>UUID</code>; the exact database object and
+              column type depend on the selected strategy, database dialect, and schema configuration.
+            </p>
+            <pre><code class="language-java">@Id
+@GeneratedValue(strategy = GenerationType.SEQUENCE)
+private Long id;</code></pre>
+
+            <h5 class="text-warning">Quick comparison</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr><th>Strategy</th><th>Application type</th><th>Database object/type</th><th>Database dependent?</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>AUTO</code></td><td>Usually <code>Long</code>/<code>Integer</code>; sometimes <code>UUID</code></td><td>Provider chooses sequence, identity, table, or UUID mechanism</td><td>Yes, strongly</td></tr>
+                <tr><td><code>IDENTITY</code></td><td><code>Long</code>/<code>Integer</code></td><td>Identity/auto-increment column, usually <code>BIGINT</code>/<code>INTEGER</code></td><td>Yes</td></tr>
+                <tr><td><code>SEQUENCE</code></td><td><code>Long</code>/<code>Integer</code></td><td>Database sequence plus numeric column, usually <code>BIGINT</code>/<code>INTEGER</code></td><td>Yes</td></tr>
+                <tr><td><code>TABLE</code></td><td><code>Long</code>/<code>Integer</code></td><td>Generator table storing the next numeric value</td><td>Portable, but provider/schema dependent</td></tr>
+                <tr><td><code>UUID</code></td><td><code>UUID</code> or supported <code>String</code></td><td>Native <code>UUID</code>, <code>CHAR/VARCHAR</code>, or binary UUID representation</td><td>Dialect and schema dependent</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">1. GenerationType.AUTO</h5>
+            <p>
+              <code>AUTO</code> is the default when <code>@GeneratedValue</code> is present but
+              <code>strategy</code> is omitted. The persistence provider chooses a suitable mechanism for
+              the database and Java type. It may select a sequence on PostgreSQL/Oracle, an identity column
+              on some MySQL/SQL Server mappings, or a table/provider-specific generator.
+            </p>
+            <pre><code class="language-java">@Id
+@GeneratedValue // same as strategy = GenerationType.AUTO
+private Long id;</code></pre>
+            <table class="table table-dark table-bordered table-sm">
+              <tbody>
+                <tr><td><strong>App type</strong></td><td>Commonly <code>Long</code> or <code>Integer</code></td></tr>
+                <tr><td><strong>DB type</strong></td><td>Usually numeric: <code>BIGINT</code> for <code>Long</code> or <code>INTEGER</code> for <code>Integer</code></td></tr>
+                <tr><td><strong>Use when</strong></td><td>You want the provider to choose and portability is more important than exact schema behavior</td></tr>
+                <tr><td><strong>Risk</strong></td><td>Behavior can differ between databases, Hibernate versions, and dialects; do not assume AUTO always means IDENTITY</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">2. GenerationType.IDENTITY</h5>
+            <p>
+              <code>IDENTITY</code> delegates generation to an auto-increment/identity column. The database
+              creates the value as part of the <code>INSERT</code>, and Hibernate reads it back using JDBC
+              generated-key support.
+            </p>
+            <pre><code class="language-java">@Id
+@GeneratedValue(strategy = GenerationType.IDENTITY)
+private Long id;</code></pre>
+            <pre><code class="language-sql">-- MySQL-style schema
+id BIGINT AUTO_INCREMENT PRIMARY KEY
+
+-- SQL Server-style schema
+id BIGINT IDENTITY(1,1) PRIMARY KEY</code></pre>
+            <ul>
+              <li><strong>App type:</strong> normally <code>Long</code> for <code>BIGINT</code> or <code>Integer</code> for <code>INT</code>.</li>
+              <li><strong>DB type:</strong> numeric identity column such as <code>BIGINT</code>, <code>INT</code>, or the database equivalent.</li>
+              <li><strong>Use when:</strong> the target database already uses auto-increment identity columns and simple inserts are preferred.</li>
+              <li><strong>Trade-off:</strong> Hibernate may have less flexibility for ID preallocation and JDBC batching compared with sequences.</li>
+            </ul>
+
+            <h5 class="text-warning">3. GenerationType.SEQUENCE</h5>
+            <p>
+              <code>SEQUENCE</code> uses a database sequence as a separate number generator. It is common
+              with PostgreSQL, Oracle, and other databases that support sequences. Hibernate can allocate a
+              block of values, reducing database round trips.
+            </p>
+            <pre><code class="language-java">@Id
+@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "order_seq")
+@SequenceGenerator(
+    name = "order_seq",
+    sequenceName = "order_id_seq",
+    allocationSize = 50
+)
+private Long id;</code></pre>
+            <pre><code class="language-sql">CREATE SEQUENCE order_id_seq START WITH 1 INCREMENT BY 50;
+CREATE TABLE orders (
+    id BIGINT PRIMARY KEY
+);</code></pre>
+            <ul>
+              <li><strong>App type:</strong> usually <code>Long</code> or <code>Integer</code>.</li>
+              <li><strong>DB type:</strong> numeric column plus a separate sequence object; commonly <code>BIGINT</code> for a Java <code>Long</code>.</li>
+              <li><strong>Use when:</strong> the database supports sequences and insert throughput/batching matters.</li>
+              <li><strong>Important:</strong> <code>allocationSize</code> must be aligned with the sequence increment according to the chosen Hibernate configuration and schema-management approach.</li>
+            </ul>
+
+            <h5 class="text-warning">4. GenerationType.TABLE</h5>
+            <p>
+              <code>TABLE</code> stores the next ID value in a normal database table. It is more portable
+              because it does not require identity or sequence support, but it can require locking and extra
+              database work, so it is less common for high-throughput systems.
+            </p>
+            <pre><code class="language-java">@Id
+@GeneratedValue(strategy = GenerationType.TABLE, generator = "customer_table_gen")
+@TableGenerator(
+    name = "customer_table_gen",
+    table = "id_generator",
+    pkColumnName = "generator_name",
+    valueColumnName = "next_value",
+    pkColumnValue = "customer",
+    allocationSize = 20
+)
+private Long id;</code></pre>
+            <pre><code class="language-sql">CREATE TABLE id_generator (
+    generator_name VARCHAR(100) PRIMARY KEY,
+    next_value BIGINT NOT NULL
+);</code></pre>
+            <ul>
+              <li><strong>App type:</strong> normally <code>Long</code> or <code>Integer</code>.</li>
+              <li><strong>DB type:</strong> numeric entity ID column and numeric next-value column in the generator table; the generator name is usually text.</li>
+              <li><strong>Use when:</strong> database portability is required and sequence/identity features cannot be relied on.</li>
+              <li><strong>Trade-off:</strong> generator-table contention and extra work make it less attractive for busy applications.</li>
+            </ul>
+
+            <h5 class="text-warning">5. GenerationType.UUID</h5>
+            <p>
+              <code>UUID</code> generates a UUID value rather than a database sequence number. It is
+              available in Jakarta Persistence 3.1 and supported by modern Hibernate versions. It is useful
+              when services need to create IDs independently before a database insert.
+            </p>
+            <pre><code class="language-java">@Id
+@GeneratedValue(strategy = GenerationType.UUID)
+private UUID id;</code></pre>
+            <pre><code class="language-sql">-- PostgreSQL native representation
+id UUID PRIMARY KEY
+
+-- Portable text representation
+id CHAR(36) PRIMARY KEY
+
+-- Compact binary representation used by some MySQL designs
+id BINARY(16) PRIMARY KEY</code></pre>
+            <ul>
+              <li><strong>App type:</strong> preferably <code>java.util.UUID</code>; some providers also support <code>String</code>.</li>
+              <li><strong>DB type:</strong> database-native <code>UUID</code>, <code>CHAR/VARCHAR</code> containing the canonical 36-character value, or <code>BINARY(16)</code>.</li>
+              <li><strong>Use when:</strong> IDs must be generated across multiple application instances without coordinating with a central sequence.</li>
+              <li><strong>Trade-off:</strong> UUID indexes and keys are larger than numeric keys; random UUIDs can cause index locality and storage overhead.</li>
+            </ul>
+
+            <h5 class="text-warning">Which strategy should we choose?</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <tbody>
+                <tr><td><strong>PostgreSQL/Oracle and high insert throughput</strong></td><td><code>SEQUENCE</code> with a correctly configured <code>@SequenceGenerator</code></td></tr>
+                <tr><td><strong>MySQL auto-increment schema</strong></td><td><code>IDENTITY</code></td></tr>
+                <tr><td><strong>Existing schema with database-generated number</strong></td><td>Match the existing identity or sequence; do not rely blindly on <code>AUTO</code></td></tr>
+                <tr><td><strong>Independent generation across microservices</strong></td><td><code>UUID</code>, or an explicitly designed distributed ID algorithm</td></tr>
+                <tr><td><strong>Need provider portability but no specific database behavior</strong></td><td><code>AUTO</code>, after testing every supported database</td></tr>
+                <tr><td><strong>Legacy portable fallback</strong></td><td><code>TABLE</code>, only after considering its contention and performance cost</td></tr>
+              </tbody>
+            </table>
+            <p>
+              <strong>Interview summary:</strong> <code>AUTO</code> lets the provider choose; <code>IDENTITY</code>
+              uses a database auto-increment column; <code>SEQUENCE</code> uses a database sequence;
+              <code>TABLE</code> uses a generator table; and <code>UUID</code> generates distributed-friendly
+              UUID values. The Java field type and database column type must be compatible, but the database
+              object used to create the value is strategy-specific.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="hibernate">
+        <h2 class="accordion-header" id="jpaSaveVsSaveAndFlushTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#jpaSaveVsSaveAndFlushTopBody">
+            JpaRepository.save() vs saveAndFlush() - what is the difference?
+          </button>
+        </h2>
+        <div id="jpaSaveVsSaveAndFlushTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Both methods make an entity managed through the JPA persistence context. The main difference
+              is timing: <strong><code>save()</code> usually postpones SQL synchronization until flush or
+              transaction commit</strong>, while <strong><code>saveAndFlush()</code> calls
+              <code>flush()</code> immediately after saving</strong>.
+            </p>
+
+            <h5 class="text-warning">Basic implementation idea</h5>
+            <pre><code class="language-java">public &lt;S extends T&gt; S save(S entity) {
+    if (entityInformation.isNew(entity)) {
+        entityManager.persist(entity);
+        return entity;
+    }
+    return entityManager.merge(entity);
+}
+
+public &lt;S extends T&gt; S saveAndFlush(S entity) {
+    S result = save(entity);
+    flush();
+    return result;
+}
+
+public void flush() {
+    entityManager.flush();
+}</code></pre>
+            <p>
+              The exact internal implementation can vary by Spring Data version, but the important
+              behavior is that <code>saveAndFlush()</code> performs the normal save and then synchronizes
+              pending changes with the database immediately.
+            </p>
+
+            <h5 class="text-warning">Example with a transaction</h5>
+            <pre><code class="language-java">@Transactional
+public void createCustomer() {
+    Customer customer = new Customer("Hari");
+
+    customerRepository.save(customer);
+    // Usually no INSERT is required at this exact line.
+    // INSERT is normally sent during flush/commit.
+
+    auditRepository.save(new Audit("CUSTOMER_CREATED"));
+    // Both INSERTs can be flushed together at transaction commit.
+}</code></pre>
+            <p>
+              With <code>save()</code>, the entity is registered with the persistence context. Hibernate may
+              delay the <code>INSERT</code> so it can order statements, batch them, and reduce database
+              round trips. A successful return from <code>save()</code> does not necessarily mean that SQL
+              has already reached the database.
+            </p>
+
+            <h5 class="text-warning">Using saveAndFlush()</h5>
+            <pre><code class="language-java">@Transactional
+public void createCustomerThenRunNativeCheck() {
+    Customer customer = customerRepository.saveAndFlush(
+        new Customer("Hari"));
+
+    // The INSERT has been synchronized with the database here,
+    // so a following native query can see it in this transaction.
+    Long count = customerRepository.countUsingNativeQuery();
+}
+</code></pre>
+            <p>
+              Flushing sends SQL, but it does <strong>not</strong> commit the transaction. If a later
+              operation throws an exception and the transaction rolls back, the flushed INSERT or UPDATE
+              is rolled back too.
+            </p>
+
+            <h5 class="text-warning">Comparison</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead><tr><th>Point</th><th><code>save()</code></th><th><code>saveAndFlush()</code></th></tr></thead>
+              <tbody>
+                <tr><td>Registers entity</td><td>Yes</td><td>Yes</td></tr>
+                <tr><td>Forces immediate flush</td><td>No</td><td>Yes</td></tr>
+                <tr><td>Guarantees commit</td><td>No</td><td>No</td></tr>
+                <tr><td>Best default</td><td>Yes, for normal service operations</td><td>No, use only when an early database synchronization is required</td></tr>
+                <tr><td>Batching</td><td>Usually friendlier to batching</td><td>Can reduce batching if called repeatedly</td></tr>
+                <tr><td>Failure timing</td><td>Constraint errors may appear at flush/commit</td><td>Constraint errors can appear at the method call</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">When should we use save()?</h5>
+            <ul>
+              <li>Normal create or update operations inside a service transaction.</li>
+              <li>When multiple entities should be written together and Hibernate can batch or order the SQL.</li>
+              <li>When no following operation needs to query the database before the transaction ends.</li>
+              <li>For large imports, together with batching and periodic <code>flush()</code>/<code>clear()</code>.</li>
+            </ul>
+            <pre><code class="language-java">@Transactional
+public void placeOrder(Order order, Payment payment) {
+    orderRepository.save(order);
+    paymentRepository.save(payment);
+    // Prefer one flush at commit instead of forcing two early flushes.
+}</code></pre>
+
+            <h5 class="text-warning">When should we use saveAndFlush()?</h5>
+            <ul>
+              <li>A following query in the same transaction must see pending changes immediately.</li>
+              <li>You need a database constraint, trigger, or generated value to be evaluated before continuing.</li>
+              <li>You want a constraint or SQL error to occur at a known point instead of later at commit.</li>
+              <li>A legacy integration or native SQL operation requires synchronization before it runs.</li>
+            </ul>
+            <pre><code class="language-java">@Transactional
+public void createReferenceAndCallDatabaseFunction() {
+    Reference ref = referenceRepository.saveAndFlush(new Reference("R-100"));
+    databaseFunctionRepository.callFunction(ref.getId());
+}</code></pre>
+
+            <h5 class="text-warning">Common mistake</h5>
+            <pre><code class="language-java">for (Order order : orders) {
+    orderRepository.saveAndFlush(order); // Avoid: flushes on every iteration
+}</code></pre>
+            <p>
+              This can cause one database synchronization per iteration, increase round trips, prevent
+              effective batching, and slow the application. Prefer <code>saveAll()</code> or repeated
+              <code>save()</code> followed by one controlled <code>flush()</code>, unless each iteration
+              genuinely requires an immediate database check.
+            </p>
+
+            <h5 class="text-warning">Interview summary</h5>
+            <p>
+              Use <code>save()</code> by default. It registers the entity and lets the persistence context
+              flush at the appropriate time, normally transaction commit. Use <code>saveAndFlush()</code>
+              only when the database must be synchronized before the next operation. Neither method commits
+              the transaction; commit or rollback is controlled by the transaction boundary.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="hibernate">
+        <h2 class="accordion-header" id="hibernateDirtyCheckingTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#hibernateDirtyCheckingTopBody">
+            What is dirty checking in Hibernate?
+          </button>
+        </h2>
+        <div id="hibernateDirtyCheckingTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>Dirty checking</strong> is Hibernate's mechanism for detecting changes made to a
+              managed entity and automatically generating the required <code>UPDATE</code> SQL during flush.
+              “Dirty” means the in-memory entity state is different from the state Hibernate loaded or
+              recorded in the persistence context.
+            </p>
+
+            <h5 class="text-warning">Step-by-step flow</h5>
+            <ol>
+              <li>The transaction loads an entity using a repository or <code>EntityManager</code>.</li>
+              <li>Hibernate places the entity in the persistence context with status <strong>managed</strong> and keeps its original state, often called a snapshot.</li>
+              <li>The application changes a field on that managed object.</li>
+              <li>At flush time, usually before transaction commit, Hibernate compares the current state with the snapshot or uses enhanced change tracking.</li>
+              <li>If a difference exists, Hibernate generates and executes an <code>UPDATE</code> statement. No explicit <code>save()</code> is required for an already-managed entity.</li>
+            </ol>
+            <pre><code class="language-java">@Transactional
+public void approveOrder(Long id) {
+    Order order = orderRepository.findById(id).orElseThrow();
+    order.setStatus("APPROVED");
+    // No save() is required: Hibernate detects the change at flush/commit.
+}
+
+// SQL generated near commit:
+// update orders set status = 'APPROVED' where id = ?</code></pre>
+
+            <h5 class="text-warning">Managed, detached, and new objects</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead><tr><th>Entity state</th><th>Dirty checking?</th><th>Typical behavior</th></tr></thead>
+              <tbody>
+                <tr><td>Managed</td><td>Yes</td><td>Changes are detected and flushed automatically</td></tr>
+                <tr><td>Detached</td><td>No</td><td>Changes are not tracked until reattached with <code>merge()</code> or loaded again</td></tr>
+                <tr><td>Transient/new</td><td>No</td><td>Not yet associated with the persistence context; use <code>persist()</code> or repository save</td></tr>
+                <tr><td>Removed</td><td>Not for normal updates</td><td>Scheduled for deletion at flush</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Flush is not the same as commit</h5>
+            <p>
+              <code>flush()</code> synchronizes pending entity changes with the database by executing SQL;
+              <code>commit</code> completes the database transaction. Hibernate may flush automatically
+              before transaction commit or before a query whose result could be affected by pending changes.
+              A flush can execute SQL, but a later rollback can still undo it.
+            </p>
+            <pre><code class="language-java">entityManager.flush(); // SQL is sent now
+// The transaction can still roll back after this point.
+transaction.commit();</code></pre>
+
+            <h5 class="text-warning">What dirty checking does not do</h5>
+            <ul>
+              <li>It does not track arbitrary objects that are not managed entities.</li>
+              <li>It does not automatically detect changes made to a detached object.</li>
+              <li>It does not mean every field is updated; Hibernate can use <code>@DynamicUpdate</code> or enhanced tracking to reduce changed columns.</li>
+              <li>It does not replace optimistic locking. Add <code>@Version</code> when concurrent updates must be detected.</li>
+            </ul>
+
+            <h5 class="text-warning">Common performance considerations</h5>
+            <ul>
+              <li>Loading thousands of entities into one persistence context creates more snapshots and makes flush checking more expensive.</li>
+              <li>Use pagination, periodic <code>flush()</code>/<code>clear()</code>, and JDBC batching for large updates.</li>
+              <li>Keep transaction boundaries short so the persistence context does not grow unnecessarily.</li>
+              <li>Use bulk JPQL/SQL updates for large set-based changes, but remember that bulk updates bypass the current persistence context; clear or refresh it afterward.</li>
+              <li>Do not modify entities from multiple threads; an <code>EntityManager</code> and its persistence context are not thread-safe.</li>
+            </ul>
+            <pre><code class="language-java">@Transactional
+public void approveMany(List&lt;Long&gt; ids) {
+    for (int i = 0; i &lt; ids.size(); i++) {
+        Order order = entityManager.find(Order.class, ids.get(i));
+        order.setStatus("APPROVED");
+
+        if (i % 100 == 0) {
+            entityManager.flush();
+            entityManager.clear();
+        }
+    }
+}</code></pre>
+
+            <h5 class="text-warning">Interview summary</h5>
+            <p>
+              Hibernate dirty checking watches managed entities inside the persistence context. When a
+              managed entity is changed, Hibernate compares its current state with the original state at
+              flush time and creates the necessary SQL. This is why an update inside a
+              <code>@Transactional</code> method often needs no explicit <code>save()</code>; the transaction
+              commit triggers the flush.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="hibernate">
+        <h2 class="accordion-header" id="immutableEntityRecordTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#immutableEntityRecordTopBody">
+            Why can an immutable JPA entity not work like a Java record?
+          </button>
+        </h2>
+        <div id="immutableEntityRecordTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              An immutable entity and a Java <code>record</code> are related ideas, but they are not the
+              same thing. An immutable entity can sometimes be mapped by Hibernate with restrictions;
+              a record is not a portable JPA entity. Jakarta Persistence requires an entity to be a
+              non-final class with a public or protected no-argument constructor, and a record cannot be
+              designated as an entity.
+            </p>
+
+            <h5 class="text-warning">What JPA/Hibernate needs from an entity</h5>
+            <ul>
+              <li><strong>Instantiation:</strong> JPA creates an object when loading a row, so it needs a public or protected no-argument constructor.</li>
+              <li><strong>Hydration:</strong> the provider must populate database values into the new object through field or property access.</li>
+              <li><strong>Lazy loading:</strong> Hibernate may create a proxy subclass that loads data only when a method is accessed.</li>
+              <li><strong>Dirty checking:</strong> the persistence context tracks the managed object and flushes detected changes as SQL.</li>
+              <li><strong>Identity:</strong> one managed entity instance represents one database row in the current persistence context.</li>
+            </ul>
+
+            <h5 class="text-warning">Why a record conflicts with these requirements</h5>
+            <pre><code class="language-java">public record Customer(Long id, String name) { }
+
+// A record has final components and normally only its canonical constructor:
+// new Customer(101L, "Hari")</code></pre>
+            <ul>
+              <li><strong>Final class:</strong> the usual Hibernate subclass proxy cannot extend a record for lazy loading.</li>
+              <li><strong>Final components:</strong> JPA cannot normally populate or replace record state after construction while hydrating an entity.</li>
+              <li><strong>No no-arg constructor:</strong> the provider cannot instantiate an empty record and fill it later.</li>
+              <li><strong>Replacement is different from mutation:</strong> changing a record creates a new object, but JPA dirty checking tracks the already-managed entity instance.</li>
+              <li><strong>Different equality model:</strong> records use value-based <code>equals()</code>/<code>hashCode()</code>, while entities usually use database identity and lifecycle state.</li>
+            </ul>
+
+            <h5 class="text-warning">Immutable entity versus record</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead><tr><th>Concern</th><th>Immutable entity class</th><th>Record</th></tr></thead>
+              <tbody>
+                <tr><td>Standard JPA entity?</td><td>Possible with restrictions and provider-specific choices</td><td>No, not as a portable JPA entity</td></tr>
+                <tr><td>State changes</td><td>Can expose no setters and restrict updates</td><td>Creates a new value when a component changes</td></tr>
+                <tr><td>Lazy associations</td><td>Possible if proxying requirements are preserved</td><td>Not through the normal subclass-proxy model</td></tr>
+                <tr><td>Best use</td><td>Read-only reference data or controlled persistence</td><td>DTOs, API responses, projections, and value objects</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">A practical read-only Hibernate entity</h5>
+            <pre><code class="language-java">@Entity
+@org.hibernate.annotations.Immutable // Hibernate-specific: do not generate updates
+public class Country {
+    @Id
+    private Long id;
+    private String code;
+    private String name;
+
+    protected Country() { } // required by JPA
+
+    public Long getId() { return id; }
+    public String getCode() { return code; }
+    public String getName() { return name; }
+}
+
+// No public setters are exposed, but Hibernate can still load the entity.</code></pre>
+            <p>
+              Hibernate can support immutable-style classes using field access, bytecode enhancement, or
+              provider-specific annotations. These are not portable JPA guarantees. If lazy loading is
+              important, keep the entity non-final and avoid final persistent methods. If the object is
+              read-only, configure that explicitly and verify it with integration tests.
+            </p>
+
+            <h5 class="text-warning">Recommended Spring Boot design</h5>
+            <pre><code class="language-java">@Entity
+public class OrderEntity {
+    @Id
+    private Long id;
+    private String status;
+
+    protected OrderEntity() { }
+    public Long getId() { return id; }
+    public String getStatus() { return status; }
+}
+
+// Immutable API/read model
+public record OrderResponse(Long id, String status) { }
+
+return new OrderResponse(order.getId(), order.getStatus());</code></pre>
+            <p>
+              <strong>Interview answer:</strong> use a normal JPA entity for lifecycle, identity, dirty
+              checking, and lazy loading. Use records at the API or query boundary for immutable DTOs and
+              projections. An immutable entity may work with Hibernate-specific support, but a record
+              conflicts with core portable JPA requirements.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="hibernate">
+        <h2 class="accordion-header" id="jpaOnlyIdGeneratedStrategyTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#jpaOnlyIdGeneratedStrategyTopBody">
+            If an entity uses only @Id, what generated strategy is used by default?
+          </button>
+        </h2>
+        <div id="jpaOnlyIdGeneratedStrategyTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>Only <code>@Id</code> does not enable automatic ID generation.</strong> It means the
+              field is the primary-key field, but the application must assign its value before calling
+              <code>persist()</code>. There is no default <code>GenerationType</code> when
+              <code>@GeneratedValue</code> is absent.
+            </p>
+            <pre><code class="language-java">@Entity
+class Customer {
+    @Id
+    private Long id; // application must assign this value
+
+    private String name;
+}
+
+Customer customer = new Customer();
+customer.setId(101L);
+entityManager.persist(customer);</code></pre>
+            <p>
+              If the ID is left <code>null</code> for a generated numeric identifier, persist commonly
+              fails because Hibernate has no generator to create the value. Exact error text can vary by
+              Hibernate version and mapping.
+            </p>
+
+            <h5 class="text-warning">When does AUTO apply?</h5>
+            <p>
+              <code>AUTO</code> is the default strategy only when <code>@GeneratedValue</code> is present
+              and its <code>strategy</code> attribute is omitted:
+            </p>
+            <pre><code class="language-java">@Id
+@GeneratedValue // equivalent to strategy = GenerationType.AUTO
+private Long id;</code></pre>
+            <p>
+              With <code>AUTO</code>, the persistence provider chooses a suitable strategy for the
+              database and identifier type. Depending on the database, dialect, Hibernate version, and
+              configuration, it may use a sequence, identity column, or another provider-supported
+              mechanism. Therefore, <code>AUTO</code> does not mean “always identity”.
+            </p>
+
+            <h5 class="text-warning">Common strategies</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Mapping</th>
+                  <th>Meaning</th>
+                  <th>Typical use</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>@Id</code></td>
+                  <td>Assigned ID; no automatic generation</td>
+                  <td>Natural key, externally supplied ID, or application-generated UUID</td>
+                </tr>
+                <tr>
+                  <td><code>@GeneratedValue</code></td>
+                  <td><code>AUTO</code> by default</td>
+                  <td>Let Hibernate choose for the database</td>
+                </tr>
+                <tr>
+                  <td><code>IDENTITY</code></td>
+                  <td>Database identity/auto-increment column</td>
+                  <td>Common with MySQL auto-increment or SQL Server identity</td>
+                </tr>
+                <tr>
+                  <td><code>SEQUENCE</code></td>
+                  <td>Database sequence</td>
+                  <td>Common with PostgreSQL or Oracle; supports allocation and batching well</td>
+                </tr>
+                <tr>
+                  <td><code>TABLE</code></td>
+                  <td>Uses a table to store the next ID</td>
+                  <td>Portable fallback, but usually more overhead</td>
+                </tr>
+                <tr>
+                  <td><code>UUID</code></td>
+                  <td>Provider generates a UUID</td>
+                  <td>Distributed systems where IDs should be generated without a database round trip</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Recommended explicit mappings</h5>
+            <pre><code class="language-java">// MySQL-style auto-increment
+@Id
+@GeneratedValue(strategy = GenerationType.IDENTITY)
+private Long id;
+
+// PostgreSQL/Oracle-style sequence
+@Id
+@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "customer_seq")
+@SequenceGenerator(name = "customer_seq", sequenceName = "customer_seq", allocationSize = 50)
+private Long id;
+
+// Hibernate/JPA UUID generation where supported by the application stack
+@Id
+@GeneratedValue(strategy = GenerationType.UUID)
+private UUID id;</code></pre>
+            <p>
+              <strong>Interview answer:</strong> <code>@Id</code> only marks the primary key and uses an
+              assigned identifier; it does not select <code>IDENTITY</code>, <code>SEQUENCE</code>, or
+              <code>AUTO</code>. <code>@GeneratedValue</code> with no explicit strategy defaults to
+              <code>AUTO</code>. In production, choose the strategy explicitly when database behavior,
+              portability, batching, or distributed ID generation matters.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="redisSingleThreadedCacheTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#redisSingleThreadedCacheTopBody">
+            Is Redis single-threaded? How does it handle multiple reads and guarantee atomic, updated data?
+          </button>
+        </h2>
+        <div id="redisSingleThreadedCacheTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              First separate the terms: a <strong>local cache</strong> such as Caffeine or a
+              <code>ConcurrentHashMap</code> is accessed by many JVM threads concurrently. If we mean
+              <strong>Redis</strong>, Redis uses a mostly single-threaded command execution model. It uses
+              non-blocking I/O and multiplexing, so one Redis process can serve many client connections
+              without creating one operating-system thread per request.
+            </p>
+
+            <h5 class="text-warning">How multiple reads work</h5>
+            <p>
+              Redis does not normally execute two commands at exactly the same time on the same primary.
+              It accepts requests from many clients, places them in the event loop, and executes each
+              command very quickly, one after another. A <code>GET</code> does not need a long lock because
+              Redis has serialized command execution and a read does not partially change the value.
+            </p>
+            <pre><code class="language-text">Client A: GET product:101
+Client B: GET product:102
+Client C: SET stock:101 9
+
+Redis event loop: GET A -> GET B -> SET C</code></pre>
+            <p>
+              Redis 6 and later can use I/O threads for parts of network reading and writing, and Redis
+              also uses background threads for selected work. That does not change the important interview
+              point: ordinary commands on a Redis primary are executed sequentially.
+            </p>
+
+            <h5 class="text-warning">What atomic means in Redis</h5>
+            <p>
+              A single Redis command is atomic relative to other Redis commands. Another client cannot see
+              a half-completed <code>INCR</code>, <code>HSET</code>, or <code>DECRBY</code> operation.
+            </p>
+            <pre><code class="language-bash">INCR login-count
+DECRBY inventory:phone 1
+SET lock:order-123 token NX PX 5000
+HSET user:42 status ACTIVE</code></pre>
+            <p>
+              Atomicity does not automatically apply to a sequence of separate commands. This is unsafe
+              for stock reservation because two requests can both read the same stock before either
+              decrements it:
+            </p>
+            <pre><code class="language-text">GET stock:phone       # request A reads 1
+GET stock:phone       # request B also reads 1
+DECR stock:phone      # A decrements
+DECR stock:phone      # B decrements again: overselling</code></pre>
+            <p>Use one of these approaches for a multi-step operation:</p>
+            <ul>
+              <li><strong>Lua script or Redis Function:</strong> check the value and decrement it in one server-side atomic operation.</li>
+              <li><strong>MULTI/EXEC:</strong> queue commands and execute the transaction as one serialized block.</li>
+              <li><strong>WATCH:</strong> use optimistic concurrency and retry if another client changes a watched key before <code>EXEC</code>.</li>
+            </ul>
+            <pre><code class="language-lua">-- Reserve one item only when stock is positive
+local stock = tonumber(redis.call('GET', KEYS[1]) or '0')
+if stock &gt; 0 then
+  return redis.call('DECR', KEYS[1])
+end
+return -1</code></pre>
+
+            <h5 class="text-warning">Does Redis always return the latest data?</h5>
+            <ul>
+              <li><strong>Read from the primary:</strong> after a successful write response, a later read from that same primary sees the updated value for normal operations.</li>
+              <li><strong>Read from a replica:</strong> Redis replication is normally asynchronous, so a replica can temporarily return an older value.</li>
+              <li><strong>After failover:</strong> a promoted replica may not contain the newest writes that had not replicated before the failure.</li>
+            </ul>
+            <p>
+              Therefore, route read-after-write or correctness-sensitive reads to the primary. Read
+              replicas are useful for scale, but they should be treated as eventually consistent. The
+              <code>WAIT</code> command can wait for replication acknowledgements, but it is not a complete
+              replacement for a strongly consistent database transaction.
+            </p>
+
+            <h5 class="text-warning">How Redis scales</h5>
+            <ul>
+              <li><strong>Many reads:</strong> use connection pooling, pipelining, replicas, or Redis Cluster read routing where stale reads are acceptable.</li>
+              <li><strong>More write capacity:</strong> use Redis Cluster to shard keys across multiple primaries. Each shard independently processes its commands sequentially.</li>
+              <li><strong>High availability:</strong> use replicas with Sentinel or Cluster failover, while accepting the configured durability and replication trade-offs.</li>
+              <li><strong>Avoid blocking the event loop:</strong> keep values and Lua scripts small, avoid <code>KEYS *</code> in production, and investigate slow commands.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview summary</h5>
+            <p>
+              Redis is mostly single-threaded for command execution, not single-client. It handles many
+              clients through non-blocking multiplexed I/O and processes commands quickly in sequence.
+              Each individual command is atomic, but a read-modify-write sequence needs a transaction,
+              optimistic locking, or a Lua script. A primary gives read-after-write behavior; replicas may
+              lag, so “atomic” and “latest everywhere” are different guarantees.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="cachePenetrationVsStampedeTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#cachePenetrationVsStampedeTopBody">
+            Cache penetration vs cache stampede
+          </button>
+        </h2>
+        <div id="cachePenetrationVsStampedeTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Both problems cause extra load on the database, but the reason is different:
+              <strong>penetration is caused by requests for data that does not exist</strong>, while
+              <strong>stampede is caused by many requests rebuilding data that does exist</strong>.
+            </p>
+
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Aspect</th>
+                  <th>Cache penetration</th>
+                  <th>Cache stampede</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>What happens?</td>
+                  <td>Invalid or nonexistent keys miss the cache and database repeatedly.</td>
+                  <td>Many callers miss or expire the same valid hot key and reload it together.</td>
+                </tr>
+                <tr>
+                  <td>Example</td>
+                  <td>Requests for random product IDs that do not exist.</td>
+                  <td>A popular product cache expires and 10,000 users request it together.</td>
+                </tr>
+                <tr>
+                  <td>Database effect</td>
+                  <td>Repeated useless not-found queries.</td>
+                  <td>A sudden burst of valid read queries or rebuild queries.</td>
+                </tr>
+                <tr>
+                  <td>Main cause</td>
+                  <td>Missing negative cache, random-ID attack, or invalid input.</td>
+                  <td>Synchronized TTL expiry, cache restart, or slow cache rebuild.</td>
+                </tr>
+                <tr>
+                  <td>Primary fix</td>
+                  <td>Negative caching, Bloom filter, validation, and rate limiting.</td>
+                  <td>Single flight, lock, TTL jitter, refresh ahead, or stale-while-revalidate.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Cache penetration flow</h5>
+            <pre><code class="language-text">Request for missing user-999
+        |
+        v
+Cache miss -> database miss -> no cache entry
+        |
+        v
+The next request repeats the same database miss</code></pre>
+            <p>
+              Fix this by caching a short-lived <code>NOT_FOUND</code> marker, rejecting impossible IDs, using a Bloom
+              filter to reject definitely absent keys, and applying rate limits.
+            </p>
+
+            <h5 class="text-warning">Cache stampede flow</h5>
+            <pre><code class="language-text">Popular product-101 expires
+        |
+        +--> request A -> database
+        +--> request B -> database
+        +--> request C -> database
+        +--> thousands more -> database
+
+All requests rebuild the same valid cache entry.</code></pre>
+            <p>
+              Fix this by allowing only one worker to rebuild a key. Other callers can wait for the same in-flight
+              result, receive stale data during a grace period, or use a safe fallback.
+            </p>
+
+            <h5 class="text-warning">Monolith versus distributed fix</h5>
+            <ul>
+              <li><strong>Monolith penetration:</strong> local negative cache, Bloom filter, validation, and rate limiting.</li>
+              <li><strong>Distributed penetration:</strong> shared Redis negative cache, coordinated Bloom filter, gateway/WAF controls, and tenant-aware keys.</li>
+              <li><strong>Monolith stampede:</strong> per-key lock or single-flight future inside the JVM.</li>
+              <li><strong>Distributed stampede:</strong> Redis lease or another distributed lock, cache double-checking, TTL jitter, and stale-while-revalidate.</li>
+            </ul>
+
+            <h5 class="text-warning">Easy memory trick</h5>
+            <p>
+              <strong>Penetration:</strong> bad key goes through the cache to the database.<br>
+              <strong>Stampede:</strong> good key expires and many requests rush the database together.
+            </p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Cache penetration happens when requests repeatedly target nonexistent data, so they miss both cache and
+              database every time. Cache stampede happens when many requests miss the same valid hot entry at once,
+              usually after expiry, and rebuild it concurrently. I solve penetration with validation, Bloom filters,
+              negative caching, and rate limits. I solve stampede with single flight or distributed locking, TTL jitter,
+              refresh ahead, and stale-while-revalidate."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="microservices">
+      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="cachePenetrationTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#cachePenetrationTopBody">
+            What is cache penetration, and how do we overcome it in monolithic and distributed systems?
+          </button>
+        </h2>
+        <div id="cachePenetrationTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>Cache penetration</strong> happens when requests repeatedly ask for data that does not exist in
+              the database. Because the result is absent, the request misses the cache and then misses the database every
+              time. The database receives repeated useless queries instead of the cache absorbing them.
+            </p>
+
+            <h5 class="text-warning">Real-world example</h5>
+            <pre><code class="language-text">Attacker sends random product IDs:
+GET /products/unknown-1
+GET /products/unknown-2
+GET /products/unknown-3
+...
+
+Cache miss -> database lookup -> no row -> no cache entry
+The next request repeats the same database lookup.</code></pre>
+            <p>
+              This is different from a cache stampede. A stampede usually concerns a valid hot key that expires and
+              causes many rebuilds. Penetration concerns keys whose data does not exist and therefore keeps bypassing the
+              cache.
+            </p>
+
+            <h5 class="text-warning">1. Negative caching</h5>
+            <p>
+              Cache a short-lived marker for a confirmed not-found result. Later requests find the marker and do not hit
+              the database. Use a short TTL because the record may be created later.
+            </p>
+            <pre><code class="language-java">Optional&lt;Product&gt; findProduct(String id) {
+    CacheValue cached = cache.get("product:" + id);
+
+    if (cached != null) {
+        return cached.isNotFound()
+            ? Optional.empty()
+            : Optional.of(cached.product());
+    }
+
+    Product product = repository.findById(id).orElse(null);
+
+    if (product == null) {
+        cache.put("product:" + id, CacheValue.notFound(),
+            Duration.ofSeconds(30));
+        return Optional.empty();
+    }
+
+    cache.put("product:" + id, CacheValue.found(product),
+        Duration.ofMinutes(10));
+    return Optional.of(product);
+}</code></pre>
+            <p>
+              Do not store a Java null in a cache that cannot distinguish a missing cache entry from a cached negative
+              result. Store an explicit marker such as <code>NOT_FOUND</code>.
+            </p>
+
+            <h5 class="text-warning">2. Bloom filter</h5>
+            <p>
+              A Bloom filter is a memory-efficient probabilistic structure that answers whether a key may exist. If it
+              says <strong>definitely not present</strong>, reject the request without querying the database. If it says
+              the key may exist, continue to the cache and database.
+            </p>
+            <pre><code class="language-text">Request product-999
+      |
+      v
+Bloom filter says "definitely absent" -> return 404, no database call
+
+Request product-101
+      |
+      v
+Bloom filter says "possibly present" -> check cache -> check database</code></pre>
+            <p>
+              Bloom filters can have false positives but should not have false negatives when correctly maintained. A
+              false positive causes an unnecessary database lookup; a false negative could incorrectly reject valid data,
+              so updates and rebuilds must be designed carefully.
+            </p>
+
+            <h5 class="text-warning">3. Validate keys before lookup</h5>
+            <ul>
+              <li>Reject malformed IDs, impossible ranges, invalid UUIDs, and unsupported tenant identifiers at the API boundary.</li>
+              <li>Require authentication and authorization before expensive lookups.</li>
+              <li>Reject obviously abusive query patterns and enforce request-size limits.</li>
+              <li>Use a canonical key format so equivalent invalid keys do not create many cache entries.</li>
+            </ul>
+
+            <h5 class="text-warning">Monolithic application solution</h5>
+            <p>
+              In one JVM, combine input validation, a local Bloom filter or known-ID set, short-lived negative caching,
+              per-key single-flight loading, and rate limiting. A local cache is fast, but every application instance has
+              its own view and may repeat the first miss independently.
+            </p>
+            <pre><code class="language-text">validate key
+  -> local Bloom filter
+  -> local cache including NOT_FOUND marker
+  -> database only for possible valid keys
+  -> short negative TTL for confirmed absence</code></pre>
+
+            <h5 class="text-warning">Distributed system solution</h5>
+            <p>
+              In multiple instances, use a shared cache such as Redis for negative markers, a shared or periodically
+              rebuilt Bloom filter, and gateway-level rate limiting. Use request coalescing or a distributed lease for
+              extremely hot invalid keys so many instances do not perform the same lookup together.
+            </p>
+            <pre><code class="language-text">Client
+  |
+  v
+API Gateway: authentication + rate limit + key validation
+  |
+  v
+Service instance
+  |
+  +--> shared Bloom filter: definitely absent -> 404
+  +--> Redis positive/negative cache
+  +--> distributed single-flight / short lease
+  +--> database only when necessary</code></pre>
+
+            <h5 class="text-warning">Additional protections</h5>
+            <ul>
+              <li><strong>Rate limiting:</strong> restrict requests per user, IP, tenant, or API key.</li>
+              <li><strong>WAF and bot protection:</strong> block random-ID scanning and abnormal request patterns.</li>
+              <li><strong>Negative cache jitter:</strong> vary negative-entry TTLs so many markers do not expire together.</li>
+              <li><strong>Database protection:</strong> use read replicas, query limits, timeouts, and connection-pool bounds.</li>
+              <li><strong>Observability:</strong> track invalid-key rate, negative-cache hit ratio, Bloom-filter rejects, database misses, and top requested keys.</li>
+              <li><strong>Cache key limits:</strong> avoid allowing arbitrary unbounded user input to create unlimited cache entries.</li>
+            </ul>
+
+            <h5 class="text-warning">Cautions</h5>
+            <ul>
+              <li>Negative-cache only safe not-found results; do not cache authorization failures as if the resource does not exist.</li>
+              <li>Use a short TTL because a missing record may be created after the negative value is stored.</li>
+              <li>Invalidate or update negative entries when a new record is created.</li>
+              <li>Do not rely on a Bloom filter as the authoritative data store; it is an optimization.</li>
+              <li>For multi-tenant systems, include tenant identity in validation, the Bloom filter, and the cache key.</li>
+            </ul>
+
+            <h5 class="text-warning">Penetration versus stampede versus avalanche</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Problem</th>
+                  <th>Meaning</th>
+                  <th>Main protection</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Penetration</td>
+                  <td>Requests target data that does not exist and bypass the cache.</td>
+                  <td>Validation, Bloom filter, negative caching, and rate limiting.</td>
+                </tr>
+                <tr>
+                  <td>Stampede</td>
+                  <td>Many requests rebuild the same valid key after expiry.</td>
+                  <td>Single flight, lock, TTL jitter, and stale-while-revalidate.</td>
+                </tr>
+                <tr>
+                  <td>Cache avalanche</td>
+                  <td>Many keys expire or the cache fails, causing broad backend load.</td>
+                  <td>TTL spreading, multi-level cache, fallback, and cache-cluster resilience.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "Cache penetration occurs when requests repeatedly ask for nonexistent keys, so every request misses both
+              the cache and database. In a monolith I use validation, a local Bloom filter, short-lived negative caching,
+              and per-key request coalescing. In a distributed system I use a shared Redis negative cache, a coordinated
+              Bloom filter, gateway rate limits, WAF protection, and a distributed lease for hot keys. Negative values
+              must have short TTLs and be invalidated when the record is created."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="microservices">
+      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="cacheStampedeTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#cacheStampedeTopBody">
+            What is cache stampede, and how do we fix it in monolithic and distributed systems?
+          </button>
+        </h2>
+        <div id="cacheStampedeTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              A <strong>cache stampede</strong>, also called the <strong>thundering herd problem</strong>, happens when
+              many requests discover that the same popular cache entry is missing or expired at nearly the same time.
+              They all query the database or downstream service together, causing a sudden load spike and potentially
+              making the dependency fail.
+            </p>
+
+            <h5 class="text-warning">Real-world example</h5>
+            <pre><code class="language-text">Product 101 is cached with TTL = 10 minutes
+At 10:00:00 the entry expires
+10,000 requests arrive together
+
+Without protection:
+10,000 requests -> cache miss -> 10,000 database queries
+
+With protection:
+1 request rebuilds the cache
+9,999 requests wait, use stale data, or receive a controlled fallback</code></pre>
+
+            <h5 class="text-warning">Why it happens</h5>
+            <ul>
+              <li>A popular key expires for every caller at the same time.</li>
+              <li>A cache service restarts or is flushed.</li>
+              <li>Many application instances miss the same key simultaneously.</li>
+              <li>Slow database calls make the rebuild window long.</li>
+              <li>A deployment or traffic spike causes many cold-cache requests.</li>
+            </ul>
+
+            <h5 class="text-warning">Fix in a monolithic application</h5>
+            <p>
+              A monolith can use an in-process lock or request-coalescing map. Only one thread loads a missing key;
+              other threads wait for the same future instead of issuing duplicate database calls.
+            </p>
+            <pre><code class="language-java">private final ConcurrentHashMap&lt;String, CompletableFuture&lt;Product&gt;&gt; loading =
+    new ConcurrentHashMap&lt;&gt;();
+
+public Product getProduct(String id) {
+    Product cached = cache.get(id);
+    if (cached != null) {
+        return cached;
+    }
+
+    CompletableFuture&lt;Product&gt; future = loading.computeIfAbsent(id, key ->
+        CompletableFuture.supplyAsync(() -> {
+            Product product = repository.findById(key);
+            cache.put(key, product, Duration.ofMinutes(10));
+            return product;
+        }).whenComplete((value, error) -> loading.remove(key)));
+
+    return future.join();
+}</code></pre>
+            <p>
+              This is called <strong>single flight</strong>: concurrent callers for the same key share one in-flight
+              load. Keep the load timeout-bounded and remove the entry on both success and failure.
+            </p>
+
+            <h5 class="text-warning">Fix in a distributed system</h5>
+            <p>
+              An in-process lock protects only one JVM. If several application instances can rebuild the same key, use a
+              distributed coordination mechanism such as a Redis lease lock, database lock, or ZooKeeper/etcd lease.
+            </p>
+            <pre><code class="language-text">Instance A -> Redis SET lock:product:101 token NX PX 5000 -> owner
+Instance B -> Redis SET lock:product:101 token NX PX 5000 -> miss
+Instance C -> Redis SET lock:product:101 token NX PX 5000 -> miss
+
+A loads database -> updates cache -> releases only its own lock
+B and C read the newly populated cache or use a safe fallback</code></pre>
+            <p>
+              Use a unique owner token and compare-and-delete when releasing the lock. Set a lease expiry because the
+              owner may crash. A lock reduces duplicate work, but it should not be the only correctness guarantee for a
+              payment or inventory operation; use idempotency and database constraints for business correctness.
+            </p>
+
+            <h5 class="text-warning">Avoid synchronized expiry</h5>
+            <p>
+              Add TTL jitter so a large group of keys does not expire at exactly the same moment.
+            </p>
+            <pre><code class="language-java">long ttlSeconds = 600 + ThreadLocalRandom.current().nextLong(0, 120);
+// Store the entry with a TTL between 10 and 12 minutes.</code></pre>
+            <p>
+              Jitter spreads refresh work over time. It does not replace request coalescing or a distributed lock for a
+              single extremely hot key.
+            </p>
+
+            <h5 class="text-warning">Stale-while-revalidate</h5>
+            <p>
+              Serve a recently expired value for a short grace period while one background worker refreshes the cache.
+              Users receive a fast, slightly stale response instead of all requests waiting for the database.
+            </p>
+            <pre><code class="language-text">Fresh value          -> return immediately
+Soft-expired value   -> return stale value and trigger one refresh
+Hard-expired value   -> wait for refresh or use fallback</code></pre>
+
+            <h5 class="text-warning">Other protections</h5>
+            <ul>
+              <li><strong>Pre-warming:</strong> load predictable popular keys before a sale, deployment, or cache restart.</li>
+              <li><strong>Refresh ahead:</strong> refresh hot entries before their hard expiry.</li>
+              <li><strong>Bounded concurrency:</strong> limit cache rebuild workers and database connection usage.</li>
+              <li><strong>Negative caching:</strong> briefly cache not-found results to prevent repeated misses for invalid keys.</li>
+              <li><strong>Rate limiting:</strong> limit callers when the dependency is overloaded.</li>
+              <li><strong>Fallbacks:</strong> use stale data, a read model, or a documented degraded response when safe.</li>
+              <li><strong>Backoff:</strong> retry failed rebuilds with limits and jitter, not immediate retry loops.</li>
+            </ul>
+
+            <h5 class="text-warning">Lock versus single flight</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Environment</th>
+                  <th>Preferred coordination</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>One JVM monolith</td>
+                  <td>In-process single flight, per-key lock, or <code>computeIfAbsent</code> with a shared future.</td>
+                </tr>
+                <tr>
+                  <td>Several service instances</td>
+                  <td>Redis lease, database advisory lock, or ZooKeeper/etcd lease plus cache double-checking.</td>
+                </tr>
+                <tr>
+                  <td>Very hot read path</td>
+                  <td>Stale-while-revalidate, refresh ahead, TTL jitter, and bounded rebuild concurrency.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Important implementation sequence</h5>
+            <ol>
+              <li>Read the cache.</li>
+              <li>On a miss, acquire a per-key lock or single-flight slot.</li>
+              <li>Read the cache again after acquiring the lock because another worker may have populated it.</li>
+              <li>Load from the database with a timeout.</li>
+              <li>Write the cache with TTL jitter.</li>
+              <li>Release the lock safely and return the value.</li>
+            </ol>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              "A cache stampede occurs when many callers miss or expire the same popular key and all hit the database at
+              once. In a monolith I use per-key single-flight loading or an in-process lock. In a distributed system I
+              use a Redis lease or another distributed lock, then double-check the cache after acquiring it. I also use
+              TTL jitter, stale-while-revalidate, refresh ahead, pre-warming, bounded concurrency, negative caching,
+              timeouts, and safe fallbacks. The lock prevents duplicate cache rebuilding; idempotency and database
+              constraints protect business correctness."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="microservices">
       <div class="accordion-item" data-manual-category="java">
         <h2 class="accordion-header" id="javaExecutionOrderStaticInstanceConstructorTop">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
