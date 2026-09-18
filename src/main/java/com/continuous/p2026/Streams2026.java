@@ -618,25 +618,31 @@ public class Streams2026 {
                         .stream())
                 .toList();
         System.out.println(list10);
-//        13. Find duplicate marks
-//        14. Count frequency of each mark
 //        15. Find student with highest individual mark
+        Student highestIndiMark = students.stream()
+                .max(Comparator.comparingInt(student ->
+                        student.getMarks()
+                                .stream()
+                                .mapToInt(Integer::intValue)
+                                .max()
+                                .orElse(0)
+                ))
+                .orElse(null);
+        System.out.println(highestIndiMark.getName());
         // 16 Group students by grade if the marks is <75 'C' and if >75 'B' and if >85 'A'
-        Map<String, List<String>> collect20 = students.stream().collect(Collectors.groupingBy(student -> {
-            double avg = student
-                    .getMarks()
-                    .stream()
-                    .mapToInt(Integer::intValue)
-                    .average()
-                    .orElse(0);
-            if (avg > 85) {
-                return "A";
-            } else if (avg >= 75) {
-                return "B";
-            } else {
-                return "C";
-            }
-        }, Collectors.mapping(Student::getName, Collectors.toList())));
+        Map<String, List<String>> collect20 = students.stream()
+                .collect(Collectors.groupingBy(student -> {
+                    double avg = student.getMarks().stream()
+                            .mapToInt(Integer::intValue)
+                            .average()
+                            .orElse(0);
+                    return avg > 85 ? "A" : avg >= 75 ? "B" : "C";
+                }, Collectors.mapping(Student::getName, Collectors.toList())));
+//        groupingBy(
+//                student -> grade,                    // Map key
+//                mapping(Student::getName, toList())  // Map value
+//        )
         System.out.println(collect20);
+
     }
 }

@@ -178,6 +178,81 @@
     </div>
     <div class="accordion" id="accordionSeniorJava">
 
+      <div class="accordion-item" data-manual-category="java8">
+        <h2 class="accordion-header" id="reverseFirstKQueueTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#reverseFirstKQueueTopBody">
+            Java 8 Coding: Reverse the first K elements of a Queue
+          </button>
+        </h2>
+        <div id="reverseFirstKQueueTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Remove the first <code>K</code> elements from the queue into a stack. Popping the stack puts
+              those elements back in reverse order. Then rotate the remaining elements to the back so their
+              original order remains unchanged.
+            </p>
+            <pre><code class="language-java">static void reverseFirstK(Queue&lt;Integer&gt; queue, int k) {
+    if (k &lt; 0 || k &gt; queue.size()) {
+        throw new IllegalArgumentException("K must be between 0 and queue size");
+    }
+
+    Stack&lt;Integer&gt; stack = new Stack&lt;&gt;();
+
+    for (int i = 0; i &lt; k; i++) {
+        stack.push(queue.remove());
+    }
+
+    while (!stack.isEmpty()) {
+        queue.add(stack.pop());
+    }
+
+    int remaining = queue.size() - k;
+    for (int i = 0; i &lt; remaining; i++) {
+        queue.add(queue.remove());
+    }
+}
+
+Queue&lt;Integer&gt; queue = new LinkedList&lt;&gt;(
+    Arrays.asList(1, 2, 3, 4, 5)
+);
+
+reverseFirstK(queue, 3);
+System.out.println(queue); // [3, 2, 1, 4, 5]</code></pre>
+            <p>
+              For <code>[1, 2, 3, 4, 5]</code> and <code>K = 3</code>, the stack reverses
+              <code>[1, 2, 3]</code> into <code>[3, 2, 1]</code>, and rotating the remaining elements keeps
+              <code>[4, 5]</code> after them. Time complexity is O(n), and auxiliary space is O(K).
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java8">
+        <h2 class="accordion-header" id="reverseWordsWithoutSplitTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#reverseWordsWithoutSplitTopBody">
+            Java 8 Coding: Reverse the order of words using Stack
+          </button>
+        </h2>
+        <div id="reverseWordsWithoutSplitTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <pre><code class="language-java">String str = "Hello World";
+
+String[] words = str.split(" ");
+
+Stack&lt;String&gt; stack = new Stack&lt;&gt;();
+
+for (String word : words) {
+    stack.push(word);
+}
+
+while (!stack.isEmpty()) {
+    System.out.print(stack.pop() + " ");
+}</code></pre>
+            <p><strong>Output:</strong> <code>World Hello</code></p>
+          </div>
+        </div>
+      </div>
+
       <div class="accordion-item" data-manual-category="java">
         <h2 class="accordion-header" id="javaMathClassMethodsTop">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
@@ -332,6 +407,262 @@ int dice = (int) (Math.random() * 6) + 1; // 1 to 6</code></pre>
               for exact financial rounding, and <code>SecureRandom</code> rather than
               <code>Math.random()</code> for security-sensitive randomness.
             </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java8">
+        <h2 class="accordion-header" id="studentAverageAbove80Top">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#studentAverageAbove80TopBody">
+            Java 8 Coding: Find students whose average marks are greater than 80
+          </button>
+        </h2>
+        <div id="studentAverageAbove80TopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>Assume the supplied <code>Student</code> class has <code>id</code>, <code>name</code>, and <code>List&lt;Integer&gt; marks</code>. The following Java 8 snippets use <code>Collectors.toList()</code>.</p>
+            <pre><code class="language-java">List&lt;String&gt; result = students.stream()
+    .filter(s -&gt; s.getMarks().stream().mapToInt(Integer::intValue)
+        .average().orElse(0) &gt; 80)
+    .map(Student::getName)
+    .collect(Collectors.toList());</code></pre>
+            <p>Use <code>mapToInt</code> to calculate each student's average, filter the qualifying students, and map them to names.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java8">
+        <h2 class="accordion-header" id="studentHighestAverageTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#studentHighestAverageTopBody">
+            Java 8 Coding: Find the student with the highest average marks
+          </button>
+        </h2>
+        <div id="studentHighestAverageTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <pre><code class="language-java">Student result = students.stream()
+    .max(Comparator.comparingDouble(s -&gt; s.getMarks().stream()
+        .mapToInt(Integer::intValue).average().orElse(0)))
+    .orElse(null);
+
+System.out.println(result == null ? "No students" : result.getName());</code></pre>
+            <p><code>max</code> compares the calculated average for every student and returns an <code>Optional&lt;Student&gt;</code>.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java8">
+        <h2 class="accordion-header" id="studentLowestAverageTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#studentLowestAverageTopBody">
+            Java 8 Coding: Find the student with the lowest average marks
+          </button>
+        </h2>
+        <div id="studentLowestAverageTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <pre><code class="language-java">Optional&lt;String&gt; result = students.stream()
+    .min(Comparator.comparingDouble(s -&gt; s.getMarks().stream()
+        .mapToInt(Integer::intValue).average().orElse(0)))
+    .map(Student::getName);
+
+result.ifPresent(System.out::println);</code></pre>
+            <p>Use <code>min</code> with the same average calculation and map the result to the student's name.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java8">
+        <h2 class="accordion-header" id="studentTotalMarksTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#studentTotalMarksTopBody">
+            Java 8 Coding: Find the total marks of each student
+          </button>
+        </h2>
+        <div id="studentTotalMarksTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <pre><code class="language-java">Map&lt;String, Integer&gt; result = students.stream()
+    .collect(Collectors.toMap(
+        Student::getName,
+        s -&gt; s.getMarks().stream().mapToInt(Integer::intValue).sum()
+    ));</code></pre>
+            <p>The map key is the student name and the map value is the sum of that student's marks.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java8">
+        <h2 class="accordion-header" id="studentAverageMarksTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#studentAverageMarksTopBody">
+            Java 8 Coding: Find the average marks of each student
+          </button>
+        </h2>
+        <div id="studentAverageMarksTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <pre><code class="language-java">Map&lt;String, Double&gt; result = students.stream()
+    .collect(Collectors.toMap(
+        Student::getName,
+        s -&gt; s.getMarks().stream().mapToInt(Integer::intValue)
+            .average().orElse(0.0)
+    ));</code></pre>
+            <p>Use <code>Double</code> because <code>IntStream.average()</code> returns an <code>OptionalDouble</code>.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java8">
+        <h2 class="accordion-header" id="studentSortAverageTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#studentSortAverageTopBody">
+            Java 8 Coding: Sort students by average marks
+          </button>
+        </h2>
+        <div id="studentSortAverageTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <pre><code class="language-java">List&lt;Student&gt; result = students.stream()
+    .sorted(Comparator.comparingDouble(s -&gt; s.getMarks().stream()
+        .mapToInt(Integer::intValue).average().orElse(0)))
+    .collect(Collectors.toList());</code></pre>
+            <p>This sorts in ascending order. Add <code>.reversed()</code> to the comparator for descending order.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java8">
+        <h2 class="accordion-header" id="studentTopThreeTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#studentTopThreeTopBody">
+            Java 8 Coding: Find the top three students by average marks
+          </button>
+        </h2>
+        <div id="studentTopThreeTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <pre><code class="language-java">List&lt;String&gt; result = students.stream()
+    .sorted(Comparator.comparingDouble(
+        (Student s) -&gt; s.getMarks().stream().mapToInt(Integer::intValue)
+            .average().orElse(0)
+    ).reversed())
+    .limit(3)
+    .map(Student::getName)
+    .collect(Collectors.toList());</code></pre>
+            <p>Sort in descending order first, then apply <code>limit(3)</code>.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java8">
+        <h2 class="accordion-header" id="studentAnyMarkAbove90Top">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#studentAnyMarkAbove90TopBody">
+            Java 8 Coding: Find students who scored above 90 in any subject
+          </button>
+        </h2>
+        <div id="studentAnyMarkAbove90TopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <pre><code class="language-java">List&lt;String&gt; result = students.stream()
+    .filter(s -&gt; s.getMarks().stream().anyMatch(mark -&gt; mark &gt; 90))
+    .map(Student::getName)
+    .collect(Collectors.toList());</code></pre>
+            <p><code>anyMatch</code> short-circuits as soon as one subject satisfies the condition.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java8">
+        <h2 class="accordion-header" id="studentAllMarksAbove80Top">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#studentAllMarksAbove80TopBody">
+            Java 8 Coding: Find students who scored above 80 in every subject
+          </button>
+        </h2>
+        <div id="studentAllMarksAbove80TopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <pre><code class="language-java">List&lt;String&gt; result = students.stream()
+    .filter(s -&gt; s.getMarks().stream().allMatch(mark -&gt; mark &gt; 80))
+    .map(Student::getName)
+    .collect(Collectors.toList());</code></pre>
+            <p><code>allMatch</code> returns false as soon as one mark is 80 or below.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java8">
+        <h2 class="accordion-header" id="studentMaximumMarkTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#studentMaximumMarkTopBody">
+            Java 8 Coding: Find the maximum mark across all students
+          </button>
+        </h2>
+        <div id="studentMaximumMarkTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <pre><code class="language-java">int result = students.stream()
+    .flatMap(s -&gt; s.getMarks().stream())
+    .mapToInt(Integer::intValue)
+    .max()
+    .orElse(0);</code></pre>
+            <p><code>flatMap</code> combines every student's marks into one stream before calculating the maximum.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java8">
+        <h2 class="accordion-header" id="studentMinimumMarkTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#studentMinimumMarkTopBody">
+            Java 8 Coding: Find the minimum mark across all students
+          </button>
+        </h2>
+        <div id="studentMinimumMarkTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <pre><code class="language-java">int result = students.stream()
+    .flatMap(s -&gt; s.getMarks().stream())
+    .mapToInt(Integer::intValue)
+    .min()
+    .orElse(0);</code></pre>
+            <p>Flatten the nested mark lists and use <code>IntStream.min()</code>.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java8">
+        <h2 class="accordion-header" id="studentFlattenMarksTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#studentFlattenMarksTopBody">
+            Java 8 Coding: Flatten all student marks into one list
+          </button>
+        </h2>
+        <div id="studentFlattenMarksTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <pre><code class="language-java">List&lt;Integer&gt; result = students.stream()
+    .flatMap(s -&gt; s.getMarks().stream())
+    .collect(Collectors.toList());</code></pre>
+            <p><code>flatMap</code> converts <code>Stream&lt;Student&gt;</code> containing nested lists into one <code>Stream&lt;Integer&gt;</code>.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java8">
+        <h2 class="accordion-header" id="studentHighestIndividualMarkTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#studentHighestIndividualMarkTopBody">
+            Java 8 Coding: Find the student with the highest individual mark
+          </button>
+        </h2>
+        <div id="studentHighestIndividualMarkTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <pre><code class="language-java">Student result = students.stream()
+    .max(Comparator.comparingInt(s -&gt; s.getMarks().stream()
+        .mapToInt(Integer::intValue).max().orElse(0)))
+    .orElse(null);
+
+System.out.println(result == null ? "No students" : result.getName());</code></pre>
+            <p>For each student, calculate their highest subject mark, then compare students using that value.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="java8">
+        <h2 class="accordion-header" id="studentGroupGradeTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#studentGroupGradeTopBody">
+            Java 8 Coding: Group students by grade based on average marks
+          </button>
+        </h2>
+        <div id="studentGroupGradeTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <pre><code class="language-java">Map&lt;String, List&lt;String&gt;&gt; result = students.stream()
+    .collect(Collectors.groupingBy(s -&gt; {
+        double average = s.getMarks().stream()
+            .mapToInt(Integer::intValue).average().orElse(0);
+        return average &gt; 85 ? "A" : average &gt;= 75 ? "B" : "C";
+    }, Collectors.mapping(Student::getName, Collectors.toList())));</code></pre>
+            <p><code>groupingBy</code> creates the grade buckets and downstream <code>mapping</code> keeps only student names in each bucket.</p>
           </div>
         </div>
       </div>
@@ -53227,7 +53558,8 @@ public class OrderController {
         .trim()
         .toLowerCase();
       const allItems = getAllAccordionItems();
-      const items = input ? allItems : getQuestionItems();
+      const questionItems = getQuestionItems();
+      const items = input ? allItems : questionItems;
       let visibleCount = 0;
 
       document.querySelectorAll(".accordion-section-heading").forEach((heading) => {
@@ -53250,7 +53582,7 @@ public class OrderController {
 
         item.style.display = shouldShow ? "" : "none";
 
-        if (input && shouldShow) {
+        if (shouldShow) {
           revealMatchingQuestionParent(item);
         }
 
@@ -53262,8 +53594,8 @@ public class OrderController {
       const count = input
         ? visibleCount
         : activeCategory === "all"
-          ? allItems.length
-          : allItems.filter((item) =>
+          ? questionItems.length
+          : questionItems.filter((item) =>
               matchesCategory(item.dataset.category || "other", activeCategory)
             ).length;
 
@@ -53374,8 +53706,10 @@ public class OrderController {
     }
 
     function getQuestionItems() {
-      return Array.from(document.querySelectorAll(".accordion > .accordion-item"))
-        .filter((item) => !item.parentElement.closest(".accordion-item"));
+      // Every accordion item is a question, including items nested inside a
+      // grouped section. Filtering only direct children hides older questions.
+      return Array.from(document.querySelectorAll(".accordion-item"))
+        .filter((item) => item.querySelector(".accordion-button") && item.querySelector(".accordion-body"));
     }
 
     function getAllAccordionItems() {
