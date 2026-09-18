@@ -177,7 +177,13 @@ public class Streams2026 {
         List<String> list4 = employees.stream().sorted(Comparator.comparing(Employee::getName).reversed()).map(Employee::getName).toList();
         System.out.println(list4);
 // 31. Group Each Employee By Hobbies
-        Map<String, List<String>> groupedByHobby = employees.stream().flatMap(emp -> emp.getHobbies().stream().map(hobby -> Map.entry(hobby, emp.getName()))).collect(Collectors.groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
+        Map<String, List<String>> groupedByHobby = employees
+                .stream()
+                .flatMap(emp -> emp
+                        .getHobbies()
+                        .stream()
+                        .map(hobby -> Map.entry(hobby, emp.getName())))
+                .collect(Collectors.groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
 // 32. Find the second Highest number in a list.
 //
 // 33. Count the occurrences of each word in a list.
@@ -503,5 +509,134 @@ public class Streams2026 {
         listOfNumbers.stream()
                 .takeWhile(n -> n < 40)
                 .forEach(System.out::println);
+
+        List<Student> students = Student.getStudents();
+
+//        1. Find students whose average marks > 80
+        List<String> averageStudent = students.stream()
+                .filter(student ->
+                        student.getMarks().stream()
+                                .mapToInt(Integer::intValue)
+                                .average()
+                                .orElse(0) > 80
+                ).map(Student::getName).toList();
+        System.out.println(averageStudent);
+        //2. Find student with highest average
+        Student highestAvg = students.stream()
+                .max(Comparator.comparingDouble(student ->
+                        student.getMarks()
+                                .stream()
+                                .mapToInt(Integer::intValue)
+                                .average()
+                                .orElse(0)
+                ))
+                .orElse(null);
+        System.out.println(highestAvg.getName());
+
+//        3. Find student with lowest average
+        Optional<String> s1 = students.stream().min(Comparator.comparingDouble(student -> student.getMarks()
+                .stream().mapToInt(Integer::intValue).average().orElse(0))).map(Student::getName);
+        System.out.println(s1);
+//        4. Find total marks of each student
+        Map<String, Integer> collect21 = students.stream()
+                .collect(Collectors.toMap(
+                        Student::getName,
+                        student -> student
+                                .getMarks()
+                                .stream()
+                                .mapToInt(Integer::intValue)
+                                .sum()
+                ));
+        System.out.println(collect21);
+//        5. Find average marks of each student
+        students.stream()
+                .collect(Collectors.toMap(student -> student
+                        .getName(), student -> student
+                        .getMarks()
+                        .stream()
+                        .mapToInt(Integer::intValue).average()));
+//        6. Sort students by average marks
+        List<String> sortAvgMarks = students.stream()
+                .sorted(Comparator.comparingDouble(student ->
+                        student.getMarks()
+                                .stream()
+                                .mapToInt(Integer::intValue)
+                                .average()
+                                .orElse(0)
+                )).map(Student::getName)
+                .collect(Collectors.toList());
+        System.out.println(sortAvgMarks);
+//        7. Find top 3 students
+        List<String> top3 = students.stream()
+                .sorted(Comparator.comparingDouble(
+                        (Student student) -> student.getMarks()
+                                .stream()
+                                .mapToInt(Integer::intValue)
+                                .average()
+                                .orElse(0)
+                ).reversed())
+                .limit(3)
+                .map(Student::getName)
+                .collect(Collectors.toList());
+        System.out.println(top3);
+//        8. Find students who scored > 90 in any subject
+        students
+                .stream()
+                .filter(student -> student
+                        .getMarks()
+                        .stream()
+                        .anyMatch(integer -> integer>90))
+                .map(Student::getName).toList();
+//        9. Find students who scored > 80 in every subject
+        students
+                .stream()
+                .filter(student -> student
+                        .getMarks()
+                        .stream()
+                        .allMatch(mark -> mark>80))
+                .map(Student::getName).toList();
+//        10. Find maximum mark across all students
+        int maxMark = students.stream()
+                .flatMap(student -> student.getMarks().stream())
+                .mapToInt(Integer::intValue)
+                .max()
+                .orElse(0);
+        System.out.println(maxMark);
+//        11. Find minimum mark across all students
+
+        int minMark = students.stream()
+                .flatMap(student -> student.getMarks().stream())
+                .mapToInt(Integer::intValue)
+                .min()
+                .orElse(0);
+        System.out.println(minMark);
+//        12. Flatten all marks into one List<Integer>
+        List<Integer> list10 = students
+                .stream()
+                .flatMap(student -> student
+                        .getMarks()
+                        .stream())
+                .toList();
+        System.out.println(list10);
+//        13. Find duplicate marks
+//        14. Count frequency of each mark
+//        15. Find student with highest individual mark
+        // 16 Group students by grade if the marks is <75 'C' and if >75 'B' and if >85 'A'
+        Map<String, List<String>> collect20 = students.stream().collect(Collectors.groupingBy(student -> {
+            double avg = student
+                    .getMarks()
+                    .stream()
+                    .mapToInt(Integer::intValue)
+                    .average()
+                    .orElse(0);
+            if (avg > 85) {
+                return "A";
+            } else if (avg >= 75) {
+                return "B";
+            } else {
+                return "C";
+            }
+        }, Collectors.mapping(Student::getName, Collectors.toList())));
+        System.out.println(collect20);
     }
 }
