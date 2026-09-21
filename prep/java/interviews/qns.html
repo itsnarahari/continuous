@@ -178,6 +178,1018 @@
     </div>
     <div class="accordion" id="accordionSeniorJava">
 
+      <div class="accordion-item" data-manual-category="java">
+        <h2 class="accordion-header" id="threadLocalWhenUseTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#threadLocalWhenUseTopBody">
+            What is ThreadLocal, when should we use it, and what are its advantages?
+          </button>
+        </h2>
+        <div id="threadLocalWhenUseTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <code>ThreadLocal&lt;T&gt;</code> provides a separate value for each thread. The same
+              <code>ThreadLocal</code> object can be shared, but every thread sees its own independent value.
+              A value stored by thread A cannot be read by thread B through that ThreadLocal.
+            </p>
+
+            <h5 class="text-warning">Basic example</h5>
+            <pre><code class="language-java">private static final ThreadLocal&lt;String&gt; USER_ID = new ThreadLocal&lt;&gt;();
+
+USER_ID.set("user-101");
+System.out.println(USER_ID.get()); // user-101 for this thread
+
+USER_ID.remove(); // always clean it when the work is complete</code></pre>
+            <p>
+              Internally, each <code>Thread</code> has thread-local storage. A ThreadLocal acts as a key into
+              that storage, so the value is associated with the current thread rather than with the shared
+              ThreadLocal object itself.
+            </p>
+
+            <h5 class="text-warning">Real-world request context example</h5>
+            <pre><code class="language-java">public final class RequestContext {
+    private static final ThreadLocal&lt;String&gt; CORRELATION_ID = new ThreadLocal&lt;&gt;();
+
+    private RequestContext() { }
+
+    public static void setCorrelationId(String id) {
+        CORRELATION_ID.set(id);
+    }
+
+    public static String getCorrelationId() {
+        return CORRELATION_ID.get();
+    }
+
+    public static void clear() {
+        CORRELATION_ID.remove();
+    }
+}
+
+try {
+    RequestContext.setCorrelationId("req-abc-123");
+    service.process(); // any method on the same thread can read it
+} finally {
+    RequestContext.clear();
+}</code></pre>
+            <p>
+              A servlet filter or Spring <code>OncePerRequestFilter</code> can set a correlation ID at request
+              start and remove it in <code>finally</code>. Logging code can then include the ID without passing
+              it through every method parameter.
+            </p>
+
+            <h5 class="text-warning">Common uses</h5>
+            <ul>
+              <li><strong>Request context:</strong> correlation ID, tenant ID, authenticated user, or locale for the current request thread.</li>
+              <li><strong>Logging:</strong> SLF4J/Logback MDC uses thread-associated context for request and trace fields.</li>
+              <li><strong>Transaction context:</strong> frameworks associate resources and transaction state with the executing thread.</li>
+              <li><strong>Per-thread utilities:</strong> legacy non-thread-safe objects such as <code>SimpleDateFormat</code>, although <code>java.time</code> is preferred now.</li>
+              <li><strong>Framework internals:</strong> temporarily store context that must be available deep in a synchronous call chain without changing every method signature.</li>
+            </ul>
+
+            <h5 class="text-warning">Why is it thread-safe?</h5>
+            <pre><code class="language-java">ThreadLocal&lt;Integer&gt; counter = ThreadLocal.withInitial(() -&gt; 0);
+
+Runnable task = () -&gt; {
+    counter.set(counter.get() + 1);
+    System.out.println(Thread.currentThread().getName()
+        + " -> " + counter.get());
+};
+
+new Thread(task, "A").start(); // A has its own value
+new Thread(task, "B").start(); // B has a different value</code></pre>
+            <p>
+              The values are isolated by thread. This avoids locking for access to that per-thread state, but
+              ThreadLocal does not make a shared object thread-safe. If the value itself points to a shared
+              mutable object, that object still needs normal synchronization.
+            </p>
+
+            <h5 class="text-warning">Advantages</h5>
+            <ul>
+              <li><strong>Thread isolation:</strong> each thread gets an independent value, reducing accidental cross-thread interference.</li>
+              <li><strong>No parameter plumbing:</strong> context can be read by lower-level synchronous code without adding a parameter to every method.</li>
+              <li><strong>Less locking:</strong> access to independent per-thread state normally needs no lock.</li>
+              <li><strong>Useful for framework infrastructure:</strong> transaction, logging, request, and security context implementations can keep execution metadata local to a thread.</li>
+            </ul>
+
+            <h5 class="text-warning">Major danger with thread pools</h5>
+            <pre><code class="language-java">ExecutorService pool = Executors.newFixedThreadPool(2);
+ThreadLocal&lt;String&gt; tenant = new ThreadLocal&lt;&gt;();
+
+pool.submit(() -&gt; {
+    tenant.set("tenant-A");
+    process();
+    // Missing remove(): the worker thread is reused and may leak tenant-A
+});</code></pre>
+            <p>
+              Thread-pool threads live much longer than one request. If a task does not call
+              <code>remove()</code>, the next task using that worker may see stale data. This can cause tenant
+              or user-data leakage, incorrect routing, memory retention, and confusing production bugs.
+            </p>
+            <pre><code class="language-java">pool.submit(() -&gt; {
+    try {
+        tenant.set("tenant-A");
+        process();
+    } finally {
+        tenant.remove();
+    }
+});</code></pre>
+
+            <h5 class="text-warning">ThreadLocal and asynchronous code</h5>
+            <p>
+              ThreadLocal values do not automatically travel to another thread. They can disappear when work
+              moves to an executor, <code>@Async</code> method, CompletableFuture, or a reactive pipeline.
+              Use explicit context passing, a carefully configured task decorator, framework context
+              propagation, or a reactive context rather than assuming the value will be present.
+            </p>
+            <pre><code class="language-java">CompletableFuture.runAsync(() -&gt; {
+    // Usually a different thread: RequestContext.getCorrelationId() may be null.
+    // Pass the context explicitly or use supported context propagation.
+});</code></pre>
+
+            <h5 class="text-warning">ThreadLocal versus alternatives</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead><tr><th>Need</th><th>Prefer</th></tr></thead>
+              <tbody>
+                <tr><td>Normal business data</td><td>Pass it explicitly as a method parameter</td></tr>
+                <tr><td>Shared mutable state</td><td>Thread-safe collection, lock, or atomic variable</td></tr>
+                <tr><td>Request logging fields</td><td>MDC with guaranteed cleanup and async propagation</td></tr>
+                <tr><td>Modern date/time formatting</td><td>Immutable <code>java.time</code> formatters</td></tr>
+                <tr><td>Reactive or asynchronous context</td><td>Explicit context propagation or framework-supported context</td></tr>
+                <tr><td>Per-thread temporary context</td><td><code>ThreadLocal</code> with <code>try/finally</code> cleanup</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">InheritableThreadLocal</h5>
+            <p>
+              <code>InheritableThreadLocal</code> can copy a parent value when a child thread is created, but
+              it is usually unsafe as a general request-context solution with thread pools because pooled
+              workers are created once and reused. It also does not automatically solve asynchronous context
+              propagation.
+            </p>
+
+            <p>
+              <strong>Interview summary:</strong> ThreadLocal stores one value per thread and is useful for
+              synchronous request, logging, transaction, or framework context. It avoids passing context
+              through every method and normally needs no lock for the context itself. Always call
+              <code>remove()</code> in a <code>finally</code> block, especially with thread pools, and do not
+              use it as a replacement for explicit business-data flow or cross-thread context propagation.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="springboot">
+        <h2 class="accordion-header" id="hikariMultipleDataSourcesTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#hikariMultipleDataSourcesTopBody">
+            How does Hikari work when a Spring Boot application has multiple data sources?
+          </button>
+        </h2>
+        <div id="hikariMultipleDataSourcesTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              When an application has multiple data sources, it normally has <strong>one Hikari pool per
+              configured <code>DataSource</code></strong>. Hikari does not create one global pool and mix
+              connections from different databases. Each pool owns its own JDBC URL, credentials, limits,
+              health checks, and physical connections.
+            </p>
+
+            <h5 class="text-warning">Example architecture</h5>
+            <pre><code class="language-text">Spring Boot application
+  -> ordersDataSource -> Hikari pool -> Orders database
+  -> reportingDataSource -> Hikari pool -> Reporting database
+  -> archiveDataSource -> Hikari pool -> Archive database
+
+Each pool is independent.</code></pre>
+            <p>
+              If the application has three data sources with maximum pool sizes 10, 5, and 3, the service
+              can create up to 18 database connections, not 10 total. Add all application instances and other
+              clients when checking database connection limits.
+            </p>
+
+            <h5 class="text-warning">Configuration example</h5>
+            <pre><code class="language-yaml">app:
+  datasource:
+    orders:
+      jdbc-url: jdbc:postgresql://orders-db:5432/orders
+      username: orders_user
+      password: ${ORDERS_DB_PASSWORD}
+      maximum-pool-size: 15
+    reporting:
+      jdbc-url: jdbc:postgresql://reports-db:5432/reports
+      username: reports_user
+      password: ${REPORTS_DB_PASSWORD}
+      maximum-pool-size: 5
+      read-only: true</code></pre>
+            <pre><code class="language-java">@Configuration
+public class DataSourceConfig {
+
+    @Bean(name = "ordersDataSource")
+    @Primary
+    @ConfigurationProperties("app.datasource.orders")
+    public DataSource ordersDataSource() {
+        return DataSourceBuilder.create()
+            .type(HikariDataSource.class)
+            .build();
+    }
+
+    @Bean(name = "reportingDataSource")
+    @ConfigurationProperties("app.datasource.reporting")
+    public DataSource reportingDataSource() {
+        return DataSourceBuilder.create()
+            .type(HikariDataSource.class)
+            .build();
+    }
+}</code></pre>
+            <p>
+              For Hikari, <code>jdbc-url</code> is commonly used when binding directly to
+              <code>HikariDataSource</code>. The exact property prefix and JPA setup depend on whether Spring
+              Boot's auto-configuration is being used or the data sources are configured manually.
+            </p>
+
+            <h5 class="text-warning">Selecting the correct pool</h5>
+            <pre><code class="language-java">@Service
+public class ReportService {
+    private final JdbcTemplate reportingJdbcTemplate;
+
+    public ReportService(
+            @Qualifier("reportingJdbcTemplate") JdbcTemplate reportingJdbcTemplate) {
+        this.reportingJdbcTemplate = reportingJdbcTemplate;
+    }
+}
+
+// The orders data source is @Primary, so an unqualified injection uses it.
+// @Qualifier selects a specific named pool.</code></pre>
+            <ul>
+              <li><strong><code>@Primary</code>:</strong> chooses the default data source when Spring finds multiple candidates.</li>
+              <li><strong><code>@Qualifier</code>:</strong> explicitly selects a named <code>DataSource</code>, <code>JdbcTemplate</code>, repository, or transaction manager.</li>
+              <li><strong>Separate packages:</strong> with multiple JPA databases, configure each entity manager and repository package against the intended data source.</li>
+              <li><strong>Routing data source:</strong> a routing layer can choose a target data source using a context such as read/write mode or tenant ID; each target still has its own Hikari pool.</li>
+            </ul>
+
+            <h5 class="text-warning">Transactions with multiple data sources</h5>
+            <pre><code class="language-java">@Transactional(transactionManager = "ordersTransactionManager")
+public void updateOrder() {
+    // Uses the orders pool and orders transaction manager.
+    orderRepository.save(order);
+}
+
+@Transactional(transactionManager = "reportingTransactionManager")
+public void writeReport() {
+    // Uses the reporting pool and reporting transaction manager.
+    reportingRepository.save(report);
+}</code></pre>
+            <p>
+              A normal local transaction manager coordinates only its own data source. Calling two methods that
+              use two local transaction managers does not make one atomic transaction. If both databases must
+              commit or roll back together, use a configured JTA/XA coordinator or redesign with an event/Saga
+              approach.
+            </p>
+
+            <h5 class="text-warning">Routing read/write example</h5>
+            <pre><code class="language-java">public enum DbRole { READ, WRITE }
+
+public class DbContext {
+    private static final ThreadLocal&lt;DbRole&gt; ROLE = new ThreadLocal&lt;&gt;();
+
+    public static void use(DbRole role) { ROLE.set(role); }
+    public static DbRole current() { return ROLE.get(); }
+    public static void clear() { ROLE.remove(); }
+}
+
+// AbstractRoutingDataSource chooses orders-primary or orders-replica.
+// Each target DataSource has its own HikariCP pool.</code></pre>
+            <p>
+              Always clear a routing context in a <code>finally</code> block or interceptor. Thread-pool
+              threads are reused; leaving a tenant or read/write value in a <code>ThreadLocal</code> can route
+              a later request to the wrong database.
+            </p>
+
+            <h5 class="text-warning">Advantages</h5>
+            <ul>
+              <li>Different databases can have different credentials, pool sizes, timeouts, and read-only policies.</li>
+              <li>A slow reporting database does not necessarily consume connections from the orders pool.</li>
+              <li>Workloads can be isolated: transactional writes, read replicas, archives, and analytics can be tuned separately.</li>
+              <li>Each pool can expose separate Hikari metrics using a distinct pool name.</li>
+            </ul>
+
+            <h5 class="text-warning">Risks and disadvantages</h5>
+            <ul>
+              <li><strong>Connection multiplication:</strong> all pool maximums add together across every application instance.</li>
+              <li><strong>Wrong pool selection:</strong> an unqualified bean or incorrect repository configuration can read or write the wrong database.</li>
+              <li><strong>Transaction boundaries:</strong> local transactions do not span multiple pools automatically.</li>
+              <li><strong>Operational overhead:</strong> each pool needs monitoring, credentials, health checks, leak diagnosis, and timeout tuning.</li>
+              <li><strong>Startup cost:</strong> eager minimum-idle connections across many pools can create a startup connection burst.</li>
+            </ul>
+
+            <h5 class="text-warning">Monitoring and sizing</h5>
+            <pre><code class="language-text">Total possible connections
+  = sum of every pool maximum
+  x number of application instances
+  + migrations + admin tools + other services
+
+Monitor each pool separately:
+  active, idle, total, pending, timeout count, and connection creation failures</code></pre>
+            <p>
+              Give each pool a meaningful name such as <code>ordersPool</code> and
+              <code>reportingPool</code>. Do not give every pool the same maximum size automatically; size it
+              according to workload, database capacity, query latency, and instance count.
+            </p>
+
+            <p>
+              <strong>Interview summary:</strong> multiple data sources mean multiple independent Hikari pools.
+              Use <code>@Primary</code> for a default, <code>@Qualifier</code> for explicit selection, and a
+              matching transaction manager for each database. A routing data source chooses among target pools,
+              but does not merge them. Pool sizes add together, and local transactions do not become atomic
+              across pools without JTA/XA or a distributed workflow design.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="springboot">
+        <h2 class="accordion-header" id="springBootConnectionOpenCloseInternalsTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#springBootConnectionOpenCloseInternalsTopBody">
+            If Spring Boot does not open and close connections manually, how does it happen internally?
+          </button>
+        </h2>
+        <div id="springBootConnectionOpenCloseInternalsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Modern Spring Boot applications usually do not call <code>DriverManager.getConnection()</code>
+              or explicitly close a physical database connection in service code. Spring Boot configures a
+              <code>DataSource</code>, normally backed by HikariCP, and Spring's transaction infrastructure
+              manages the connection lifecycle. The connection is still borrowed and released; the framework
+              performs those operations for us.
+            </p>
+
+            <h5 class="text-warning">Typical request flow</h5>
+            <pre><code class="language-text">HTTP request
+  -> Spring transaction interceptor starts @Transactional method
+  -> DataSourceUtils asks HikariCP for a connection
+  -> connection is bound to the current thread/transaction
+  -> Hibernate/JDBC executes SQL using that connection
+  -> flush pending changes
+  -> commit or rollback
+  -> connection is released to HikariCP
+  -> response returned</code></pre>
+
+            <h5 class="text-warning">Application code</h5>
+            <pre><code class="language-java">@Service
+public class OrderService {
+    private final OrderRepository orderRepository;
+
+    @Transactional
+    public void createOrder(Order order) {
+        orderRepository.save(order);
+        // No DriverManager.getConnection() and no explicit close().
+    }
+}</code></pre>
+            <ol>
+              <li>Spring's transaction interceptor sees <code>@Transactional</code> through the Spring proxy.</li>
+              <li>The configured transaction manager starts or joins a transaction.</li>
+              <li>When Hibernate first needs JDBC, it asks the configured <code>DataSource</code> for a connection.</li>
+              <li>HikariCP gives the transaction a pooled connection and Spring binds it to the current transaction context.</li>
+              <li>Repositories and Hibernate reuse that same connection during the transaction.</li>
+              <li>At method completion, Spring commits if successful or rolls back if an exception marks the transaction rollback-only.</li>
+              <li>Spring releases the connection. Hikari resets its state and returns it to the idle pool.</li>
+            </ol>
+
+            <h5 class="text-warning">What does close() actually do?</h5>
+            <pre><code class="language-java">try (Connection connection = dataSource.getConnection()) {
+    // use connection
+} // close() is called automatically
+</code></pre>
+            <p>
+              With HikariCP, the object returned to application code is a pooled connection proxy. Calling
+              <code>close()</code> on that proxy normally does <strong>not</strong> close the physical TCP
+              connection to the database. It returns the connection to HikariCP, which can reuse it. Hikari
+              resets connection state such as auto-commit, read-only mode, isolation, and transaction state
+              before handing it to another request.
+            </p>
+
+            <h5 class="text-warning">Spring's JDBC connection handling</h5>
+            <pre><code class="language-java">// Simplified conceptual flow inside Spring
+Connection connection = dataSource.getConnection();
+TransactionSynchronizationManager.bindResource(dataSource, connection);
+
+try {
+    // repositories and JdbcTemplate reuse the bound connection
+    transactionManager.commit(transaction);
+} catch (RuntimeException ex) {
+    transactionManager.rollback(transaction);
+    throw ex;
+} finally {
+    TransactionSynchronizationManager.unbindResource(dataSource);
+    DataSourceUtils.releaseConnection(connection, dataSource);
+}</code></pre>
+            <p>
+              This is a simplified explanation. Spring uses transaction managers, resource synchronization,
+              proxies, and framework-specific adapters. The important idea is that the connection is associated
+              with the transaction, not manually passed through every repository method.
+            </p>
+
+            <h5 class="text-warning">What if there is no @Transactional?</h5>
+            <ul>
+              <li>Spring Data repository methods may have their own transaction configuration, especially standard CRUD methods.</li>
+              <li>A read query may borrow and release a connection around that repository operation.</li>
+              <li>Multiple repository calls without one outer transaction may use different transactions and connections.</li>
+              <li>Hibernate lazy loading after the persistence context is closed can fail with <code>LazyInitializationException</code>.</li>
+              <li>For related writes that must succeed or fail together, put the transaction boundary at the service layer.</li>
+            </ul>
+            <pre><code class="language-java">@Transactional
+public void transfer() {
+    accountRepository.debit(from);
+    accountRepository.credit(to);
+    // Both operations participate in one transaction and normally one bound connection.
+}</code></pre>
+
+            <h5 class="text-warning">When is a connection physically opened?</h5>
+            <ul>
+              <li>At startup or on demand when Hikari creates connections to satisfy <code>minimumIdle</code> or a request.</li>
+              <li>When the pool needs to replace an expired, invalid, or failed connection.</li>
+              <li>During a request only if no reusable idle connection is available and the pool is below <code>maximumPoolSize</code>.</li>
+            </ul>
+            <p>
+              A connection is not necessarily opened for every HTTP request. A request can also complete
+              without a database connection if no database operation is executed.
+            </p>
+
+            <h5 class="text-warning">When is it physically closed?</h5>
+            <ul>
+              <li>When the application shuts down and Hikari closes the pool.</li>
+              <li>When <code>maxLifetime</code> is reached and Hikari retires the connection.</li>
+              <li>When the database/network marks it broken or validation fails.</li>
+              <li>When the pool is resized or an unrecoverable connection error occurs.</li>
+            </ul>
+            <p>
+              Application-level release and physical close are different. Application code releases the pooled
+              connection after the transaction; Hikari decides later when the underlying physical connection
+              should actually be retired.
+            </p>
+
+            <h5 class="text-warning">Common mistakes</h5>
+            <ul>
+              <li>Calling <code>DriverManager.getConnection()</code> manually while also using Spring's pool can bypass the configured pool.</li>
+              <li>Keeping a JDBC connection in a field or static variable can leak it and is not thread-safe.</li>
+              <li>Starting a transaction in the controller and doing slow network calls inside it can hold a connection unnecessarily.</li>
+              <li>Forgetting <code>@Transactional</code> on the correct Spring bean or calling a transactional method through self-invocation can prevent the proxy from starting a transaction.</li>
+              <li>Increasing pool size does not fix slow SQL or long-running transactions and may overload the database.</li>
+            </ul>
+
+            <p>
+              <strong>Interview summary:</strong> Spring Boot opens a physical connection through Hikari only
+              when a transaction or database operation needs one. Spring binds the pooled connection to the
+              transaction, Hibernate/JDBC reuses it, and the transaction manager commits or rolls back. On
+              completion, Spring releases it and Hikari returns it to the pool; the proxy's
+              <code>close()</code> usually means “return to pool,” not “close the physical database socket.”
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="twoPcVsSagaWhenToUseTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#twoPcVsSagaWhenToUseTopBody">
+            2PC vs Saga: when should we use each one?
+          </button>
+        </h2>
+        <div id="twoPcVsSagaWhenToUseTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Both patterns coordinate work across multiple resources, but they use different consistency
+              models. <strong>2PC tries to make every participant commit or roll back atomically.</strong>
+              <strong>A Saga commits a sequence of local transactions and uses compensation when a later
+              step fails.</strong>
+            </p>
+
+            <h5 class="text-warning">Order and payment example</h5>
+            <pre><code class="language-text">2PC:
+  Order DB + Payment DB prepare
+  If both vote commit -> commit both
+  If one fails -> roll back both
+
+Saga:
+  OrderService creates PENDING order
+  PaymentService charges payment
+  InventoryService reserves stock
+  If inventory fails -> refund payment and cancel order</code></pre>
+
+            <h5 class="text-warning">Comparison</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead><tr><th>Aspect</th><th>2PC</th><th>Saga</th></tr></thead>
+              <tbody>
+                <tr><td>Consistency</td><td>Strong all-or-nothing transaction outcome</td><td>Usually eventual consistency with intermediate states</td></tr>
+                <tr><td>Mechanism</td><td>Prepare/vote, then global commit or rollback</td><td>Local transactions plus events/commands and compensating actions</td></tr>
+                <tr><td>Locks</td><td>Participants may hold locks while prepared</td><td>Short local transactions; usually fewer long-held locks</td></tr>
+                <tr><td>Failure behavior</td><td>Coordinator/resource failure can block prepared participants</td><td>Workflow continues, retries, or runs compensation</td></tr>
+                <tr><td>Resource requirement</td><td>XA-capable resources and a compatible coordinator</td><td>Each service needs only a local transaction and reliable messaging</td></tr>
+                <tr><td>Service coupling</td><td>High; participants share transaction protocol and recovery</td><td>Lower; services communicate through business events or commands</td></tr>
+                <tr><td>Latency</td><td>Higher due to multiple phases and durable logs</td><td>Usually lower per local transaction, but workflow takes time</td></tr>
+                <tr><td>Business compensation</td><td>Not normally needed if protocol completes</td><td>Required for actions that must be undone, such as refund or release</td></tr>
+                <tr><td>Best fit</td><td>Controlled XA resources where atomicity is mandatory</td><td>Independent microservices and long-running business workflows</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Use 2PC when</h5>
+            <ul>
+              <li>Every participant supports XA/JTA or an equivalent distributed transaction protocol.</li>
+              <li>A true all-or-nothing outcome is required and an eventual intermediate state is unacceptable.</li>
+              <li>The transaction is short and participants are reliable and under one operational boundary.</li>
+              <li>Examples include two controlled databases in one enterprise application or coordinated database and XA message-broker work.</li>
+              <li>You can operate coordinator recovery logs, transaction timeouts, monitoring, and prepared-transaction cleanup.</li>
+            </ul>
+            <p>
+              Avoid choosing 2PC merely because two services call each other. Normal HTTP/REST services and
+              external payment providers are not automatically XA participants.
+            </p>
+
+            <h5 class="text-warning">Use Saga when</h5>
+            <ul>
+              <li>Services own separate databases and must remain independently deployable.</li>
+              <li>Participants include HTTP APIs, payment gateways, email systems, or other resources that do not support XA.</li>
+              <li>The workflow can tolerate intermediate states such as <code>PENDING</code>, <code>PROCESSING</code>, or <code>CANCELLED</code>.</li>
+              <li>Business actions have meaningful compensations such as refund payment, release inventory, or cancel shipment.</li>
+              <li>The process is long-running, needs retries, or must survive service restarts and temporary outages.</li>
+            </ul>
+            <pre><code class="language-java">@Transactional
+public void createOrder(OrderRequest request) {
+    Order order = orderRepository.save(new Order("PENDING"));
+    outboxRepository.save(new OutboxEvent(
+        "OrderCreated", order.getId(), request));
+}
+
+// A message publisher sends OrderCreated after local commit.
+// PaymentService and InventoryService perform local transactions.
+// Failure events trigger refund/cancel compensation.</code></pre>
+
+            <h5 class="text-warning">Saga safeguards</h5>
+            <ul>
+              <li>Use the transactional outbox so the local database change and event publication are not lost.</li>
+              <li>Make every command and event handler idempotent because messages can be retried or delivered twice.</li>
+              <li>Use correlation IDs, workflow state, timeouts, retry with backoff, and a dead-letter strategy.</li>
+              <li>Choose choreography for simple event flows and orchestration for complex workflows that need centralized visibility.</li>
+              <li>Design explicit compensation; a compensation is a new business transaction, not a database rollback.</li>
+            </ul>
+
+            <h5 class="text-warning">Decision rule</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <tbody>
+                <tr><td><strong>One database, multiple tables</strong></td><td>Use one local database transaction; neither 2PC nor Saga is necessary.</td></tr>
+                <tr><td><strong>Two XA databases, strict atomicity</strong></td><td>Consider 2PC, after accepting locking and operational complexity.</td></tr>
+                <tr><td><strong>Independent services or external APIs</strong></td><td>Use Saga with outbox, idempotency, retries, and compensation.</td></tr>
+                <tr><td><strong>Long-running workflow</strong></td><td>Prefer Saga; 2PC is a poor fit for long-held locks.</td></tr>
+                <tr><td><strong>No compensating action exists</strong></td><td>Reconsider the business design; Saga cannot magically undo an irreversible side effect.</td></tr>
+              </tbody>
+            </table>
+            <p>
+              <strong>Interview summary:</strong> choose 2PC for short, tightly controlled, XA-capable
+              resources when atomic commit is mandatory. Choose Saga for independent microservices, external
+              systems, and long-running workflows where eventual consistency and business compensation are
+              acceptable. In most modern microservice architectures, Saga is preferred because it avoids
+              distributed locks and preserves service autonomy.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="implementTwoPcJavaServicesTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#implementTwoPcJavaServicesTopBody">
+            How do we implement 2PC in Java for multiple services?
+          </button>
+        </h2>
+        <div id="implementTwoPcJavaServicesTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              First, an important distinction: <strong>ordinary REST calls between Spring Boot services do
+              not automatically become a 2PC transaction</strong>. To implement real 2PC, every participant
+              must support a compatible distributed transaction protocol, usually XA, and a transaction
+              coordinator must propagate and recover the global transaction. A normal service that simply
+              receives HTTP, writes its local database, and returns a response is not an XA participant.
+            </p>
+
+            <h5 class="text-warning">Architecture</h5>
+            <pre><code class="language-text">Application / transaction coordinator
+        |
+        | global transaction ID
+        |
+   Order service / XA database
+        |
+   Payment service / XA database
+
+Coordinator: begin -> prepare all -> commit all or rollback all</code></pre>
+            <p>
+              The coordinator maintains the global transaction state. Each participant uses an XA-capable
+              resource such as an XA database driver or XA message broker integration. The coordinator sends
+              prepare and commit/rollback commands, and durable logs allow recovery after crashes.
+            </p>
+
+            <h5 class="text-warning">Option 1: 2PC across resources in one Java application</h5>
+            <p>
+              The simplest Java deployment is one application using two XA data sources. A JTA transaction
+              manager coordinates both databases. The exact provider can be Narayana, Atomikos, Bitronix, or
+              an application-server transaction manager; configuration names vary by version.
+            </p>
+            <pre><code class="language-java">@Service
+public class OrderApplicationService {
+    private final OrderRepository orderRepository;
+    private final PaymentRepository paymentRepository;
+
+    public OrderApplicationService(
+            OrderRepository orderRepository,
+            PaymentRepository paymentRepository) {
+        this.orderRepository = orderRepository;
+        this.paymentRepository = paymentRepository;
+    }
+
+    @Transactional // must be a JTA transaction, not two unrelated local transactions
+    public void placeOrder(Order order, Payment payment) {
+        orderRepository.save(order);     // XA participant 1
+        paymentRepository.save(payment); // XA participant 2
+        // At commit, JTA runs prepare and then commit on both resources.
+    }
+}</code></pre>
+            <p>
+              The application must configure both repositories to use the same JTA transaction manager and
+              XA data sources. If one data source uses a local transaction manager and the other uses JTA,
+              <code>@Transactional</code> will not provide atomicity across both databases.
+            </p>
+            <pre><code class="language-yaml">spring:
+  jta:
+    enabled: true
+  datasource:
+    # The actual XA URL, driver, and pool properties depend on the database.
+    # Configure each XA resource with the selected JTA provider.
+  transaction:
+    default-timeout: 30s</code></pre>
+            <p>
+              In production, follow the selected transaction manager's documented setup for XA data sources,
+              recovery logs, unique node identifiers, transaction timeouts, and resource enlistment. Do not
+              treat a generic JDBC URL as proof that the resource is XA-enabled.
+            </p>
+
+            <h5 class="text-warning">Option 2: Separate Spring Boot services</h5>
+            <p>
+              With separate Order and Payment services, the coordinator must propagate a global transaction
+              context and each service must expose an XA-aware participant endpoint. A simple REST call is not
+              enough:
+            </p>
+            <pre><code class="language-text">OrderService begins global transaction T-100
+  -> calls PaymentService with T-100
+  -> PaymentService enlists its XA resource in T-100
+  -> coordinator prepares Order and Payment
+  -> coordinator commits or rolls back both
+</code></pre>
+            <p>
+              In practice this requires a distributed transaction manager/coordinator, protocol support in
+              every service, transaction context propagation, XA-capable resources, timeout handling, durable
+              recovery logs, and strict operational coordination. Passing a header such as
+              <code>X-Transaction-Id</code> by itself does not create a transaction or provide atomicity.
+            </p>
+            <pre><code class="language-java">// Illustrative only: this is not a complete XA coordinator.
+@PostMapping("/payments")
+public ResponseEntity&lt;Void&gt; preparePayment(
+        @RequestHeader("Global-Transaction-Id") String transactionId,
+        @RequestBody PaymentRequest request) {
+    // The service must enlist an XA resource under transactionId,
+    // durably prepare its work, and return a vote.
+    return ResponseEntity.ok().build();
+}</code></pre>
+            <p>
+              The coordinator must then call explicit prepare and completion operations, and the Payment
+              service must recover prepared transactions after restart. Building this protocol manually over
+              REST is dangerous because retries, duplicate messages, coordinator failure, idempotency, locks,
+              and recovery are all part of the protocol.
+            </p>
+
+            <h5 class="text-warning">Why not use two local transactions?</h5>
+            <pre><code class="language-java">@Transactional
+public void unsafePlaceOrder() {
+    orderService.createOrder();   // local transaction may commit
+    paymentService.chargeCard();  // may fail afterward
+}</code></pre>
+            <p>
+              If the first service commits and the second fails, the first change remains. Calling two
+              independent <code>@Transactional</code> methods does not create 2PC. Likewise,
+              <code>REQUIRES_NEW</code> creates a separate transaction; it does not coordinate the two
+              services.
+            </p>
+
+            <h5 class="text-warning">Recommended microservices approach</h5>
+            <p>
+              For independent services, use a Saga more often than 2PC. Each service commits a short local
+              transaction and publishes an event or invokes the next step. If a later step fails, a
+              compensating action reverses the business effect. Use an outbox and idempotent consumers so
+              events are not lost or applied twice.
+            </p>
+            <pre><code class="language-text">OrderService: create PENDING order + outbox event
+PaymentService: charge payment + publish PaymentCompleted/Failed
+OrderService: mark CONFIRMED or CANCELLED
+
+Failure: refund payment or cancel the order as compensation</code></pre>
+
+            <h5 class="text-warning">When to choose which</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead><tr><th>Situation</th><th>Preferred approach</th></tr></thead>
+              <tbody>
+                <tr><td>Two XA databases under one controlled application boundary</td><td>JTA/XA 2PC can be appropriate</td></tr>
+                <tr><td>Independent Spring Boot services with separate ownership</td><td>Saga with outbox, retries, idempotency, and compensation</td></tr>
+                <tr><td>One database with multiple tables</td><td>One local database transaction; 2PC is unnecessary</td></tr>
+                <tr><td>External payment provider or HTTP-only API</td><td>Usually Saga/workflow; the provider is not automatically an XA participant</td></tr>
+                <tr><td>Strict atomicity is mandatory and resources are XA-compatible</td><td>Use a supported coordinator and accept blocking/latency/operational cost</td></tr>
+              </tbody>
+            </table>
+            <p>
+              <strong>Interview summary:</strong> Java 2PC is implemented with a JTA transaction manager,
+              XA-capable resources, transaction context propagation, prepare/commit coordination, and durable
+              recovery. Spring's <code>@Transactional</code> works only when it is backed by the same JTA
+              coordinator; two local transactions or ordinary REST calls are not 2PC. For most independent
+              microservices, prefer a Saga with an outbox and compensating actions.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="microservices">
+        <h2 class="accordion-header" id="twoPhaseCommitInternalsTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#twoPhaseCommitInternalsTopBody">
+            What happens internally in Two-Phase Commit (2PC)?
+          </button>
+        </h2>
+        <div id="twoPhaseCommitInternalsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>Two-Phase Commit (2PC)</strong> is a distributed transaction protocol used when one
+              logical transaction must commit across multiple resource participants, such as two databases.
+              A <strong>coordinator</strong> controls the protocol; each database or resource manager is a
+              <strong>participant</strong>.
+            </p>
+
+            <h5 class="text-warning">Example</h5>
+            <pre><code class="language-text">Order transaction
+  Coordinator
+    |-- Inventory database participant
+    |-- Payment database participant
+
+Goal: either both databases commit, or both roll back.</code></pre>
+
+            <h5 class="text-warning">Phase 1: Prepare / voting phase</h5>
+            <ol>
+              <li>The application starts a distributed transaction and the coordinator assigns a global transaction ID.</li>
+              <li>The coordinator sends <code>PREPARE</code> to every participant.</li>
+              <li>Each participant executes its local SQL changes, obtains required locks, validates constraints, and writes enough recovery information to durable transaction logs.</li>
+              <li>If it can commit later, the participant writes a prepared/ready record, keeps the transaction uncommitted, and replies <code>VOTE_COMMIT</code>.</li>
+              <li>If it cannot commit, it rolls back its local work and replies <code>VOTE_ABORT</code>.</li>
+            </ol>
+            <pre><code class="language-text">Coordinator -> Inventory: PREPARE
+Coordinator -> Payment:   PREPARE
+
+Inventory -> Coordinator: VOTE_COMMIT
+Payment   -> Coordinator: VOTE_COMMIT</code></pre>
+            <p>
+              A <code>VOTE_COMMIT</code> does not mean the participant has committed. It means the
+              participant promises that it can commit later and has made the necessary recovery state durable.
+            </p>
+
+            <h5 class="text-warning">Phase 2: Decision phase</h5>
+            <p>
+              The coordinator decides based on all votes. If every participant voted commit, it writes a
+              global commit decision and sends <code>COMMIT</code>. If any participant voted abort or timed
+              out during preparation, it writes an abort decision and sends <code>ROLLBACK</code>.
+            </p>
+            <pre><code class="language-text">All prepared:
+Coordinator -> durable log: GLOBAL_COMMIT
+Coordinator -> Inventory:   COMMIT
+Coordinator -> Payment:     COMMIT
+
+Any abort:
+Coordinator -> durable log: GLOBAL_ABORT
+Coordinator -> participants: ROLLBACK</code></pre>
+            <p>
+              Each participant commits or rolls back its prepared local transaction, releases locks, records
+              completion in its log, and sends an acknowledgement. The coordinator can finish only after the
+              participants acknowledge the decision.
+            </p>
+
+            <h5 class="text-warning">State flow</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead><tr><th>Component</th><th>Typical states</th></tr></thead>
+              <tbody>
+                <tr><td>Coordinator</td><td>ACTIVE -&gt; PREPARING -&gt; COMMITTING or ABORTING -&gt; COMPLETE</td></tr>
+                <tr><td>Participant</td><td>ACTIVE -&gt; PREPARED -&gt; COMMITTED or ROLLED_BACK</td></tr>
+                <tr><td>Transaction log</td><td>Stores transaction ID, prepare decision, global decision, and recovery records</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Why durable logs are required</h5>
+            <p>
+              Messages can be lost and processes can crash. The coordinator and participants persist protocol
+              decisions to stable storage so recovery can continue after restart. A participant that restarts
+              in the <code>PREPARED</code> state asks the coordinator for the global decision instead of
+              guessing whether it should commit or roll back.
+            </p>
+
+            <h5 class="text-warning">Failure scenarios</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead><tr><th>Failure</th><th>Result</th></tr></thead>
+              <tbody>
+                <tr><td>Participant fails before voting</td><td>Coordinator can abort after timeout or failed prepare.</td></tr>
+                <tr><td>Participant fails after voting commit</td><td>It recovers from its prepared log and asks for the global decision.</td></tr>
+                <tr><td>Coordinator fails before global decision</td><td>Participants may remain prepared and hold locks while waiting; this is the classic blocking problem.</td></tr>
+                <tr><td>Coordinator fails after writing commit</td><td>Recovery reads the durable commit decision and resends commit messages.</td></tr>
+                <tr><td>Commit message is lost</td><td>Participant retries or queries the coordinator before completing recovery.</td></tr>
+                <tr><td>Network partition</td><td>Participants cannot safely guess; prepared transactions may remain blocked.</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Main disadvantages</h5>
+            <ul>
+              <li><strong>Blocking:</strong> prepared participants may hold locks while the coordinator is unavailable.</li>
+              <li><strong>Latency:</strong> at least two communication phases and durable logging are required.</li>
+              <li><strong>Coordinator dependency:</strong> the coordinator is a critical availability and recovery component.</li>
+              <li><strong>Resource locking:</strong> long distributed transactions reduce throughput and can cause deadlocks or lock contention.</li>
+              <li><strong>Operational complexity:</strong> all participants need compatible transaction protocols, timeouts, recovery, and monitoring.</li>
+              <li><strong>Microservice coupling:</strong> services must participate in a shared distributed transaction, reducing autonomy.</li>
+            </ul>
+
+            <h5 class="text-warning">Spring/JTA-style example</h5>
+            <pre><code class="language-java">@Transactional // requires a configured JTA/XA transaction manager
+public void placeOrder(Order order, Payment payment) {
+    orderRepository.save(order);       // participant 1
+    paymentRepository.save(payment);   // participant 2
+    // The transaction manager coordinates prepare and commit.
+}</code></pre>
+            <p>
+              In a Spring application, <code>@Transactional</code> alone does not automatically create a
+              distributed 2PC transaction. A local transaction manager is typically used for one database.
+              2PC requires a configured JTA/XA transaction manager and XA-capable resources, with the exact
+              setup depending on the application server and database drivers.
+            </p>
+
+            <h5 class="text-warning">2PC versus Saga</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead><tr><th>2PC</th><th>Saga</th></tr></thead>
+              <tbody>
+                <tr><td>Atomic all-or-nothing commit</td><td>Sequence of local transactions with compensating actions</td></tr>
+                <tr><td>Usually strong consistency during the protocol</td><td>Usually eventual consistency</td></tr>
+                <tr><td>Locks/resources may remain held</td><td>Short local transactions and fewer long-held locks</td></tr>
+                <tr><td>Good for tightly controlled XA resources</td><td>Often better for independent microservices and long workflows</td></tr>
+              </tbody>
+            </table>
+            <p>
+              <strong>Interview summary:</strong> 2PC first asks every participant to prepare and vote, then
+              sends one global commit or rollback decision. The prepare record and coordinator decision must be
+              durable for recovery. It provides atomicity, but the protocol can block, hold locks, add latency,
+              and tightly couple services; that is why Sagas are often preferred for business workflows across
+              independent microservices.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-manual-category="springboot">
+        <h2 class="accordion-header" id="hikariConnectionPoolTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#hikariConnectionPoolTopBody">
+            How does HikariCP help with database connections? What are its advantages and disadvantages?
+          </button>
+        </h2>
+        <div id="hikariConnectionPoolTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>HikariCP</strong> is a JDBC connection pool. Instead of opening a new database
+              connection for every request, the application keeps a managed pool of reusable connections.
+              A request borrows an available connection, executes SQL, and returns it to the pool.
+            </p>
+
+            <h5 class="text-warning">Without a connection pool</h5>
+            <pre><code class="language-text">HTTP request
+  -> create TCP connection
+  -> authenticate with database
+  -> execute SQL
+  -> close connection
+
+Repeated for every request: expensive and slow</code></pre>
+
+            <h5 class="text-warning">With HikariCP</h5>
+            <pre><code class="language-text">Application startup: create a small pool of database connections
+
+HTTP request A -> borrow connection -> execute SQL -> return connection
+HTTP request B -> borrow connection -> execute SQL -> return connection
+
+The physical connections are reused.</code></pre>
+            <p>
+              Closing a pooled JDBC connection normally returns it to HikariCP rather than closing the
+              physical database connection. Hikari resets connection state such as auto-commit, read-only,
+              and transaction-related state before another request uses it.
+            </p>
+
+            <h5 class="text-warning">Connection lifecycle</h5>
+            <ol>
+              <li>HikariCP creates connections up to the configured pool limits.</li>
+              <li>A request asks the <code>DataSource</code> for a connection.</li>
+              <li>If one is available, Hikari returns it immediately.</li>
+              <li>If all connections are busy, the request waits up to <code>connectionTimeout</code>.</li>
+              <li>The application closes the JDBC connection in a <code>finally</code> block or try-with-resources.</li>
+              <li>Hikari returns the connection to the idle pool and makes it available to another request.</li>
+            </ol>
+            <pre><code class="language-java">try (Connection connection = dataSource.getConnection();
+     PreparedStatement statement = connection.prepareStatement(
+         "select id, name from customer where id = ?")) {
+    statement.setLong(1, 101L);
+    // use the connection
+} // returned to HikariCP, not physically closed</code></pre>
+
+            <h5 class="text-warning">Spring Boot configuration</h5>
+            <pre><code class="language-yaml">spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/app
+    username: app_user
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      validation-timeout: 5000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      leak-detection-threshold: 0
+      pool-name: AppHikariPool</code></pre>
+            <p>
+              Spring Boot uses HikariCP by default when it is available through the JDBC starter. The
+              application normally injects the configured <code>DataSource</code> rather than creating a
+              Hikari pool manually.
+            </p>
+
+            <h5 class="text-warning">Important settings</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead><tr><th>Setting</th><th>Meaning</th><th>How to think about it</th></tr></thead>
+              <tbody>
+                <tr><td><code>maximum-pool-size</code></td><td>Maximum physical connections in the pool</td><td>Must fit database connection limits and application concurrency</td></tr>
+                <tr><td><code>minimum-idle</code></td><td>Target number of idle connections</td><td>Keep warm connections for bursts, but avoid wasting database resources</td></tr>
+                <tr><td><code>connection-timeout</code></td><td>Maximum wait for a connection</td><td>After this, Hikari throws a pool-exhaustion timeout</td></tr>
+                <tr><td><code>max-lifetime</code></td><td>Maximum lifetime of a physical connection</td><td>Set below database/proxy connection lifetime so Hikari retires it first</td></tr>
+                <tr><td><code>idle-timeout</code></td><td>How long an extra idle connection can remain</td><td>Applies when the pool has more than <code>minimum-idle</code></td></tr>
+                <tr><td><code>validation-timeout</code></td><td>Maximum time to validate a connection</td><td>Must be lower than <code>connection-timeout</code></td></tr>
+                <tr><td><code>leak-detection-threshold</code></td><td>Logs a warning when a connection is borrowed too long</td><td>Useful temporarily for diagnosing missing close calls; not a fix for slow SQL</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Advantages</h5>
+            <ul>
+              <li><strong>Lower latency:</strong> avoids repeatedly creating TCP connections and performing database authentication.</li>
+              <li><strong>Resource control:</strong> limits the number of concurrent database connections and protects the database from connection storms.</li>
+              <li><strong>High throughput:</strong> lightweight pooling and efficient concurrent access reduce pool-management overhead.</li>
+              <li><strong>Connection health:</strong> retires expired or invalid connections and validates them when required.</li>
+              <li><strong>Transaction integration:</strong> Spring transactions borrow and return connections through the configured <code>DataSource</code>.</li>
+              <li><strong>Observability:</strong> pool metrics show active, idle, pending, and total connections through Micrometer/Actuator integration.</li>
+            </ul>
+
+            <h5 class="text-warning">Disadvantages and risks</h5>
+            <ul>
+              <li><strong>Pool exhaustion:</strong> long queries, uncommitted transactions, or missing closes make requests wait and eventually fail.</li>
+              <li><strong>Too many connections:</strong> a large pool can overload the database, increase context switching, and reduce performance.</li>
+              <li><strong>Connection leaks:</strong> forgetting to close a connection can slowly consume every pool slot.</li>
+              <li><strong>Timeout confusion:</strong> Hikari's connection timeout, JDBC socket timeout, transaction timeout, and load-balancer timeout are different settings.</li>
+              <li><strong>Not a query optimizer:</strong> a pool cannot fix slow SQL, missing indexes, locks, or database CPU saturation.</li>
+              <li><strong>Multiple pools can multiply load:</strong> if ten service instances each have a pool of 20, the database may receive up to 200 connections.</li>
+            </ul>
+
+            <h5 class="text-warning">How to choose pool size</h5>
+            <p>
+              Do not set <code>maximum-pool-size</code> equal to the number of application threads by default.
+              Start with a measured value, consider the database's maximum connections, and account for every
+              application instance, admin tool, migration job, and replica. A smaller pool can perform better
+              than a huge pool when the database has limited CPU or most work is I/O-bound.
+            </p>
+            <pre><code class="language-text">Total possible DB connections
+  = service instances x maximumPoolSize
+  + other clients
+
+Example:
+  5 instances x 15 connections = 75 possible service connections</code></pre>
+
+            <h5 class="text-warning">Diagnosing pool exhaustion</h5>
+            <ul>
+              <li>Check Hikari metrics: active, idle, total, and pending connections.</li>
+              <li>Look for high database query latency, lock waits, or transactions that remain open.</li>
+              <li>Check application code for missing try-with-resources and connection leaks.</li>
+              <li>Temporarily enable leak detection with a sensible threshold; do not set it lower than normal query duration.</li>
+              <li>Inspect thread dumps for requests waiting inside <code>HikariPool.getConnection()</code>.</li>
+              <li>Fix the underlying slow query or transaction boundary before simply increasing the pool size.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview summary</h5>
+            <p>
+              HikariCP improves database performance by reusing a controlled number of JDBC connections.
+              Requests borrow and return connections instead of repeatedly creating them. Its advantages are
+              low overhead, lower latency, connection limits, health checks, and metrics. Its main risks are
+              pool exhaustion, leaks, an oversized pool, and assuming that increasing pool size fixes slow
+              database work. Tune it together with database limits, query latency, transaction duration, and
+              the number of service instances.
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div class="accordion-item" data-manual-category="java8">
         <h2 class="accordion-header" id="reverseFirstKQueueTop">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#reverseFirstKQueueTopBody">
