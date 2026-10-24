@@ -57,7 +57,14 @@ public class Streams2026 {
 //
 // 9. Find the First Non-Repeating Character in a String (Fresher Level)
         String s = "java is tough but o, java is best";
-        Character c1 = s.chars().mapToObj(c -> (char) c).collect(Collectors.groupingBy(Function.identity(), LinkedHashMap::new, Collectors.counting())).entrySet().stream().filter(longEntry -> longEntry.getValue() == 1).map(Map.Entry::getKey).findFirst().orElse(null);
+        Character c1 = s.chars()
+                .mapToObj(c -> (char) c)
+                .collect(Collectors.groupingBy(Function.identity(), LinkedHashMap::new, Collectors.counting()))
+                .entrySet().stream()
+                .filter(longEntry -> longEntry.getValue() == 1)
+                .map(Map.Entry::getKey)
+                .findFirst()
+                .orElse(null);
         System.out.println(c1);
 //
 // 10. Find Maximum & Minimum Number in a List (Fresher Level)
@@ -82,7 +89,13 @@ public class Streams2026 {
         System.out.println(collect4);
 //
 // 14. Find Employees with Second-Highest Salary in Each Department (Expert Level)
-        Map<String, Employee> collect5 = employees.stream().collect(Collectors.groupingBy(Employee::getDepartment, Collectors.collectingAndThen(Collectors.toList(), empList -> empList.stream().sorted(Comparator.comparing(Employee::getSalary).reversed()).skip(1).findFirst().orElseGet(null))));
+        Map<String, Employee> collect5 = employees.stream()
+                .collect(Collectors.groupingBy(Employee::getDepartment, Collectors.collectingAndThen(Collectors.toList(), empList -> empList.stream()
+                        .sorted(Comparator.comparing(Employee::getSalary)
+                                .reversed())
+                        .skip(1)
+                        .findFirst()
+                        .orElseGet(null))));
         System.out.println(collect5);
 
 
@@ -644,5 +657,34 @@ public class Streams2026 {
 //        )
         System.out.println(collect20);
 
+        Queue<Integer> queue = new LinkedList<>(
+                Arrays.asList(1, 2, 3, 4, 5)
+        );
+
+        reverseFirstK(queue, 3);
+        System.out.println(queue); // [3, 2, 1, 4, 5]
+
+
+    }
+
+    static void reverseFirstK(Queue<Integer> queue, int k) {
+        if (k < 0 || k > queue.size()) {
+            throw new IllegalArgumentException("K must be between 0 and queue size");
+        }
+
+        Stack<Integer> stack = new Stack<>();
+
+        for (int i = 0; i < k; i++) {
+            stack.push(queue.remove());
+        }
+
+        while (!stack.isEmpty()) {
+            queue.add(stack.pop());
+        }
+
+        int remaining = queue.size() - k;
+        for (int i = 0; i < remaining; i++) {
+            queue.add(queue.remove());
+        }
     }
 }
