@@ -178,6 +178,748 @@
     </div>
     <div class="accordion" id="accordionSeniorJava">
 
+      <div class="accordion-item" data-category="java">
+        <h2 class="accordion-header" id="stringInternTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#stringInternTopBody">
+            How does the String intern() method work, and what is its use?
+          </button>
+        </h2>
+        <div id="stringInternTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <code>String.intern()</code> returns the canonical pooled representation of a string. The JVM keeps a
+              string pool containing one shared instance for each distinct string value registered in that pool. If
+              the same value is already present, <code>intern()</code> returns the existing pooled reference. If it
+              is absent, the value is added to the pool and that pooled reference is returned.
+            </p>
+
+            <h5 class="text-warning">Basic example</h5>
+            <pre><code class="language-java">String literal = "java";             // literal is automatically pooled
+String object = new String("java");  // new heap object, separate reference
+String pooled = object.intern();      // returns the pooled "java" reference
+
+System.out.println(literal == object); // false
+System.out.println(literal == pooled); // true
+System.out.println(literal.equals(object)); // true</code></pre>
+            <p>
+              <code>==</code> compares references, while <code>equals()</code> compares string content. Calling
+              <code>intern()</code> makes the reference point to the shared canonical pool entry, so two equal
+              strings can compare true with <code>==</code>. Use <code>equals()</code> for normal string comparison;
+              do not depend on interning to make <code>==</code> a business comparison.
+            </p>
+
+            <h5 class="text-warning">What happens internally?</h5>
+            <pre><code class="language-text">String value = new String("spring");
+
+value.intern()
+  -> calculate/find the string value in the JVM string table
+  -> if "spring" is already pooled, return that existing reference
+  -> otherwise register this value and return the pooled reference
+
+The String object you called intern() on is not changed into the pooled object;
+intern() returns the canonical reference, so assign its result when needed.</code></pre>
+            <pre><code class="language-java">String value = new String("spring");
+value.intern();
+
+System.out.println(value == "spring"); // do not assume true
+
+value = value.intern();
+System.out.println(value == "spring"); // true</code></pre>
+
+            <h5 class="text-warning">Literals are already interned</h5>
+            <pre><code class="language-java">String a = "backend";
+String b = "back" + "end"; // compile-time constant; usually pooled
+String part = "back";
+String c = part + "end";    // runtime-created value
+
+System.out.println(a == b); // true
+System.out.println(a == c); // usually false
+System.out.println(a == c.intern()); // true</code></pre>
+            <p>
+              String literals are placed in the pool by the JVM/class loading process. Compile-time constant
+              expressions can also become pooled literals. Runtime concatenation generally creates a separate
+              value unless its result is explicitly interned.
+            </p>
+
+            <h5 class="text-warning">When is intern() useful?</h5>
+            <ul>
+              <li>When a very large number of repeated, long-lived string values would otherwise occupy duplicate memory.</li>
+              <li>When a controlled vocabulary such as protocol names, event types, or fixed keys is repeatedly loaded.</li>
+              <li>When a system intentionally needs canonical references for a bounded set of values.</li>
+              <li>When designing a custom symbol table, after measuring memory usage and pool behavior.</li>
+            </ul>
+
+            <h5 class="text-warning">Why can excessive interning be dangerous?</h5>
+            <pre><code class="language-java">// Dangerous for unbounded user input
+for (String userValue : requestValues) {
+    String canonical = userValue.intern();
+    process(canonical);
+}</code></pre>
+            <ul>
+              <li>The string table is shared by the JVM and can become large when values are mostly unique.</li>
+              <li>Interning has lookup and synchronization overhead, so it is not automatically faster.</li>
+              <li>It can retain canonical values longer than the application needs and increase memory pressure.</li>
+              <li>It can create contention or unpredictable performance on hot paths.</li>
+              <li>It is usually a poor choice for arbitrary request IDs, user names, URLs, or unbounded data.</li>
+            </ul>
+
+            <h5 class="text-warning">String pool and heap</h5>
+            <p>
+              In modern Java versions, the string pool is stored on the Java heap rather than the old permanent
+              generation. Pooled strings can be garbage collected when no live references remain, but a large number
+              of unique interned values can still consume heap and cause GC pressure. The exact implementation and
+              table sizing are JVM-dependent.
+            </p>
+
+            <h5 class="text-warning">Prefer a bounded application cache for dynamic values</h5>
+            <pre><code class="language-java">Cache&lt;String, String&gt; canonicalValues = Caffeine.newBuilder()
+    .maximumSize(10_000)
+    .expireAfterAccess(Duration.ofMinutes(10))
+    .build();
+
+String canonical = canonicalValues.get(input, key -&gt; key);
+// Application cache has explicit bounds and eviction policy.</code></pre>
+            <p>
+              For dynamic values, an application cache or a domain-specific dictionary is often safer because it can
+              have explicit size limits, expiry, metrics, and eviction. For ordinary strings, simply use
+              <code>equals()</code> and let the garbage collector reclaim unused objects.
+            </p>
+
+            <p>
+              <strong>Interview summary:</strong> <code>intern()</code> returns one canonical reference from the JVM
+              string pool. Literals are automatically pooled, while runtime-created strings can be registered with
+              <code>intern()</code>. It can reduce duplicate memory for a small, bounded vocabulary, but excessive
+              interning of unbounded input increases lookup and heap pressure. Use <code>equals()</code> for normal
+              content comparison and prefer a bounded cache for dynamic canonicalization.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="java">
+        <h2 class="accordion-header" id="javaMemoryLeakAnalysisTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#javaMemoryLeakAnalysisTopBody">
+            What is a memory leak in Java, and how do you analyze it?
+          </button>
+        </h2>
+        <div id="javaMemoryLeakAnalysisTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              A Java memory leak occurs when an application no longer needs objects but still holds reachable
+              references to them. The garbage collector cannot reclaim reachable objects, so the live set grows
+              over time until garbage collection becomes frequent, performance degrades, or the JVM throws
+              <code>OutOfMemoryError: Java heap space</code>. Java has automatic garbage collection, but it does
+              not automatically remove objects that the application accidentally keeps referenced.
+            </p>
+
+            <h5 class="text-warning">Common symptoms</h5>
+            <ul>
+              <li>Used heap after each full GC keeps rising instead of returning to a stable baseline.</li>
+              <li>GC runs more often, pauses increase, and throughput or request latency declines.</li>
+              <li>Old-generation occupancy grows until the heap cannot satisfy allocations.</li>
+              <li>Thread dumps may show blocked requests while heap usage continues to increase.</li>
+              <li>The process may fail with heap, metaspace, direct-buffer, or native-memory exhaustion.</li>
+            </ul>
+
+            <h5 class="text-warning">Common causes</h5>
+            <pre><code class="language-java">// 1. Static collection grows forever
+private static final Map&lt;String, Object&gt; CACHE = new HashMap&lt;&gt;();
+
+// 2. ThreadLocal value is not removed in a thread pool
+private static final ThreadLocal&lt;RequestContext&gt; CONTEXT = new ThreadLocal&lt;&gt;();
+
+// 3. Listener or callback is registered but never unregistered
+eventBus.register(listener);
+
+// 4. Unbounded queue or cache retains every request/event
+queue.add(event);
+
+// 5. ClassLoader leak: long-lived container reference retains an old application classloader
+// after redeployment.</code></pre>
+            <p>
+              Other examples include incorrect cache eviction, application-owned collections keyed by changing
+              identifiers, JDBC resources not closed, large static buffers, retained exception or request objects,
+              and native/direct memory that is outside the ordinary Java heap.
+            </p>
+
+            <h5 class="text-warning">Step 1: Confirm that it is a leak</h5>
+            <pre><code class="language-text">1. Check heap usage, allocation rate, GC frequency, pause time, and process RSS.
+2. Trigger or observe full GC safely in a controlled environment.
+3. Compare old-generation/live-set size after several full collections.
+4. Repeat the same workload and verify that the baseline keeps increasing.
+
+Temporary traffic growth is not necessarily a leak. A leak is retained
+memory that cannot be reclaimed after the workload and references should end.</code></pre>
+            <p>
+              First rule out a legitimate cache warm-up, a larger traffic volume, an undersized heap, excessive
+              allocation, or a native-memory problem. Compare the live set after GC, not only the total committed
+              heap shown by a dashboard.
+            </p>
+
+            <h5 class="text-warning">Step 2: Collect JVM and GC evidence</h5>
+            <pre><code class="language-bash">jcmd &lt;pid&gt; GC.heap_info
+jcmd &lt;pid&gt; GC.class_histogram
+jcmd &lt;pid&gt; VM.native_memory summary
+jstat -gcutil &lt;pid&gt; 5s
+
+# Enable GC logging on a restart when required
+-Xlog:gc*,safepoint:file=gc.log:time,uptime,level,tags</code></pre>
+            <p>
+              A class histogram shows which classes occupy the most instances or bytes. It is a clue, not proof:
+              a large class may be legitimate. GC logs show whether the live set grows after collections and help
+              distinguish heap pressure from long pauses or allocation spikes.
+            </p>
+
+            <h5 class="text-warning">Step 3: Capture and compare heap dumps</h5>
+            <pre><code class="language-bash">jcmd &lt;pid&gt; GC.heap_dump /tmp/app-before.hprof
+
+# Capture a second dump after the same workload or after growth
+jcmd &lt;pid&gt; GC.heap_dump /tmp/app-after.hprof</code></pre>
+            <p>
+              Heap dumps can briefly pause the process and are large, so capture them according to the production
+              runbook. Use Eclipse MAT, VisualVM, JProfiler, YourKit, or another heap analyzer to compare dumps.
+            </p>
+
+            <h5 class="text-warning">What to inspect in MAT or a similar tool</h5>
+            <ol>
+              <li>Open the <strong>histogram</strong> and sort by retained heap, not only shallow object size.</li>
+              <li>Use the <strong>dominator tree</strong> to find objects retaining the largest subgraphs.</li>
+              <li>Inspect <strong>path to GC roots</strong> for a suspicious object.</li>
+              <li>Identify the owner: static field, ThreadLocal, executor queue, listener registry, cache, or classloader.</li>
+              <li>Compare object counts, retained sizes, and GC-root paths between dumps.</li>
+              <li>Map the retained object back to application code and the lifecycle that should have released it.</li>
+            </ol>
+            <pre><code class="language-text">Example path to GC root:
+GC root -> static UserCache.entries -> HashMap table
+         -> UserSession -> request payload -> large byte[]
+
+Conclusion: the static cache retains completed sessions and their payloads.
+Fix: bounded cache, expiry/eviction, remove payload, or use an external store.</code></pre>
+
+            <h5 class="text-warning">ThreadLocal leak in a thread pool</h5>
+            <pre><code class="language-java">private static final ThreadLocal&lt;byte[]&gt; BUFFER = new ThreadLocal&lt;&gt;();
+
+executor.submit(() -&gt; {
+    try {
+        BUFFER.set(new byte[10 * 1024 * 1024]);
+        processRequest();
+    } finally {
+        BUFFER.remove(); // required because the worker thread is reused
+    }
+});</code></pre>
+            <p>
+              Thread-pool threads can live for the entire application lifetime. A value left in a ThreadLocal may
+              remain attached to that worker and retain a large object graph. Always remove request-scoped values in
+              <code>finally</code>, especially in servlet filters, task decorators, and executor tasks.
+            </p>
+
+            <h5 class="text-warning">Static cache and listener fixes</h5>
+            <pre><code class="language-java">Cache&lt;String, User&gt; cache = Caffeine.newBuilder()
+    .maximumSize(10_000)
+    .expireAfterAccess(Duration.ofMinutes(10))
+    .build();
+
+@PreDestroy
+void shutdown() {
+    eventBus.unregister(listener);
+    cache.invalidateAll();
+}</code></pre>
+            <p>
+              Prefer bounded caches with metrics and explicit expiry. Deregister listeners, close client pools,
+              cancel scheduled tasks, and release resources when a component is destroyed. A <code>WeakHashMap</code>
+              can help for specific metadata associations, but it is not a general cache replacement because keys
+              may disappear unpredictably.
+            </p>
+
+            <h5 class="text-warning">ClassLoader leak after redeployment</h5>
+            <p>
+              In an application server, an old application classloader should become unreachable after redeployment.
+              If a parent or shared library retains a thread, static registry entry, JDBC driver, timer, or ThreadLocal
+              containing an application class, the old classloader and all its classes can remain in metaspace. Compare
+              classloader counts and inspect GC-root paths for the old loader after repeated redeployments.
+            </p>
+
+            <h5 class="text-warning">Heap leak versus other memory problems</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead><tr><th>Symptom</th><th>Likely area</th><th>Useful evidence</th></tr></thead>
+              <tbody>
+                <tr><td>Live heap grows after full GC</td><td>Java heap retention/leak</td><td>Heap dump, dominator tree, GC roots</td></tr>
+                <tr><td>Heap stable but RSS grows</td><td>Direct/native memory, thread stacks, libraries</td><td><code>VM.native_memory</code>, thread count, profiler</td></tr>
+                <tr><td>Metaspace grows after redeploy</td><td>ClassLoader leak</td><td>Class histogram and classloader paths</td></tr>
+                <tr><td>Large short-lived allocation rate</td><td>Allocation pressure, not necessarily leak</td><td>GC logs, allocation profiler, code path</td></tr>
+                <tr><td>Many blocked threads</td><td>Thread or resource leak</td><td>Thread dump, executor metrics, connection pools</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Prevention checklist</h5>
+            <ul>
+              <li>Bound every cache, queue, batch, retry list, and in-memory aggregation.</li>
+              <li>Use try-with-resources for streams, files, sockets, JDBC statements, and result sets.</li>
+              <li>Remove ThreadLocal values in <code>finally</code> and clean up executor context.</li>
+              <li>Unregister listeners and cancel scheduled tasks during component shutdown.</li>
+              <li>Track heap, post-GC baseline, old generation, metaspace, native memory, thread count, and cache size.</li>
+              <li>Load-test long-running workloads and repeated redeployments, not only short smoke tests.</li>
+            </ul>
+
+            <p>
+              <strong>Interview summary:</strong> a Java memory leak is unwanted reachable memory, not a failure of
+              the garbage collector. Confirm a rising post-GC live set, inspect GC logs and class histograms, compare
+              heap dumps with a dominator tree and GC-root paths, then fix the retaining reference. The most common
+              causes are unbounded static caches/queues, ThreadLocal values, listeners, executors, and classloader
+              references. Add bounds, cleanup, lifecycle management, and memory-focused monitoring afterward.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="springboot">
+        <h2 class="accordion-header" id="multipartFileTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#multipartFileTopBody">
+            What is MultipartFile in Spring Boot, and how can we use it?
+          </button>
+        </h2>
+        <div id="multipartFileTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <code>MultipartFile</code> is Spring's abstraction for one uploaded file in an HTTP
+              <code>multipart/form-data</code> request. It contains the original filename, content type, size, and
+              file content. It is an interface, not necessarily a permanent file on disk; the servlet container may
+              keep small content in memory and temporary content on disk until the request finishes.
+            </p>
+
+            <h5 class="text-warning">1. Upload one file with <code>@RequestParam</code></h5>
+            <pre><code class="language-java">@PostMapping("/files")
+public ResponseEntity&lt;String&gt; upload(@RequestParam("file") MultipartFile file)
+        throws IOException {
+    if (file.isEmpty()) {
+        return ResponseEntity.badRequest().body("File is empty");
+    }
+
+    Path target = Path.of("/safe/uploads", UUID.randomUUID().toString());
+    file.transferTo(target);
+    return ResponseEntity.ok("Uploaded: " + file.getOriginalFilename());
+}</code></pre>
+            <p>
+              The client must send a field named <code>file</code>. This is the most common option for a simple
+              upload endpoint.
+            </p>
+
+            <h5 class="text-warning">2. Upload multiple files as an array or list</h5>
+            <pre><code class="language-java">@PostMapping("/files/batch")
+public List&lt;String&gt; uploadMany(@RequestParam("files") List&lt;MultipartFile&gt; files) {
+    return files.stream()
+        .filter(file -&gt; !file.isEmpty())
+        .map(this::storeSafely)
+        .toList();
+}
+
+// Also valid:
+// public List&lt;String&gt; uploadMany(@RequestParam("files") MultipartFile[] files)</code></pre>
+            <p>
+              Use <code>List&lt;MultipartFile&gt;</code> or <code>MultipartFile[]</code> when the request contains
+              repeated fields with the same name, such as multiple images in a form.
+            </p>
+
+            <h5 class="text-warning">3. Upload a file with JSON metadata using <code>@RequestPart</code></h5>
+            <pre><code class="language-java">public record DocumentMetadata(String title, String category) {}
+
+@PostMapping(value = "/documents", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+public DocumentResponse uploadDocument(
+        @RequestPart("metadata") DocumentMetadata metadata,
+        @RequestPart("file") MultipartFile file) {
+    // Spring deserializes the JSON part and binds the file part.
+    return documentService.store(metadata, file);
+}</code></pre>
+            <pre><code class="language-http">POST /documents
+Content-Type: multipart/form-data
+
+metadata: {"title":"Resume","category":"HR"}
+file: resume.pdf</code></pre>
+            <p>
+              Use <code>@RequestPart</code> when one multipart part is JSON or another structured object and
+              another part is the file. This is different from a plain string form field.
+            </p>
+
+            <h5 class="text-warning">4. Read file metadata</h5>
+            <pre><code class="language-java">String originalName = file.getOriginalFilename();
+String contentType = file.getContentType();
+long size = file.getSize();
+boolean empty = file.isEmpty();
+byte[] bytes = file.getBytes();</code></pre>
+            <p>
+              Do not trust <code>getOriginalFilename()</code> or <code>getContentType()</code> for security. The
+              filename is user input and the MIME type is client supplied. Validate size, inspect file signatures,
+              allow-list types, and generate your own storage filename.
+            </p>
+
+            <h5 class="text-warning">5. Store using <code>transferTo()</code></h5>
+            <pre><code class="language-java">private String storeSafely(MultipartFile file) {
+    String extension = extensionForAllowedType(file.getContentType());
+    Path destination = uploadRoot.resolve(UUID.randomUUID() + extension).normalize();
+
+    if (!destination.startsWith(uploadRoot)) {
+        throw new SecurityException("Invalid destination");
+    }
+
+    try {
+        file.transferTo(destination);
+        return destination.getFileName().toString();
+    } catch (IOException ex) {
+        throw new UncheckedIOException(ex);
+    }
+}</code></pre>
+            <p>
+              <code>transferTo(Path)</code> or <code>transferTo(File)</code> is convenient for local disk storage.
+              The implementation may move or copy the temporary upload. Do not assume the temporary file remains
+              available after the request completes.
+            </p>
+
+            <h5 class="text-warning">6. Store using an input stream</h5>
+            <pre><code class="language-java">try (InputStream input = file.getInputStream()) {
+    Files.copy(input, destination, StandardCopyOption.REPLACE_EXISTING);
+}</code></pre>
+            <p>
+              Use <code>getInputStream()</code> when integrating with an object-storage SDK, virus scanner, hashing
+              service, or another stream-based API. It avoids explicitly loading the entire file into a byte array.
+            </p>
+
+            <h5 class="text-warning">7. Store small content with <code>getBytes()</code></h5>
+            <pre><code class="language-java">byte[] content = file.getBytes();
+documentRepository.save(new Document(file.getOriginalFilename(), content));</code></pre>
+            <p>
+              This is acceptable only for small, controlled files such as tiny icons. For photos, videos, and large
+              documents, loading all bytes into heap can cause high memory usage or an out-of-memory error. Prefer
+              object storage and persist only metadata in the database.
+            </p>
+
+            <h5 class="text-warning">8. Upload directly to object storage</h5>
+            <pre><code class="language-java">@PostMapping("/upload-session")
+public UploadSession createUploadSession(@RequestParam String contentType) {
+    String objectKey = "tenant-a/" + UUID.randomUUID();
+    String signedUrl = objectStorage.createPutUrl(objectKey, contentType,
+        Duration.ofMinutes(10));
+    return new UploadSession(objectKey, signedUrl);
+}</code></pre>
+            <p>
+              For large files or high traffic, the application should create a short-lived signed URL and let the
+              client upload directly to S3, Azure Blob Storage, or GCS. The application then receives an object-created
+              event, scans/processes the file, and marks its metadata as ready. This prevents application servers
+              from becoming a bandwidth bottleneck.
+            </p>
+
+            <h5 class="text-warning">9. Validate and configure limits</h5>
+            <pre><code class="language-properties">spring.servlet.multipart.max-file-size=20MB
+spring.servlet.multipart.max-request-size=25MB
+spring.servlet.multipart.file-size-threshold=2MB</code></pre>
+            <ul>
+              <li>Validate maximum file size before expensive processing.</li>
+              <li>Allow-list content types and inspect magic bytes instead of trusting only the extension.</li>
+              <li>Scan for malware and reject zip bombs, decompression bombs, and dangerous active content.</li>
+              <li>Use authentication, authorization, tenant quotas, rate limits, and audit logging.</li>
+              <li>Never concatenate an untrusted filename into a filesystem path.</li>
+            </ul>
+
+            <h5 class="text-warning">10. Common API shapes</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead><tr><th>Need</th><th>Spring signature</th></tr></thead>
+              <tbody>
+                <tr><td>One form file</td><td><code>@RequestParam("file") MultipartFile file</code></td></tr>
+                <tr><td>Many form files</td><td><code>@RequestParam("files") List&lt;MultipartFile&gt; files</code></td></tr>
+                <tr><td>JSON plus file</td><td><code>@RequestPart("metadata") Metadata metadata</code> and <code>@RequestPart("file") MultipartFile file</code></td></tr>
+                <tr><td>Optional file</td><td><code>@RequestParam(value = "file", required = false) MultipartFile file</code></td></tr>
+                <tr><td>Large/high-volume upload</td><td>Signed object-storage URL and multipart/resumable upload</td></tr>
+              </tbody>
+            </table>
+
+            <p>
+              <strong>Interview summary:</strong> <code>MultipartFile</code> represents one part of a multipart HTTP
+              upload. Common uses are one file with <code>@RequestParam</code>, multiple files with a list or array,
+              JSON plus file with <code>@RequestPart</code>, local storage with <code>transferTo()</code>, stream-based
+              storage with <code>getInputStream()</code>, and direct object-storage uploads using signed URLs. For
+              production, validate content and size, avoid loading large files into memory, generate safe names,
+              scan the file, enforce quotas, and store large content outside the application database.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="hibernate">
+        <h2 class="accordion-header" id="generationTypeAutoIdentityTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#generationTypeAutoIdentityTopBody">
+            GenerationType.AUTO vs GenerationType.IDENTITY: who generates the ID and how does each behave?
+          </button>
+        </h2>
+        <div id="generationTypeAutoIdentityTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <h5 class="text-warning">Short answer</h5>
+            <p>
+              Your understanding is mostly correct for <code>IDENTITY</code>, but <code>AUTO</code> does not mean
+              that Hibernate always generates the number in Java. <code>AUTO</code> means the JPA provider chooses
+              an appropriate ID-generation strategy for the database and provider configuration. That choice may be
+              a database identity column, a database sequence, or a table-based generator.
+            </p>
+
+            <h5 class="text-warning">GenerationType.IDENTITY: database generates the value</h5>
+            <pre><code class="language-java">@Entity
+public class User {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+}</code></pre>
+            <pre><code class="language-sql">-- Typical MySQL-style schema
+CREATE TABLE users (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100)
+);</code></pre>
+            <p>
+              With <code>IDENTITY</code>, the database column has an auto-increment or identity definition. Hibernate
+              sends an insert without the ID, and the database assigns the next value. Hibernate then reads the
+              generated key from the insert result and places it into the entity.
+            </p>
+            <pre><code class="language-text">Before persist: user.id = null
+INSERT INTO users (name) VALUES ('Anu')
+Database generates: id = 101
+After insert: user.id = 101</code></pre>
+            <p>
+              Because the database must execute the insert to know the ID, Hibernate commonly cannot delay that
+              insert until flush in the same way it can with a preallocated sequence. Identity generation can reduce
+              JDBC batching efficiency for large insert workloads, although the exact behavior depends on the
+              Hibernate and database version.
+            </p>
+
+            <h5 class="text-warning">GenerationType.AUTO: provider chooses the strategy</h5>
+            <pre><code class="language-java">@Id
+@GeneratedValue(strategy = GenerationType.AUTO)
+private Long id;</code></pre>
+            <p>
+              At startup, Hibernate examines the database dialect and its configuration. For example, it may choose
+              a sequence on PostgreSQL or Oracle, an identity column on a database that favors identity, or a
+              table-based generator when no suitable native mechanism is available. Therefore, the generated schema
+              and runtime SQL can differ between databases.
+            </p>
+
+            <h5 class="text-warning">Example: AUTO chooses a sequence</h5>
+            <pre><code class="language-sql">CREATE SEQUENCE user_seq START WITH 1 INCREMENT BY 50;
+
+-- Hibernate can obtain a block of values before inserts
+SELECT nextval('user_seq');
+INSERT INTO users (id, name) VALUES (101, 'Anu');</code></pre>
+            <p>
+              With a sequence, Hibernate can obtain an ID before the insert and may allocate a block of IDs using an
+              optimizer. This generally works better for batching than identity columns, but it can leave gaps after
+              rollbacks or application restarts. Gaps are normal; generated IDs are not invoice numbers.
+            </p>
+
+            <h5 class="text-warning">So does AUTO execute SELECT and then INSERT?</h5>
+            <p>
+              <strong>Sometimes, yes, but only when AUTO selects a sequence or table-based generator.</strong> For a
+              sequence-based choice, Hibernate may execute a sequence call such as
+              <code>SELECT nextval('user_seq')</code>, receive the next ID, and then include that ID in the
+              <code>INSERT</code>. With an allocation size such as 50, it may obtain a block and generate the next
+              49 IDs in memory, so it does not necessarily execute one sequence query for every insert.
+            </p>
+            <pre><code class="language-text">Sequence-based AUTO:
+  SELECT nextval(...)       -> Hibernate receives ID or ID block
+  INSERT INTO users (id...) -> Hibernate sends the ID with the row
+
+Identity-based AUTO:
+  INSERT INTO users (name...) -> database generates the ID
+  generated key returned      -> Hibernate attaches it to the entity
+
+Table-based AUTO:
+  SELECT/UPDATE generator table -> reserve the next value
+  INSERT INTO users (id...)     -> use the reserved value</code></pre>
+            <p>
+              Therefore, <code>AUTO</code> does not guarantee a preceding <code>SELECT</code>. Check the selected
+              database dialect and enable SQL logging to see the actual behavior. The important distinction is that
+              <code>IDENTITY</code> must wait for the database insert to obtain the ID, while a sequence-based
+              strategy can know the ID before the insert and usually supports batching more effectively.
+            </p>
+
+            <h5 class="text-warning">Comparison</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead><tr><th>Point</th><th>AUTO</th><th>IDENTITY</th></tr></thead>
+              <tbody>
+                <tr><td>Meaning</td><td>Provider chooses the strategy</td><td>Use the database identity/auto-increment column</td></tr>
+                <tr><td>Who decides the mechanism?</td><td>JPA provider and database dialect</td><td>Application explicitly requests identity semantics</td></tr>
+                <tr><td>Who produces the value?</td><td>Depends on selected strategy: sequence, identity, or table</td><td>Database during INSERT</td></tr>
+                <tr><td>When is ID commonly known?</td><td>Possibly before INSERT with a sequence; otherwise after INSERT</td><td>After the database INSERT returns the generated key</td></tr>
+                <tr><td>Portability</td><td>Portable annotation, but actual behavior can vary by database</td><td>Less portable because it depends on identity support</td></tr>
+                <tr><td>Batch inserts</td><td>Often better when AUTO selects a sequence</td><td>May limit batching because each insert must produce a key</td></tr>
+                <tr><td>Schema predictability</td><td>Less explicit; inspect generated schema and dialect</td><td>Explicit identity column behavior</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Important AUTO nuance</h5>
+            <pre><code class="language-java">// AUTO does not mean this:
+Long id = someJavaCounter.incrementAndGet();
+
+// It means Hibernate selects an appropriate persistence strategy.
+// Check the generated DDL and SQL logs to see whether it chose
+// identity, sequence, or a table generator for the current database.</code></pre>
+            <p>
+              The exact selection is provider and version dependent. A migration from PostgreSQL to MySQL can
+              change <code>AUTO</code> from sequence-based behavior to identity-based behavior. If the strategy is
+              important for performance or schema control, specify it explicitly rather than relying on AUTO.
+            </p>
+
+            <h5 class="text-warning">Which one should you use?</h5>
+            <ul>
+              <li><strong>Use IDENTITY:</strong> when the target database uses auto-increment identity columns and simple inserts are more important than high-volume batching.</li>
+              <li><strong>Use SEQUENCE:</strong> with PostgreSQL/Oracle-style databases when you want efficient batching and explicit allocation control.</li>
+              <li><strong>Use AUTO:</strong> for straightforward provider-managed portability when the exact database strategy is not a performance requirement.</li>
+              <li><strong>Use UUID:</strong> when IDs must be generated before persistence or across services without a database round trip, accepting the larger index size.</li>
+            </ul>
+            <pre><code class="language-java">@Id
+@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_seq")
+@SequenceGenerator(name = "user_seq", sequenceName = "user_seq", allocationSize = 50)
+private Long id;</code></pre>
+
+            <p>
+              <strong>Interview summary:</strong> <code>IDENTITY</code> delegates ID creation to the database during
+              the insert, so Hibernate obtains the generated key afterward. <code>AUTO</code> delegates the choice
+              of strategy to the JPA provider and database dialect; it may select identity, sequence, or table
+              generation. AUTO is convenient but can behave differently across databases, while an explicit sequence
+              or identity strategy gives more predictable performance and schema behavior.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="hibernate">
+        <h2 class="accordion-header" id="mappedByImportanceTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
+            data-bs-target="#mappedByImportanceTopBody">
+            What is the importance of mappedBy in an entity relationship?
+          </button>
+        </h2>
+        <div id="mappedByImportanceTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <code>mappedBy</code> tells JPA/Hibernate that this side is the <strong>inverse side</strong> of a
+              bidirectional relationship and that the other entity owns the mapping. Its value must be the Java
+              field name on the owning entity. It prevents Hibernate from creating an unnecessary second foreign
+              key or join table and tells it where relationship changes are actually persisted.
+            </p>
+
+            <h5 class="text-warning">Example: Department and Employee</h5>
+            <pre><code class="language-java">@Entity
+public class Department {
+    @Id
+    private Long id;
+
+    @OneToMany(mappedBy = "department")
+    private List&lt;Employee&gt; employees = new ArrayList&lt;&gt;();
+}
+
+@Entity
+public class Employee {
+    @Id
+    private Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "department_id") // owning side; FK is here
+    private Department department;
+}</code></pre>
+            <p>
+              The <code>Employee.department</code> field owns the relationship because it contains
+              <code>@JoinColumn</code>. The <code>Department.employees</code> collection uses
+              <code>mappedBy = "department"</code> to point to that field. The foreign key is stored in the
+              <code>employee.department_id</code> column, not in a separate department table or join table.
+            </p>
+
+            <h5 class="text-warning">Owning side versus inverse side</h5>
+            <table class="table table-dark table-bordered table-sm">
+              <thead><tr><th>Side</th><th>Responsibility</th></tr></thead>
+              <tbody>
+                <tr><td>Owning side</td><td>Defines <code>@JoinColumn</code> or join-table details and updates the relationship in the database</td></tr>
+                <tr><td>Inverse side</td><td>Uses <code>mappedBy</code> to refer to the owning field; it mirrors the relationship in the object model</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">What happens if mappedBy is omitted?</h5>
+            <pre><code class="language-java">@Entity
+class Department {
+    @OneToMany
+    private List&lt;Employee&gt; employees;
+}
+
+@Entity
+class Employee {
+    @ManyToOne
+    private Department department;
+}</code></pre>
+            <p>
+              Hibernate may treat these as two independent relationships. Depending on the mapping, it can create
+              an extra join table, duplicate relationship metadata, or fail during startup because the association
+              is ambiguous. In a bidirectional relationship, use <code>mappedBy</code> on the non-owning side.
+            </p>
+
+            <h5 class="text-warning">Many-to-many example</h5>
+            <pre><code class="language-java">@Entity
+class Student {
+    @ManyToMany
+    @JoinTable(
+        name = "student_course",
+        joinColumns = @JoinColumn(name = "student_id"),
+        inverseJoinColumns = @JoinColumn(name = "course_id")
+    )
+    private Set&lt;Course&gt; courses = new HashSet&lt;&gt;(); // owning side
+}
+
+@Entity
+class Course {
+    @ManyToMany(mappedBy = "courses")
+    private Set&lt;Student&gt; students = new HashSet&lt;&gt;(); // inverse side
+}</code></pre>
+            <p>
+              The <code>Student.courses</code> side owns the <code>student_course</code> join table. The
+              <code>Course.students</code> side uses <code>mappedBy = "courses"</code> and does not create a second
+              join table.
+            </p>
+
+            <h5 class="text-warning">Keep both sides synchronized</h5>
+            <pre><code class="language-java">public void addEmployee(Employee employee) {
+    employees.add(employee);
+    employee.setDepartment(this); // update owning side too
+}
+
+public void removeEmployee(Employee employee) {
+    employees.remove(employee);
+    employee.setDepartment(null);
+}</code></pre>
+            <p>
+              Updating only the inverse collection changes the in-memory object but may not update the database.
+              Keep helper methods that update both sides, especially when the owning side is the child entity.
+            </p>
+
+            <h5 class="text-warning">Important points</h5>
+            <ul>
+              <li><code>mappedBy</code> contains the Java property name, not the database column name.</li>
+              <li>It is used for bidirectional relationships; a unidirectional relationship has no inverse side.</li>
+              <li>It does not mean cascade, eager loading, or orphan removal. Configure those separately.</li>
+              <li><code>mappedBy</code> does not automatically keep both Java collections synchronized.</li>
+              <li>Use <code>orphanRemoval = true</code> carefully; removing a child from the parent collection may delete the child row.</li>
+              <li>For many-to-many relationships, avoid unnecessary cascading remove because deleting one entity can affect shared rows.</li>
+            </ul>
+
+            <p>
+              <strong>Interview summary:</strong> <code>mappedBy</code> identifies the inverse side of a
+              bidirectional JPA relationship and points to the owning entity's field. It prevents duplicate join
+              structures, clarifies which side updates the foreign key or join table, and keeps the object model
+              aligned with the database. The owning side must be updated for persistence, and both sides should be
+              synchronized in helper methods.
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div class="accordion-item" data-category="java8">
         <h2 class="accordion-header" id="streams2026ExtractionTop">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
