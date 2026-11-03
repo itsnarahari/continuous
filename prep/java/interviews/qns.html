@@ -177,6 +177,107 @@
         onkeyup="searchQuestions()" />
     </div>
     <div class="accordion" id="accordionSeniorJava">
+      <div class="accordion-item" data-category="java">
+        <h2 class="accordion-header" id="completableFutureExceptionallyTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#completableFutureExceptionallyTopBody">
+            How does exceptionally() work in CompletableFuture, and why is it used?
+          </button>
+        </h2>
+        <div id="completableFutureExceptionallyTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <code>exceptionally()</code> is a recovery stage for a <code>CompletableFuture</code>. It runs only when
+              an earlier stage completes exceptionally. The function receives the failure and returns a fallback value,
+              converting the failed future into a normally completed future so later stages can continue.
+            </p>
+            <pre><code class="language-java">CompletableFuture&lt;String&gt; result = fetchUserName()
+    .exceptionally(error -&gt; {
+        log.error("User lookup failed", error);
+        return "Guest"; // Recovery value
+    })
+    .thenApply(String::toUpperCase); // Continues with Guest on failure
+
+System.out.println(result.join());</code></pre>
+            <p>
+              If <code>fetchUserName()</code> succeeds, the recovery function is skipped and the original value flows
+              through. If it fails, the exception is passed to <code>exceptionally</code>, and its returned value becomes
+              the result. If the recovery function itself throws, the returned future remains exceptional.
+            </p>
+            <h5 class="text-warning">Why is it useful?</h5>
+            <ul><li>Provide a safe fallback for optional or non-critical work.</li><li>Convert an asynchronous failure into a response the next stage can process.</li><li>Centralize logging, metrics, or a default value at the appropriate chain boundary.</li></ul>
+            <h5 class="text-warning">Difference from related methods</h5>
+            <ul><li><code>exceptionally</code>: runs only on failure and returns a replacement value.</li><li><code>handle</code>: runs on both success and failure and receives both value and error.</li><li><code>whenComplete</code>: observes success or failure for logging/cleanup but normally preserves the original result and does not recover it.</li></ul>
+            <pre><code class="language-java">CompletableFuture&lt;String&gt; result = loadData()
+    .handle((value, error) -&gt; error == null ? value : "fallback");
+
+loadData().whenComplete((value, error) -&gt; audit(value, error));
+// whenComplete observes; exceptionally recovers.</code></pre>
+            <p>
+              Use a fallback only when it is semantically safe. For mandatory operations such as payment authorization,
+              silently returning a default can hide a production failure; log it, propagate it, or use an explicit retry
+              and error response instead. For asynchronous recovery that itself returns a future, newer Java versions
+              also provide <code>exceptionallyCompose()</code>.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="java8">
+        <h2 class="accordion-header" id="streamExceptionHandlingTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#streamExceptionHandlingTopBody">
+            How do you handle exceptions in Java Streams?
+          </button>
+        </h2>
+        <div id="streamExceptionHandlingTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>Stream interfaces such as <code>Function</code>, <code>Predicate</code>, and <code>Consumer</code> do not declare checked exceptions. Unchecked exceptions can escape directly; checked exceptions must be caught, converted, or handled explicitly.</p>
+            <h5 class="text-warning">Unchecked exceptions</h5>
+            <pre><code class="language-java">List&lt;Integer&gt; values = List.of(10, 0, 5);
+
+values.stream()
+    .map(value -&gt; 100 / value) // ArithmeticException stops the pipeline
+    .forEach(System.out::println);</code></pre>
+            <p>Catch the exception at the operation boundary if the complete pipeline should fail, or handle it inside the lambda when the business rule defines a fallback.</p>
+            <h5 class="text-warning">Checked exceptions</h5>
+            <pre><code class="language-java">List&lt;String&gt; lines = paths.stream()
+    .map(path -&gt; {
+        try {
+            return Files.readString(path);
+        } catch (IOException ex) {
+            throw new UncheckedIOException("Could not read " + path, ex);
+        }
+    })
+    .collect(Collectors.toList());</code></pre>
+            <p>Wrapping in <code>UncheckedIOException</code> preserves the original cause and lets the stream propagate the failure. Handle it outside the pipeline for logging, retry, or an error response.</p>
+            <h5 class="text-warning">Skip, replace, or collect failures</h5>
+            <pre><code class="language-java">List&lt;Integer&gt; parsed = input.stream()
+    .map(text -&gt; {
+        try {
+            return Optional.of(Integer.parseInt(text));
+        } catch (NumberFormatException ex) {
+            return Optional.&lt;Integer&gt;empty();
+        }
+    })
+    .flatMap(Optional::stream)
+    .collect(Collectors.toList());</code></pre>
+            <p>For important processing, do not silently discard errors. Return a result object containing the input, success value, and error, or collect successes and failures separately. In parallel streams, avoid shared mutable error lists; use immutable results or thread-safe collectors.</p>
+            <h5 class="text-warning">Reusable adapter</h5>
+            <pre><code class="language-java">@FunctionalInterface
+interface ThrowingFunction&lt;T, R&gt; {
+    R apply(T value) throws Exception;
+}
+
+static &lt;T, R&gt; Function&lt;T, R&gt; unchecked(ThrowingFunction&lt;T, R&gt; fn) {
+    return value -&gt; {
+        try { return fn.apply(value); }
+        catch (Exception ex) { throw new RuntimeException(ex); }
+    };
+}</code></pre>
+            <p>Use <code>RuntimeException</code> wrapping carefully: preserve the cause and decide at the boundary whether to fail, retry, skip, or return a fallback.</p>
+          </div>
+        </div>
+      </div>
+
       <div class="accordion-item" data-category="springboot">
         <h2 class="accordion-header" id="transactionalPrivateStaticTop">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#transactionalPrivateStaticTopBody">
