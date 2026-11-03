@@ -18,7 +18,7 @@ public class StreamsOctober2026Test {
         List<Integer> numbers2 = Arrays.asList(1, 58, 400, 6, 30, 50, 78, 40, 32, 9, 300);
 
         String str = "java is tough but o, java is best";
-        List<String> words = Arrays.asList("apple", "banana", "apple", "orange", "banana", "apple");
+        List<String> words = Arrays.asList("apple", "banana", "apple", "orange", "banana", "apple", "abca");
 
         List<List<Integer>> nestedList = List.of(
                 List.of(1, 2, 3, 4),
@@ -150,12 +150,28 @@ public class StreamsOctober2026Test {
         Map<Integer, List<String>> collect15 = words.stream().collect(Collectors.groupingBy(s -> s.length(), Collectors.toList()));
         // Follow-up challenge: How would you group the words by length but store only the count of words for each length, using Map<Integer, Long>?
         Map<Integer, Long> collect16 = words.stream().collect(Collectors.groupingBy(s -> s.length(), Collectors.mapping(Function.identity(), Collectors.counting())));
-        Map<Integer, Long> collect17 = words.stream()
-                .collect(Collectors.groupingBy(
-                        String::length,
-                        Collectors.counting()
-                ));
-        System.out.println(collect17);
+
+        //Group a list of words by their first letter, sort words in each group
+        TreeMap<Character, List<String>> collect23 = words.stream()
+                .collect(Collectors.groupingBy(word -> word.charAt(0), TreeMap::new, Collectors.collectingAndThen(Collectors.toList(),
+                wordsList -> wordsList.stream()
+                        .sorted()
+                        .collect(Collectors.toList()))));
+        System.out.println(collect23);
+        // Find words that start and end with the same character (Java 8 Streams)
+        List<String> sameWord = words.stream().filter(StreamsOctober2026Test::checkIsFirstAndLastCharSameOrNot).toList();
+        System.out.println(sameWord);
+
+        // Question: Group employees by department and sort employee names alphabetically within each department.
+        Map<String, List<String>> collect17 = employees.stream()
+                .collect(Collectors.groupingBy(Employee::getDepartment, Collectors.collectingAndThen(Collectors.toList(), empList ->
+                empList.stream().map(Employee::getName).sorted().toList())));
+
+        TreeMap<String, List<Employee>> collect24 = employees.stream()
+                .collect(Collectors.groupingBy(Employee::getDepartment, TreeMap::new, Collectors.toList()));
+
+
+
         //        How do you flatten a list of lists?
         employees.stream().flatMap(employee1 -> employee1.getHobbies().stream()).toList();
 //        How do you find total salary by department?
@@ -212,6 +228,7 @@ public class StreamsOctober2026Test {
 
         numbers.parallelStream()
                 .forEach(result2::add);
+
 //        How many threads does parallelStream() use?
 //                Which thread pool does parallelStream() use?
 //                What are the uses of filter, map, flatMap, distinct, sorted, skip, and limit?
@@ -266,6 +283,8 @@ public class StreamsOctober2026Test {
                         .average().orElse(0)
         )).toList();
         System.out.println(list7);
+
+
 //                Find the top three students by average marks.
 
 //                Find students who scored above 90 in any subject.
@@ -277,5 +296,15 @@ public class StreamsOctober2026Test {
 //        Group students by grade based on their average marks.
 //                Other coding exercise present in Streams2026.java
 //        How do you reverse the first K elements of a queue using a stack?
+    }
+
+
+    public static boolean checkIsFirstAndLastCharSameOrNot(String s){
+        if(s.isBlank())
+            return false;
+        s=s.trim();
+        char first = Character.toLowerCase(s.charAt(0));
+        char last = Character.toLowerCase(s.charAt(s.length()-1));
+        return  first == last;
     }
 }
