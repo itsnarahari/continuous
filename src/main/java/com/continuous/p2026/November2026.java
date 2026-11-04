@@ -71,6 +71,7 @@ public class November2026 {
 //    Time	O(n)
 //    Space	O(1)
 //    Technique	Two pointers
+    //         int[] arr3 = {0, 1, 0, 3, 12};
     public static int[] moveZerosToEnd(int[] arr, int n){
         int j=-1;
         for (int i = 0; i < n; i++) {
@@ -113,9 +114,7 @@ public class November2026 {
         int i = 0, j = 0;
 
         while (i < n1 && j < n2) {
-
             int value;
-
             if (arr1[i] < arr2[j]) {
                 value = arr1[i++];
             }
@@ -127,7 +126,6 @@ public class November2026 {
                 i++;
                 j++;
             }
-
             if (union.isEmpty() ||
                     union.get(union.size() - 1) != value) {
                 union.add(value);

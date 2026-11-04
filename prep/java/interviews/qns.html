@@ -178,6 +178,457 @@
     </div>
     <div class="accordion" id="accordionSeniorJava">
       <div class="accordion-item" data-category="java">
+        <h2 class="accordion-header" id="javaFinalizeTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#javaFinalizeTopBody">
+            How does finalize() work, what was its use, and when should it be used?
+          </button>
+        </h2>
+        <div id="javaFinalizeTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <code>finalize()</code> was a method on <code>Object</code> that the garbage collector could call before
+              reclaiming an object. It was intended as a last-chance cleanup hook for native or external resources.
+              It is <strong>not a destructor</strong>, and application code should not depend on it.
+            </p>
+            <pre><code class="language-java">@Override
+protected void finalize() throws Throwable {
+    // Old and unsafe cleanup approach
+    super.finalize();
+}</code></pre>
+            <h5 class="text-warning">Why finalize() is unreliable</h5>
+            <ul>
+              <li>The JVM does not guarantee when it will run, or that it will run before the process exits.</li>
+              <li>An object may remain reachable through finalization machinery, delaying memory reclamation.</li>
+              <li>Finalizer threads can become a bottleneck, causing latency and memory pressure.</li>
+              <li>Exceptions are not a reliable application error mechanism, and finalizers can introduce security and resurrection problems.</li>
+              <li>It cannot provide deterministic release of files, sockets, database connections, locks, or native handles.</li>
+            </ul>
+            <p>
+              Because of these problems, finalization was deprecated for removal in modern Java. Do not use
+              <code>finalize()</code> for new code and do not call <code>System.gc()</code> as a cleanup strategy.
+            </p>
+
+            <h5 class="text-warning">Modern alternatives</h5>
+            <pre><code class="language-java">final class ReportFile implements AutoCloseable {
+    private final InputStream input;
+
+    ReportFile(InputStream input) {
+        this.input = input;
+    }
+
+    @Override
+    public void close() throws IOException {
+        input.close();
+    }
+}
+
+try (ReportFile report = new ReportFile(input)) {
+    readReport(report);
+} // Deterministic cleanup, even when an exception occurs</code></pre>
+            <ul>
+              <li>Use <code>try-with-resources</code> and <code>AutoCloseable</code> for deterministic resource release.</li>
+              <li>Use explicit <code>close()</code> methods and ownership rules for lifecycle management.</li>
+              <li>Use <code>java.lang.ref.Cleaner</code> only as a last-resort safety net for resources that were not explicitly closed; it is not a replacement for deterministic cleanup.</li>
+            </ul>
+            <p>
+              The garbage collector manages Java memory automatically, but external resources must be released by the
+              application at a known point in time. That is why <code>finalize()</code> should generally never be used.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="java">
+        <h2 class="accordion-header" id="finallyExceptionReturnTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#finallyExceptionReturnTopBody">
+            If finally throws an exception while the method has a return statement, does the method return or terminate?
+          </button>
+        </h2>
+        <div id="finallyExceptionReturnTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              If <code>try</code> or <code>catch</code> has prepared a return value but <code>finally</code> throws an
+              exception, the exception from <code>finally</code> wins. The return value is discarded and the method
+              terminates exceptionally.
+            </p>
+            <pre><code class="language-java">static int value() {
+    try {
+        return 10;
+    } finally {
+        throw new IllegalStateException("Cleanup failed");
+    }
+}
+
+value(); // Does not return 10; throws IllegalStateException</code></pre>
+            <p>
+              Conceptually, Java evaluates and stores the return value, executes <code>finally</code>, and returns only
+              if <code>finally</code> completes normally. An exception from <code>finally</code> replaces the pending
+              return or the earlier exception.
+            </p>
+
+            <h5 class="text-warning">A return in finally is even more dangerous</h5>
+            <pre><code class="language-java">static int value() {
+    try {
+        return 10;
+    } finally {
+        return 20; // Suppresses the return 10 and any exception
+    }
+}</code></pre>
+            <p>This returns <code>20</code>. A <code>return</code> in <code>finally</code> suppresses a pending exception as well, making failures very difficult to diagnose.</p>
+            <p>
+              Avoid <code>return</code> and new exceptions in <code>finally</code>. Use <code>finally</code> for simple
+              cleanup, use try-with-resources for closeable resources, and preserve cleanup failures as suppressed
+              exceptions when appropriate.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="java">
+        <h2 class="accordion-header" id="javaSortingAlgorithmsTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#javaSortingAlgorithmsTopBody">
+            Arrays.sort vs Collections.sort vs Stream.sorted(): which algorithm do they use internally?
+          </button>
+        </h2>
+        <div id="javaSortingAlgorithmsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              The exact algorithm is an implementation detail rather than a permanent API guarantee, so it can vary by
+              JDK version and data type. In current mainstream JDK implementations, the typical behavior is:
+            </p>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>API</th><th>What it sorts</th><th>Typical algorithm</th><th>Mutates source?</th></tr></thead>
+              <tbody>
+                <tr><td><code>Arrays.sort()</code></td><td>Array</td><td>Object arrays: TimSort; primitive arrays: Dual-Pivot Quicksort</td><td>Yes</td></tr>
+                <tr><td><code>Collections.sort()</code></td><td>List</td><td>Delegates to <code>List.sort()</code>; commonly TimSort for object lists</td><td>Yes</td></tr>
+                <tr><td><code>Stream.sorted()</code></td><td>Stream elements</td><td>Buffers elements, then uses the relevant array/list sorting implementation</td><td>No; produces sorted stream output</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Arrays.sort()</h5>
+            <pre><code class="language-java">int[] numbers = {5, 1, 4, 2};
+Arrays.sort(numbers); // Primitive sorting; array becomes [1, 2, 4, 5]
+
+String[] names = {"Ravi", "Asha", "John"};
+Arrays.sort(names); // Object sorting; stable TimSort in common JDKs</code></pre>
+            <p>
+              Primitive array sorting commonly uses Dual-Pivot Quicksort. Reference/object arrays commonly use TimSort,
+              an adaptive stable merge-based algorithm. For very large arrays, <code>Arrays.parallelSort()</code> uses
+              parallel sorting techniques. Average complexity is generally <code>O(n log n)</code>, though primitive
+              quicksort has different worst-case implementation details.
+            </p>
+
+            <h5 class="text-warning">Collections.sort()</h5>
+            <pre><code class="language-java">List&lt;String&gt; names = new ArrayList&lt;&gt;(List.of("Ravi", "Asha", "John"));
+Collections.sort(names); // Sorts the existing list
+
+// Modern equivalent:
+names.sort(Comparator.naturalOrder());</code></pre>
+            <p>
+              Since Java 8, <code>Collections.sort(list)</code> delegates to <code>list.sort(null)</code>. For an
+              <code>ArrayList</code>, this typically copies or accesses elements as an array and uses the object-array
+              sorting implementation, commonly stable TimSort. The list must support modification; an unmodifiable list
+              throws <code>UnsupportedOperationException</code>.
+            </p>
+
+            <h5 class="text-warning">Stream.sorted()</h5>
+            <pre><code class="language-java">List&lt;String&gt; sorted = names.stream()
+    .sorted()
+    .collect(Collectors.toList());
+
+// names itself is unchanged; sorted is a new result.</code></pre>
+            <p>
+              <code>sorted()</code> is a stateful intermediate operation. It cannot emit the final ordered result until
+              it has consumed and buffered the relevant input, so it needs additional memory. Sequential reference
+              streams use stable object sorting in typical JDKs. Ordered streams preserve encounter order for equal
+              elements; unordered streams have fewer ordering guarantees. Parallel streams may use parallel array
+              sorting and require additional coordination and memory.
+            </p>
+
+            <h5 class="text-warning">Which one should be used?</h5>
+            <ul>
+              <li>Use <code>Arrays.sort</code> when you own an array and in-place sorting is desired.</li>
+              <li>Use <code>list.sort</code> or <code>Collections.sort</code> when sorting a mutable list in place.</li>
+              <li>Use <code>Stream.sorted</code> when sorting is one step in a pipeline and the original source should remain unchanged.</li>
+              <li>Use a comparator to define business ordering and benchmark before choosing parallel sorting; parallel overhead can make small inputs slower.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="springboot">
+        <h2 class="accordion-header" id="shedLockTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#shedLockTopBody">
+            What is ShedLock and when do we use it?
+          </button>
+        </h2>
+        <div id="shedLockTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              ShedLock is a library for ensuring that a scheduled task runs on only one application instance at a time.
+              It is useful when a Spring Boot service is deployed on multiple pods and every pod has the same
+              <code>@Scheduled</code> job. ShedLock does not schedule jobs itself; Spring still triggers the schedule,
+              while ShedLock coordinates which instance is allowed to execute it.
+            </p>
+            <pre><code class="language-java">@Scheduled(cron = "0 0 * * * *")
+@SchedulerLock(
+    name = "rebuildDailySummary",
+    lockAtMostFor = "PT30M",
+    lockAtLeastFor = "PT1M")
+public void rebuildDailySummary() {
+    // Only one application instance executes this run.
+}</code></pre>
+
+            <h5 class="text-warning">How it works</h5>
+            <ol>
+              <li>Each instance wakes up according to the local Spring scheduler.</li>
+              <li>The instance tries to acquire a shared lock named <code>rebuildDailySummary</code>.</li>
+              <li>The lock provider stores the lock in a shared system such as a database, Redis, MongoDB, or JDBC-compatible store.</li>
+              <li>Only the instance that successfully acquires the lock runs the method; other instances skip that execution.</li>
+              <li>The lock is released after completion, subject to the configured minimum and maximum durations.</li>
+            </ol>
+
+            <ul>
+              <li><strong>lockAtMostFor:</strong> safety lease that releases the lock if the owner crashes. Set it longer than the normal maximum execution time.</li>
+              <li><strong>lockAtLeastFor:</strong> keeps the lock for a minimum duration, useful to avoid another node immediately running the same short job because of clock/scheduling differences.</li>
+              <li><strong>Lock name:</strong> must be identical across all instances for the same logical job.</li>
+            </ul>
+
+            <h5 class="text-warning">Spring Boot configuration concept</h5>
+            <pre><code class="language-java">@Configuration
+@EnableScheduling
+@EnableSchedulerLock(defaultLockAtMostFor = "PT10M")
+class SchedulingConfig {
+}
+
+// Example dependency choices include a JDBC provider with a shared database
+// or a Redis provider with a shared Redis deployment.</code></pre>
+            <p>
+              With a JDBC provider, ShedLock creates a lock table containing the lock name, lock expiry time, and owner.
+              The acquisition uses an atomic insert/update so two instances do not both win. The provider must be shared
+              by all pods; an in-memory provider would not coordinate separate processes.
+            </p>
+
+            <h5 class="text-warning">Important limitations</h5>
+            <ul>
+              <li>ShedLock is not a general-purpose distributed lock for arbitrary business transactions.</li>
+              <li>If the job runs longer than <code>lockAtMostFor</code>, the lease can expire and another instance may start the same job. Choose the duration carefully and make the job idempotent.</li>
+              <li>A lock prevents concurrent execution, but it does not provide exactly-once business effects. Use database uniqueness, checkpoints, or idempotency keys where needed.</li>
+              <li>Monitor lock acquisition failures, job duration, missed runs, clock behavior, and the health of the lock store.</li>
+            </ul>
+            <p>
+              Use ShedLock for singleton-style scheduled maintenance such as cleanup, reconciliation, or report creation
+              across multiple Spring Boot instances. For high-throughput distributed work, prefer a durable job queue or
+              a partitioned worker system instead of making one scheduled node process everything.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaConsumerLagTroubleshootingTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaConsumerLagTroubleshootingTopBody">
+            Kafka Consumer Lag Troubleshooting: causes, diagnosis, and duplicate-safe processing
+          </button>
+        </h2>
+        <div id="kafkaConsumerLagTroubleshootingTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Kafka consumer lag is the difference between the latest offset available in a partition and the consumer
+              group's committed offset. Lag is not automatically a failure: it becomes a problem when it continuously
+              grows, exceeds the business freshness target, or is concentrated on a partition.
+            </p>
+            <h5 class="text-warning">Partitions, consumers, and assignment</h5>
+            <ul>
+              <li>Partitions provide Kafka's unit of ordering and consumer parallelism.</li>
+              <li>Within one consumer group, a partition is assigned to at most one active consumer at a time.</li>
+              <li>If a topic has 10 partitions and only 2 consumers, each consumer normally owns about 5 partitions and processes them sequentially.</li>
+              <li>The maximum useful consumer count for that group is normally the partition count: 10 consumers for 10 partitions. Extra consumers are idle unless more partitions are added.</li>
+              <li>Assignment is redistributed during joins, leaves, failures, partition changes, or missed heartbeats.</li>
+            </ul>
+
+            <h5 class="text-warning">Why lag continuously increases</h5>
+            <p>
+              Lag grows when the producer rate is greater than the consumer group's sustainable processing rate. Adding
+              consumers helps only when unassigned partitions exist and the downstream resources can handle the extra
+              concurrency. If all partitions already have consumers, more consumers do not increase throughput.
+            </p>
+            <ul>
+              <li>Slow message processing or expensive serialization/deserialization.</li>
+              <li>Slow database queries, connection-pool waits, locks, or one database transaction per message.</li>
+              <li>Slow downstream HTTP APIs, retries, rate limits, or long timeouts.</li>
+              <li>Poison messages that repeatedly fail, or unusually large/slow messages.</li>
+              <li>Hot partitions caused by skewed keys, such as one celebrity customer receiving most events.</li>
+              <li>Frequent rebalances, insufficient poll settings, GC pauses, CPU/memory pressure, or network throttling.</li>
+              <li>Producer throughput exceeding consumer throughput, retention pressure, or broker/disk bottlenecks.</li>
+            </ul>
+
+            <h5 class="text-warning">Partition-level troubleshooting</h5>
+            <p>
+              Inspect lag per topic, partition, and consumer rather than only the group total. One hot partition can make
+              the group appear unhealthy while other consumers are idle. Check the partition key distribution, latest
+              offsets, committed offsets, consumer ownership, processing time, and records-per-poll.
+            </p>
+            <pre><code class="language-bash">kafka-consumer-groups --bootstrap-server broker:9092 \\
+  --group orders-service --describe
+
+# Compare CURRENT-OFFSET, LOG-END-OFFSET, LAG, and CONSUMER-ID per partition.</code></pre>
+
+            <h5 class="text-warning">Consumer rebalancing</h5>
+            <p>
+              A consumer that does not poll within <code>max.poll.interval.ms</code> can be considered failed, causing a
+              rebalance. Long processing inside the poll loop, short session/heartbeat settings, unstable pods, or slow
+              shutdowns can create repeated rebalances and reduce throughput. Measure rebalance count and duration,
+              keep the poll loop responsive, tune <code>max.poll.interval.ms</code> and <code>max.poll.records</code>, and
+              use cooperative assignment where appropriate.
+            </p>
+
+            <h5 class="text-warning">Poison and slow messages</h5>
+            <p>
+              A poison message repeatedly fails and blocks later records on its partition. Catch processing failures,
+              apply bounded retries with backoff, publish the failed record and error context to a dead-letter topic, and
+              commit or advance the original offset according to the business policy. For slow messages, batch work,
+              optimize the dependency, isolate the workload, or use a separate topic instead of allowing one record to
+              stall the partition indefinitely.
+            </p>
+
+            <h5 class="text-warning">Offset commit failures and redelivery</h5>
+            <p>
+              If processing succeeds but the offset commit fails, Kafka does not know that the work completed. After a
+              retry, restart, or rebalance, the consumer reads the record again. This is expected at-least-once behavior,
+              not necessarily data loss. A crash before the commit has the same result: the message is redelivered from the
+              last committed offset.
+            </p>
+            <p>
+              Committing before processing risks losing work; committing after processing can produce duplicates. Kafka
+              consumers should therefore make the business operation idempotent.
+            </p>
+
+            <h5 class="text-warning">Idempotent consumer and duplicate-safe business data</h5>
+            <pre><code class="language-sql">CREATE TABLE processed_event (
+    consumer_name VARCHAR(100),
+    event_id VARCHAR(200),
+    processed_at TIMESTAMP,
+    PRIMARY KEY (consumer_name, event_id)
+);</code></pre>
+            <pre><code class="language-java">@Transactional
+void process(OrderCreated event) {
+    if (processedEventRepository.exists(consumerName, event.id())) {
+        return; // Duplicate delivery: safe no-op
+    }
+
+    orderProjectionRepository.upsert(event.orderId(), event.status());
+    processedEventRepository.insert(consumerName, event.id());
+}
+
+// Commit the Kafka offset only after the transaction succeeds.</code></pre>
+            <p>
+              The unique key makes the business update and deduplication record atomic when they share a database
+              transaction. Other options include an idempotency key with an upsert, a natural unique business key, or a
+              Kafka transaction for Kafka-to-Kafka read-process-write flows. Kafka producer idempotence alone does not
+              make an external database update idempotent.
+            </p>
+
+            <h5 class="text-warning">Real-world troubleshooting approach</h5>
+            <ol>
+              <li>Confirm the freshness SLO and identify whether total lag is rising or only one partition is hot.</li>
+              <li>Compare producer rate with consumer processing rate and inspect broker, network, CPU, disk, and GC metrics.</li>
+              <li>Check consumer assignment, active consumer count, rebalances, poll intervals, commit errors, and exceptions.</li>
+              <li>Measure time in deserialization, business code, database calls, external APIs, retries, and commit operations.</li>
+              <li>Inspect keys for partition skew and verify that the partition count supports the required parallelism.</li>
+              <li>Handle poison messages with retry and dead-letter policies; do not blindly reset offsets and lose unprocessed data.</li>
+              <li>Scale only after identifying the bottleneck, then validate that database/downstream capacity and ordering requirements still hold.</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="observabilityToolsComparisonTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#observabilityToolsComparisonTopBody">
+            Micrometer vs Telemetry vs OpenTelemetry vs OTLP vs Prometheus vs Grafana
+          </button>
+        </h2>
+        <div id="observabilityToolsComparisonTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              These terms belong to the observability stack, but they are not interchangeable. The simplest memory aid
+              is: <strong>Micrometer instruments the application, OpenTelemetry standardizes telemetry, OTLP transports
+              it, Prometheus stores/scrapes metrics, and Grafana displays and alerts on data.</strong>
+            </p>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Term</th><th>What it is</th><th>Main responsibility</th></tr></thead>
+              <tbody>
+                <tr><td><strong>Telemetry</strong></td><td>General data emitted about system behavior</td><td>Metrics, logs, traces, and related context</td></tr>
+                <tr><td><strong>Micrometer</strong></td><td>Java instrumentation and metrics facade</td><td>Create counters, timers, gauges, observations, and export to monitoring backends</td></tr>
+                <tr><td><strong>OpenTelemetry</strong></td><td>Vendor-neutral observability framework and specification</td><td>Generate, collect, correlate, and export metrics, logs, and distributed traces</td></tr>
+                <tr><td><strong>OTLP</strong></td><td>OpenTelemetry Protocol</td><td>Wire protocol, commonly over HTTP or gRPC, for sending telemetry</td></tr>
+                <tr><td><strong>Prometheus</strong></td><td>Metrics monitoring system and time-series database</td><td>Scrape/store metrics, query with PromQL, and evaluate alert rules</td></tr>
+                <tr><td><strong>Grafana</strong></td><td>Visualization and alerting platform</td><td>Build dashboards and query Prometheus, Loki, Tempo, Jaeger, and other sources</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">How they fit together</h5>
+            <pre><code class="language-text">Spring Boot application
+  |-- Micrometer metrics / Observation API
+  |-- OpenTelemetry instrumentation for traces and metrics
+  v
+OpenTelemetry Collector (optional)
+  |-- OTLP -&gt; trace backend such as Tempo or Jaeger
+  |-- metrics -&gt; Prometheus-compatible backend
+  |-- logs -&gt; log backend such as Loki or Elasticsearch
+  v
+Grafana dashboards and alerts</code></pre>
+
+            <h5 class="text-warning">Micrometer in Spring Boot</h5>
+            <p>
+              Spring Boot Actuator uses Micrometer for application metrics such as HTTP request timers, JVM memory,
+              threads, database pools, and custom business counters. A Prometheus registry can expose metrics at
+              <code>/actuator/prometheus</code> for Prometheus to scrape.
+            </p>
+            <pre><code class="language-java">private final Counter ordersCreated;
+
+ordersCreated.increment();
+
+Timer.Sample sample = Timer.start(meterRegistry);
+try {
+    processOrder();
+} finally {
+    sample.stop(orderTimer);
+}</code></pre>
+
+            <h5 class="text-warning">OpenTelemetry and OTLP</h5>
+            <p>
+              OpenTelemetry can instrument inbound HTTP requests, outbound clients, database calls, and messaging. It
+              creates spans and trace context so a request can be followed across services. The SDK or an agent exports
+              the signals, often using OTLP to an OpenTelemetry Collector. The collector can batch, sample, enrich, and
+              route data to vendor-specific backends.
+            </p>
+            <p>
+              OTLP is not a database, dashboard, or tracing product. It is the transport/data protocol between an
+              instrumented application, collector, and backend. OpenTelemetry is not the same as Grafana or Prometheus;
+              it can export data to systems such as them or to other compatible backends.
+            </p>
+
+            <h5 class="text-warning">Which should be used?</h5>
+            <ul>
+              <li><strong>Metrics in a Spring Boot service:</strong> Micrometer plus Actuator, with Prometheus scraping for a common self-hosted setup.</li>
+              <li><strong>Distributed traces across microservices:</strong> OpenTelemetry instrumentation and OTLP export, commonly through a Collector.</li>
+              <li><strong>Dashboards and alerting:</strong> Grafana connected to the metrics, logs, and trace backends.</li>
+              <li><strong>Vendor-neutral portability:</strong> use OpenTelemetry and OTLP at the application/collector boundary rather than coupling code to one vendor.</li>
+              <li><strong>Logs:</strong> use structured JSON logs and a log backend; Prometheus is not a log store.</li>
+            </ul>
+            <p>
+              In practice, a team may use Micrometer for Spring metrics, OpenTelemetry for traces and broader signal
+              correlation, OTLP to move telemetry to a Collector, Prometheus for metrics storage/querying, and Grafana
+              for a single operational view. Avoid high-cardinality metric labels such as raw user IDs or request IDs;
+              put those identifiers in traces and logs instead.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="java">
         <h2 class="accordion-header" id="completableFutureExceptionallyTop">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#completableFutureExceptionallyTopBody">
             How does exceptionally() work in CompletableFuture, and why is it used?
