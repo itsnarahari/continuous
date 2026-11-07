@@ -50,6 +50,24 @@ public class November2026 {
         System.out.println(Arrays.toString(moveZerosToEnd(arr3, arr3.length)));
         System.out.println(isAnagram("silent", "listen"));
 
+        lengthOfLongestSubstring("abcbadb");
+    }
+
+    // abcbadb
+    public static int lengthOfLongestSubstring(String s) {
+        Set<Character> set = new HashSet<>();
+        int left = 0;
+        int maxLength = 0;
+        for (int right = 0; right < s.length(); right++) {
+            char current = s.charAt(right);
+            while (set.contains(current)) {
+                set.remove(s.charAt(left));
+                left++;
+            }
+            set.add(current);
+            maxLength = Math.max(maxLength, right - left + 1);
+        }
+        return maxLength;
     }
 
     public static boolean isAnagram(String s1, String s2) {

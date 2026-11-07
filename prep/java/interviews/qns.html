@@ -177,6 +177,1859 @@
         onkeyup="searchQuestions()" />
     </div>
     <div class="accordion" id="accordionSeniorJava">
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaMessageOrderingTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaMessageOrderingTopBody">How does Kafka order messages?</button>
+        </h2>
+        <div id="kafkaMessageOrderingTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Kafka guarantees ordering <strong>within a single partition</strong>. Records appended to one partition
+              receive increasing offsets and a consumer reads them in offset order. Kafka does not provide ordering
+              across all partitions of a topic by default.
+            </p>
+            <pre><code class="language-java">producer.send(new ProducerRecord&lt;&gt;(
+    "orders", customerId, "OrderCreated"));
+producer.send(new ProducerRecord&lt;&gt;(
+    "orders", customerId, "PaymentCompleted"));
+
+// Same customerId normally maps both records to the same partition,
+// preserving their order for that customer.</code></pre>
+            <h5 class="text-warning">How ordering is achieved</h5>
+            <ol><li>The producer chooses a partition, normally by hashing the message key.</li><li>Records in that partition are appended sequentially and receive offsets.</li><li>The consumer processes records from that partition in offset order.</li><li>Within a consumer group, only one active consumer owns a partition at a time.</li></ol>
+            <p>
+              Use a stable business key such as <code>customerId</code>, <code>orderId</code>, or account ID when all
+              events for that entity must be ordered. For example, <code>OrderCreated</code>,
+              <code>PaymentCompleted</code>, and <code>OrderShipped</code> for order 101 should use the same key.
+            </p>
+            <h5 class="text-warning">What can break or limit ordering?</h5>
+            <ul><li>Different keys can route related events to different partitions.</li><li>Adding partitions can change default hash-to-partition mapping for future records.</li><li>Retries and multiple in-flight requests can affect ordering if producer settings are unsafe; idempotence and suitable in-flight limits help.</li><li>Parallel processing within a consumer can complete records out of order even if Kafka delivered them in order.</li><li>Multiple consumer groups each preserve partition order independently, but do not create a global order.</li></ul>
+            <p>
+              If strict global ordering is required, use one partition, accepting that throughput and parallelism are
+              limited. Usually the better design is per-entity ordering with multiple partitions. Use sequence numbers,
+              versions, or an ordering key in the consumer when events can arrive late or be retried.
+            </p>
+            <p>
+              Kafka ordering is an append/read guarantee, not a guarantee that every external side effect completes in
+              order. The consumer must process sequentially per key or partition and make retries/idempotency compatible
+              with the required business ordering.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaMessageCopiesTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaMessageCopiesTopBody">How many copies of a Kafka message are stored?</button>
+        </h2>
+        <div id="kafkaMessageCopiesTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Kafka stores one copy of a record per replica of its partition. The number of broker copies is controlled
+              by the topic's <strong>replication factor</strong>, not by the number of consumers. For replication factor 3,
+              each partition's record is stored on three brokers: one leader and two followers.
+            </p>
+            <pre><code class="language-text">Topic orders, partition P0, replication factor 3
+
+Broker 1: P0 leader   - message M100
+Broker 2: P0 follower - message M100
+Broker 3: P0 follower - message M100
+
+Physical broker copies: 3
+Logical Kafka record: 1</code></pre>
+            <p>
+              A producer sends the record to the partition leader. Followers replicate it. With <code>acks=all</code>,
+              the producer waits for the required in-sync replicas according to <code>min.insync.replicas</code>. If a
+              follower is temporarily behind, it may not yet contain the newest record and may leave the ISR until it
+              catches up.
+            </p>
+            <h5 class="text-warning">Do consumers create more stored copies?</h5>
+            <p>
+              No. Consumers read the broker log; they do not normally create another Kafka copy just by consuming. A
+              different consumer group receives the same logical records independently, but Kafka still stores the topic
+              according to its replication factor. A consumer may have application buffers, database projections, or
+              output topics, but those are separate storage/side effects.
+            </p>
+            <ul><li><strong>Replication factor 1:</strong> one broker copy; no broker redundancy.</li><li><strong>Replication factor 3:</strong> three broker copies; common production choice for important events.</li><li><strong>Replication factor 5:</strong> five copies; more fault tolerance but more disk, network, and recovery cost.</li></ul>
+            <p>
+              Total disk usage is approximately partition data size multiplied by replication factor, plus indexes and
+              overhead. Replication does not mean unlimited retention: retention or compaction can remove records from all
+              replicas. Monitor ISR, under-replicated partitions, disk usage, and broker health.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaRebalanceAffectedOnlyTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaRebalanceAffectedOnlyTopBody">Does Kafka rebalance happen only for the affected consumer instance?</button>
+        </h2>
+        <div id="kafkaRebalanceAffectedOnlyTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p><strong>It depends on the assignment protocol.</strong> A consumer failure is a change to the entire consumer group, so Kafka must recalculate ownership. It is not only a private recovery operation inside the failed instance.</p>
+            <h5 class="text-warning">Eager rebalancing</h5>
+            <p>
+              With an eager assignor, consumers revoke their assigned partitions and the group performs a full
+              reassignment. Even consumers whose partitions were not owned by the failed instance can briefly pause,
+              revoke, and receive assignments again. This can increase latency and lag across the group.
+            </p>
+            <pre><code class="language-text">Before: C1 -&gt; P0,P1   C2 -&gt; P2,P3   C3 -&gt; P4,P5
+C2 fails
+Eager: C1/C3 revoke and receive a complete new assignment
+After: C1 -&gt; P0,P1,P2   C3 -&gt; P3,P4,P5</code></pre>
+            <h5 class="text-warning">Cooperative rebalancing</h5>
+            <p>
+              With cooperative-sticky assignment, Kafka attempts an incremental rebalance. Partitions that do not need
+              to move can remain with their current consumers, while only affected partitions are revoked and reassigned.
+              This reduces stop-the-world pauses, but all group members still participate in the coordination protocol.
+            </p>
+            <p>
+              Use a cooperative assignor where supported, graceful shutdown, stable deployments, and appropriate
+              heartbeat/poll settings. Monitor rebalance count and duration, partition revocations, consumer lag, and
+              missed heartbeats. Even with cooperative rebalancing, application code must safely handle partition revoke
+              and assignment callbacks and commit any work that is safe to commit.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaActiveConsumerDiesTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaActiveConsumerDiesTopBody">What happens if an active Kafka consumer dies?</button>
+        </h2>
+        <div id="kafkaActiveConsumerDiesTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Kafka detects that the consumer has stopped sending heartbeats or polling. The group coordinator marks it
+              unavailable and triggers a rebalance. The dead consumer's partitions are reassigned to the remaining
+              consumers in the same group, and processing resumes from the last committed offsets.
+            </p>
+            <pre><code class="language-text">Before failure: 4 partitions, 2 consumers
+C1 -&gt; P0, P1       C2 -&gt; P2, P3
+
+C2 dies
+After rebalance:
+C1 -&gt; P0, P1, P2, P3
+
+New C2 joins later and assignments are balanced again.</code></pre>
+            <h5 class="text-warning">What happens to uncommitted messages?</h5>
+            <p>
+              Records processed by the dead consumer after its last successful commit are delivered again. This gives
+              at-least-once behavior. If the consumer committed before completing the business operation, records can be
+              skipped, so commit after successful processing and make the handler idempotent.
+            </p>
+            <h5 class="text-warning">Detection and recovery settings</h5>
+            <ul><li><code>session.timeout.ms</code> and heartbeat settings influence failure detection.</li><li><code>max.poll.interval.ms</code> controls how long processing can prevent the consumer from polling before it is considered unresponsive.</li><li>Too-short timeouts can cause false failures; too-long timeouts delay recovery.</li><li>During rebalance, requests may pause briefly and consumer lag can increase.</li></ul>
+            <h5 class="text-warning">Production handling</h5>
+            <p>
+              Use graceful shutdown so the consumer leaves the group and commits safe progress before termination. Run
+              multiple replicas in the same group, keep enough partition capacity for failover, use cooperative assignment
+              where supported, and monitor consumer heartbeats, rebalance count, lag, and commit failures. Set deployment
+              readiness/liveness probes carefully so Kubernetes does not repeatedly kill healthy slow-starting consumers.
+            </p>
+            <p>
+              If there is only one consumer and it dies, no processing occurs until it restarts or another instance joins.
+              Kafka retains the records according to topic retention, so recovery is possible as long as the offsets and
+              data are still retained.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaGeneralSizingFormulaTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaGeneralSizingFormulaTopBody">How do we generally calculate the required Kafka partitions and consumers?</button>
+        </h2>
+        <div id="kafkaGeneralSizingFormulaTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>There is no universal fixed number. Use measured producer and consumer capacity, then validate with a load test.</p>
+            <h5 class="text-warning">Useful formulas</h5>
+            <pre><code class="language-text">Consumer count by throughput:
+ceil(peak input rate / safe rate per consumer)
+
+Partition count by consumer parallelism:
+at least the required active consumer count
+
+Partition count by broker throughput:
+ceil(peak bytes per second / safe bytes per second per partition)
+
+Recommended starting partitions:
+max(throughput-based partitions, consumer-parallelism partitions)
+then add measured growth/failure headroom</code></pre>
+            <h5 class="text-warning">Worked example</h5>
+            <p>
+              Suppose peak traffic is 24,000 messages per minute, each message is 4 KB, and one consumer safely
+              processes 4,000 messages per minute. Add 25% headroom:
+            </p>
+            <pre><code class="language-text">Consumer requirement = ceil(24,000 / 4,000 * 1.25)
+                    = ceil(7.5) = 8 consumers
+
+If one partition safely supports 5,000 messages/minute:
+Partition requirement = ceil(24,000 / 5,000 * 1.25)
+                    = ceil(6) = 6 partitions
+
+Choose at least 8 partitions so 8 consumers can be active.
+Run 8 consumers at peak; fewer can run off-peak.</code></pre>
+            <p>
+              If each consumer opens 5 database connections and the database safely allows 30 connections for this
+              service, six consumers may be the downstream limit even though Kafka needs eight for throughput. In that
+              case, optimize/batch the database work, use bounded concurrency, or increase database capacity before
+              scaling consumers blindly.
+            </p>
+            <h5 class="text-warning">Rules of thumb</h5>
+            <ul><li>Partitions must be at least the maximum useful consumer count for one group.</li><li>Use measured safe capacity, not theoretical CPU capacity.</li><li>Reserve headroom for traffic spikes and one or more failed consumers.</li><li>Keep all records for an ordering key in one partition; check for hot-key skew.</li><li>Replication factor improves durability but does not create consumer parallelism.</li><li>Too many partitions increase metadata, file, replication, rebalance, and recovery overhead.</li><li>Partitions can be increased but not reduced, and changing them can affect key-to-partition mapping.</li></ul>
+            <p>
+              Finally, verify the result by measuring producer throughput, partition-level lag, consumer processing rate,
+              p99 latency, rebalance time, broker CPU/disk/network, and downstream saturation. Increase consumers only when
+              unassigned partitions exist; increase partitions only when the topic needs more parallelism and the
+              ordering/storage tradeoff is understood.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaRecommendedConsumerInstancesTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaRecommendedConsumerInstancesTopBody">How many Kafka consumer instances are recommended?</button>
+        </h2>
+        <div id="kafkaRecommendedConsumerInstancesTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              There is no universal number. Choose consumer instances from the topic's partition count, measured
+              processing capacity, peak input rate, lag target, failure headroom, and database/downstream limits.
+              Within one group, the useful active consumer count is normally no greater than the number of partitions.
+            </p>
+            <h5 class="text-warning">Practical calculation</h5>
+            <pre><code class="language-text">Peak input: 12,000 messages/minute
+One consumer safely processes: 2,000 messages/minute
+
+Minimum consumers = ceil(12,000 / 2,000) = 6
+Topic partitions = at least 6
+
+With one-instance failure headroom:
+Run 7 or 8 consumers only if the topic has 7 or 8 partitions.</code></pre>
+            <p>
+              If the topic has 6 partitions, run 6 active consumers for maximum group parallelism; a seventh consumer
+              remains idle. If the topic has 12 partitions, 6 consumers can process about two partitions each, and
+              scaling toward 12 may help if each consumer is the bottleneck and downstream systems can handle it.
+            </p>
+            <h5 class="text-warning">What to consider</h5>
+            <ul><li><strong>Throughput:</strong> benchmark records per second per consumer with realistic payloads and processing.</li><li><strong>Ordering:</strong> one partition is processed by one consumer in the group, preserving partition order.</li><li><strong>Failure headroom:</strong> keep enough spare capacity so lag remains acceptable when one instance fails.</li><li><strong>Downstream capacity:</strong> database connections, locks, API rate limits, and thread pools may limit consumers before Kafka does.</li><li><strong>Rebalances:</strong> too many unstable instances can increase rebalance frequency and reduce throughput.</li><li><strong>Autoscaling:</strong> use lag or processing-rate metrics with min/max replicas and cooldown; do not scale based only on CPU.</li></ul>
+            <p>
+              Start with a measured baseline, for example 3 consumers for 6 partitions, load-test at peak, and increase
+              until lag and p99 processing latency meet the target. Stop increasing when partitions are fully assigned or
+              another dependency saturates. Scale consumers and partitions separately: consumers process the work, while
+              partitions create the maximum parallelism boundary.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaIdempotentConsumerTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaIdempotentConsumerTopBody">What is an idempotent Kafka consumer and how do we implement it?</button>
+        </h2>
+        <div id="kafkaIdempotentConsumerTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              An idempotent consumer produces the same business result whether it receives an event once or multiple
+              times. Kafka commonly provides at-least-once delivery, so duplicates can occur after a crash before offset
+              commit, a commit failure, a retry, or a rebalance.
+            </p>
+            <h5 class="text-warning">Real-world payment example</h5>
+            <pre><code class="language-text">Event: PaymentRequested
+eventId: e-9001
+
+First delivery: charge succeeds, process crashes before offset commit
+Redelivery: consumer sees e-9001 again
+
+Idempotent result: second delivery does not charge the card again</code></pre>
+            <h5 class="text-warning">Database inbox/deduplication pattern</h5>
+            <pre><code class="language-sql">CREATE TABLE processed_event (
+    consumer_name VARCHAR(100),
+    event_id VARCHAR(200),
+    processed_at TIMESTAMP,
+    PRIMARY KEY (consumer_name, event_id)
+);</code></pre>
+            <pre><code class="language-java">@Transactional
+void consume(PaymentRequested event) {
+    if (processedEventRepository.exists("payment-service", event.id())) {
+        return; // Duplicate delivery: no business action
+    }
+
+    paymentRepository.chargeIfNotAlreadyCharged(
+        event.id(), event.customerId(), event.amount());
+    processedEventRepository.insert("payment-service", event.id());
+}
+
+// Commit the Kafka offset after this transaction succeeds.</code></pre>
+            <p>
+              The primary key makes duplicate processing safe. Ideally, the business update and the processed-event
+              insert are in the same database transaction. If the duplicate insert fails with a unique-key conflict, the
+              consumer can treat it as already processed only when the transaction and event identity make that conclusion
+              safe.
+            </p>
+            <h5 class="text-warning">Other idempotency techniques</h5>
+            <ul><li>Use a business idempotency key and a database unique constraint.</li><li>Use an atomic upsert such as “insert if absent” or “update only when version is newer.”</li><li>Store an external provider's idempotency key for payment or API calls.</li><li>For Kafka-to-Kafka processing, use Kafka transactions and commit the consumed offset with the produced output.</li><li>Use an outbox/inbox pattern when a Kafka event drives a database side effect.</li></ul>
+            <p>
+              Do not use only the Kafka offset as the idempotency key: offsets belong to a consumer group and can change
+              when data is replayed into another group or topic. Use a stable event ID or business key. Idempotency is not
+              the same as deduplicating every event blindly; events may be legitimate repeated state changes, so define
+              the business semantics first.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaCrashBeforeCommitTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaCrashBeforeCommitTopBody">What happens if a consumer processes a message successfully but crashes before committing the offset?</button>
+        </h2>
+        <div id="kafkaCrashBeforeCommitTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Kafka does not know that processing succeeded because the offset was not committed. After the consumer
+              restarts or another consumer receives the partition during a rebalance, Kafka resumes from the last
+              committed offset and delivers the message again. This is normal <strong>at-least-once</strong> behavior.
+            </p>
+            <pre><code class="language-text">1. Read OrderCreated at offset 100
+2. Charge card successfully
+3. Consumer crashes before commit
+4. Restart resumes from committed offset 100
+5. OrderCreated at offset 100 is delivered again
+
+Risk: card could be charged twice if processing is not idempotent.</code></pre>
+            <h5 class="text-warning">How to handle duplicates</h5>
+            <pre><code class="language-sql">CREATE TABLE processed_event (
+    consumer_name VARCHAR(100),
+    event_id VARCHAR(200),
+    processed_at TIMESTAMP,
+    PRIMARY KEY (consumer_name, event_id)
+);</code></pre>
+            <pre><code class="language-java">@Transactional
+void process(OrderCreated event) {
+    if (processedEventRepository.exists("payment-service", event.id())) {
+        return; // Redelivery is a safe no-op
+    }
+
+    paymentRepository.authorizeIfNotAlreadyCharged(event.id(), event.amount());
+    processedEventRepository.insert("payment-service", event.id());
+}
+
+// Commit the Kafka offset after the transaction succeeds.</code></pre>
+            <p>
+              The unique event ID, database unique constraint, upsert, or idempotency key prevents duplicate business
+              effects. Keep the business update and processed-event record in the same database transaction when possible.
+            </p>
+            <h5 class="text-warning">Why not commit first?</h5>
+            <p>
+              If the consumer commits the offset before processing and then crashes, Kafka resumes after the record and
+              the business action can be lost. Commit-after-success favors at-least-once delivery and possible duplicate
+              work; commit-before-processing favors at-most-once delivery and possible loss. For critical business events,
+              use commit-after-success plus idempotent processing, an outbox/inbox pattern, or a suitable Kafka
+              transaction for Kafka-to-Kafka processing.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaKraftVsZookeeperTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaKraftVsZookeeperTopBody">What is KRaft and why did Kafka replace ZooKeeper?</button>
+        </h2>
+        <div id="kafkaKraftVsZookeeperTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <strong>KRaft</strong> means Kafka Raft. It is Kafka's built-in metadata management protocol. Kafka
+              controller nodes form a Raft-based quorum and replicate the cluster metadata log, such as broker
+              membership, topic configuration, partition assignments, and leader state.
+            </p>
+            <h5 class="text-warning">What happened with ZooKeeper?</h5>
+            <p>
+              Older Kafka clusters used Apache ZooKeeper as an external coordination system for broker registration,
+              controller election, and metadata storage. Kafka did not remove ZooKeeper because it was unreliable; it
+              replaced the separate dependency to simplify Kafka's architecture and make metadata management part of Kafka.
+            </p>
+            <h5 class="text-warning">Why KRaft?</h5>
+            <ul><li><strong>Fewer systems:</strong> operators no longer need to manage a separate ZooKeeper cluster and Kafka coordination configuration.</li><li><strong>Better metadata scalability:</strong> Kafka can manage large numbers of topics and partitions using its own metadata log.</li><li><strong>Clearer ownership:</strong> Kafka controllers own Kafka metadata directly instead of translating between Kafka state and ZooKeeper state.</li><li><strong>Consistent consensus model:</strong> controller metadata uses the Raft quorum protocol.</li><li><strong>Simpler recovery and operations:</strong> metadata replication, snapshots, controller membership, and Kafka upgrades follow one platform model.</li></ul>
+            <pre><code class="language-text">KRaft cluster
+  Controller 1 - active metadata leader
+  Controller 2 - metadata follower
+  Controller 3 - metadata follower
+
+Majority of controllers must agree on metadata changes.
+Kafka brokers receive the committed metadata state.</code></pre>
+            <h5 class="text-warning">KRaft versus ZooKeeper</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Area</th><th>ZooKeeper mode</th><th>KRaft mode</th></tr></thead><tbody><tr><td>Metadata</td><td>Stored/managed through external ZooKeeper</td><td>Stored in Kafka's internal metadata log</td></tr><tr><td>Coordination</td><td>Kafka plus a separate coordination system</td><td>Kafka controller quorum using Raft</td></tr><tr><td>Operations</td><td>Two systems to deploy, secure, monitor, and upgrade</td><td>Fewer external components</td></tr><tr><td>Deployment choice</td><td>Legacy architecture</td><td>Recommended architecture for supported new Kafka deployments</td></tr></tbody></table>
+            <p>
+              KRaft does not replace partition replication or consumer groups. Broker data is still replicated through
+              partition leaders and followers, and consumers still use group coordination. KRaft coordinates cluster
+              metadata; it is not the storage mechanism for business records.
+            </p>
+            <p>
+              Use an odd number of controller nodes, commonly three or five, so a majority can survive a failure. For
+              migration, follow the Kafka version's supported migration path and compatibility rules; do not simply
+              delete ZooKeeper from an existing cluster. Verify controller quorum health, metadata lag, broker
+              registration, leader elections, and backup/recovery procedures.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaConsumerRebalancingTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaConsumerRebalancingTopBody">What is Kafka consumer rebalancing and why does it occur?</button>
+        </h2>
+        <div id="kafkaConsumerRebalancingTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Consumer rebalancing is the process of redistributing topic partitions among consumers in the same
+              consumer group. It ensures that every active partition has an eligible owner after the group membership or
+              subscription changes.
+            </p>
+            <pre><code class="language-text">Before: 4 partitions, 2 consumers
+C1 -&gt; P0, P1       C2 -&gt; P2, P3
+
+C2 crashes
+After rebalance:
+C1 -&gt; P0, P1, P2, P3</code></pre>
+            <h5 class="text-warning">Why rebalancing occurs</h5>
+            <ul><li>A new consumer instance joins the group.</li><li>A consumer shuts down, crashes, or loses its network connection.</li><li>A consumer misses heartbeats or does not call <code>poll()</code> within the allowed interval.</li><li>The topic gains partitions or the consumer subscription changes.</li><li>A deployment, autoscaling event, broker issue, or long garbage-collection pause changes group membership.</li></ul>
+            <h5 class="text-warning">What happens during a rebalance?</h5>
+            <ol><li>The group coordinator detects a membership or assignment change.</li><li>Consumers revoke or pause affected partitions.</li><li>The assignment strategy calculates a new mapping.</li><li>Consumers receive partitions and resume fetching from their committed offsets.</li></ol>
+            <p>
+              During an eager rebalance, many or all partitions may be revoked temporarily, increasing lag and reducing
+              throughput. Cooperative-sticky assignment can move partitions incrementally and reduce disruption. A
+              rebalance does not delete records; uncommitted work can be processed again, so handlers should be idempotent.
+            </p>
+            <h5 class="text-warning">How to reduce unnecessary rebalances</h5>
+            <ul><li>Keep the consumer poll loop responsive and move long work to bounded workers or tune <code>max.poll.interval.ms</code> carefully.</li><li>Use graceful shutdown so a pod leaves the group cleanly.</li><li>Configure stable health checks and avoid frequent deployment churn.</li><li>Use cooperative-sticky assignment where supported.</li><li>Commit offsets after successful processing and handle partition revocation safely.</li><li>Monitor rebalance count/duration, consumer lag, heartbeat failures, poll latency, and GC pauses.</li></ul>
+            <p>
+              More consumers do not always help: if there are fewer partitions than consumers, extra instances remain
+              idle, while every membership change can still trigger assignment work. Scale consumers based on lag and
+              available partitions, while respecting database and downstream capacity.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaLogRetentionTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaLogRetentionTopBody">What is Kafka log retention?</button>
+        </h2>
+        <div id="kafkaLogRetentionTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Kafka log retention controls how long or how much data Kafka keeps in each partition log. It allows
+              consumers to replay records while they are retained and deletes old complete log segments when retention
+              rules are met. Kafka retention is independent of whether a consumer has already read a record.
+            </p>
+            <h5 class="text-warning">Main retention policies</h5>
+            <ul><li><strong>Time-based:</strong> delete segments older than <code>retention.ms</code>, for example seven days.</li><li><strong>Size-based:</strong> delete old segments when a partition exceeds <code>retention.bytes</code>.</li><li><strong>Both:</strong> the first applicable limit can remove old segments, so size can cause deletion earlier than the time target.</li><li><strong>Compaction:</strong> a separate cleanup policy that eventually keeps the latest value per key instead of retaining every historical value.</li></ul>
+            <pre><code class="language-properties"># Topic-level example
+retention.ms=604800000
+retention.bytes=10737418240
+cleanup.policy=delete
+segment.ms=3600000
+segment.bytes=1073741824</code></pre>
+            <p>
+              Kafka normally deletes complete old segments, not arbitrary records from the middle of the active segment.
+              Therefore deletion may happen after the exact retention time, depending on segment rolling and cleanup
+              scheduling. <code>segment.ms</code> and <code>segment.bytes</code> influence how quickly data becomes eligible
+              for deletion.
+            </p>
+            <h5 class="text-warning">Real-world example</h5>
+            <p>
+              If an order topic retains seven days, a consumer that was offline for two days can resume from its committed
+              offset and catch up. If it is offline for ten days, the earlier offsets may no longer exist and the consumer
+              cannot replay them; its behavior depends on offset-reset and recovery policy. Set retention longer than the
+              maximum expected outage plus replay margin.
+            </p>
+            <h5 class="text-warning">Retention versus compaction</h5>
+            <p>
+              Use <code>cleanup.policy=delete</code> for event history such as click or order events. Use
+              <code>cleanup.policy=compact</code> for a keyed changelog such as the latest customer address. Use
+              <code>compact,delete</code> when you want compaction plus a time limit. Compaction is asynchronous, so old
+              records can remain temporarily, and tombstones represent deleted keys.
+            </p>
+            <p>
+              Retention can be configured at broker defaults or overridden per topic using the Admin API/portal. Monitor
+              disk usage, retention cleanup, segment count, consumer lag, and the age of the oldest required event. Never
+              reduce retention below the recovery/replay requirement without checking downstream consumers and compliance
+              needs.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaDiskStorageTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaDiskStorageTopBody">How are messages stored on disk in Kafka?</button>
+        </h2>
+        <div id="kafkaDiskStorageTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Kafka stores each topic partition as an append-only log on the broker's local disk. A record is appended
+              sequentially to the partition log and receives an offset that identifies its position within that
+              partition. Kafka does not normally update a record in place.
+            </p>
+            <pre><code class="language-text">/var/lib/kafka/data/orders-0/
+  00000000000000000000.log
+  00000000000000000000.index
+  00000000000000000000.timeindex
+  00000000000000100000.log
+  00000000000000100000.index
+
+orders-1/ ... another independent partition log</code></pre>
+            <h5 class="text-warning">Log segments</h5>
+            <p>
+              Each partition is divided into segment files. The active segment accepts new records; older segments become
+              immutable. Segment rolling is controlled by settings such as <code>log.segment.bytes</code> and
+              <code>log.roll.ms</code>. Immutable segments make sequential reads, replication, retention, and cleanup
+              efficient.
+            </p>
+            <h5 class="text-warning">Indexes</h5>
+            <ul><li><strong>Offset index:</strong> maps an offset to an approximate file position so Kafka can locate a record without scanning the entire log.</li><li><strong>Time index:</strong> maps timestamps to approximate offsets for time-based searches.</li><li>Kafka uses sparse indexes and then scans a small range from the nearest position.</li></ul>
+            <p>
+              A record contains metadata such as key, value, headers, timestamp, and offset context. The exact on-disk
+              binary layout is managed by Kafka and may include batches, compression, checksums, and record metadata. A
+              compressed producer batch is generally stored/transferred as a batch, improving throughput.
+            </p>
+            <h5 class="text-warning">Replication and durability</h5>
+            <p>
+              The leader appends the record and followers fetch the leader's log to maintain their own local copy. The
+              replication factor determines how many brokers store the partition. With <code>acks=all</code>, the producer
+              waits for the required in-sync replicas according to <code>min.insync.replicas</code>. Kafka's durability
+              therefore depends on acknowledgement, replication, disk behavior, and failure configuration.
+            </p>
+            <h5 class="text-warning">Retention and compaction</h5>
+            <ul><li><strong>Time/size retention:</strong> Kafka deletes complete old segments after retention time or size rules; it does not delete arbitrary records from the middle of an active segment.</li><li><strong>Log compaction:</strong> for keyed topics, Kafka eventually retains the latest value per key and may write cleaned segments. Tombstones represent deletes.</li><li>Consumers can replay records while their offsets remain within the retained log.</li></ul>
+            <p>
+              Kafka usually relies heavily on the operating-system page cache rather than loading the whole topic into the
+              JVM heap. Monitor broker disk usage, segment count, page-cache behavior, disk latency, filesystem capacity,
+              replication lag, and retention cleanup. Do not manually edit Kafka log files; use Kafka administration tools
+              and backups/recovery procedures.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="whyKafkaFastTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#whyKafkaFastTopBody">Why is Kafka so fast?</button>
+        </h2>
+        <div id="whyKafkaFastTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Kafka is fast because it is optimized for sequential event-log throughput rather than random updates to
+              individual records. It combines efficient storage, batching, partition parallelism, and network-friendly
+              producer/consumer behavior.
+            </p>
+            <h5 class="text-warning">Main reasons</h5>
+            <ul><li><strong>Append-only logs:</strong> records are appended sequentially to partition files, avoiding random in-place updates.</li><li><strong>Operating-system page cache:</strong> recently written/read data can be served from memory while the log remains durable on disk according to the configured acknowledgement policy.</li><li><strong>Zero-copy transfer:</strong> Kafka can transfer log data efficiently from file cache to the network without unnecessary application-level copying.</li><li><strong>Batching:</strong> producers send many records in one request and consumers fetch batches, reducing per-message network and system-call overhead.</li><li><strong>Compression:</strong> batches compress efficiently, reducing network and disk traffic.</li><li><strong>Partitions:</strong> partitions allow producers, brokers, and consumers to process independent logs in parallel.</li><li><strong>Sequential consumer pull:</strong> consumers fetch ranges of records efficiently and control their own rate.</li><li><strong>Simple broker work:</strong> Kafka does not perform a database-style index update and random mutation for every message.</li></ul>
+            <pre><code class="language-text">Producer -&gt; batch records -&gt; partition append
+Broker    -&gt; sequential log + replication
+Consumer  -&gt; fetch a batch -&gt; process sequentially
+
+More partitions -&gt; more independent work can run in parallel</code></pre>
+            <h5 class="text-warning">Real-world example</h5>
+            <p>
+              An order service produces 10,000 events per second. Instead of sending 10,000 network requests, the
+              producer groups records by partition, compresses each batch, and sends fewer larger requests. Six partition
+              leaders distribute the append work across brokers, while multiple consumers fetch batches in parallel.
+              The result is high throughput with predictable sequential I/O.
+            </p>
+            <h5 class="text-warning">What can reduce Kafka performance?</h5>
+            <ul><li>Too few partitions or a hot partition/key.</li><li>Small batches, zero batching delay, or flushing after every record.</li><li>Large messages, expensive serialization, or disabled compression when network-bound.</li><li>Slow disks, broker CPU/network saturation, replication lag, or too many partitions.</li><li>Slow consumers, database/API calls, frequent rebalances, or excessive retries.</li><li>Strong durability settings can add latency: <code>acks=all</code> waits for the required ISR.</li></ul>
+            <p>
+              Kafka's speed does not mean every operation is low latency. Increasing partitions and batching can improve
+              throughput but may increase ordering complexity and tail latency. Benchmark with realistic message size,
+              replication, acknowledgement, retention, and consumer-processing settings.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaDeliveryGuaranteesTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaDeliveryGuaranteesTopBody">What are at-most-once, at-least-once, and exactly-once delivery guarantees?</button>
+        </h2>
+        <div id="kafkaDeliveryGuaranteesTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>These guarantees describe the relationship between message processing and offset acknowledgement when failures occur.</p>
+            <table class="table table-dark table-bordered"><thead><tr><th>Guarantee</th><th>Commit timing</th><th>Failure behavior</th><th>Tradeoff</th></tr></thead><tbody><tr><td><strong>At-most-once</strong></td><td>Commit before processing</td><td>Message may be lost, but is not normally redelivered</td><td>No duplicates, weaker delivery</td></tr><tr><td><strong>At-least-once</strong></td><td>Process, then commit</td><td>Crash before commit can redeliver the message</td><td>No silent loss if processing is reliable, but duplicates possible</td></tr><tr><td><strong>Exactly-once</strong></td><td>Atomic processing/output and offset handling</td><td>Effect is intended to appear once within the supported transactional boundary</td><td>More coordination, constraints, and operational cost</td></tr></tbody></table>
+            <h5 class="text-warning">At-most-once example</h5>
+            <pre><code class="language-text">1. Consumer reads OrderCreated.
+2. Consumer commits offset.
+3. Application crashes before charging the card.
+4. Consumer restarts after the committed offset.
+
+Result: the order event may never be processed.</code></pre>
+            <p>Use this only when occasional loss is acceptable, such as some non-critical telemetry.</p>
+            <h5 class="text-warning">At-least-once example</h5>
+            <pre><code class="language-text">1. Consumer reads OrderCreated.
+2. Consumer charges the card successfully.
+3. Application crashes before committing the offset.
+4. Consumer restarts and reads OrderCreated again.
+
+Result: the handler runs twice, so it must be idempotent.</code></pre>
+            <p>Use manual commit after successful business work, an idempotency key, a database unique constraint, an upsert, or a processed-event table. This is the common practical choice for microservices.</p>
+            <h5 class="text-warning">Exactly-once semantics</h5>
+            <p>
+              Kafka transactions can atomically publish output records and consumed offsets for Kafka-to-Kafka
+              processing. Configure an idempotent/transactional producer and have downstream consumers use
+              <code>isolation.level=read_committed</code>. For example, consume an input order, write a transformed event
+              to an output topic, and commit the input offset in one Kafka transaction.
+            </p>
+            <p>
+              Kafka exactly-once does not automatically make an external payment, email, or database update exactly once.
+              Use an outbox/inbox pattern, a shared database transaction, an idempotency key, or a transactional sink for
+              those side effects. “Exactly once” is always scoped to a defined system boundary.
+            </p>
+            <h5 class="text-warning">How to choose</h5>
+            <ul><li><strong>At-most-once:</strong> when loss is acceptable and duplicate work is more harmful.</li><li><strong>At-least-once:</strong> for most business events, with idempotent consumers and retries.</li><li><strong>Exactly-once:</strong> for Kafka-native pipelines where duplicate output is unacceptable and the added transaction overhead is justified.</li></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaMessageLossTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaMessageLossTopBody">Under what conditions can Kafka lose messages?</button>
+        </h2>
+        <div id="kafkaMessageLossTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Kafka is durable when configured correctly, but messages can be lost or become unavailable through producer,
+              broker, retention, or consumer mistakes. First distinguish actual deletion from a message that was not
+              delivered to a consumer because of offsets, filtering, errors, or lag.
+            </p>
+            <h5 class="text-warning">Producer-side causes</h5>
+            <ul><li><code>acks=0</code>: the producer does not know whether the broker received the record.</li><li><code>acks=1</code>: the leader acknowledges before followers replicate; leader failure can lose the record.</li><li>Producer retries, delivery timeouts, serialization errors, or application code ignoring the send future can drop failed sends from the application's perspective.</li><li>Incorrect idempotence/transaction handling can create duplicates or aborted records that consumers using <code>read_committed</code> will not see.</li></ul>
+            <h5 class="text-warning">Broker and replication causes</h5>
+            <ul><li>Replication factor 1 and loss of the only broker copy.</li><li>Multiple broker/zone failures before replicas recover.</li><li>Unclean leader election selecting an out-of-sync replica; records present only on the old leader may be lost.</li><li>Disk corruption, operator deletion, incorrect reassignment, or a catastrophic storage failure without backups.</li><li>Using <code>acks=all</code> with an unsafe ISR/minimum-ISR policy and assuming acknowledgement means a backup exists.</li></ul>
+            <h5 class="text-warning">Retention and operator causes</h5>
+            <ul><li>Time- or size-based retention deletes records before a slow consumer reads them.</li><li>Log compaction removes older values for the same key; tombstones represent deletes.</li><li>Manual offset reset, topic deletion, wrong environment/topic, or a consumer starting at <code>latest</code> can make records appear missing.</li></ul>
+            <h5 class="text-warning">Consumer-side loss</h5>
+            <p>
+              If a consumer commits an offset before processing succeeds, then crashes, Kafka resumes after the committed
+              record and the business work can be lost. Deserialization failures, ignored exceptions, filtering logic,
+              and a dead-letter policy that discards records can also prevent business processing. Committing after
+              successful work gives at-least-once delivery, which may redeliver but should not lose work.
+            </p>
+            <pre><code class="language-properties"># Durable baseline for important events
+acks=all
+enable.idempotence=true
+replication.factor=3
+min.insync.replicas=2
+unclean.leader.election.enable=false</code></pre>
+            <p>
+              Also handle producer futures, use retries and suitable delivery timeouts, monitor ISR and under-replicated
+              partitions, retain data for the slowest expected consumer, commit only after successful idempotent business
+              processing, and maintain backups/recovery procedures. No setting provides unlimited durability if operators
+              delete the topic or all copies are destroyed.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaUncleanLeaderElectionTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaUncleanLeaderElectionTopBody">What is an unclean leader election in Kafka?</button>
+        </h2>
+        <div id="kafkaUncleanLeaderElectionTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              An unclean leader election allows Kafka to select a replica that is <strong>not in the ISR</strong> when no
+              in-sync replica is available. It prioritizes partition availability over guaranteed preservation of the
+              latest acknowledged data.
+            </p>
+            <pre><code class="language-text">P0 replicas: B1 leader, B2 follower, B3 follower
+Last accepted records exist on B1
+B1 fails; B2 and B3 are out of sync
+
+Clean election: P0 remains unavailable
+Unclean election: B2 may become leader
+Risk: records only on B1 may be lost or the log may be truncated</code></pre>
+            <p>
+              With clean election, Kafka waits for a valid ISR replica and protects the committed log, but producers and
+              consumers cannot use that partition while no eligible leader exists. With unclean election enabled, an
+              out-of-date replica can lead and traffic resumes sooner, but data that had not reached that replica can
+              disappear and consumers may observe a discontinuity.
+            </p>
+            <h5 class="text-warning">Configuration and recommendation</h5>
+            <p>
+              The setting is commonly <code>unclean.leader.election.enable</code>, configured at broker or topic level
+              depending on the Kafka version and deployment. For orders, payments, inventory, and audit events, keep
+              unclean election disabled unless the business explicitly accepts possible data loss. Use replication factor
+              3, spread replicas across failure zones, <code>acks=all</code>, and an appropriate
+              <code>min.insync.replicas</code> to reduce the chance of reaching this decision.
+            </p>
+            <p>
+              It may be acceptable for disposable telemetry or a system where serving stale data is better than a short
+              outage. Make the choice per topic and document the recovery tradeoff; unclean election is not a normal
+              scaling mechanism and should not hide unhealthy replication.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaLeaderElectionDetailedTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaLeaderElectionDetailedTopBody">How does Kafka leader election work?</button>
+        </h2>
+        <div id="kafkaLeaderElectionDetailedTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Kafka elects a leader for each partition so producers and consumers have one authoritative replica for
+              writes and ordered reads. The cluster controller coordinates the election. In KRaft, controller nodes use
+              a Raft metadata quorum; in older deployments, ZooKeeper-based controller coordination was used.
+            </p>
+            <h5 class="text-warning">Normal failure flow</h5>
+            <ol><li>The controller detects that the current leader broker has failed or lost membership.</li><li>It examines the partition's ISR list.</li><li>It selects an eligible in-sync replica, normally according to the current assignment and election rules.</li><li>The selected replica becomes the new partition leader.</li><li>The controller publishes new metadata to brokers.</li><li>Producers and consumers refresh metadata and retry requests against the new leader.</li></ol>
+            <pre><code class="language-text">P0 assignment: [B1, B2, B3]
+Current leader: B1
+ISR: [B1, B2, B3]
+
+B1 fails -&gt; controller elects B2
+New leader: B2
+B3 remains a follower and B1 rejoins after recovery/catch-up</code></pre>
+            <h5 class="text-warning">Clean versus unclean election</h5>
+            <ul><li><strong>Clean election:</strong> chooses an in-sync replica, protecting acknowledged data but potentially leaving the partition unavailable if no ISR replica can lead.</li><li><strong>Unclean election:</strong> allows an out-of-sync replica to become leader to restore availability, but records present only on the old leader can be lost or the log can be truncated.</li></ul>
+            <p>
+              With replication factor 3 and healthy ISR, a single broker failure normally causes only a short pause. If
+              multiple brokers fail and no ISR remains, the partition can be offline. Configure replication factor,
+              <code>min.insync.replicas</code>, <code>acks=all</code>, and unclean-election policy according to the
+              durability requirement.
+            </p>
+            <p>
+              This is partition-leader election, not consumer-group assignment. Consumer groups separately elect or use
+              a group coordinator and assign partitions to consumers. Monitor controller health, leader-election rate,
+              offline partitions, ISR shrinkage, and under-replicated partitions.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaPartitionLeaderFailsTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaPartitionLeaderFailsTopBody">What happens when a Kafka partition leader fails?</button>
+        </h2>
+        <div id="kafkaPartitionLeaderFailsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              A partition leader failure causes a short election and metadata-update period for that partition. Kafka's
+              controller chooses an eligible in-sync follower and promotes it to the new leader.
+            </p>
+            <pre><code class="language-text">P0 replicas: Broker 1 leader, Broker 2 follower, Broker 3 follower
+Broker 1 fails
+Controller elects Broker 2 as P0 leader
+Clients refresh metadata and retry P0 requests</code></pre>
+            <ol><li>Heartbeats show that the leader broker is unavailable.</li><li>The controller selects a caught-up ISR follower.</li><li>The follower becomes leader and accepts new produce/fetch requests.</li><li>Producers and consumers receive a metadata response or retry against the new leader.</li><li>The failed replica is removed from ISR until it recovers and catches up.</li></ol>
+            <p>
+              During election, requests for that partition may fail briefly or be retried, so latency and consumer lag
+              can temporarily increase. Other partitions continue normally unless the failed broker hosted many leaders
+              or the remaining brokers become overloaded.
+            </p>
+            <h5 class="text-warning">What if no ISR follower exists?</h5>
+            <p>
+              If no eligible in-sync replica is available, the partition remains unavailable while safe election is not
+              possible. Allowing an unclean leader election can restore availability by choosing an out-of-sync replica,
+              but records that existed only on the old leader may be lost. For durable data, use replication factor 3
+              where appropriate, spread replicas across failure zones, configure <code>acks=all</code> and
+              <code>min.insync.replicas</code>, and keep unclean election disabled unless the availability tradeoff is
+              explicitly accepted.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaBrokerFailsTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaBrokerFailsTopBody">What happens if a Kafka broker fails?</button>
+        </h2>
+        <div id="kafkaBrokerFailsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              The impact depends on what the failed broker was hosting. It may have been the leader for some partitions
+              and a follower for others. Kafka's controller detects the failure and coordinates new leadership for the
+              affected partitions.
+            </p>
+            <h5 class="text-warning">Typical sequence</h5>
+            <ol><li>Broker heartbeats stop and the controller marks the broker unavailable.</li><li>For each affected partition, Kafka selects an eligible in-sync replica on another broker.</li><li>That replica becomes the new leader after a short election period.</li><li>Producers and consumers refresh metadata and retry requests against the new leader.</li><li>The cluster reports under-replicated partitions until a replacement broker or recovery process restores the missing replica.</li></ol>
+            <pre><code class="language-text">P0 replicas: B1 leader, B2 follower, B3 follower
+B1 fails
+Controller elects B2 leader
+Producer refreshes metadata and continues writing to B2</code></pre>
+            <h5 class="text-warning">Possible outcomes</h5>
+            <ul><li><strong>Healthy ISR exists:</strong> short availability pause; data remains durable according to the acknowledged replication policy.</li><li><strong>No ISR follower is available:</strong> the partition can remain unavailable. An unclean election may restore availability by selecting an out-of-sync replica but can lose records.</li><li><strong>Replication factor is 1:</strong> the partition has no replica to promote, so it is unavailable while that broker is down and data can be lost if storage is lost.</li><li><strong>Many partitions on the broker:</strong> the controller may perform many elections and the remaining brokers may become overloaded.</li></ul>
+            <p>
+              With replication factor 3, <code>acks=all</code>, and <code>min.insync.replicas=2</code>, one broker failure
+              can still allow durable writes if two replicas remain in sync. Clients may see retries and a brief latency
+              increase. Monitor offline partitions, under-replicated partitions, ISR shrink events, controller health,
+              broker disk/network saturation, and consumer lag.
+            </p>
+            <p>
+              Spread replicas across availability zones, use suitable replication and minimum-ISR settings, configure
+              producer retries/timeouts, and test broker-failure recovery. Replication improves fault tolerance but does
+              not replace backups or capacity planning.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaIsrTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaIsrTopBody">What is an in-sync replica (ISR) in Kafka?</button>
+        </h2>
+        <div id="kafkaIsrTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              ISR means <strong>in-sync replicas</strong>. It is the set of partition replicas that are sufficiently
+              caught up with the leader and are eligible to become the next leader if the current leader fails. The
+              leader itself is included in the ISR set.
+            </p>
+            <pre><code class="language-text">Partition P0, replication factor 3
+
+Leader: Broker 1
+Followers: Broker 2, Broker 3
+ISR: Broker 1, Broker 2, Broker 3
+
+If Broker 3 becomes too far behind:
+ISR: Broker 1, Broker 2</code></pre>
+            <h5 class="text-warning">How a replica leaves or rejoins</h5>
+            <p>
+              A follower continuously fetches records from the leader. If it is unavailable or falls behind beyond the
+              allowed replica-lag threshold, Kafka removes it from the ISR. When it recovers and catches up, Kafka can
+              add it back. The exact threshold and behavior depend on the Kafka version and configuration, commonly
+              including <code>replica.lag.time.max.ms</code>.
+            </p>
+            <h5 class="text-warning">Why ISR matters</h5>
+            <ul><li><strong>Leader election:</strong> Kafka prefers an ISR follower because it should have the latest committed data.</li><li><strong>Durable writes:</strong> with <code>acks=all</code>, the leader waits for the required ISR acknowledgements.</li><li><strong>Write availability:</strong> with <code>min.insync.replicas=2</code>, a replication-factor-3 topic rejects <code>acks=all</code> writes if fewer than two replicas are in sync.</li><li><strong>Operational health:</strong> shrinking ISR indicates slow brokers, network problems, disk pressure, or overloaded replication.</li></ul>
+            <p>
+              For example, with replication factor 3, ISR size 3, <code>acks=all</code>, and minimum ISR 2, a record can
+              be accepted while two replicas are healthy. If the ISR shrinks to one, Kafka rejects durable writes rather
+              than pretending the record is safely replicated. If the leader then fails and no ISR follower is available,
+              the partition may become unavailable unless an unclean election is allowed, which can risk data loss.
+            </p>
+            <p>
+              Monitor ISR size, under-replicated partitions, offline partitions, replication lag, broker disk and network
+              metrics, and controller events. Do not remove a broker or lower the minimum ISR during an incident without
+              understanding the durability tradeoff.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaReplicationFactorTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaReplicationFactorTopBody">What is Kafka replication factor? Explain in detail.</button>
+        </h2>
+        <div id="kafkaReplicationFactorTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>In Kafka, the <strong>replication factor</strong> is the number of copies of every partition stored across different brokers. It provides fault tolerance and data durability. Replication factor 3 means each partition has one leader and two follower replicas.</p>
+            <pre><code class="language-text">Topic: orders, 3 partitions, replication factor 3
+P0: Broker 1 leader, Broker 2 follower, Broker 3 follower
+P1: Broker 2 leader, Broker 3 follower, Broker 1 follower
+P2: Broker 3 leader, Broker 1 follower, Broker 2 follower</code></pre>
+            <h5 class="text-warning">How it works</h5>
+            <ol><li>The producer writes to the partition leader.</li><li>Followers fetch and replicate the leader's log.</li><li>Followers that are sufficiently caught up form the ISR (in-sync replica) set.</li><li>If the leader fails, Kafka can elect an eligible ISR follower as the new leader.</li><li>Clients refresh metadata and use the new leader.</li></ol>
+            <h5 class="text-warning">Replication factor versus ISR</h5>
+            <p>Replication factor is the configured number of replicas, while ISR is the replicas currently caught up enough to be eligible for safe leadership. A topic can have replication factor 3 but only 2 in-sync replicas temporarily when one follower is slow or offline.</p>
+            <p>For example, with <code>replication.factor=3</code>, <code>min.insync.replicas=2</code>, and <code>acks=all</code>, a write succeeds only when the leader and at least one other replica are in sync. If only one replica remains, Kafka rejects the write rather than accepting reduced durability.</p>
+            <h5 class="text-warning">Choosing a value</h5>
+            <ul><li><strong>1:</strong> no replica redundancy; a broker failure can make data unavailable or lost.</li><li><strong>2:</strong> can tolerate one failure in some configurations but leaves little redundancy during recovery.</li><li><strong>3:</strong> common production choice, especially when brokers are spread across availability zones.</li></ul>
+            <p>Replication increases disk usage, network traffic, recovery time, and broker work. It does not increase consumer-group parallelism: partitions provide parallelism, while replicas provide fault tolerance. Monitor under-replicated partitions and ISR shrink events, distribute replicas across failure zones, and remember that replication is not a backup.</p>
+            <p>The standard Kafka term is <strong>replication factor</strong>. “Reflection factor” is usually a typo in this context; Java reflection is a separate topic.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaAutoManualCommitTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaAutoManualCommitTopBody">Kafka auto commit versus manual commit: how do they work and which is best?</button>
+        </h2>
+        <div id="kafkaAutoManualCommitTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>A consumer commit records the next offset Kafka should resume from for a group and partition. The key decision is whether the offset is committed automatically or only after business processing succeeds.</p>
+            <h5 class="text-warning">Auto commit</h5>
+            <p>Configure <code>enable.auto.commit=true</code> and, for example, <code>auto.commit.interval.ms=5000</code>. The client periodically commits offsets in the background. This is simple, but offsets for records returned by <code>poll()</code> may be committed before processing finishes. A crash after the commit but before business work completes can skip records; a crash before the next commit can redeliver processed records.</p>
+            <h5 class="text-warning">Manual commit</h5>
+            <pre><code class="language-java">ConsumerRecords&lt;String, OrderEvent&gt; records = consumer.poll(Duration.ofMillis(500));
+for (ConsumerRecord&lt;String, OrderEvent&gt; record : records) {
+    processOrder(record.value());
+}
+consumer.commitSync(); // Commit after successful processing</code></pre>
+            <p>Set <code>enable.auto.commit=false</code>. <code>commitSync()</code> waits for confirmation and is easier to reason about. <code>commitAsync()</code> avoids waiting but requires careful callback and ordering handling. Both can produce redelivery if the process crashes after business work and before the commit.</p>
+            <h5 class="text-warning">Spring Kafka</h5>
+            <pre><code class="language-java">@KafkaListener(topics = "orders", groupId = "payment-service")
+public void consume(OrderCreated event, Acknowledgment acknowledgment) {
+    paymentService.authorize(event);
+    acknowledgment.acknowledge();
+}</code></pre>
+            <p>Configure the listener container's acknowledgment mode to commit per record, per batch, or explicitly. Commit only after the successful business operation.</p>
+            <h5 class="text-warning">Which is best?</h5>
+            <p>For payments, orders, database updates, and audit events, manual commit after successful processing is usually preferred because the boundary is explicit. Make processing idempotent because a crash before commit can redeliver a record. Auto commit is acceptable for non-critical telemetry where occasional loss or duplicate work is acceptable and simplicity matters.</p>
+            <p>Do not commit before processing just to remove lag. Keep processing within <code>max.poll.interval.ms</code>; otherwise Kafka can rebalance the group even when commit settings are correct.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaConsumerOffsetsTopicUseTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaConsumerOffsetsTopicUseTopBody">What is the use of the __consumer_offsets topic, and what jobs does it perform?</button>
+        </h2>
+        <div id="kafkaConsumerOffsetsTopicUseTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <code>__consumer_offsets</code> is an internal, replicated, compacted Kafka topic used by Kafka to persist
+              consumer-group state. Applications normally do not publish business messages to it or consume it directly.
+            </p>
+            <h5 class="text-warning">Main responsibilities</h5>
+            <ol><li><strong>Store committed offsets:</strong> records the position for each group, topic, and partition.</li><li><strong>Resume after restart:</strong> a consumer reads its last valid committed position and continues from there.</li><li><strong>Recover after rebalance:</strong> a replacement consumer uses committed offsets when it receives a partition.</li><li><strong>Support lag calculation:</strong> monitoring compares the committed offset with the partition's log-end offset.</li><li><strong>Persist group metadata:</strong> Kafka stores consumer-group metadata records used by the group coordinator, such as group state and protocol information.</li><li><strong>Replicate coordinator state:</strong> the internal topic is replicated so an individual broker failure does not erase committed positions.</li></ol>
+            <pre><code class="language-text">Group: payment-service
+Topic: orders
+Partition: 2
+Committed offset: 8,500
+Log-end offset: 8,900
+
+Consumer lag = 8,900 - 8,500 = 400 records</code></pre>
+            <h5 class="text-warning">How a commit reaches the topic</h5>
+            <p>
+              When a consumer calls <code>commitSync()</code>, <code>commitAsync()</code>, or the framework commits on
+              its behalf, the group coordinator appends an offset record to <code>__consumer_offsets</code>. Newer
+              records for the same group/topic/partition supersede older ones. Compaction eventually removes obsolete
+              records while retaining the latest useful state.
+            </p>
+            <h5 class="text-warning">What it does not do</h5>
+            <ul><li>It does not store the actual business records from the <code>orders</code> topic.</li><li>It does not distribute topic partitions to consumers by itself; the group coordination protocol performs assignment, while the topic stores committed state.</li><li>It does not make database side effects exactly once.</li></ul>
+            <p>
+              If processing succeeds but the offset commit fails, the record may be delivered again. If an offset is
+              committed before processing, a crash can skip work. Therefore, commit after successful processing and make
+              consumers idempotent when using the usual at-least-once model. Avoid manually changing this internal topic;
+              use consumer-group offset tools or the Admin API for controlled resets.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaConsumerOffsetsStoredTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaConsumerOffsetsStoredTopBody">How are Kafka consumer offsets stored?</button>
+        </h2>
+        <div id="kafkaConsumerOffsetsStoredTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Kafka stores committed consumer-group offsets in an internal compacted topic named
+              <code>__consumer_offsets</code>. The group coordinator broker manages commits for a consumer group and
+              writes the group's position for each topic partition to this topic. The topic is replicated like other
+              Kafka topics so offsets survive a consumer or broker restart.
+            </p>
+            <pre><code class="language-text">Group: payment-service
+Topic: orders
+Partition: 3
+Committed offset: 18,420
+
+After restart, the consumer resumes from the committed position
+according to its offset and reset configuration.</code></pre>
+            <h5 class="text-warning">What is stored?</h5>
+            <p>
+              An offset record is associated with the consumer group, topic, and partition. It includes the committed
+              offset and may include metadata and commit timing information. The topic is compacted so Kafka keeps the
+              latest useful offset for a key while old records are eventually cleaned up.
+            </p>
+            <h5 class="text-warning">When is the offset committed?</h5>
+            <ul><li><strong>Auto commit:</strong> the client commits periodically according to <code>enable.auto.commit</code> and <code>auto.commit.interval.ms</code>; convenient but less precise.</li><li><strong>Manual synchronous:</strong> <code>commitSync()</code> waits for the broker response and is easier to reason about but can add latency.</li><li><strong>Manual asynchronous:</strong> <code>commitAsync()</code> reduces waiting but requires careful error handling and ordering.</li><li><strong>Spring Kafka:</strong> listener container acknowledgment mode controls when offsets are committed relative to listener success.</li></ul>
+            <pre><code class="language-java">for (ConsumerRecord&lt;String, OrderEvent&gt; record : records) {
+    process(record.value());
+}
+
+consumer.commitSync(); // Commit only after processing succeeds</code></pre>
+            <p>
+              If processing succeeds but the commit fails, the record can be delivered again after a restart or rebalance.
+              If the offset is committed before processing, a crash can cause the record to be skipped. This is why
+              at-least-once consumers should commit after successful work and make business processing idempotent.
+            </p>
+            <h5 class="text-warning">Offset reset</h5>
+            <p>
+              <code>auto.offset.reset=earliest</code> or <code>latest</code> is used when the group has no valid committed
+              offset, for example when a new group starts or its old offset is outside retention. It does not normally
+              override an existing valid committed offset. Operators can explicitly reset offsets for replay or recovery,
+              but should understand the duplicate and data-loss consequences.
+            </p>
+            <p>
+              Some special processing frameworks store offsets in an external database together with business results so
+              the offset and side effect can share one transaction. Standard Kafka consumers normally use
+              <code>__consumer_offsets</code>; monitor its health, commit failures, group membership, and lag.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaConsumerLagDetailedTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaConsumerLagDetailedTopBody">What is Kafka consumer lag, how do we measure it, and how do we resolve it?</button>
+        </h2>
+        <div id="kafkaConsumerLagDetailedTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Consumer lag is the amount of data a consumer group has not processed yet. For each partition it is
+              approximately <strong>log-end offset minus the group's committed offset</strong>. The group lag is the sum
+              across its partitions. A time-based lag, such as “events are 3 minutes old,” is also useful because 10,000
+              tiny records and 10,000 large records have different operational impact.
+            </p>
+            <pre><code class="language-text">Partition 0: log end = 12,000, committed = 11,700, lag = 300
+Partition 1: log end = 20,000, committed = 19,900, lag = 100
+Group lag = 400 records</code></pre>
+            <h5 class="text-warning">Ways to obtain lag</h5>
+            <ul><li><strong>Kafka CLI:</strong> <code>kafka-consumer-groups --describe</code> shows current offset, log-end offset, and lag per partition.</li><li><strong>Kafka UI/managed portal:</strong> Confluent, MSK, and other platforms expose group and partition lag dashboards.</li><li><strong>JMX/exporters:</strong> expose consumer metrics such as records lag/max and offsets to Prometheus.</li><li><strong>Cloud monitoring:</strong> managed services can publish consumer-lag metrics to CloudWatch or a similar system.</li><li><strong>Application/APM:</strong> correlate lag with processing time, error count, database latency, and trace IDs.</li></ul>
+            <pre><code class="language-bash">kafka-consumer-groups --bootstrap-server broker:9092 \\
+  --group orders-service --describe</code></pre>
+
+            <h5 class="text-warning">How to resolve increasing lag</h5>
+            <ol><li>Check whether producer rate is greater than consumer processing rate.</li><li>Find whether lag is spread across all partitions or concentrated in one hot partition.</li><li>Measure deserialization, business logic, database calls, external APIs, retries, garbage collection, and offset commits.</li><li>Fix slow queries, indexes, connection-pool waits, downstream timeouts, batching, and unnecessary synchronous calls.</li><li>Handle poison messages with bounded retries and a dead-letter topic so one record does not block a partition forever.</li><li>Check consumer rebalances, missed polls, commit failures, CPU/memory pressure, broker health, and network throughput.</li><li>Make processing idempotent before changing commit behavior or resetting offsets.</li></ol>
+
+            <h5 class="text-warning">Can we increase consumers?</h5>
+            <p>
+              Yes, but only when the topic has unassigned partitions and downstream systems can handle more concurrency.
+              If there are 6 partitions and 2 consumers, increasing to 6 can increase parallelism. Increasing to 10
+              does not help because 4 consumers remain idle. If every partition already has a consumer, extra consumers
+              cannot reduce lag.
+            </p>
+
+            <h5 class="text-warning">Can we increase partitions?</h5>
+            <p>
+              Yes, partitions can be increased when more parallelism is genuinely required, but this is not a universal
+              lag fix. Adding partitions may change key-to-partition mapping, affect per-key ordering, create more broker
+              metadata and replication work, and does not make a slow database faster. It also cannot be reversed by
+              reducing the partition count.
+            </p>
+            <p>
+              Increase partitions only after measuring the bottleneck, checking ordering requirements and broker capacity,
+              and planning consumer-group rebalancing. Then scale consumers up to the useful partition count and verify
+              partition-level lag. If the bottleneck is downstream, use bounded concurrency, batching, caching, or a
+              separate processing path instead.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaPullModelTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaPullModelTopBody">Why does Kafka use a pull model instead of a push model?</button>
+        </h2>
+        <div id="kafkaPullModelTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Kafka consumers pull records by calling <code>poll()</code>. Kafka does not continuously push records into
+              each consumer. This gives the consumer control over its processing rate and makes large-scale streaming
+              easier to operate.
+            </p>
+            <h5 class="text-warning">Benefits of pull</h5>
+            <ul><li><strong>Backpressure:</strong> a slow consumer fetches fewer records instead of being overwhelmed by broker pushes.</li><li><strong>Batching:</strong> one poll fetches many records, reducing network and request overhead.</li><li><strong>Consumer-controlled capacity:</strong> the consumer chooses fetch size, poll timeout, and how many records to process.</li><li><strong>Replay:</strong> offsets tell the consumer exactly where to read, so it can restart or replay retained records.</li><li><strong>Different speeds:</strong> fast and slow consumer groups independently read the same topic at their own pace.</li><li><strong>Efficient brokers:</strong> brokers do not need to track per-consumer delivery state or push into arbitrary application buffers.</li></ul>
+            <pre><code class="language-java">while (running) {
+    ConsumerRecords&lt;String, OrderEvent&gt; batch =
+        consumer.poll(Duration.ofMillis(500));
+
+    for (ConsumerRecord&lt;String, OrderEvent&gt; record : batch) {
+        process(record.value());
+    }
+
+    consumer.commitSync();
+}</code></pre>
+            <p>
+              For example, if payment processing slows down because the database is busy, the consumer can reduce its
+              processing and polling batch. The records remain in Kafka and consumer lag increases visibly instead of
+              being silently lost in a broker-to-application push buffer.
+            </p>
+            <h5 class="text-warning">Why not push?</h5>
+            <p>
+              In a push model, the broker would need to decide how many records each consumer can accept, handle slow or
+              disconnected consumers, manage application buffers, and coordinate delivery backpressure. One slow
+              consumer could create memory pressure or require complicated flow-control protocols. Kafka moves that
+              responsibility to the consumer while still tracking group membership and offsets.
+            </p>
+            <p>
+              Pull does not mean inefficient polling: long-poll fetch requests can wait briefly for data, and batches are
+              transferred efficiently. The consumer must still call <code>poll()</code> often enough to send heartbeats
+              and stay within <code>max.poll.interval.ms</code>; otherwise Kafka may remove it and trigger a rebalance.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaPracticalExamplesTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaPracticalExamplesTopBody">Kafka Practical Examples for Partitions, Brokers, Consumers, Scaling, and Producers</button>
+        </h2>
+        <div id="kafkaPracticalExamplesTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p><strong>Common scenario:</strong> an e-commerce system publishes <code>OrderCreated</code> events. The topic has 6 partitions and replication factor 3. The key is <code>customerId</code>.</p>
+            <h5 class="text-warning">Broker and coordination</h5>
+            <p>Broker 1 may host partition 0 as leader, Broker 2 may host partition 0 as follower, and Broker 3 may host partition 0 as follower. Producers write to Broker 1 for partition 0; followers replicate. If Broker 1 fails, the controller elects an in-sync follower and clients refresh metadata. The partition pauses briefly, not permanently.</p>
+            <h5 class="text-warning">Consumers and assignment</h5>
+            <p>With group <code>payment-service</code> and 2 consumers, Kafka can assign P0-P2 to C1 and P3-P5 to C2. With 6 consumers, each receives one partition. With 8 consumers, 2 remain idle. If C2 crashes, Kafka rebalances its partitions among the remaining members.</p>
+            <h5 class="text-warning">Multiple consumer groups</h5>
+            <p><code>payment-service</code>, <code>notification-service</code>, and <code>analytics-service</code> use different group IDs. Each group receives every order event independently. Three replicas of payment service use the same group ID so they share the work instead of receiving duplicate copies.</p>
+            <h5 class="text-warning">More partitions than consumers</h5>
+            <p>Six partitions and two consumers means each consumer processes about three partitions. This is valid, but a slow or hot partition can delay other partitions owned by the same consumer. Add consumers up to six when downstream capacity allows.</p>
+            <h5 class="text-warning">More consumers than partitions</h5>
+            <p>Three partitions and five consumers means only three consumers are active and two are idle. Adding a sixth consumer changes nothing until the topic has more partitions.</p>
+            <h5 class="text-warning">Producer acknowledgements</h5>
+            <pre><code class="language-properties">acks=all
+min.insync.replicas=2
+enable.idempotence=true</code></pre>
+            <p>With three replicas, <code>acks=all</code> and minimum ISR 2, the order write succeeds only when the leader and at least one follower are in sync. If only one replica remains, the producer receives an error instead of silently accepting a less durable write.</p>
+            <h5 class="text-warning">Producer batching</h5>
+            <pre><code class="language-properties">batch.size=131072
+linger.ms=10
+compression.type=zstd</code></pre>
+            <p>Suppose 500 order events for the same partition arrive within 10 ms. Kafka groups them into a batch up to 128 KB, compresses it, and sends one request. This improves throughput, but a quiet request can wait up to the linger interval, so lower latency workloads use a smaller value.</p>
+            <h5 class="text-warning">Idempotent producer</h5>
+            <p>The producer sends event ID <code>e-100</code>, but the acknowledgement is lost. It retries <code>e-100</code>. Kafka uses the producer ID and sequence number to recognize the retry and avoids appending a second copy. If the consumer charges a card, it still needs an idempotency key because producer idempotence does not protect external side effects.</p>
+            <h5 class="text-warning">Choosing partitions and consumers</h5>
+            <p>If peak input is 12,000 events/minute and one consumer safely processes 2,000/minute, use at least 6 partitions and 6 consumers for peak parallelism. Add headroom, for example 8 partitions, only after checking ordering, broker capacity, and future growth. Replicas improve durability; they do not increase consumer parallelism.</p>
+            <h5 class="text-warning">Peak and off-peak autoscaling</h5>
+            <p>From 10 AM to 9 PM, KEDA observes lag and scales the consumer Deployment from 2 to 6 replicas. After 9 PM, lag stays near zero for the cooldown period, so it scales back to 1 or 2 replicas. Kafka rebalances partitions after each change. Set min/max replicas, cooldown, graceful shutdown, and downstream concurrency limits.</p>
+            <h5 class="text-warning">Increasing partitions from a portal</h5>
+            <p>An operator changes <code>orders</code> from 6 to 12 partitions through a managed Kafka console or Admin API. The consumer group can now use up to 12 active consumers, but default key hashing may map future customer events differently. Increase partitions only with an ordering and capacity plan; partitions cannot be reduced.</p>
+            <h5 class="text-warning">Idle consumers</h5>
+            <p>When no order is available, consumers continue polling and receive an empty result. They remain group members and heartbeats continue. Autoscaling can reduce replicas for cost, but processing must not block polling beyond <code>max.poll.interval.ms</code>.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaMorePartitionsThanConsumersTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaMorePartitionsThanConsumersTopBody">What happens if Kafka partitions are more than consumers?</button>
+        </h2>
+        <div id="kafkaMorePartitionsThanConsumersTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              If a topic has more partitions than consumers in a group, Kafka assigns multiple partitions to each
+              consumer. All partitions are still processed, but each consumer handles its assigned partitions during its
+              poll loop.
+            </p>
+            <pre><code class="language-text">Topic: 6 partitions, consumer group: 2 consumers
+
+Consumer C1 -&gt; P0, P1, P2
+Consumer C2 -&gt; P3, P4, P5</code></pre>
+            <p>
+              This is normal and often desirable. It reduces the number of application instances while allowing more
+              partition-level parallelism. Records remain ordered within each partition, but records from different
+              partitions can be processed concurrently and have no global ordering guarantee.
+            </p>
+            <h5 class="text-warning">Tradeoffs</h5>
+            <ul><li>If one consumer receives a hot or slow partition, its other assigned partitions may also wait behind it.</li><li>Throughput is limited by the number of consumers and how much work each can process, not just by the partition count.</li><li>Adding consumers can distribute the partitions more evenly until consumers equal partitions.</li><li>Partition assignment may change during a rebalance, so commit offsets and handle partition revocation correctly.</li></ul>
+            <p>
+              For example, if each consumer processes 3,000 messages per minute and the six partitions produce 10,000
+              messages per minute, two consumers may be insufficient even though all partitions are assigned. Increase
+              consumers up to six, verify downstream capacity, and monitor partition-level lag. Adding more than six
+              consumers would not add useful parallelism for this group unless more partitions are created.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaMoreConsumersThanPartitionsTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaMoreConsumersThanPartitionsTopBody">What happens if Kafka consumers are more than partitions?</button>
+        </h2>
+        <div id="kafkaMoreConsumersThanPartitionsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Within one consumer group, each partition can be assigned to only one active consumer. If there are more
+              consumers than partitions, every partition is assigned to a consumer, and the remaining consumers have no
+              partition and stay idle.
+            </p>
+            <pre><code class="language-text">Topic: 3 partitions
+Consumer group: 5 consumers
+
+C1 -&gt; P0
+C2 -&gt; P1
+C3 -&gt; P2
+C4 -&gt; idle
+C5 -&gt; idle</code></pre>
+            <p>
+              The maximum useful active consumers for a group is normally the number of partitions. Adding more
+              consumers does not increase throughput unless the topic has more partitions. It can still add resource
+              cost and cause extra rebalances when instances join or leave.
+            </p>
+            <p>
+              This applies per consumer group. A different consumer group can independently consume all partitions, so
+              multiple applications may each have active consumers for the same topic. To increase parallelism in one
+              group, increase the partition count carefully, considering ordering, key mapping, broker capacity, and
+              partition-recovery overhead.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaPartitionAssignmentTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaPartitionAssignmentTopBody">How does Kafka assign partitions to consumers?</button>
+        </h2>
+        <div id="kafkaPartitionAssignmentTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Kafka assigns partitions among consumers that share the same <strong>consumer group ID</strong>. A
+              partition can be assigned to only one active consumer in that group, while one consumer can own multiple
+              partitions. Different consumer groups receive independent assignments.
+            </p>
+            <h5 class="text-warning">Assignment flow</h5>
+            <ol><li>Consumers connect to brokers and join the group.</li><li>The group coordinator, which is a broker chosen using the group metadata, tracks membership and heartbeats.</li><li>One group member acts as the assignor/leader for the assignment calculation, depending on the protocol and assignor.</li><li>The assignment strategy distributes topic partitions among group members.</li><li>Consumers receive their assignments and fetch records from their partition leaders.</li></ol>
+            <pre><code class="language-text">Topic: 6 partitions, group: orders-service
+Consumer C1 -&gt; P0, P1
+Consumer C2 -&gt; P2, P3
+Consumer C3 -&gt; P4, P5
+
+Extra consumers beyond 6 have no partition and remain idle.</code></pre>
+            <h5 class="text-warning">Common assignment strategies</h5>
+            <ul><li><strong>Range:</strong> assigns consecutive partition ranges, which can be uneven when multiple topics or partition counts differ.</li><li><strong>Round-robin:</strong> distributes partitions cyclically for a more even spread when subscriptions align.</li><li><strong>Sticky:</strong> balances assignments while trying to preserve existing ownership and reduce movement.</li><li><strong>Cooperative sticky:</strong> performs incremental rebalancing, reducing the stop-and-reassign disruption of eager strategies.</li></ul>
+            <p>
+              A rebalance occurs when a consumer joins or leaves, a consumer misses heartbeats, a subscription changes,
+              or partitions are added. During assignment changes, consumers revoke and receive partitions according to
+              the selected strategy. Keep the poll loop responsive, commit offsets safely, and use graceful shutdown to
+              reduce unnecessary rebalances.
+            </p>
+            <p>
+              Kafka does not assign partitions based on the producer's message key at consumer-assignment time. The key
+              determines which partition a record normally enters; the group assignor then assigns the complete partition
+              to one consumer. Ordering is therefore preserved within that partition, not across consumers or the whole topic.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaConsumerTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaConsumerTopBody">What is a Kafka consumer?</button>
+        </h2>
+        <div id="kafkaConsumerTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              A Kafka consumer is an application process that reads records from Kafka topic partitions, processes them,
+              and tracks its position using offsets. It does not receive messages pushed one-by-one; it repeatedly calls
+              <code>poll()</code> to fetch available records from the brokers.
+            </p>
+            <pre><code class="language-java">consumer.subscribe(List.of("orders"));
+
+while (running) {
+    ConsumerRecords&lt;String, OrderEvent&gt; records =
+        consumer.poll(Duration.ofMillis(500));
+
+    for (ConsumerRecord&lt;String, OrderEvent&gt; record : records) {
+        process(record.value());
+    }
+
+    consumer.commitSync(); // Commit after successful processing
+}</code></pre>
+            <h5 class="text-warning">How it works</h5>
+            <ol><li>The consumer joins a consumer group using a group ID.</li><li>Kafka assigns partitions to group members; one partition is assigned to at most one active consumer in that group.</li><li>The consumer polls records and processes them in partition order.</li><li>It commits offsets so it can resume after restart or rebalance.</li><li>If consumers join/leave or miss heartbeats, Kafka rebalances the assignments.</li></ol>
+            <p>
+              Different groups independently read the same topic. Consumers in the same group share work, while a new
+              group receives its own copy of the topic's records according to its offset-reset policy. A group can use
+              useful parallelism only up to the number of topic partitions.
+            </p>
+            <h5 class="text-warning">Spring Boot example</h5>
+            <pre><code class="language-java">@KafkaListener(topics = "orders", groupId = "payment-service")
+public void consume(OrderCreated event) {
+    paymentService.authorize(event);
+}</code></pre>
+            <p>
+              Offset commits can be automatic or manual. Commit after successful business processing for at-least-once
+              behavior, and make the handler idempotent because a crash before commit can cause redelivery. Monitor
+              consumer lag, processing duration, rebalance count, commit failures, poll interval, and downstream health.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaIdempotentProducerTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaIdempotentProducerTopBody">What is an idempotent Kafka producer?</button>
+        </h2>
+        <div id="kafkaIdempotentProducerTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              An idempotent producer prevents a retry of the same Kafka record from creating a duplicate record in the
+              partition. Without idempotence, a broker may append the record, the acknowledgement may be lost, and the
+              producer may retry; Kafka could then append it twice.
+            </p>
+            <pre><code class="language-properties">enable.idempotence=true
+acks=all
+retries=2147483647</code></pre>
+            <h5 class="text-warning">How it works internally</h5>
+            <ol>
+              <li>The producer receives a producer ID (PID) from the broker.</li>
+              <li>It assigns increasing sequence numbers to records for each producer/partition stream.</li>
+              <li>The broker tracks the expected sequence and recognizes a retry of a record already appended.</li>
+              <li>The broker avoids appending the duplicate while still allowing the producer to recover from the lost acknowledgement.</li>
+            </ol>
+            <p>
+              This protects Kafka writes within the producer session and partition protocol. It does not mean that an
+              external database update, email, payment call, or consumer side effect is automatically idempotent.
+              Consumers still need an event ID, unique constraint, upsert, or processed-event table for duplicate-safe
+              business processing.
+            </p>
+            <h5 class="text-warning">Idempotent producer versus exactly once</h5>
+            <ul><li><strong>Idempotent producer:</strong> prevents duplicate Kafka records caused by producer retries.</li><li><strong>Kafka transactions:</strong> atomically write multiple Kafka records and commit consumed offsets for Kafka-to-Kafka processing.</li><li><strong>End-to-end exactly once:</strong> requires the external side effect to participate in a compatible transaction or to be designed idempotently; producer idempotence alone is not enough.</li></ul>
+            <p>
+              Idempotence is appropriate for orders, payments, audit events, and most reliable event streams. Monitor
+              producer errors, retries, request latency, broker health, and delivery timeouts. Do not confuse the setting
+              with an application idempotency key: a business key is still needed when the same logical request can be
+              submitted twice by a client.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaProducerBatchingTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaProducerBatchingTopBody">How does Kafka producer message batching work and how do we configure it?</button>
+        </h2>
+        <div id="kafkaProducerBatchingTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Kafka batching collects multiple records in the producer before sending them in one request. Batches are
+              maintained <strong>per partition</strong>, so records with different keys can be batched together only when
+              they route to the same partition. Batching reduces network requests and system-call overhead and usually
+              improves throughput and compression ratio.
+            </p>
+            <h5 class="text-warning">Important producer settings</h5>
+            <ul>
+              <li><code>batch.size</code>: maximum batch size in bytes for one partition. It is a limit, not a requirement; a batch can be sent before it is full.</li>
+              <li><code>linger.ms</code>: how long the producer waits for more records to fill a batch before sending it. More wait can improve throughput but increases latency.</li>
+              <li><code>compression.type</code>: compresses batches, commonly with <code>lz4</code>, <code>snappy</code>, <code>zstd</code>, or <code>gzip</code>. Compression trades CPU for lower network and broker storage usage.</li>
+              <li><code>buffer.memory</code>: total memory available to buffer unsent records. If it fills, <code>send()</code> can block up to <code>max.block.ms</code>.</li>
+              <li><code>max.request.size</code>: maximum request size; it must accommodate the largest compressed/uncompressed batch and broker limits.</li>
+              <li><code>acks</code>, <code>retries</code>, and <code>enable.idempotence</code>: control durability and retry safety alongside batching.</li>
+              <li><code>max.in.flight.requests.per.connection</code>: limits outstanding requests; configure consistently with idempotence and ordering requirements.</li>
+            </ul>
+            <pre><code class="language-properties"># Example throughput-oriented producer configuration
+batch.size=131072
+linger.ms=10
+compression.type=zstd
+buffer.memory=67108864
+acks=all
+enable.idempotence=true
+max.block.ms=60000
+delivery.timeout.ms=120000</code></pre>
+
+            <h5 class="text-warning">Spring Boot example</h5>
+            <pre><code class="language-yaml">spring:
+  kafka:
+    producer:
+      batch-size: 131072
+      properties:
+        linger.ms: 10
+        compression.type: zstd
+        buffer.memory: 67108864
+      acks: all
+      retries: 10
+      enable-idempotence: true</code></pre>
+            <pre><code class="language-java">kafkaTemplate.send("orders", customerId, orderEvent);
+kafkaTemplate.send("orders", customerId, anotherOrderEvent);
+// The producer asynchronously groups records routed to the same partition.</code></pre>
+
+            <h5 class="text-warning">How to tune it</h5>
+            <ol>
+              <li>Measure records per second, average and p99 producer latency, batch size/records, compression ratio, CPU, buffer wait time, and broker request rate.</li>
+              <li>For low-latency APIs, keep <code>linger.ms</code> small and avoid waiting for a large batch.</li>
+              <li>For high-throughput telemetry, increase <code>batch.size</code> and a modest <code>linger.ms</code>, then test p99 latency.</li>
+              <li>Use asynchronous sends and callbacks/futures for errors; do not call <code>flush()</code> after every message because it defeats batching.</li>
+              <li>Ensure broker limits, topic limits, and consumer capacity support the chosen request size and throughput.</li>
+            </ol>
+            <p>
+              Batching does not guarantee one event is delivered as one network request, and it does not change Kafka's
+              ordering rule: order is preserved within a partition. A very large batch can increase memory use, latency,
+              retry cost, and burst size. Choose settings from measurements rather than maximizing every value.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaProducerAcksTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaProducerAcksTopBody">What are Kafka producer acknowledgements (acks)?</button>
+        </h2>
+        <div id="kafkaProducerAcksTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              The producer <code>acks</code> setting controls how much broker acknowledgement Kafka waits for before
+              considering a record send successful. It is a durability versus latency tradeoff.
+            </p>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Setting</th><th>When success is reported</th><th>Tradeoff</th></tr></thead>
+              <tbody>
+                <tr><td><code>acks=0</code></td><td>Producer does not wait for a broker response.</td><td>Lowest latency, but errors and data loss may be invisible.</td></tr>
+                <tr><td><code>acks=1</code></td><td>Partition leader writes the record locally and acknowledges.</td><td>Good latency, but data can be lost if the leader fails before replication.</td></tr>
+                <tr><td><code>acks=all</code> or <code>-1</code></td><td>Leader waits for the required in-sync replicas.</td><td>Strongest durability, usually more latency and possible failure when ISR capacity is insufficient.</td></tr>
+              </tbody>
+            </table>
+            <p>
+              <code>acks=all</code> does not necessarily mean every configured replica is available. The effective
+              requirement is controlled by <code>min.insync.replicas</code>. For example, with replication factor 3 and
+              <code>min.insync.replicas=2</code>, an <code>acks=all</code> write succeeds only while at least two replicas
+              are in sync. This protects durability but can reject writes during a replica outage rather than silently
+              accepting a less durable write.
+            </p>
+            <pre><code class="language-properties"># Typical durable producer settings
+acks=all
+enable.idempotence=true
+retries=2147483647
+max.in.flight.requests.per.connection=5</code></pre>
+            <p>
+              Idempotence prevents duplicate records caused by producer retries within the supported configuration, but
+              it does not replace consumer idempotency for external database effects. For payments, orders, or audit
+              events, use <code>acks=all</code>, an appropriate replication factor and ISR policy, retries/timeouts,
+              schema validation, and idempotent consumers. For disposable telemetry where some loss is acceptable,
+              <code>acks=1</code> or <code>acks=0</code> may be appropriate after measurement.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaBrokerCoordinationTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaBrokerCoordinationTopBody">How are multiple brokers coordinated in a Kafka cluster?</button>
+        </h2>
+        <div id="kafkaBrokerCoordinationTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Kafka brokers coordinate through a cluster metadata quorum and a controller. The controller maintains
+              information such as broker membership, topic/partition assignments, replica state, and partition leaders.
+              Brokers exchange heartbeats and metadata so failures can be detected and leadership can be changed.
+            </p>
+            <h5 class="text-warning">KRaft and older ZooKeeper deployments</h5>
+            <ul><li><strong>KRaft:</strong> Kafka controller nodes form a Raft-based metadata quorum. One controller is active and the others replicate metadata; a majority is needed to make metadata decisions.</li><li><strong>ZooKeeper mode:</strong> Kafka brokers used ZooKeeper for cluster metadata, controller election, broker registration, and coordination. New deployments generally use supported KRaft architecture.</li></ul>
+            <h5 class="text-warning">Partition coordination flow</h5>
+            <ol><li>A broker registers with the cluster and sends liveness information.</li><li>The controller assigns partition replicas to brokers and chooses a leader for each partition.</li><li>The leader appends records and followers replicate the leader's log.</li><li>Followers that are caught up form the ISR set.</li><li>If a broker fails, the controller detects it and elects an eligible ISR follower as leader.</li><li>The controller publishes updated metadata; clients refresh metadata and route requests to the new leader.</li></ol>
+            <pre><code class="language-text">Topic orders, replication factor 3
+
+Broker 1: P0 leader, P1 follower
+Broker 2: P1 leader, P2 follower
+Broker 3: P2 leader, P0 follower
+
+Broker 1 fails -&gt; controller elects Broker 3 as P0 leader
+Clients refresh metadata -&gt; writes/read requests use Broker 3</code></pre>
+            <p>
+              Brokers are not all independently deciding different leaders. The controller coordinates metadata and
+              elections, while partition leaders coordinate record replication. Producers and consumers first obtain
+              metadata from a broker, then normally connect to the relevant partition leader.
+            </p>
+            <h5 class="text-warning">What if coordination fails?</h5>
+            <p>
+              If the metadata quorum loses its majority, the cluster may continue serving existing data in limited ways
+              but cannot safely make many metadata changes or elect leaders. If a partition has no available leader, it
+              becomes unavailable. Use an odd number of controller nodes, distribute brokers and replicas across failure
+              zones, monitor under-replicated/offline partitions and controller health, and configure replication and
+              <code>min.insync.replicas</code> for the desired durability.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaBrokerTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaBrokerTopBody">What is a broker in Kafka?</button>
+        </h2>
+        <div id="kafkaBrokerTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              A Kafka <strong>broker</strong> is a Kafka server process. It stores topic partitions on disk, accepts
+              producer writes, serves consumer reads, replicates partition data to other brokers, and participates in
+              cluster metadata and leader management.
+            </p>
+            <pre><code class="language-text">Kafka cluster
+  Broker 1: orders-P0 leader, orders-P1 follower
+  Broker 2: orders-P1 leader, orders-P2 follower
+  Broker 3: orders-P2 leader, orders-P0 follower
+
+Producer/consumer -&gt; partition leader broker</code></pre>
+            <p>
+              A topic is divided into partitions, and each partition replica is placed on a broker. One replica is the
+              leader; producers and consumers normally communicate with that leader. Followers replicate the log and
+              can become leader if the current leader fails. The controller manages assignments and leadership changes.
+            </p>
+            <h5 class="text-warning">Broker versus related terms</h5>
+            <ul><li><strong>Broker:</strong> server that stores and serves Kafka data.</li><li><strong>Topic:</strong> logical name for a stream of records.</li><li><strong>Partition:</strong> ordered log stored on one or more brokers.</li><li><strong>Consumer:</strong> application process that reads records from brokers.</li><li><strong>Controller:</strong> cluster role that coordinates metadata and partition leadership; in modern Kafka this is managed through KRaft.</li></ul>
+            <p>
+              Adding brokers increases storage, network, and request capacity, but existing partitions are not
+              automatically balanced in every deployment. Partitions may need reassignment or an operator-managed
+              balancing process. A broker can host leaders for some partitions and followers for others.
+            </p>
+            <p>
+              In production, monitor broker CPU, heap, disk space and I/O, network throughput, request latency, under-
+              replicated partitions, offline partitions, ISR changes, and controller events. Broker replication provides
+              fault tolerance; consumer replicas provide application processing scale, and they are separate concepts.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="devops">
+        <h2 class="accordion-header" id="kafkaPeakOffPeakAutoscalingTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaPeakOffPeakAutoscalingTopBody">Kafka autoscaling example: six consumers from 10 AM to 9 PM, low traffic after 9 PM. How does scaling happen?</button>
+        </h2>
+        <div id="kafkaPeakOffPeakAutoscalingTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Kafka itself does not decide to add or remove consumer application instances. Deploy the consumers on
+              Kubernetes/EKS and use HPA or KEDA to change the Deployment replica count based on consumer lag, records
+              per second, or a business metric. The consumer group then rebalances partitions among the new replicas.
+            </p>
+            <h5 class="text-warning">Example calculation</h5>
+            <p>
+              Assume the topic has 6 partitions and one consumer safely processes 2,000 messages per minute. During the
+              10 AM to 9 PM peak, traffic is 10,000 messages per minute. Six consumers provide up to about 12,000
+              messages per minute, leaving headroom. After 9 PM, traffic drops below 10,000 per minute and the measured
+              rate can be handled by fewer consumers, so the scaler reduces replicas gradually.
+            </p>
+            <pre><code class="language-yaml">apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: order-consumer
+spec:
+  scaleTargetRef:
+    name: order-consumer
+  minReplicaCount: 1
+  maxReplicaCount: 6
+  pollingInterval: 30
+  cooldownPeriod: 300
+  triggers:
+    - type: kafka
+      metadata:
+        bootstrapServers: kafka:9092
+        consumerGroup: orders-group
+        topic: orders
+        lagThreshold: "2000"</code></pre>
+            <h5 class="text-warning">How the scale cycle works</h5>
+            <ol>
+              <li>At peak, lag rises above the target because incoming rate approaches the six-consumer capacity.</li>
+              <li>KEDA/HPA observes lag and increases the Deployment replicas, up to the configured maximum of six.</li>
+              <li>New consumers join the same group and Kafka reassigns partitions. With six partitions, at most six consumers actively process them.</li>
+              <li>After 9 PM, lag stays at zero or below the scale-down target for the cooldown/stabilization period.</li>
+              <li>The scaler removes consumers one at a time. Kafka rebalances the remaining consumers and their partitions continue from committed offsets.</li>
+            </ol>
+            <p>
+              Set <code>minReplicaCount</code> to the minimum warm capacity, <code>maxReplicaCount</code> to the partition
+              and downstream limit, and use a cooldown to avoid flapping. Scale down only after processing is healthy and
+              lag is stable; abrupt termination should allow graceful consumer shutdown and offset commits. If traffic is
+              predictable, a scheduled scaler can raise replicas before 10 AM and lower them after 9 PM, while lag-based
+              scaling handles unexpected spikes.
+            </p>
+            <p>
+              If the topic has more than six partitions, six consumers can be the peak target but fewer can run off-peak.
+              If it has only six partitions, a seventh consumer cannot add useful group parallelism. Consumer scaling
+              must also respect database connections, downstream API limits, ordering requirements, and rebalance cost.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaPartitionConsumerSizingTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaPartitionConsumerSizingTopBody">How do you decide how many Kafka partitions and consumers are needed? Explain with a real-time example.</button>
+        </h2>
+        <div id="kafkaPartitionConsumerSizingTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Size partitions from the required throughput, processing time, ordering/key distribution, retention, and
+              expected growth. Size consumers from the partition count and the processing capacity of each consumer. A
+              consumer group cannot usefully have more active consumers than partitions.
+            </p>
+            <h5 class="text-warning">Real-time example: order events</h5>
+            <p>Suppose an order topic receives 12,000 events per second. Each event is 2 KB, so the incoming rate is about 24 MB/s. A benchmark shows one partition can safely support 4 MB/s for the chosen replication, message size, producer settings, and latency target. Add 25% headroom:</p>
+            <pre><code class="language-text">Required partitions = ceil(24 MB/s / 4 MB/s * 1.25)
+                   = ceil(7.5)
+                   = 8 partitions</code></pre>
+            <p>
+              If one consumer instance processes 1,500 events/second for this workload, eight consumers can process
+              12,000 events/second. Deploy 8 to 10 consumers for normal operation and failure headroom, but never more
+              active consumers than the 8 partitions unless the topic is increased to support more parallelism.
+            </p>
+            <h5 class="text-warning">A second constraint: processing latency</h5>
+            <p>
+              If each event takes 20 ms and a consumer processes one record at a time, one consumer can process about
+              50 records/second. If records can be processed with 10-way bounded concurrency, the measured capacity is
+              closer to 500 records/second. Use benchmarked capacity, not only CPU estimates:
+            </p>
+            <pre><code class="language-text">Consumer count needed = ceil(input rate / measured rate per consumer)
+                      = ceil(12,000 / 1,500)
+                      = 8 consumers
+
+Partition count must be at least the useful consumer count.
+Choose the larger requirement from throughput and consumer parallelism.</code></pre>
+
+            <h5 class="text-warning">Things that can change the number</h5>
+            <ul>
+              <li><strong>Ordering:</strong> all events for one customer/order key normally stay in one partition. If strict per-customer ordering is required, do not parallelize that key across partitions.</li>
+              <li><strong>Hot keys:</strong> a celebrity customer can overload one partition even when average throughput looks safe. Test key distribution and consider a business-safe sharding key.</li>
+              <li><strong>Growth:</strong> provision future capacity, because increasing partitions later can change key mapping and affect ordering.</li>
+              <li><strong>Replication:</strong> replicas improve durability and broker fault tolerance; they do not create additional consumer parallelism.</li>
+              <li><strong>Downstream limits:</strong> database connections and API rate limits may require fewer consumers or a semaphore even when more partitions exist.</li>
+              <li><strong>Operations:</strong> too many partitions increase metadata, file, replication, rebalance, and recovery overhead.</li>
+            </ul>
+            <p>
+              Validate the choice with a load test and monitor partition-level throughput, consumer lag, processing
+              latency, rebalance rate, broker CPU/disk/network, and downstream saturation. Increase consumers only when
+              unassigned partitions exist; increase partitions only when the topic needs more parallelism or throughput
+              and the ordering/storage tradeoffs are understood.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaMultipleConsumerGroupsTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaMultipleConsumerGroupsTopBody">Can one Kafka topic have multiple consumer groups? Is that unnecessary?</button>
+        </h2>
+        <div id="kafkaMultipleConsumerGroupsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p><strong>Yes, one topic can have many consumer groups, and it is often necessary.</strong> Each consumer group maintains its own offsets and receives its own logical copy of every record.</p>
+            <pre><code class="language-text">Topic: orders
+  group: payment-service      - receives every order event
+  group: notification-service - receives every order event
+  group: analytics-service    - receives every order event
+
+Within one group, partitions are divided among that group's consumers.</code></pre>
+            <p>
+              A consumer group represents one independent application or processing purpose. Payment, notification,
+              analytics, audit, and search-index services should normally use different group IDs so they can process
+              the same event independently and at their own speed. If one group is down, another group can continue.
+            </p>
+            <h5 class="text-warning">Same group versus different groups</h5>
+            <ul><li><strong>Same group:</strong> load balances work. Each record goes to one consumer in that group.</li><li><strong>Different groups:</strong> fan-out. Each group receives all records and tracks its own committed offsets.</li><li><strong>Same group ID across service replicas:</strong> use this to scale one logical application horizontally.</li><li><strong>New group:</strong> choose whether it starts from the latest or earliest available offset according to the consumer configuration and retention.</li></ul>
+            <p>
+              Multiple groups are not unnecessary duplication; they are Kafka's main publish-subscribe mechanism. The
+              tradeoff is additional consumer processing, network traffic, and possibly storage in downstream systems.
+              Use one group when instances are workers for the same application, and separate groups when applications
+              need independent delivery, retry, offset, or replay behavior.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaHorizontalScalingPartitionsTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaHorizontalScalingPartitionsTopBody">Why is horizontal scaling in Kafka done through partitions?</button>
+        </h2>
+        <div id="kafkaHorizontalScalingPartitionsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              A Kafka partition is the unit of storage, ordering, and consumer parallelism. A consumer group can assign
+              a partition to only one active consumer at a time. Therefore, adding partitions creates more independent
+              logs that can be processed concurrently by more consumer instances.
+            </p>
+            <pre><code class="language-text">Topic: 6 partitions
+Consumer group: 3 consumers
+
+Consumer 1 -&gt; P0, P1
+Consumer 2 -&gt; P2, P3
+Consumer 3 -&gt; P4, P5
+
+Add consumers to 6 -&gt; one consumer can process each partition
+Add a 7th consumer -&gt; one consumer is idle</code></pre>
+            <p>
+              Partitions can also be distributed across brokers, so more partitions allow storage and request load to
+              be spread across broker machines. Replicas provide fault tolerance; they are not the same as partitions
+              and do not by themselves increase consumer-group parallelism.
+            </p>
+            <h5 class="text-warning">Important limits and tradeoffs</h5>
+            <ul><li>Useful consumer parallelism is normally bounded by the partition count.</li><li>Adding partitions increases metadata, open files, replication work, and recovery/rebalance cost.</li><li>Ordering is guaranteed within a partition, not across the complete topic.</li><li>With a key-based producer, all records for the same key usually go to one partition; a hot key can therefore create a hot partition.</li><li>Increasing partitions can change key-to-partition mapping and may affect per-key ordering for future records.</li></ul>
+            <p>
+              So Kafka does not “scale only by partitions” in every dimension: brokers scale storage and network, and
+              consumers scale application processing. Partitions are the coordination boundary that makes those resources
+              independently parallelizable. Choose the partition count from expected throughput, ordering requirements,
+              retention, and future growth rather than adding partitions reactively without a plan.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="devops">
+        <h2 class="accordion-header" id="kafkaPortalScalingTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaPortalScalingTopBody">Can we manage Kafka consumers and partitions from a portal?</button>
+        </h2>
+        <div id="kafkaPortalScalingTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p><strong>Yes, but consumers and partitions are managed differently.</strong></p>
+            <h5 class="text-warning">Consumers</h5>
+            <p>
+              A Kafka consumer is normally an application instance, not a Kafka server resource. From a portal or
+              deployment platform such as EKS, Kubernetes, ECS, or a managed Kafka console, you increase or decrease the
+              number of replicas of the consumer service. The new instances join the same consumer group and Kafka
+              rebalances the partitions among them.
+            </p>
+            <p>
+              Scaling is useful only up to the number of partitions in the topic. If a topic has 10 partitions, a group
+              with 2 consumers can receive roughly 5 partitions each; a group with 10 consumers can use all partitions;
+              15 consumers leaves about 5 idle. For automatic scaling, use HPA/KEDA or another controller based on
+              consumer lag, with minimum and maximum replica limits.
+            </p>
+
+            <h5 class="text-warning">Partitions</h5>
+            <p>
+              A Kafka administrator can increase a topic's partition count from a Kafka portal, managed-cloud console,
+              Admin API, Terraform, or CLI. Partitions can be increased but not reduced. Increasing them may change
+              key-to-partition mapping and can affect per-key ordering, so plan it before the change.
+            </p>
+            <pre><code class="language-bash">kafka-topics --bootstrap-server broker:9092 \\
+  --alter --topic orders --partitions 20</code></pre>
+            <p>
+              A portal is only a management interface; the underlying operation is still a Kafka admin API call or a
+              deployment scaling operation. Use role-based access control, audit changes, capacity checks, and a change
+              plan. After scaling, verify consumer assignment, lag, broker disk/network load, and ordering behavior.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaLeaderFailurePartitionTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaLeaderFailurePartitionTopBody">Does a Kafka leader failure mean the entire partition fails?</button>
+        </h2>
+        <div id="kafkaLeaderFailurePartitionTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p><strong>No, not normally.</strong> A Kafka partition has one leader and replicated followers. If the leader broker fails, Kafka detects it and elects an eligible in-sync replica (ISR) as the new leader.</p>
+            <p>During leader election, the partition can be temporarily unavailable and producers/consumers may retry. After election, clients refresh metadata and continue using the new leader. The partition data is not lost merely because its current leader failed.</p>
+            <h5 class="text-warning">When can the partition remain unavailable?</h5>
+            <ul><li>There is no available in-sync replica.</li><li>All replicas for the partition are down.</li><li>Replication is unhealthy or the controller cannot complete the election.</li><li>Unclean leader election is disabled and no fully caught-up replica is eligible.</li></ul>
+            <p>If unclean leader election is allowed, Kafka may elect an out-of-sync replica to restore availability, but records that existed only on the failed leader can be lost. For durable business events, use a suitable replication factor, spread replicas across failure zones, monitor ISR, configure <code>acks=all</code> and <code>min.insync.replicas</code>, and keep unclean election disabled unless availability is more important than possible data loss.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-category="sql">
+        <h2 class="accordion-header" id="capcoSqlQuestionsTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#capcoSqlQuestionsTopBody">Capco Interview: Department and Employee SQL Queries</button>
+        </h2>
+        <div id="capcoSqlQuestionsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava"><div class="accordion-body bg-dark text-light">
+          <p>Assume <code>employees(id, name, salary, department_id)</code> and <code>departments(id, name)</code>.</p>
+          <pre><code class="language-sql">-- Employees without a department
+SELECT e.* FROM employees e
+LEFT JOIN departments d ON d.id = e.department_id
+WHERE d.id IS NULL;
+
+-- Salaries shared by multiple employees
+SELECT salary, COUNT(*) AS employee_count
+FROM employees GROUP BY salary HAVING COUNT(*) &gt; 1;
+
+-- Duplicate employee names
+SELECT name, COUNT(*) AS name_count
+FROM employees GROUP BY name HAVING COUNT(*) &gt; 1;
+
+-- Departments without employees
+SELECT d.* FROM departments d
+LEFT JOIN employees e ON e.department_id = d.id
+WHERE e.id IS NULL;</code></pre>
+          <p>Use <code>COUNT(*)</code> for rows, and use <code>NOT EXISTS</code> as another clear option for “without a matching row.”</p>
+        </div></div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="capcoKafkaLeaderFollowerTop"><button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#capcoKafkaLeaderFollowerTopBody">Capco Interview: Have you worked on Kafka? What are leader and follower replicas?</button></h2>
+        <div id="capcoKafkaLeaderFollowerTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava"><div class="accordion-body bg-dark text-light">
+          <p>Kafka topics are divided into partitions. Each partition has one <strong>leader</strong> and zero or more <strong>followers</strong>. Producers and consumers normally communicate with the leader. Followers replicate the leader's log and, when caught up, belong to the ISR (in-sync replica) set.</p>
+          <p>If the leader broker fails, Kafka elects an eligible in-sync follower as the new leader. Replication factor, ISR, <code>acks=all</code>, and <code>min.insync.replicas</code> determine durability. Leaders and replicas are distributed across brokers and preferably availability zones.</p>
+        </div></div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="capcoKafkaAutoscaleTop"><button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#capcoKafkaAutoscaleTopBody">Capco Interview: Does Kafka auto-scale or auto-de-scale?</button></h2>
+        <div id="capcoKafkaAutoscaleTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava"><div class="accordion-body bg-dark text-light">
+          <p>Kafka does not automatically add or remove brokers, partitions, or consumers by itself. Auto-scaling must be configured around it. In Kubernetes, a consumer deployment can scale with KEDA or a custom HPA metric based on consumer lag; AWS MSK and other managed services may offer broker/storage scaling features with provider-specific limits.</p>
+          <p>Scale-out is constrained by partition count: a group cannot usefully have more active consumers than partitions. Scale-in must be graceful so consumers leave, partitions rebalance, and processing capacity remains above the incoming rate. Kafka broker scaling also requires capacity planning, partition reassignment, and monitoring.</p>
+        </div></div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="capcoKafkaIdleTimeTop"><button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#capcoKafkaIdleTimeTopBody">Capco Interview: How do you handle idle time of Kafka consumers?</button></h2>
+        <div id="capcoKafkaIdleTimeTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava"><div class="accordion-body bg-dark text-light"><p>Consumer threads normally call <code>poll()</code> even when no records are available. A poll can return an empty batch; the consumer remains in the group and continues heartbeats. Configure <code>pollTimeout</code>, avoid busy loops, and do not create and destroy consumers for every empty interval.</p><p>For cost control, scale consumers down when lag is zero and demand is low, while keeping enough warm capacity for latency targets. Never stop polling longer than <code>max.poll.interval.ms</code>; long processing should be bounded, batched, or moved outside the poll thread.</p></div></div>
+      </div>
+
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="capcoKafkaIncreasePartitionsTop"><button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#capcoKafkaIncreasePartitionsTopBody">Capco Interview: Can Kafka partitions be increased? How?</button></h2>
+        <div id="capcoKafkaIncreasePartitionsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava"><div class="accordion-body bg-dark text-light"><p>Yes. Increase them with the Admin API, Kafka CLI, or the platform's console:</p><pre><code class="language-bash">kafka-topics --bootstrap-server broker:9092 \\
+  --alter --topic orders --partitions 12</code></pre><p>Partitions can be increased but not reduced. Adding partitions changes the key-to-partition mapping for many default partitioners, so per-key ordering can be affected during and after the change. Plan capacity, verify consumer behavior, and use a stable partitioning/migration strategy when strict customer ordering is required.</p></div></div>
+      </div>
+
+      <div class="accordion-item" data-category="devops">
+        <h2 class="accordion-header" id="capcoEksBuildDeployTop"><button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#capcoEksBuildDeployTopBody">Capco Interview: How do you build and deploy microservices to AWS EKS?</button></h2>
+        <div id="capcoEksBuildDeployTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava"><div class="accordion-body bg-dark text-light">
+          <ol><li>Commit code and run unit, integration, security, and quality-gate checks in CI.</li><li>Build the Spring Boot JAR and a Docker image; tag it with an immutable Git SHA.</li><li>Scan the image, push it to Amazon ECR, and publish Helm/Kustomize manifests.</li><li>Create or use an EKS cluster with managed node groups or Fargate, IAM roles for service accounts, VPC networking, and observability agents.</li><li>Deploy with Helm, Argo CD, or <code>kubectl</code>; configure Deployment, Service, Ingress/ALB, ConfigMaps, Secrets, resource requests/limits, probes, and autoscaling.</li><li>Use rolling, blue-green, or canary deployment; wait for readiness and run smoke tests.</li><li>Monitor rollout, logs, metrics, traces, error rate, latency, and rollback automatically when health checks fail.</li></ol>
+          <pre><code class="language-yaml">containers:
+  - name: order-service
+    image: 123456789.dkr.ecr.region.amazonaws.com/order-service:git-sha
+    ports: [{containerPort: 8080}]
+    readinessProbe:
+      httpGet: {path: /actuator/health/readiness, port: 8080}
+    resources:
+      requests: {cpu: "250m", memory: "512Mi"}
+      limits: {cpu: "1", memory: "1Gi"}</code></pre>
+        </div></div>
+      </div>
+
+      <div class="accordion-item" data-category="devops">
+        <h2 class="accordion-header" id="capcoEksObservabilityAutoscaleTop"><button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#capcoEksObservabilityAutoscaleTopBody">Capco Interview: How do you monitor logs in EKS and how does EKS auto-scale internally?</button></h2>
+        <div id="capcoEksObservabilityAutoscaleTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava"><div class="accordion-body bg-dark text-light">
+          <h5 class="text-warning">Logs and monitoring</h5><p>Applications write structured JSON logs to stdout/stderr. Fluent Bit, Fluentd, or the CloudWatch agent runs as a DaemonSet, collects container logs, enriches them with pod/namespace labels, and sends them to CloudWatch Logs, OpenSearch, or another backend. Use correlation ID, trace ID, span ID, service, pod, namespace, level, timestamp, and request metadata. Metrics can go through Micrometer/Prometheus or CloudWatch; traces through OpenTelemetry to a trace backend.</p>
+          <h5 class="text-warning">EKS autoscaling flow</h5><ol><li>HPA reads CPU/memory or custom metrics such as request rate or Kafka lag through Metrics Server, Prometheus Adapter, or CloudWatch.</li><li>HPA changes the desired replica count of a Deployment.</li><li>The Kubernetes scheduler places new pods on nodes with available resources.</li><li>If no node has capacity, Cluster Autoscaler or Karpenter provisions/claims additional EC2 capacity.</li><li>When demand falls, HPA scales pods down and the node scaler removes underused nodes subject to disruption and availability rules.</li></ol><p>HPA scales pods; Cluster Autoscaler/Karpenter scales nodes. Set realistic resource requests because scheduling and CPU-based HPA use them. Configure readiness/liveness/startup probes, PodDisruptionBudgets, cooldown/stabilization windows, and min/max bounds to prevent flapping. Autoscaling is not instant, so use queue buffering and overprovisioning for sudden spikes.</p>
+        </div></div>
+      </div>
+
+      <div class="accordion-item" data-category="sql">
+        <h2 class="accordion-header" id="departmentEmployeeQueriesTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#departmentEmployeeQueriesTopBody">
+            SQL Queries: Department and Employee Problems
+          </button>
+        </h2>
+        <div id="departmentEmployeeQueriesTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>Assume tables <code>employees(id, name, salary, department_id)</code> and <code>departments(id, name)</code>.</p>
+            <h5 class="text-warning">1. Find employees who do not belong to any department</h5>
+            <pre><code class="language-sql">SELECT e.*
+FROM employees e
+LEFT JOIN departments d ON d.id = e.department_id
+WHERE d.id IS NULL;</code></pre>
+            <p>The <code>LEFT JOIN</code> keeps every employee. A missing department produces NULL values for the department columns.</p>
+
+            <h5 class="text-warning">2. Find salaries shared by multiple employees</h5>
+            <pre><code class="language-sql">SELECT salary, COUNT(*) AS employee_count
+FROM employees
+GROUP BY salary
+HAVING COUNT(*) &gt; 1;</code></pre>
+            <p>Use <code>COUNT(*)</code> to count rows. If NULL salaries should be excluded, add <code>WHERE salary IS NOT NULL</code>.</p>
+
+            <h5 class="text-warning">3. Find duplicate employee names</h5>
+            <pre><code class="language-sql">SELECT name, COUNT(*) AS name_count
+FROM employees
+GROUP BY name
+HAVING COUNT(*) &gt; 1;</code></pre>
+            <p>If names should be compared case-insensitively, the expression depends on the database, for example <code>LOWER(name)</code>.</p>
+
+            <h5 class="text-warning">4. Find departments with no employees</h5>
+            <pre><code class="language-sql">SELECT d.*
+FROM departments d
+LEFT JOIN employees e ON e.department_id = d.id
+WHERE e.id IS NULL;</code></pre>
+            <p>The department is preserved by the left join, and a NULL employee ID indicates that no matching employee exists.</p>
+
+            <h5 class="text-warning">JPQL equivalents</h5>
+            <pre><code class="language-sql">-- Employees without a department
+SELECT e FROM Employee e
+LEFT JOIN e.department d
+WHERE d.id IS NULL
+
+-- Departments without employees
+SELECT d FROM Department d
+LEFT JOIN d.employees e
+WHERE e.id IS NULL</code></pre>
+            <p>In JPQL, use entity names and mapped relationship properties rather than table names and foreign-key columns.</p>
+          </div>
+        </div>
+      </div>
+
       <div class="accordion-item" data-category="java">
         <h2 class="accordion-header" id="javaFinalizeTop">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#javaFinalizeTopBody">
