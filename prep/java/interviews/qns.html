@@ -177,6 +177,69 @@
         onkeyup="searchQuestions()" />
     </div>
     <div class="accordion" id="accordionSeniorJava">
+      <div class="accordion-item" data-category="devops">
+        <h2 class="accordion-header" id="kafkaMonitoringTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaMonitoringTopBody">How do we monitor Kafka topics, clusters, messages, and brokers?</button>
+        </h2>
+        <div id="kafkaMonitoringTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Kafka monitoring should combine broker metrics, topic/partition metrics, consumer-group lag, producer and
+              consumer application metrics, logs, traces, and controlled message inspection. A dashboard should show
+              both system health and business freshness, not just CPU.
+            </p>
+            <h5 class="text-warning">1. Cluster and broker health</h5>
+            <ul><li>Broker CPU, heap/non-heap memory, garbage collection, disk usage, disk latency, filesystem capacity, and network throughput.</li><li>Request rate and latency for produce, fetch, metadata, and replication operations.</li><li>Active controller/KRaft quorum health, broker count, broker registration, leader-election rate, and offline partitions.</li><li>Under-replicated partitions, ISR shrink/expand events, replica fetcher lag, and unclean elections.</li><li>Open file descriptors, thread pools, page-cache behavior, and request queues.</li></ul>
+            <h5 class="text-warning">2. Topics and partitions</h5>
+            <ul><li>Messages/bytes produced and consumed per second.</li><li>Bytes in/out per topic and partition, partition size, segment count, and retention cleanup.</li><li>Partition leadership distribution and hot partitions caused by skewed keys.</li><li>Replication factor, ISR size, under-replication, and partition availability.</li><li>Schema/serialization errors and rejected or oversized records.</li></ul>
+            <pre><code class="language-bash"># Inspect topics and partitions
+kafka-topics --bootstrap-server broker:9092 --describe --topic orders
+
+# Inspect consumer group offsets and lag
+kafka-consumer-groups --bootstrap-server broker:9092 \\
+  --group payment-service --describe</code></pre>
+
+            <h5 class="text-warning">3. Consumer and message monitoring</h5>
+            <p>
+              Monitor lag per group and partition, oldest message age, records consumed per second, processing latency,
+              poll latency, commit failures, rebalance count, error rate, retry count, dead-letter volume, and consumer
+              assignment. A total lag value can hide one hot partition, so always inspect partition-level lag.
+            </p>
+            <p>
+              Do not inspect every message in production as a monitoring strategy. Use metrics and structured logs. For
+              troubleshooting, use a controlled consumer or portal with a filter, a separate group, and read-only access;
+              never accidentally commit offsets or mutate the production stream.
+            </p>
+
+            <h5 class="text-warning">4. Producer monitoring</h5>
+            <ul><li>Record send rate, batch size, compression ratio, request latency, retry rate, record errors, and delivery timeouts.</li><li>Buffer pool wait time and full-buffer events, which indicate producers are faster than brokers or batching is misconfigured.</li><li>Serialization failures, authentication/authorization errors, message-size violations, and acknowledgement failures.</li><li>Producer-to-broker throughput compared with consumer processing throughput.</li></ul>
+
+            <h5 class="text-warning">5. Tools and architecture</h5>
+            <pre><code class="language-text">Kafka brokers -&gt; JMX exporter -&gt; Prometheus -&gt; Grafana
+Kafka Connect/clients -&gt; logs and metrics -&gt; CloudWatch/OpenSearch/Loki
+Spring Boot consumers -&gt; Micrometer/Actuator -&gt; Prometheus
+Applications -&gt; OpenTelemetry traces -&gt; Collector -&gt; trace backend</code></pre>
+            <p>
+              Common choices include Kafka JMX metrics with Prometheus and Grafana, managed-service metrics such as
+              CloudWatch, Kafka UI/Confluent tools for administration, and OpenTelemetry/Micrometer for application
+              metrics and traces. Use structured JSON logs with topic, partition, offset, consumer group, event ID,
+              correlation ID, trace ID, and error information. Avoid putting high-cardinality raw event IDs in metric labels.
+            </p>
+
+            <h5 class="text-warning">6. Important alerts</h5>
+            <ul><li>Consumer lag or oldest-record age above the business SLO for a sustained period.</li><li>Offline partitions, under-replicated partitions, ISR below the expected level, or repeated leader elections.</li><li>Broker disk usage or filesystem growth approaching capacity.</li><li>Produce/fetch p95 or p99 latency, request queue time, and network saturation above thresholds.</li><li>Consumer rebalances, missed heartbeats, poll timeouts, commit failures, and dead-letter growth.</li><li>Producer retries, delivery failures, buffer exhaustion, serialization failures, and authentication errors.</li></ul>
+
+            <h5 class="text-warning">Real-world incident flow</h5>
+            <ol><li>Alert says <code>orders</code> consumer lag is rising.</li><li>Check whether lag is all partitions or one hot partition.</li><li>Compare producer rate, consumer processing rate, broker fetch latency, and downstream database/API latency.</li><li>Check rebalances, commit errors, poison messages, consumer thread dumps, and database connection-pool waits.</li><li>Fix the bottleneck first; then scale consumers only when partitions and downstream capacity allow it.</li><li>After recovery, confirm lag is decreasing, offsets are committing, ISR is healthy, and no duplicate business effects occurred.</li></ol>
+            <p>
+              Monitoring should answer four questions quickly: Is Kafka available? Are brokers and replicas healthy? Are
+              producers writing successfully? Are every consumer group and partition keeping up? Combine technical alerts
+              with business metrics such as orders processed, payments completed, and event age.
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div class="accordion-item" data-category="microservices">
         <h2 class="accordion-header" id="kafkaMessageOrderingTop">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaMessageOrderingTopBody">How does Kafka order messages?</button>
