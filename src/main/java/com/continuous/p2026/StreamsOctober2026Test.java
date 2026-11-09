@@ -7,7 +7,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public class StreamsOctober2026Test {
@@ -286,13 +285,44 @@ public class StreamsOctober2026Test {
 
 
 //                Find the top three students by average marks.
+        List<Student> list8 = students.stream()
+                .sorted(Comparator.comparing(student -> student.getMarks()
+                        .stream()
+                        .mapToInt(Integer::intValue)
+                        .average()
+                        .orElse(0)))
+                .limit(3)
+                .toList();
+        System.out.println(list8);
 
 //                Find students who scored above 90 in any subject.
+        List<Student> list9 = students.stream()
+                .filter(student -> student.getMarks().stream().anyMatch(integer -> integer > 90))
+                .toList();
+        System.out.println(list9);
 //                Find students who scored above 80 in every subject.
+        List<Student> list10 = students.stream().filter(student -> student.getMarks().stream().allMatch(mark -> mark > 80))
+                .toList();
 //                Find the maximum mark across all students.
+        Optional<Integer> maxMark = students.stream()
+                .flatMap(student -> student.getMarks().stream())
+                .max(Integer::compareTo);
+
+        System.out.println(maxMark.orElse(0));
 //        Find the minimum mark across all students.
+        Optional<Integer> minMark = students.stream()
+                .flatMap(student -> student.getMarks().stream())
+                .min(Integer::compareTo);
+
+        System.out.println(minMark.orElse(0));
 //                Flatten all student marks into one list.
+        List<Integer> list11 = students.stream().flatMap(student -> student.getMarks().stream()).toList();
+        System.out.println(list11);
 //        Find the student with the highest individual mark.
+        Optional<Map.Entry<Student, Integer>> result344 = students.stream()
+                .flatMap(s -> s.getMarks().stream()
+                        .map(mark -> Map.entry(s, mark)))
+                .max(Map.Entry.comparingByValue());
 //        Group students by grade based on their average marks.
 //                Other coding exercise present in Streams2026.java
 //        How do you reverse the first K elements of a queue using a stack?
