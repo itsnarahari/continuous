@@ -6,6 +6,7 @@ import java.util.*;
 
 public class November2026 {
     public static void main(String[] args) {
+
         int number  = 487;
         int rev = 0;
         while (number!=0){
@@ -169,6 +170,7 @@ public class November2026 {
 
 
      //Left rotate the array by d places
+    //         int arr[] = {10, 20, 400, 147, 30, 50, 231,3, 40, 20, 10, 400, 401}; d=2;
     public static int[] leftRotateTheArrayByDPlaces(int[] arr, int d){
         for (int i = 0; i < d; i++) {
             int temp = arr[i];

@@ -178,6 +178,1795 @@
         onkeyup="searchQuestions()" />
     </div>
     <div class="accordion" id="accordionSeniorJava">
+      <div class="accordion-item" data-category="devops">
+        <h2 class="accordion-header" id="throughputOneThousandToTwoFiftyTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#throughputOneThousandToTwoFiftyTopBody">The application should handle 1,000 requests per minute but processes only 250: where do you analyze?</button>
+        </h2>
+        <div id="throughputOneThousandToTwoFiftyTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              First I clarify whether only 250 requests reach the application, or whether all 1,000 arrive but only 250
+              complete successfully. These indicate different bottlenecks. I then analyze the full request path rather than
+              immediately adding application instances.
+            </p>
+            <h5 class="text-warning">End-to-end investigation</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Layer</th><th>What to check</th></tr></thead><tbody><tr><td>Client/API Gateway</td><td>Incoming rate, throttling, quotas, rejected requests, and timeout configuration</td></tr><tr><td>Load balancer</td><td>Healthy targets, routing distribution, connection limits, and target response time</td></tr><tr><td>Spring Boot</td><td>Tomcat/Netty threads, request queue, CPU, heap, GC, exceptions, and timeouts</td></tr><tr><td>Database</td><td>Hikari active/pending connections, slow queries, locks, transaction time, and DB CPU</td></tr><tr><td>Downstream services</td><td>Latency, rate limits, retries, circuit breakers, and failures</td></tr><tr><td>Kafka</td><td>Consumer lag, partitions, active consumers, processing time, and retries</td></tr></tbody></table>
+            <h5 class="text-warning">1. Confirm where requests disappear</h5>
+            <p>
+              Compare gateway received count, load-balancer forwarded count, application request count, successful response
+              count, rejected count, and timeout count. An API Gateway limit of 250 requests per minute is very different
+              from an application receiving 1,000 requests but completing only 250.
+            </p>
+            <h5 class="text-warning">2. Check application capacity</h5>
+            <ul>
+              <li>Inspect active and max Tomcat/Netty threads, queued requests, request duration, and rejected work.</li>
+              <li>Check CPU saturation, heap pressure, GC pauses, blocked/waiting threads, and thread dumps.</li>
+              <li>Check application exceptions, downstream timeouts, retry storms, and circuit-breaker state.</li>
+              <li>Confirm that the configured container CPU and memory limits are not throttling the service.</li>
+            </ul>
+            <p>
+              For example, if all 200 request threads are waiting on a downstream API, new requests queue even when CPU is
+              only 35%. Increasing CPU or pods may not help until the blocking dependency is fixed or bounded.
+            </p>
+            <h5 class="text-warning">3. Check HikariCP and the database</h5>
+            <pre><code class="language-properties">spring.datasource.hikari.maximum-pool-size=10</code></pre>
+            <p>
+              If all 10 connections are busy with slow queries, other application threads wait for a connection. Monitor
+              active, idle, pending, acquisition time, timeout count, query duration, locks, and transaction duration. Do not
+              blindly increase the pool: 20 application instances with a pool of 20 can request 400 connections from a
+              database that supports only 150.
+            </p>
+            <h5 class="text-warning">4. Use observability evidence</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Tool</th><th>Purpose</th></tr></thead><tbody><tr><td>Spring Boot Actuator</td><td>Application health, request metrics, and pool metrics</td></tr><tr><td>Prometheus/Grafana</td><td>Throughput, latency, saturation, and trend dashboards</td></tr><tr><td>CloudWatch</td><td>Load balancer, container, database, and infrastructure metrics</td></tr><tr><td>OpenTelemetry</td><td>Trace time spent in each service, query, and downstream call</td></tr><tr><td>Centralized logs</td><td>Exceptions, timeouts, correlation IDs, and request outcomes</td></tr><tr><td>JFR/thread dumps</td><td>JVM hotspots, blocked threads, lock contention, and GC behavior</td></tr></tbody></table>
+            <h5 class="text-warning">Illustrative bottleneck</h5>
+            <pre><code class="language-text">Incoming requests:        1,000/min
+Successful requests:        250/min
+CPU:                          35%
+Active application threads: 200/200
+Hikari active connections:   20/20
+Pending DB connections:      80
+Average query time:          2 seconds</code></pre>
+            <p>
+              This suggests database or connection-pool saturation, not a CPU problem. I would inspect query plans, indexes,
+              locks, transaction boundaries, and connection usage, then load-test the change before adjusting pool capacity.
+            </p>
+            <h5 class="text-warning">Fix and verify</h5>
+            <ul>
+              <li>Remove gateway throttling only when the downstream capacity and business rate limits support it.</li>
+              <li>Optimize queries and indexes, reduce transaction duration, batch database work, or add read replicas where appropriate.</li>
+              <li>Bound downstream calls with timeouts, circuit breakers, bulkheads, and controlled retries.</li>
+              <li>Increase application replicas only after confirming the bottleneck can scale and the database is protected.</li>
+              <li>Run a production-like load test, compare throughput and p95/p99 latency, and roll out gradually with alerts.</li>
+            </ul>
+            <p>
+              <strong>Interview answer:</strong> I first confirm whether 250 requests are arriving or only 250 are completing.
+              Then I compare gateway, load balancer, application, database, downstream, and Kafka metrics. I use logs and
+              distributed traces to isolate the slow layer, fix that bottleneck, load-test the change, and scale only the
+              component that needs capacity. I would not blindly add pods because a saturated database or downstream service
+              can make the problem worse.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="devops">
+        <h2 class="accordion-header" id="uatWorksProductionFailsTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#uatWorksProductionFailsTopBody">The feature works in UAT but fails in production: what do you do?</button>
+        </h2>
+        <div id="uatWorksProductionFailsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              I would not immediately assume it is a code defect. I would handle it in three phases: identify the
+              production-specific difference, restore service safely, and prevent the same gap from recurring.
+            </p>
+            <h5 class="text-warning">1. Investigate and compare environments</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Area</th><th>What to compare</th></tr></thead><tbody><tr><td>Application configuration</td><td>Environment variables, profiles, feature flags, URLs, timeouts, and defaults</td></tr><tr><td>Database</td><td>Schema version, migrations, indexes, permissions, data volume, and real data formats</td></tr><tr><td>Runtime</td><td>Java, Spring Boot, library versions, JVM flags, container image, and architecture</td></tr><tr><td>Security</td><td>IAM roles, certificates, secrets, token scopes, and service-account permissions</td></tr><tr><td>Network</td><td>DNS, firewall, security groups, proxy, routing, and connectivity</td></tr><tr><td>Capacity</td><td>CPU, memory, thread pools, Hikari connections, pod limits, and autoscaling</td></tr><tr><td>External services</td><td>Endpoint, credentials, rate limits, API version, timeout, and production allowlists</td></tr><tr><td>Data</td><td>Nulls, size, encoding, boundary values, duplicates, and unexpected production states</td></tr></tbody></table>
+            <p>
+              For example, an API may pass in UAT but fail in production because the production secret is missing, the
+              database migration was not applied, the service has insufficient permission, or production data contains a
+              case that the test data did not cover.
+            </p>
+            <h5 class="text-warning">2. Use evidence from logs, metrics, and traces</h5>
+            <pre><code class="language-text">Service A -&gt; Service B -&gt; Service C -&gt; Database
+Service A: success
+Service B: success
+Service C: timeout
+Database: slow query / exhausted connection pool</code></pre>
+            <ul>
+              <li>Check structured logs, exception stack traces, deployment version, pod name, environment, and correlation/TraceId.</li>
+              <li>Check error rate, response codes, p95/p99 latency, CPU, memory, GC, thread pools, and restart history.</li>
+              <li>Check database slow queries, locks, schema state, Hikari active/idle/pending connections, and downstream health.</li>
+              <li>Use distributed tracing to identify the exact service or dependency where time or failure appears.</li>
+              <li>Compare the failing request with a successful UAT request without exposing secrets or personal data.</li>
+            </ul>
+            <h5 class="text-warning">3. Restore service safely</h5>
+            <ul>
+              <li>If impact is high, stop the rollout or roll back to the last known good version.</li>
+              <li>If it is a configuration issue, correct the configuration through the approved deployment path, not by an undocumented manual edit.</li>
+              <li>If it is a schema or data issue, validate the migration and data repair plan before changing production.</li>
+              <li>If it is a code defect, deploy a small targeted fix through the normal pipeline and verify it with smoke tests.</li>
+              <li>Use a feature-flag kill switch or route traffic away from the affected path when available.</li>
+              <li>After the fix, run production smoke tests and watch error, latency, and business metrics.</li>
+            </ul>
+            <h5 class="text-warning">4. Prevent recurrence</h5>
+            <ul>
+              <li>Use the same immutable container image and compatible runtime baseline across UAT and production.</li>
+              <li>Manage infrastructure and environment configuration with Infrastructure as Code and version control.</li>
+              <li>Validate required environment variables, secrets, certificates, permissions, and database migrations before deployment.</li>
+              <li>Add unit, integration, contract, regression, production-like data, and load tests for the missed scenario.</li>
+              <li>Use canary or progressive deployments with automated rollback thresholds.</li>
+              <li>Add startup checks for required dependencies and alerts for errors, latency, connection pools, Kafka lag, and resource saturation.</li>
+              <li>Perform a blameless RCA: document the root cause, why UAT missed it, the immediate fix, and a permanent action with an owner.</li>
+            </ul>
+            <h5 class="text-warning">Senior-level interview framework</h5>
+            <p>
+              For an experienced developer, avoid saying only “I will check logs and fix it.” Explain the complete flow:
+            </p>
+            <pre><code class="language-text">Compare -&gt; Investigate -&gt; Isolate -&gt; Fix/Rollback -&gt; RCA -&gt; Prevent</code></pre>
+            <p>
+              Compare UAT and production, investigate with evidence, isolate the failing layer, fix or roll back safely,
+              perform root-cause analysis, and add a permanent test or control so the issue does not recur.
+            </p>
+            <p>
+              <strong>Interview answer:</strong> If it works in UAT but fails in production, I compare configuration, runtime,
+              database schema and data, security, network, capacity, and external dependencies. I then use logs, metrics, and
+              distributed traces to isolate the failing component. Based on impact, I roll back or apply a targeted fix and
+              perform smoke testing. Finally, I complete an RCA and add the missing test, validation, monitoring, or canary
+              control so the same difference cannot escape again.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="springboot">
+        <h2 class="accordion-header" id="transactionalRollbackFailureCasesTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#transactionalRollbackFailureCasesTopBody">Even with @Transactional, why might a transaction not roll back?</button>
+        </h2>
+        <div id="transactionalRollbackFailureCasesTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <code>@Transactional</code> is applied through a Spring proxy and rollback is decided when the proxied method
+              exits. By default, Spring rolls back for <code>RuntimeException</code> and <code>Error</code>, but not for
+              checked exceptions. Several proxy, propagation, thread, configuration, and database issues can therefore make
+              it appear that rollback is not working.
+            </p>
+            <h5 class="text-warning">1. Checked exception</h5>
+            <pre><code class="language-java">@Transactional
+public void transferMoney() throws IOException {
+    debitAccount();
+    throw new IOException("Transfer failed");
+}</code></pre>
+            <p>
+              <code>IOException</code> is checked, so the default rule may allow the transaction to commit. Configure the
+              rollback rule explicitly when required:
+            </p>
+            <pre><code class="language-java">@Transactional(rollbackFor = Exception.class)
+public void transferMoney() throws IOException {
+    debitAccount();
+    throw new IOException("Transfer failed");
+}</code></pre>
+            <h5 class="text-warning">2. Exception is caught and swallowed</h5>
+            <pre><code class="language-java">@Transactional
+public void saveEmployee() {
+    try {
+        employeeRepository.save(employee);
+        throw new RuntimeException("Failure");
+    } catch (RuntimeException ex) {
+        log.error("Failure", ex);
+        // No exception escapes, so Spring may commit.
+    }
+}</code></pre>
+            <p>
+              Rethrow the exception, or deliberately mark the transaction rollback-only when the method must return normally:
+            </p>
+            <pre><code class="language-java">catch (RuntimeException ex) {
+    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+    throw ex; // usually the clearest choice
+}</code></pre>
+            <h5 class="text-warning">3. Self-invocation bypasses the proxy</h5>
+            <pre><code class="language-java">public void save() {
+    saveEmployee(); // this.saveEmployee(), not a proxy call
+}
+
+@Transactional
+public void saveEmployee() {
+    employeeRepository.save(employee);
+}</code></pre>
+            <p>
+              A direct call within the same object bypasses the Spring proxy, so the annotation may not be applied. Move the
+              transactional method to another Spring bean, call through a properly injected proxy, or redesign the service.
+            </p>
+            <h5 class="text-warning">4. Independent propagation</h5>
+            <pre><code class="language-java">@Transactional(propagation = Propagation.REQUIRES_NEW)
+public void saveAudit() {
+    auditRepository.save(audit);
+}</code></pre>
+            <p>
+              <code>REQUIRES_NEW</code> suspends the outer transaction and starts a separate one. The inner transaction can
+              commit even if the outer transaction later rolls back. This is expected behavior, not a rollback failure.
+            </p>
+            <h5 class="text-warning">5. Asynchronous execution</h5>
+            <pre><code class="language-java">@Transactional
+public void saveEmployee() {
+    employeeRepository.save(employee);
+    asyncService.process(); // @Async runs on another thread
+}</code></pre>
+            <p>
+              Spring transactions are generally thread-bound. An <code>@Async</code> method does not automatically join the
+              caller's transaction and normally needs its own transaction if it performs database work.
+            </p>
+            <h5 class="text-warning">6. Wrong transaction manager or data source</h5>
+            <pre><code class="language-java">@Transactional("mysqlTransactionManager")
+public void saveEmployee() {
+    // Verify that this repository really uses the MySQL data source.
+}</code></pre>
+            <p>
+              With multiple databases, the selected transaction manager must control the data source used by the repository.
+              Otherwise one database may commit outside the transaction you expected to roll back.
+            </p>
+            <h5 class="text-warning">7. Explicit no-rollback rule</h5>
+            <pre><code class="language-java">@Transactional(noRollbackFor = RuntimeException.class)
+public void saveEmployee() {
+    employeeRepository.save(employee);
+    throw new RuntimeException("Not configured to roll back");
+}</code></pre>
+            <p>
+              Check <code>noRollbackFor</code>, <code>noRollbackForClassName</code>, and any global transaction configuration
+              that changes the default rollback rules.
+            </p>
+            <h5 class="text-warning">8. Database or transaction boundary issue</h5>
+            <ul>
+              <li>The database engine or table does not support transactions, such as a non-transactional MySQL table.</li>
+              <li>The work uses a different connection, raw JDBC connection, or external system outside the managed transaction.</li>
+              <li>The transaction committed before the exception, or the exception occurred after the transactional method returned.</li>
+              <li>An earlier inner transaction committed independently, so an outer rollback cannot undo it.</li>
+              <li>Another transaction or event consumer wrote the same data, making the original rollback appear ineffective.</li>
+            </ul>
+            <h5 class="text-warning">Quick revision table</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Scenario</th><th>Why rollback may not happen</th></tr></thead><tbody><tr><td>Checked exception</td><td>Not rolled back by default</td></tr><tr><td>Exception swallowed</td><td>No exception reaches the proxy</td></tr><tr><td>Self-invocation</td><td>Spring proxy is bypassed</td></tr><tr><td><code>REQUIRES_NEW</code></td><td>Independent transaction may commit</td></tr><tr><td><code>@Async</code></td><td>Different thread and transaction context</td></tr><tr><td>Wrong manager</td><td>Intended data source is not covered</td></tr><tr><td><code>noRollbackFor</code></td><td>Rollback is explicitly disabled</td></tr><tr><td>Non-transactional database table</td><td>Database cannot undo the write</td></tr></tbody></table>
+            <p>
+              <strong>Interview answer:</strong> I would first verify that the method is invoked through a Spring proxy and
+              that the correct transaction manager and data source are used. Then I would check the exception type,
+              rollback rules, swallowed exceptions, self-invocation, propagation such as <code>REQUIRES_NEW</code>, and
+              asynchronous execution. Finally, I would confirm database transaction support and inspect SQL logs and
+              transaction boundaries to determine whether another transaction committed the data.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="devops">
+        <h2 class="accordion-header" id="limitedProductionFeatureTestingTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#limitedProductionFeatureTestingTopBody">How do you test a new feature with limited users in production?</button>
+        </h2>
+        <div id="limitedProductionFeatureTestingTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              I would deploy the code safely but keep the feature disabled behind a feature flag. Then I would enable it for
+              a small, controlled audience, such as internal users or 1% of production users, while monitoring business and
+              technical metrics. If the results are healthy, I would increase the rollout gradually; if not, I would turn
+              the flag off without redeploying.
+            </p>
+            <h5 class="text-warning">Feature-flag example</h5>
+            <pre><code class="language-java">@Service
+class CheckoutService {
+    private final FeatureFlagService flags;
+
+    CheckoutService(FeatureFlagService flags) {
+        this.flags = flags;
+    }
+
+    CheckoutResult checkout(User user, Cart cart) {
+        if (flags.isEnabled("new-checkout", user.getId())) {
+            return newCheckout(cart);
+        }
+        return existingCheckout(cart);
+    }
+}</code></pre>
+            <p>
+              The flag service can be Unleash, LaunchDarkly, OpenFeature, Togglz, or an internal service. The targeting rule
+              should use a stable hash of the user or account ID so the same user consistently receives the same version.
+            </p>
+            <pre><code class="language-text">Rollout plan:
+1. Deploy code with the flag OFF for everyone.
+2. Enable for employees or test accounts.
+3. Enable for 1% of eligible users using stable bucketing.
+4. Compare errors, latency, conversion, and business outcomes.
+5. Increase to 5%, 25%, 50%, then 100% if healthy.
+6. Remove the old path and flag after the rollout is complete.</code></pre>
+            <h5 class="text-warning">Canary deployment alternative</h5>
+            <p>
+              If the change affects infrastructure, runtime behavior, or dependencies, deploy a separate canary version of
+              the service. Route a small percentage of traffic to the canary through the load balancer, service mesh, or API
+              gateway, compare it with the stable version, and shift traffic gradually. A feature flag changes behavior
+              inside the same version; a canary deployment tests a separate application version.
+            </p>
+            <h5 class="text-warning">What I would monitor</h5>
+            <ul>
+              <li>HTTP error rate, timeout rate, p95/p99 latency, CPU, memory, thread pools, database latency, and downstream failures.</li>
+              <li>Feature-specific metrics such as checkout success, payment failures, cancellations, or user conversion.</li>
+              <li>Logs and distributed traces tagged with feature name, version, cohort, user/account hash, and TraceId.</li>
+              <li>Separate dashboards and alerts for control and treatment groups so a small user percentage is not hidden by overall averages.</li>
+            </ul>
+            <h5 class="text-warning">Safety and rollback</h5>
+            <ul>
+              <li>Keep a kill switch that can disable the feature quickly and test it before release.</li>
+              <li>Use a server-side flag for security-sensitive or payment behavior; do not rely only on a client-side flag.</li>
+              <li>Use authorization and tenant boundaries so the experiment cannot expose data across users.</li>
+              <li>Make database changes backward-compatible because old and new application versions may run together.</li>
+              <li>Define rollout and rollback thresholds before enabling the first production user.</li>
+            </ul>
+            <p>
+              <strong>Interview answer:</strong> I would use a feature flag with stable user targeting, start with internal
+              users or a small percentage, monitor control versus treatment metrics, and expand gradually. For a version-level
+              change I would use a canary deployment. Both approaches provide a fast rollback by disabling the flag or
+              shifting traffic back to the stable version without waiting for a full redeployment.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaProblemsDisadvantagesTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaProblemsDisadvantagesTopBody">What problems and disadvantages does Kafka have?</button>
+        </h2>
+        <div id="kafkaProblemsDisadvantagesTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Kafka is excellent for high-throughput event streaming, buffering, replay, and decoupling services, but it is
+              not a universal replacement for a database, REST API, or queue. Its main disadvantages come from distributed
+              operations, partition-based ordering, and the responsibility placed on producers and consumers.
+            </p>
+            <h5 class="text-warning">1. Operational complexity</h5>
+            <p>
+              A production cluster requires planning for brokers, partitions, replication, ISR, disk capacity, retention,
+              upgrades, security, monitoring, rebalancing, and recovery. KRaft simplifies metadata management compared with
+              ZooKeeper, but operating Kafka is still more complex than using a simple managed queue.
+            </p>
+            <h5 class="text-warning">2. Ordering is limited</h5>
+            <p>
+              Kafka guarantees ordering only within one partition, not across an entire topic. If events for one customer use
+              different keys or partitions, their order is not guaranteed. Adding partitions can also change the partition
+              mapping for keys and must be planned carefully.
+            </p>
+            <h5 class="text-warning">3. Duplicate processing is normal</h5>
+            <p>
+              With at-least-once processing, a consumer can successfully update a database and then crash before committing
+              its offset. Kafka redelivers the record after restart. Consumers therefore need idempotency keys, upserts,
+              deduplication tables, or transactional processing. Exactly-once semantics reduce some duplicate effects but do
+              not automatically make an external database or email provider exactly once.
+            </p>
+            <h5 class="text-warning">4. Consumer lag and rebalancing</h5>
+            <ul>
+              <li>A slow database, downstream API, CPU-heavy transformation, or poison message can make lag grow continuously.</li>
+              <li>Consumer membership changes trigger rebalancing, which can pause processing and increase latency.</li>
+              <li>More consumers help only up to the number of useful partitions; extra consumers remain idle.</li>
+              <li>Increasing partitions is not an instant fix and can affect ordering and resource usage.</li>
+            </ul>
+            <h5 class="text-warning">5. Storage and cost</h5>
+            <p>
+              Kafka retains data on disk, so large retention periods, replication factors, backups, cross-region replication,
+              and high partition counts consume substantial disk and network capacity. Keeping every event forever is usually
+              more expensive than storing the system of record in a database or object store.
+            </p>
+            <h5 class="text-warning">6. Not ideal for request-response</h5>
+            <p>
+              Kafka is asynchronous by design. It is a poor fit when a caller needs a quick synchronous answer, simple CRUD,
+              low-volume point-to-point communication, or a direct validation error. REST or gRPC is usually clearer for those
+              cases.
+            </p>
+            <h5 class="text-warning">7. Hot partitions and uneven load</h5>
+            <p>
+              A poor message key can send most traffic to one partition while other partitions are idle. A popular customer,
+              tenant, or product can create a hot partition. Changing the key may improve distribution but can sacrifice
+              per-key ordering or require a new topic and migration strategy.
+            </p>
+            <h5 class="text-warning">8. Schema and compatibility responsibility</h5>
+            <p>
+              Producers and consumers often release independently. Renaming or removing a field can break older consumers,
+              so teams need schema versioning, compatibility rules, a schema registry, and a deprecation process. Event
+              contracts are harder to change than a private method or database table.
+            </p>
+            <h5 class="text-warning">9. Debugging and business consistency</h5>
+            <p>
+              An event may be delayed, retried, processed out of order across keys, or sent to a dead-letter topic. Debugging
+              requires correlation IDs, TraceIds, offset and partition information, consumer-lag dashboards, and replay
+              procedures. Kafka also does not automatically make a database update and event publication atomic; use an
+              outbox or a carefully designed transaction boundary for that problem.
+            </p>
+            <h5 class="text-warning">When should Kafka not be the first choice?</h5>
+            <ul>
+              <li>A small application needs simple background jobs with no replay or very high throughput.</li>
+              <li>The caller requires an immediate response rather than eventual processing.</li>
+              <li>The workflow requires strict global ordering or a simple single-record transaction.</li>
+              <li>The team cannot operate or monitor a distributed streaming platform and no managed Kafka service is available.</li>
+              <li>A task is better represented by a task queue with visibility timeout and per-message acknowledgement.</li>
+            </ul>
+            <p>
+              <strong>Interview answer:</strong> Kafka provides high throughput and replayability, but it adds operational
+              complexity, partition-based ordering limits, consumer-lag and rebalance behavior, duplicate-processing concerns,
+              storage cost, schema-management work, and eventual consistency. I choose it when durable event streaming and
+              independent consumers justify that complexity, and I use idempotent consumers, observability, schema evolution,
+              partition planning, and managed operations to control the risks.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaAutoscalingTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaAutoscalingTopBody">Does Kafka support autoscaling?</button>
+        </h2>
+        <div id="kafkaAutoscalingTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Kafka does not automatically scale every part of the system by itself. Autoscaling depends on what is being
+              scaled: consumer instances can scale based on lag, producers can scale as application instances increase,
+              and some managed Kafka services can scale broker capacity or storage. Kafka partitions and broker topology
+              still require capacity planning and controlled changes.
+            </p>
+            <h5 class="text-warning">What can scale?</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Component</th><th>How scaling works</th></tr></thead><tbody><tr><td>Consumers</td><td>Scale application instances using lag, CPU, or processing latency. One partition is assigned to only one consumer in a group.</td></tr><tr><td>Producers</td><td>Scale producer application instances behind a load balancer; Kafka distributes writes across partitions.</td></tr><tr><td>Partitions</td><td>Increase manually or through an approved automation process. They cannot normally be decreased.</td></tr><tr><td>Brokers</td><td>Add brokers and rebalance partition replicas; managed services may offer capacity autoscaling depending on the provider.</td></tr><tr><td>Storage</td><td>Cloud-managed Kafka may expand storage automatically; self-managed clusters need disk planning or automation.</td></tr></tbody></table>
+            <h5 class="text-warning">Consumer autoscaling example in Kubernetes</h5>
+            <p>
+              Suppose a topic has 12 partitions and the consumer group has 3 pods. Each pod receives about 4 partitions. If
+              lag continuously increases, an autoscaler can increase the deployment to 6 pods, and Kafka rebalances roughly
+              2 partitions per pod. Scaling beyond 12 active consumers does not increase useful parallelism because extra
+              consumers remain idle.
+            </p>
+            <pre><code class="language-yaml">apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: payment-consumer-scaler
+spec:
+  scaleTargetRef:
+    name: payment-consumer
+  minReplicaCount: 2
+  maxReplicaCount: 12
+  triggers:
+    - type: kafka
+      metadata:
+        bootstrapServers: kafka:9092
+        consumerGroup: payment-group
+        topic: payment-events
+        lagThreshold: "1000"
+        activationLagThreshold: "100"</code></pre>
+            <p>
+              KEDA or an HPA-style controller observes consumer lag and changes the number of pods. When lag falls, it can
+              scale down to the minimum. Configure cooldowns and stabilization windows so temporary spikes do not cause
+              constant scaling and rebalancing.
+            </p>
+            <h5 class="text-warning">Broker scaling</h5>
+            <p>
+              Adding a broker does not instantly move all existing data to it. The cluster must reassign and replicate
+              partitions, which consumes network and disk I/O. Scale brokers before the cluster reaches sustained resource
+              limits, then monitor replication lag, disk usage, request latency, and under-replicated partitions.
+            </p>
+            <h5 class="text-warning">Important limitations</h5>
+            <ul>
+              <li>Consumer autoscaling cannot create more useful work than the topic's partition count.</li>
+              <li>Adding partitions can change key-to-partition mapping and may affect per-key ordering, so do it deliberately.</li>
+              <li>Consumer rebalancing briefly changes assignments and can increase processing latency.</li>
+              <li>Scale consumers only when processing capacity is available; otherwise a slow database will remain the bottleneck.</li>
+              <li>Use idempotent consumers because rebalances, crashes, and retries can cause duplicate processing.</li>
+              <li>Kafka does not automatically increase partitions just because consumer lag rises in a standard self-managed setup.</li>
+            </ul>
+            <p>
+              <strong>Interview answer:</strong> Kafka consumer applications can autoscale based on consumer lag using KEDA,
+              HPA, or a cloud-native controller. Brokers and storage may autoscale in managed offerings, while partitions
+              normally require planned expansion. I set minimum and maximum replicas, keep consumer count at or below useful
+              partition parallelism, protect the downstream database, and monitor lag, rebalances, throughput, and broker health.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="springboot">
+        <h2 class="accordion-header" id="springBatchSixHoursToOneTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#springBatchSixHoursToOneTopBody">Spring Batch job takes six hours but must finish in one hour: how do you optimize it?</button>
+        </h2>
+        <div id="springBatchSixHoursToOneTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              I would not immediately add threads. First measure where the six hours are spent, then remove the bottleneck
+              and parallelize only the independent work. A one-hour target needs roughly six times the current throughput,
+              but the real limit may be the database, external APIs, CPU, disk, or lock contention.
+            </p>
+            <h5 class="text-warning">1. Establish a baseline</h5>
+            <ul>
+              <li>Measure read time, processing time, write time, commit time, queue wait, and each step's throughput.</li>
+              <li>Check CPU, heap/GC, disk I/O, database CPU, slow queries, connection-pool usage, locks, and external-call latency.</li>
+              <li>Use Spring Batch step metrics, SQL execution plans, JFR, database monitoring, and representative test data.</li>
+              <li>Confirm whether the job is sequential because of design or because a hidden shared resource serializes it.</li>
+            </ul>
+            <h5 class="text-warning">2. Optimize the single-threaded path first</h5>
+            <pre><code class="language-java">// Prefer paging and JDBC batching for a large relational data set.
+JdbcPagingItemReader&lt;Order&gt; reader = new JdbcPagingItemReaderBuilder&lt;Order&gt;()
+    .name("orderReader")
+    .dataSource(dataSource)
+    .pageSize(1000)
+    .queryProvider(queryProvider)
+    .rowMapper(orderRowMapper)
+    .build();
+
+JdbcBatchItemWriter&lt;OrderSummary&gt; writer =
+    new JdbcBatchItemWriterBuilder&lt;OrderSummary&gt;()
+        .dataSource(dataSource)
+        .sql("update order_summary set total = :total where id = :id")
+        .beanMapped()
+        .build();</code></pre>
+            <ul>
+              <li>Use <code>JdbcPagingItemReader</code> or a cursor reader instead of loading all rows into memory.</li>
+              <li>Use a suitable chunk size, JDBC batch writes, prepared statements, and one transaction per chunk.</li>
+              <li>Add or correct indexes for the reader's filter, sort, and join columns; avoid N+1 queries.</li>
+              <li>Fetch only required columns, avoid unnecessary object mapping, and move set-based transformations into SQL when appropriate.</li>
+              <li>Remove avoidable remote calls from the item loop or batch them with a bounded concurrency limit.</li>
+            </ul>
+            <h5 class="text-warning">3. Partition independent data</h5>
+            <p>
+              If records can be processed independently, split the input into disjoint partitions, such as customer ranges,
+              date ranges, or hash buckets. Each worker reads and writes only its own partition, so workers do not duplicate
+              work or update the same rows concurrently.
+            </p>
+            <pre><code class="language-java">@Bean
+Step masterStep(JobRepository repository, Step workerStep,
+                TaskExecutor batchExecutor) {
+    return new StepBuilder("masterStep", repository)
+        .partitioner("workerStep", orderPartitioner())
+        .step(workerStep)
+        .partitionHandler(new TaskExecutorPartitionHandler() {{
+            setTaskExecutor(batchExecutor);
+            setStep(workerStep);
+            setGridSize(8);
+        }})
+        .build();
+}
+
+@Bean
+TaskExecutor batchExecutor() {
+    ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+    executor.setCorePoolSize(8);
+    executor.setMaxPoolSize(8);
+    executor.setQueueCapacity(0);
+    executor.initialize();
+    return executor;
+}</code></pre>
+            <p>
+              For example, an eight-way partition can process customer ID ranges in parallel. Start with a small grid size,
+              test throughput, and increase it only while the database and downstream systems remain healthy. In a cluster,
+              use remote partitioning or remote chunking with a durable broker so multiple worker instances can scale out.
+            </p>
+            <h5 class="text-warning">4. Tune safely</h5>
+            <ul>
+              <li>Choose worker concurrency from the smallest capacity among CPU, database connections, database write throughput, and downstream rate limits.</li>
+              <li>Do not configure 50 worker threads against a database that can handle only 10 useful concurrent operations.</li>
+              <li>Increase chunk size only after measuring transaction duration, lock time, rollback cost, and memory usage.</li>
+              <li>Configure retry and skip policies for transient failures, but send permanently bad records to a review/DLQ path.</li>
+              <li>Make processing idempotent using a business key, upsert, processed-record table, or safe restart state.</li>
+              <li>Use checkpoints and restartable steps so a failed run does not restart six hours of work.</li>
+            </ul>
+            <h5 class="text-warning">Example production plan</h5>
+            <p>
+              If profiling shows 80% of the time is spent reading and updating independent orders, I would add the required
+              index, switch to paging plus JDBC batch writes, then partition by customer hash into eight workers. I would
+              load-test with production-like data, compare records-per-second and database saturation, and use autoscaling
+              only if the worker architecture and database capacity support it. I would verify totals, duplicates, restart
+              behavior, and reconciliation before enabling the faster schedule.
+            </p>
+            <p>
+              <strong>Interview answer:</strong> profile first, optimize queries and batch I/O, partition independent work,
+              run bounded parallel workers, and protect the database with connection limits and backpressure. The goal is
+              not merely to create more threads; it is to increase end-to-end throughput without compromising correctness.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaConsumerTraceIdTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaConsumerTraceIdTopBody">How do you maintain TraceId when Service C is a Kafka consumer?</button>
+        </h2>
+        <div id="kafkaConsumerTraceIdTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              A Kafka consumer does not receive HTTP headers, so the producer must place the trace context in Kafka
+              record headers. The consumer extracts that context and creates a consumer span whose parent is the producer
+              span. The TraceId therefore remains the same across Service A -&gt; Service B -&gt; Kafka -&gt; Service C.
+            </p>
+            <h5 class="text-warning">Clear architecture example</h5>
+            <p>
+              Service A receives an HTTP request with <code>TraceId = ABC123</code>. It calls Service B, and the trace
+              context travels in HTTP propagation headers. Service B publishes an order event. Kafka carries the tracing
+              context in record headers, and Service C extracts it and continues the same distributed trace.
+            </p>
+            <pre><code class="language-text">Service A: HTTP request, TraceId = ABC123
+    -&gt; Service B: REST call with trace context
+    -&gt; Kafka: order event + trace context headers
+    -&gt; Service C: extracts context and continues TraceId = ABC123</code></pre>
+            <h5 class="text-warning">Simplified manual implementation</h5>
+            <pre><code class="language-java">ProducerRecord&lt;String, String&gt; record =
+    new ProducerRecord&lt;&gt;("orders", orderId, message);
+
+// Simplified log-correlation example only.
+String traceId = MDC.get("traceId");
+if (traceId != null) {
+    record.headers().add("traceId",
+        traceId.getBytes(StandardCharsets.UTF_8));
+}
+kafkaTemplate.send(record);</code></pre>
+            <pre><code class="language-java">@KafkaListener(topics = "orders")
+public void consume(ConsumerRecord&lt;String, String&gt; record) {
+    Header header = record.headers().lastHeader("traceId");
+    String traceId = header == null ? null :
+        new String(header.value(), StandardCharsets.UTF_8);
+    try {
+        if (traceId != null) MDC.put("traceId", traceId);
+        log.info("Processing Kafka message");
+    } finally {
+        MDC.clear(); // prevent leakage to the next record
+    }
+}</code></pre>
+            <p>
+              This manual version explains log correlation, but it copies only a string. It does not propagate the complete
+              span context, sampling decision, baggage, or parent-child relationship. Production tracing should use automatic
+              instrumentation instead.
+            </p>
+            <h5 class="text-warning">Preferred Spring Kafka configuration</h5>
+            <pre><code class="language-yaml">spring:
+  kafka:
+    template:
+      observation-enabled: true
+    listener:
+      observation-enabled: true</code></pre>
+            <p>
+              With Micrometer Tracing and the appropriate Kafka observation/tracing dependencies configured, the producer
+              adds propagation headers such as W3C <code>traceparent</code>. The listener extracts them, creates a consumer
+              span, and makes the span context available to logs and instrumented downstream clients.
+            </p>
+            <pre><code class="language-java">@KafkaListener(topics = "payment-events", groupId = "notification-service")
+public void consume(PaymentEvent event) {
+    // Current span/TraceId is active here.
+    log.info("Processing payment event for orderId={}", event.orderId());
+    emailClient.sendReceipt(event); // child span continues the same trace
+}</code></pre>
+            <p>
+              The consumer should not trust a TraceId from the message body or invent a new one when a valid propagated
+              context exists. If a message was produced without tracing headers, the consumer starts a new root trace and
+              should log that correlation limitation.
+            </p>
+            <h5 class="text-warning">Manual fallback for legacy producers</h5>
+            <pre><code class="language-java">// Conceptual example: use the tracing library's propagator,
+// not a shared static variable or MDC alone.
+ProducerRecord&lt;String, PaymentEvent&gt; record = new ProducerRecord&lt;&gt;(
+    "payment-events", event.orderId(), event);
+tracer.propagator().inject(
+    tracer.currentTraceContext().context(),
+    record.headers(),
+    (headers, key, value) -&gt; headers.add(key, value.getBytes(StandardCharsets.UTF_8)));
+kafkaTemplate.send(record);</code></pre>
+            <p>
+              The exact propagator API depends on the Micrometer Tracing bridge and version. Prefer automatic Spring Kafka
+              instrumentation so header formats remain compatible across services and languages.
+            </p>
+            <h5 class="text-warning">Retries, DLT, and listener threads</h5>
+            <ul>
+              <li>Configure retry and dead-letter publishing to copy tracing headers; otherwise the retry may appear as an unrelated trace.</li>
+              <li>Use the instrumented listener container rather than manually creating a thread or using the common pool.</li>
+              <li>If the listener starts an <code>@Async</code> task, use <code>ContextPropagatingTaskDecorator</code> on that executor too.</li>
+              <li>Do not use only <code>MDC.get("traceId")</code> to propagate tracing; MDC is for logging and may not contain the complete span context.</li>
+              <li>For long-running processing, the consumer span may be ended after the record is acknowledged while the business operation is represented by a child/internal span.</li>
+            </ul>
+            <h5 class="text-warning">Flow</h5>
+            <p>
+              <code>HTTP request (TraceId T1)</code> -&gt; <code>Service B producer span</code> -&gt;
+              <code>Kafka headers: traceparent(T1)</code> -&gt; <code>Service C consumer span(T1)</code> -&gt;
+              <code>downstream call child span(T1)</code>.
+            </p>
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p>
+              If Service C is a Kafka consumer, I propagate the complete tracing context through Kafka message headers
+              instead of HTTP headers. The producer injects the context, Kafka transports it, and the consumer extracts it
+              and creates a child span under the same distributed TraceId. In production I use Micrometer Tracing or
+              OpenTelemetry Kafka instrumentation so W3C context such as <code>traceparent</code> is propagated
+              automatically. This lets me correlate logs and follow the complete flow across REST calls and asynchronous
+              Kafka processing.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="asyncTraceIdPropagationTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#asyncTraceIdPropagationTopBody">How do you propagate TraceId when calling a service using @Async?</button>
+        </h2>
+        <div id="asyncTraceIdPropagationTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <code>@Async</code> runs work on another thread. Trace context is commonly stored in thread-local state,
+              such as MDC, so it does not automatically move from the request thread to the async executor thread. If it
+              is not propagated, logs from the async work have no TraceId and an outgoing call may start an unrelated trace.
+            </p>
+            <h5 class="text-warning">Recommended Spring Boot approach</h5>
+            <p>
+              Use Micrometer Tracing with an instrumented HTTP client and a context-propagating task executor. The tracing
+              library creates or continues the current span, while the executor copies the context to the worker thread.
+            </p>
+            <pre><code class="language-java">@Configuration
+@EnableAsync
+class AsyncConfig {
+    @Bean(name = "applicationTaskExecutor")
+    TaskExecutor applicationTaskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(10);
+        executor.setMaxPoolSize(50);
+        executor.setQueueCapacity(500);
+        executor.setTaskDecorator(new ContextPropagatingTaskDecorator());
+        executor.initialize();
+        return executor;
+    }
+}</code></pre>
+            <pre><code class="language-java">@Service
+class OrderService {
+    private final PaymentClient paymentClient;
+
+    @Async("applicationTaskExecutor")
+    public CompletableFuture&lt;Void&gt; notifyPayment() {
+        paymentClient.charge(); // instrumented client carries trace context
+        return CompletableFuture.completedFuture(null);
+    }
+}</code></pre>
+            <p>
+              In Spring Boot 3, <code>ContextPropagatingTaskDecorator</code> propagates Micrometer context, including
+              tracing context and other registered context such as observation data. Configure Micrometer Tracing and an
+              exporter such as OTLP or Zipkin; do not manually create a TraceId for every async task.
+            </p>
+            <h5 class="text-warning">Older MDC-only approach</h5>
+            <pre><code class="language-java">class MdcTaskDecorator implements TaskDecorator {
+    @Override
+    public Runnable decorate(Runnable task) {
+        Map&lt;String, String&gt; captured = MDC.getCopyOfContextMap();
+        return () -&gt; {
+            Map&lt;String, String&gt; previous = MDC.getCopyOfContextMap();
+            try {
+                if (captured == null) MDC.clear();
+                else MDC.setContextMap(captured);
+                task.run();
+            } finally {
+                if (previous == null) MDC.clear();
+                else MDC.setContextMap(previous);
+            }
+        };
+    }
+}</code></pre>
+            <p>
+              An MDC decorator is useful for log correlation in legacy applications, but copying only an MDC value does not
+              propagate the complete Micrometer tracing scope. Always clear or restore the worker thread in a
+              <code>finally</code> block to prevent one request's TraceId leaking into another request.
+            </p>
+            <h5 class="text-warning">Important distinctions</h5>
+            <ul>
+              <li>TraceId identifies the overall distributed request; SpanId identifies one operation, such as an async task.</li>
+              <li>For HTTP calls, use an instrumented <code>RestClient</code>, <code>WebClient</code>, or Feign client so the propagation headers are injected automatically.</li>
+              <li>Do not pass a TraceId through a shared static variable; it is unsafe with concurrent requests.</li>
+              <li>Do not submit work to the common pool or a manually created executor unless its context propagation is configured.</li>
+              <li>For fire-and-forget work that may outlive the request, consider publishing an event and starting a new consumer span instead of keeping the request span open.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="java8">
+        <h2 class="accordion-header" id="collectorsPartitioningByTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#collectorsPartitioningByTopBody">Collectors.partitioningBy(): overloads and stream examples</button>
+        </h2>
+        <div id="collectorsPartitioningByTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <code>partitioningBy()</code> divides stream elements into exactly two groups using a predicate:
+              <code>true</code> for matching elements and <code>false</code> for non-matching elements. It has two overloads,
+              not constructors, and returns a <code>Map&lt;Boolean, ...&gt;</code>.
+            </p>
+            <h5 class="text-warning">1. partitioningBy(predicate)</h5>
+            <pre><code class="language-java">List&lt;Integer&gt; numbers = Arrays.asList(1, 2, 3, 4, 5, 6);
+
+Map&lt;Boolean, List&lt;Integer&gt;&gt; evenAndOdd = numbers.stream()
+    .collect(Collectors.partitioningBy(number -&gt; number % 2 == 0));
+
+// true  -&gt; [2, 4, 6]
+// false -&gt; [1, 3, 5]</code></pre>
+            <p>
+              The predicate <code>number % 2 == 0</code> is evaluated for each element. A matching element goes into the
+              <code>true</code> list; every other element goes into the <code>false</code> list.
+            </p>
+            <h5 class="text-warning">2. partitioningBy(predicate, downstream)</h5>
+            <pre><code class="language-java">List&lt;Employee&gt; employees = Arrays.asList(
+    new Employee(101, "Asha", "IT", 90000),
+    new Employee(102, "Ravi", "HR", 70000),
+    new Employee(103, "Meera", "IT", 95000));
+
+Map&lt;Boolean, Long&gt; salaryCounts = employees.stream()
+    .collect(Collectors.partitioningBy(
+        employee -&gt; employee.getSalary() &gt;= 90000,
+        Collectors.counting()));
+
+// true -&gt; 2, false -&gt; 1</code></pre>
+            <p>
+              The downstream collector controls the value for each partition. The same overload can calculate sums,
+              averages, names, maximums, or nested groups.
+            </p>
+            <pre><code class="language-java">Map&lt;Boolean, List&lt;String&gt;&gt; namesBySalaryBand = employees.stream()
+    .collect(Collectors.partitioningBy(
+        employee -&gt; employee.getSalary() &gt;= 90000,
+        Collectors.mapping(Employee::getName, Collectors.toList())));
+
+Map&lt;Boolean, Optional&lt;Employee&gt;&gt; highestPaidInEachPartition = employees.stream()
+    .collect(Collectors.partitioningBy(
+        employee -&gt; employee.getSalary() &gt;= 90000,
+        Collectors.maxBy(Comparator.comparingInt(Employee::getSalary))));</code></pre>
+            <h5 class="text-warning">Real-world Spring Security-style example</h5>
+            <pre><code class="language-java">List&lt;User&gt; users = loadUsers();
+
+Map&lt;Boolean, List&lt;User&gt;&gt; activeAndInactiveUsers = users.stream()
+    .collect(Collectors.partitioningBy(User::isActive));
+
+List&lt;User&gt; activeUsers = activeAndInactiveUsers.get(true);
+List&lt;User&gt; inactiveUsers = activeAndInactiveUsers.get(false);</code></pre>
+            <p>
+              This is useful for separating active and inactive accounts, authorized and unauthorized requests, valid and
+              invalid records, or orders above and below a payment threshold.
+            </p>
+            <h5 class="text-warning">partitioningBy vs groupingBy</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Concern</th><th>partitioningBy</th><th>groupingBy</th></tr></thead><tbody><tr><td>Classifier</td><td>Predicate returning boolean</td><td>Any function returning a key</td></tr><tr><td>Number of groups</td><td>Exactly two: <code>true</code> and <code>false</code></td><td>Any number of keys</td></tr><tr><td>Return type</td><td><code>Map&lt;Boolean, ...&gt;</code></td><td><code>Map&lt;K, ...&gt;</code></td></tr><tr><td>Best use</td><td>Pass/fail or yes/no split</td><td>Department, country, status, or category grouping</td></tr></tbody></table>
+            <h5 class="text-warning">Interview points</h5>
+            <ul>
+              <li>The predicate is evaluated once per stream element.</li>
+              <li>The result generally contains both boolean keys, even when one partition is empty.</li>
+              <li>Use the downstream overload when you need counts, sums, averages, mapped values, or nested results.</li>
+              <li>Use <code>groupingBy()</code> instead when you need more than two categories.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="java8">
+        <h2 class="accordion-header" id="collectorsGroupingByOverloadsTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#collectorsGroupingByOverloadsTopBody">Collectors.groupingBy(): all overloads and stream examples</button>
+        </h2>
+        <div id="collectorsGroupingByOverloadsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <code>groupingBy()</code> groups stream elements by a classifier function. It has three overloads, not
+              constructors. The first creates <code>Map&lt;K, List&lt;T&gt;&gt;</code>; the other two let you specify the
+              downstream result and the map implementation.
+            </p>
+            <h5 class="text-warning">Simple example: group words by their first letter</h5>
+            <pre><code class="language-java">List&lt;String&gt; words = Arrays.asList("apple", "ant", "banana", "boat");
+
+Map&lt;Character, List&lt;String&gt;&gt; wordsByFirstLetter = words.stream()
+    .collect(Collectors.groupingBy(word -&gt; word.charAt(0)));
+
+// {a=[apple, ant], b=[banana, boat]}</code></pre>
+            <p>
+              Here, <code>word -&gt; word.charAt(0)</code> is the classifier. It produces the map key, and
+              <code>groupingBy()</code> automatically collects all matching words into that key's list.
+            </p>
+            <pre><code class="language-java">List&lt;Employee&gt; employees = Arrays.asList(
+    new Employee(101, "Asha", "IT", 90000),
+    new Employee(102, "Ravi", "HR", 70000),
+    new Employee(103, "Meera", "IT", 95000),
+    new Employee(104, "John", "HR", 72000));</code></pre>
+            <h5 class="text-warning">1. groupingBy(classifier)</h5>
+            <pre><code class="language-java">Map&lt;String, List&lt;Employee&gt;&gt; employeesByDepartment = employees.stream()
+    .collect(Collectors.groupingBy(Employee::getDepartment));</code></pre>
+            <p>
+              The classifier returns the key, such as <code>IT</code> or <code>HR</code>. The default downstream
+              collector is <code>toList()</code>, so every key maps to a list of employees.
+            </p>
+            <h5 class="text-warning">2. groupingBy(classifier, downstream)</h5>
+            <pre><code class="language-java">Map&lt;String, Long&gt; employeeCount = employees.stream()
+    .collect(Collectors.groupingBy(
+        Employee::getDepartment, Collectors.counting()));
+
+Map&lt;String, Integer&gt; salaryTotal = employees.stream()
+    .collect(Collectors.groupingBy(
+        Employee::getDepartment,
+        Collectors.summingInt(Employee::getSalary)));
+
+Map&lt;String, Double&gt; averageSalary = employees.stream()
+    .collect(Collectors.groupingBy(
+        Employee::getDepartment,
+        Collectors.averagingInt(Employee::getSalary)));
+
+Map&lt;String, List&lt;String&gt;&gt; namesByDepartment = employees.stream()
+    .collect(Collectors.groupingBy(
+        Employee::getDepartment,
+        Collectors.mapping(Employee::getName, Collectors.toList())));</code></pre>
+            <h5 class="text-warning">3. groupingBy(classifier, mapFactory, downstream)</h5>
+            <pre><code class="language-java">Map&lt;String, Long&gt; sortedCounts = employees.stream()
+    .collect(Collectors.groupingBy(
+        Employee::getDepartment,
+        TreeMap::new,
+        Collectors.counting()));</code></pre>
+            <p>
+              The second argument is a map supplier. Use <code>LinkedHashMap::new</code> to preserve encounter order,
+              <code>TreeMap::new</code> to sort keys, or another suitable <code>Map</code> implementation.
+            </p>
+            <h5 class="text-warning">Useful downstream collectors</h5>
+            <pre><code class="language-java">Map&lt;String, Optional&lt;Employee&gt;&gt; highestPaid = employees.stream()
+    .collect(Collectors.groupingBy(
+        Employee::getDepartment,
+        Collectors.maxBy(Comparator.comparingInt(Employee::getSalary))));
+
+Map&lt;String, Employee&gt; highestPaidOrNull = employees.stream()
+    .collect(Collectors.groupingBy(
+        Employee::getDepartment,
+        Collectors.collectingAndThen(
+            Collectors.maxBy(Comparator.comparingInt(Employee::getSalary)),
+            optional -&gt; optional.orElse(null))));
+
+Map&lt;String, Map&lt;String, List&lt;Employee&gt;&gt;&gt; byDepartmentAndBand = employees.stream()
+    .collect(Collectors.groupingBy(
+        Employee::getDepartment,
+        Collectors.groupingBy(employee -&gt;
+            employee.getSalary() &gt;= 90000 ? "HIGH" : "STANDARD")));</code></pre>
+            <h5 class="text-warning">groupingByConcurrent()</h5>
+            <pre><code class="language-java">ConcurrentMap&lt;String, Long&gt; concurrentCounts = employees.parallelStream()
+    .collect(Collectors.groupingByConcurrent(
+        Employee::getDepartment, Collectors.counting()));</code></pre>
+            <p>
+              <code>groupingByConcurrent()</code> has the same three overload shapes, returns a
+              <code>ConcurrentMap</code>, and is designed for parallel collection. Use it only when the workload is
+              large enough to benefit from parallelism; for ordinary streams, <code>groupingBy()</code> is often simpler.
+            </p>
+            <h5 class="text-warning">Interview points</h5>
+            <ul>
+              <li>The classifier decides the group key; the downstream collector decides the value for each key.</li>
+              <li>If no downstream collector is supplied, the value is <code>List&lt;T&gt;</code>.</li>
+              <li>Use <code>groupingBy()</code> for one key to many values and <code>toMap()</code> when each key should resolve to one value with an explicit merge rule.</li>
+              <li>Null classifier keys are not supported by the standard implementation; map nulls explicitly before grouping if required.</li>
+              <li>These collectors do not make mutable employee objects or downstream values immutable or automatically thread-safe.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="java8">
+        <h2 class="accordion-header" id="collectorsToMapOverloadsTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#collectorsToMapOverloadsTopBody">Collectors.toMap(): all overloads with stream examples</button>
+        </h2>
+        <div id="collectorsToMapOverloadsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <code>Collectors.toMap()</code> does not have constructors; it has three main overloads. All convert stream
+              elements into a <code>Map</code>. The first overload is safe only when keys are unique. If duplicate keys are
+              possible, provide a merge function explicitly.
+            </p>
+            <pre><code class="language-java">List&lt;Employee&gt; employees = List.of(
+    new Employee(101, "Asha", "IT", 90000),
+    new Employee(102, "Ravi", "HR", 70000),
+    new Employee(103, "Meera", "IT", 95000));</code></pre>
+            <h5 class="text-warning">1. keyMapper and valueMapper</h5>
+            <pre><code class="language-java">Map&lt;Integer, String&gt; namesById = employees.stream()
+    .collect(Collectors.toMap(
+        Employee::getId,       // keyMapper
+        Employee::getName));   // valueMapper</code></pre>
+            <p>
+              Result: <code>{101=Asha, 102=Ravi, 103=Meera}</code>. The default map is normally a
+              <code>HashMap</code>; do not depend on iteration order. A duplicate key throws
+              <code>IllegalStateException</code>.
+            </p>
+            <h5 class="text-warning">2. keyMapper, valueMapper, and mergeFunction</h5>
+            <pre><code class="language-java">Map&lt;String, Integer&gt; highestSalaryByDepartment = employees.stream()
+    .collect(Collectors.toMap(
+        Employee::getDepartment,
+        Employee::getSalary,
+        Integer::max));       // choose the higher value on duplicate key</code></pre>
+            <p>
+              Both IT employees map to the same key, so the merge function combines their salaries and keeps
+              <code>95000</code>. Other merge strategies include <code>(oldValue, newValue) -&gt; oldValue</code>,
+              <code>(oldValue, newValue) -&gt; newValue</code>, or combining two objects into one.
+            </p>
+            <h5 class="text-warning">3. keyMapper, valueMapper, mergeFunction, and mapSupplier</h5>
+            <pre><code class="language-java">Map&lt;String, List&lt;String&gt;&gt; namesByDepartment = employees.stream()
+    .collect(Collectors.toMap(
+        Employee::getDepartment,
+        employee -&gt; new ArrayList&lt;&gt;(List.of(employee.getName())),
+        (left, right) -&gt; {
+            left.addAll(right);
+            return left;
+        },
+        LinkedHashMap::new)); // preserve first-seen department order</code></pre>
+            <p>
+              The fourth argument supplies the map implementation. Use <code>LinkedHashMap::new</code> for encounter order,
+              <code>TreeMap::new</code> for sorted keys, or a suitable concurrent map supplier when the collection is
+              intentionally designed for parallel processing.
+            </p>
+            <h5 class="text-warning">More practical examples</h5>
+            <pre><code class="language-java">// Keep the last employee when IDs are duplicated
+Map&lt;Integer, Employee&gt; lastEmployeeById = employees.stream()
+    .collect(Collectors.toMap(
+        Employee::getId,
+        Function.identity(),
+        (oldEmployee, newEmployee) -&gt; newEmployee));
+
+// Sort the result by department name
+Map&lt;String, Integer&gt; salaryByDepartment = employees.stream()
+    .collect(Collectors.toMap(
+        Employee::getDepartment,
+        Employee::getSalary,
+        Integer::max,
+        TreeMap::new));
+
+// Build an immutable result after collecting
+Map&lt;Integer, String&gt; immutableNames = employees.stream()
+    .collect(Collectors.collectingAndThen(
+        Collectors.toMap(Employee::getId, Employee::getName),
+        Map::copyOf));</code></pre>
+            <h5 class="text-warning">Important interview points</h5>
+            <ul>
+              <li>The key mapper creates the map key; the value mapper creates its value.</li>
+              <li>Duplicate keys require a merge function, otherwise collection fails with <code>IllegalStateException</code>.</li>
+              <li>The merge function must return the value that remains in the map; it should be associative for parallel streams.</li>
+              <li><code>toMap()</code> is not automatically a thread-safe map and does not make mutable values thread-safe.</li>
+              <li>Use <code>groupingBy()</code> when one key naturally maps to many values; use <code>toMap()</code> when you control how duplicates are merged.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="springboot">
+        <h2 class="accordion-header" id="beanPostProcessorLifecycleTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#beanPostProcessorLifecycleTopBody">BeanPostProcessor vs @PostConstruct and @PreDestroy</button>
+        </h2>
+        <div id="beanPostProcessorLifecycleTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              These are Spring bean-lifecycle mechanisms, but they operate at different levels. Use
+              <code>@PostConstruct</code> and <code>@PreDestroy</code> for lifecycle work inside one bean. Use a
+              <code>BeanPostProcessor</code> when framework code must inspect, modify, wrap, or process many beans.
+            </p>
+            <h5 class="text-warning">@PostConstruct</h5>
+            <pre><code class="language-java">@Component
+class CacheLoader {
+    private final ProductRepository repository;
+
+    CacheLoader(ProductRepository repository) {
+        this.repository = repository;
+    }
+
+    @PostConstruct
+    void loadCache() {
+        // Dependencies have been injected and the bean is ready to initialize.
+    }
+}</code></pre>
+            <p>
+              Spring calls it once after dependency injection and before the bean is exposed for normal use. It is a
+              good fit for validating configuration or initializing resources owned by that bean. It should not perform
+              long blocking startup work unless that startup cost is intentional.
+            </p>
+            <h5 class="text-warning">@PreDestroy</h5>
+            <pre><code class="language-java">@Component
+class ReportWorker {
+    @PreDestroy
+    void stop() {
+        // Stop workers and release resources owned by this bean.
+    }
+}</code></pre>
+            <p>
+              Spring calls it during context shutdown for singleton beans. It is useful for closing application-managed
+              resources, stopping worker threads, and unregistering listeners. It is not guaranteed during an abrupt
+              process kill, such as a forced container termination.
+            </p>
+            <h5 class="text-warning">BeanPostProcessor</h5>
+            <pre><code class="language-java">@Component
+class TimingPostProcessor implements BeanPostProcessor {
+    @Override
+    public Object postProcessAfterInitialization(Object bean, String name) {
+        if (bean instanceof PaymentService) {
+            return new TimedPaymentService((PaymentService) bean);
+        }
+        return bean;
+    }
+}</code></pre>
+            <ul>
+              <li><code>postProcessBeforeInitialization</code> runs before initialization callbacks such as <code>@PostConstruct</code>.</li>
+              <li><code>postProcessAfterInitialization</code> runs after initialization callbacks and can return a proxy or replacement object.</li>
+              <li>It is commonly used internally for AOP proxies, annotation processing, dependency injection, and framework-wide customization.</li>
+              <li>Do not assume every dependency is fully initialized while a post-processor is running; early bean creation can occur.</li>
+            </ul>
+            <h5 class="text-warning">Typical order</h5>
+            <ol>
+              <li>Spring constructs the bean and injects its dependencies.</li>
+              <li><code>BeanPostProcessor.postProcessBeforeInitialization</code> runs.</li>
+              <li><code>@PostConstruct</code> runs through Spring's common annotation post-processor.</li>
+              <li><code>InitializingBean.afterPropertiesSet()</code> and a configured custom init method run, if present.</li>
+              <li><code>BeanPostProcessor.postProcessAfterInitialization</code> runs, often creating a proxy.</li>
+              <li>At shutdown, <code>@PreDestroy</code> runs before the singleton is destroyed.</li>
+            </ol>
+            <table class="table table-dark table-bordered"><thead><tr><th>Need</th><th>Preferred mechanism</th></tr></thead><tbody><tr><td>Initialize one bean after injection</td><td><code>@PostConstruct</code></td></tr><tr><td>Release one bean's resources</td><td><code>@PreDestroy</code></td></tr><tr><td>Apply behavior to many beans</td><td><code>BeanPostProcessor</code></td></tr><tr><td>Wrap beans with logging, security, or transactions</td><td><code>BeanPostProcessor</code> or Spring AOP</td></tr></tbody></table>
+            <p>
+              In modern Spring applications, prefer <code>jakarta.annotation.PostConstruct</code> and
+              <code>jakarta.annotation.PreDestroy</code> for bean-local lifecycle callbacks. Use a post-processor only when
+              the behavior is cross-cutting or must be applied centrally to a group of beans.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="springboot">
+        <h2 class="accordion-header" id="autowiredVsResourceTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#autowiredVsResourceTopBody">@Autowired vs @Resource: what is the difference?</button>
+        </h2>
+        <div id="autowiredVsResourceTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Both annotations inject Spring-managed dependencies, but they use different default resolution rules.
+              <code>@Autowired</code> is Spring-specific and primarily resolves by type. <code>@Resource</code> is the
+              Jakarta standard annotation and primarily resolves by bean name.
+            </p>
+            <h5 class="text-warning">@Autowired: primarily by type</h5>
+            <pre><code class="language-java">@Service
+class OrderService {
+    private final PaymentClient paymentClient;
+
+    OrderService(@Autowired PaymentClient paymentClient) {
+        this.paymentClient = paymentClient;
+    }
+}</code></pre>
+            <ul>
+              <li>If exactly one <code>PaymentClient</code> bean exists, Spring injects it by type.</li>
+              <li>If multiple beans exist, use <code>@Primary</code> or <code>@Qualifier("stripeClient")</code>.</li>
+              <li>With one constructor, modern Spring can inject it without writing <code>@Autowired</code>.</li>
+              <li>It supports constructor, setter, and field injection, although constructor injection is preferred.</li>
+            </ul>
+            <pre><code class="language-java">@Autowired
+@Qualifier("stripeClient")
+private PaymentClient paymentClient;</code></pre>
+            <h5 class="text-warning">@Resource: primarily by name</h5>
+            <pre><code class="language-java">@Service
+class OrderService {
+    @Resource(name = "stripeClient")
+    private PaymentClient paymentClient;
+}</code></pre>
+            <ul>
+              <li>The explicit <code>name</code> is used to find the bean.</li>
+              <li>Without a name, the field or property name is used first; for example, <code>paymentClient</code>.</li>
+              <li>If name matching does not resolve the dependency, Spring may fall back to type matching.</li>
+              <li><code>@Resource</code> is commonly used on fields and setter methods; it is not the usual choice for constructor injection.</li>
+            </ul>
+            <h5 class="text-warning">Comparison</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Concern</th><th>@Autowired</th><th>@Resource</th></tr></thead><tbody><tr><td>Owner</td><td>Spring</td><td>Jakarta standard</td></tr><tr><td>Default lookup</td><td>By type</td><td>By name</td></tr><tr><td>Multiple implementations</td><td><code>@Qualifier</code> or <code>@Primary</code></td><td><code>name</code> attribute</td></tr><tr><td>Constructor injection</td><td>Recommended</td><td>Not the normal usage</td></tr></tbody></table>
+            <p>
+              Prefer constructor injection with no annotation, or <code>@Autowired</code> when multiple constructors need
+              disambiguation. Use <code>@Resource(name = "...")</code> when the bean name is the intended contract or when
+              maintaining code that follows Jakarta dependency-injection conventions. Do not mix annotations unnecessarily.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="springboot">
+        <h2 class="accordion-header" id="fieldVsConstructorDiTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#fieldVsConstructorDiTopBody">Field-level injection vs constructor injection: what is the difference?</button>
+        </h2>
+        <div id="fieldVsConstructorDiTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Field injection lets Spring create the object first and then set its private fields, usually through
+              reflection. Constructor injection passes required dependencies during construction, so the object is ready
+              and valid immediately.
+            </p>
+            <h5 class="text-warning">Field-level injection</h5>
+            <pre><code class="language-java">@Service
+class PaymentService {
+    @Autowired
+    private PaymentClient paymentClient;
+}</code></pre>
+            <ul>
+              <li>Spring assigns the field after construction; the dependency is hidden in the class definition.</li>
+              <li>The field cannot normally be <code>final</code>, and the object can temporarily exist without its dependency.</li>
+              <li>Unit tests need Spring or reflection/setter support to inject a mock.</li>
+              <li>It can hide circular dependencies and make lifecycle problems harder to see.</li>
+            </ul>
+            <h5 class="text-warning">Constructor injection</h5>
+            <pre><code class="language-java">@Service
+class PaymentService {
+    private final PaymentClient paymentClient;
+
+    PaymentService(PaymentClient paymentClient) {
+        this.paymentClient = paymentClient;
+    }
+}</code></pre>
+            <ul>
+              <li>Required dependencies are explicit and the class cannot be created in a partially initialized state.</li>
+              <li><code>final</code> fields support immutability and safer use by multiple threads.</li>
+              <li>Tests can instantiate the class directly with a mock or fake.</li>
+              <li>Missing beans and circular dependencies fail fast during startup instead of failing later.</li>
+            </ul>
+            <h5 class="text-warning">Comparison and recommendation</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Concern</th><th>Field injection</th><th>Constructor injection</th></tr></thead><tbody><tr><td>Required dependency</td><td>Hidden until Spring sets it</td><td>Explicit at construction</td></tr><tr><td>Immutability</td><td>Usually not <code>final</code></td><td>Supports <code>final</code></td></tr><tr><td>Testing</td><td>Needs container or reflection</td><td>Simple direct construction</td></tr><tr><td>Failure detection</td><td>Can fail after construction</td><td>Fails fast at startup</td></tr></tbody></table>
+            <p>
+              Prefer constructor injection for required dependencies in Spring Boot. For a genuinely optional dependency,
+              use <code>Optional&lt;T&gt;</code>, <code>ObjectProvider&lt;T&gt;</code>, a no-op implementation, or a clearly documented
+              setter. With one constructor, modern Spring does not require <code>@Autowired</code>.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="springboot">
+        <h2 class="accordion-header" id="constructorVsSetterDiTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#constructorVsSetterDiTopBody">What is the difference between setter injection and constructor injection?</button>
+        </h2>
+        <div id="constructorVsSetterDiTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Both are Spring dependency-injection styles. Constructor injection supplies dependencies when the object is
+              created; setter injection creates the bean first and supplies a dependency through a setter afterward. Use
+              constructor injection for required dependencies and setter injection mainly for genuinely optional or mutable
+              configuration dependencies.
+            </p>
+            <h5 class="text-warning">Constructor injection</h5>
+            <pre><code class="language-java">@Service
+class OrderService {
+    private final OrderRepository repository;
+    private final PaymentClient paymentClient;
+
+    OrderService(OrderRepository repository,
+                  PaymentClient paymentClient) {
+        this.repository = repository;
+        this.paymentClient = paymentClient;
+    }
+}</code></pre>
+            <ul><li>Dependencies are explicit and the object cannot be created in an invalid partially initialized state.</li><li>Fields can be <code>final</code>, supporting immutability and safer publication.</li><li>Tests can instantiate the class directly with mocks/fakes without starting Spring.</li><li>Missing required dependencies fail during application startup.</li><li>It exposes too many constructor parameters as a useful design signal that the class may have too many responsibilities.</li></ul>
+            <p>
+              If a class has one constructor, modern Spring can inject it without <code>@Autowired</code>. If there are
+              multiple constructors, annotate the one Spring should use or provide an unambiguous configuration.
+            </p>
+            <h5 class="text-warning">Setter injection</h5>
+            <pre><code class="language-java">@Component
+class ReportService {
+    private AuditPublisher auditPublisher;
+
+    @Autowired
+    public void setAuditPublisher(AuditPublisher auditPublisher) {
+        this.auditPublisher = auditPublisher;
+    }
+}</code></pre>
+            <ul><li>Useful for optional dependencies or properties that have a sensible default.</li><li>Can support changing a dependency after construction, though changing collaborators at runtime is usually undesirable.</li><li>Allows the object to be constructed with a no-argument constructor, but it can exist temporarily without required dependencies.</li><li>Fields cannot naturally be final, and direct unit tests must remember to call the setter.</li></ul>
+            <pre><code class="language-java">@Component
+class NotificationService {
+    private NotificationClient client = new NoOpNotificationClient();
+
+    @Autowired(required = false)
+    public void setClient(NotificationClient client) {
+        this.client = client;
+    }
+}</code></pre>
+            <h5 class="text-warning">Comparison</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Concern</th><th>Constructor injection</th><th>Setter injection</th></tr></thead><tbody><tr><td>Required dependency</td><td>Recommended</td><td>Can be forgotten until after creation</td></tr><tr><td>Immutability</td><td>Supports <code>final</code> fields</td><td>Dependency can be reassigned</td></tr><tr><td>Testing</td><td>Simple direct construction</td><td>Requires setter setup</td></tr><tr><td>Optional dependency</td><td>Use <code>Optional</code>, nullable contract, or a no-op implementation</td><td>Natural fit when documented clearly</td></tr><tr><td>Circular dependency</td><td>Fails fast, exposing the design problem</td><td>May sometimes allow creation, but usually hides the design problem</td></tr></tbody></table>
+            <h5 class="text-warning">Circular dependencies</h5>
+            <p>
+              Constructor injection exposes a cycle such as <code>A -&gt; B -&gt; A</code> during startup. Do not switch to
+              setter injection merely to hide it. Redesign the collaboration, extract a third service, publish an event, or
+              use a callback/port. A circular dependency often indicates that responsibilities are too tightly coupled.
+            </p>
+            <p>
+              Interview answer: “I prefer constructor injection for mandatory dependencies because it makes the contract
+              explicit, supports final fields, improves testability, and fails fast. I use setter injection only for
+              optional or deliberately replaceable dependencies, with a safe default and clear lifecycle expectations.”
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="springboot">
+        <h2 class="accordion-header" id="runtimeEncryptionStrategyTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#runtimeEncryptionStrategyTopBody">Two Encryption implementations exist, EncryptionX and EncryptionY. X is the default, but how do you switch to Y without restarting?</button>
+        </h2>
+        <div id="runtimeEncryptionStrategyTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Do not depend on <code>@Primary</code> for runtime switching; bean selection happens when the application
+              context is created. Register both implementations and inject a strategy registry or selector. The selector
+              reads a controlled feature/configuration value for each operation, with EncryptionX as the initial default.
+            </p>
+            <pre><code class="language-java">public interface Encryption {
+    String encrypt(String plaintext);
+    String decrypt(String ciphertext);
+}
+
+@Component("encryptionX")
+class EncryptionX implements Encryption { /* ... */ }
+
+@Component("encryptionY")
+class EncryptionY implements Encryption { /* ... */ }
+
+@Service
+class EncryptionSelector {
+    private final Map&lt;String, Encryption&gt; implementations;
+    private final AtomicReference&lt;String&gt; active =
+        new AtomicReference&lt;&gt;("encryptionX");
+
+    EncryptionSelector(Map&lt;String, Encryption&gt; implementations) {
+        this.implementations = implementations;
+    }
+
+    Encryption current() {
+        return implementations.get(active.get());
+    }
+
+    void switchTo(String name) {
+        if (!implementations.containsKey(name)) {
+            throw new IllegalArgumentException("Unknown encryption: " + name);
+        }
+        active.set(name); // atomic visibility for local threads
+    }
+}</code></pre>
+            <h5 class="text-warning">Single application instance</h5>
+            <p>
+              For one instance, expose a secured administrative operation or configuration refresh mechanism that changes
+              the selector atomically. Use <code>AtomicReference</code> or an immutable configuration snapshot so one
+              request never observes a partially updated state. Protect the operation with authentication, authorization,
+              audit logging, validation, and a safe default.
+            </p>
+            <pre><code class="language-java">@Service
+class EncryptionService {
+    private final EncryptionSelector selector;
+
+    String encrypt(String value) {
+        return selector.current().encrypt(value);
+    }
+}
+
+// Secured admin operation; not a public endpoint.
+@PostMapping("/internal/encryption/{name}")
+@PreAuthorize("hasAuthority('encryption:admin')")
+void switchEncryption(@PathVariable String name) {
+    selector.switchTo(name);
+}</code></pre>
+            <p>
+              A Spring Cloud Config/Actuator refresh or a feature-flag SDK can update the value without restarting, but the
+              refresh endpoint must be protected and the configuration source must be authoritative. A plain environment
+              variable cannot normally be changed inside a running process and should not be treated as a live switch.
+            </p>
+            <h5 class="text-warning">Multiple application instances</h5>
+            <p>
+              A local <code>AtomicReference</code> changes only one JVM. For multiple instances, store the active strategy in
+              a centralized feature-flag/configuration service and have every instance refresh it, or publish a config-change
+              event through Kafka/SNS/SQS. Each instance updates its local immutable snapshot atomically after validating
+              the version. Include a version or epoch so stale events cannot overwrite a newer decision.
+            </p>
+            <pre><code class="language-text">Admin changes encryption.strategy = Y, version=42
+        -&gt; centralized config/feature-flag store
+        -&gt; publish EncryptionStrategyChanged(version=42)
+        -&gt; instance A refreshes to Y
+        -&gt; instance B refreshes to Y
+        -&gt; instance C refreshes to Y
+
+Instances temporarily out of sync must be handled by compatibility logic.</code></pre>
+            <ul><li>Use polling with a short bounded interval, push events, or both; do not require a service restart.</li><li>Expose the active strategy/version as a safe metric and health detail, not encryption keys.</li><li>Use feature-flag targeting for gradual rollout: first internal users, then a percentage or tenant cohort.</li><li>Allow instant rollback to X through the same control plane.</li><li>Use audit history, approvals, optimistic version checks, and an emergency kill switch.</li></ul>
+            <h5 class="text-warning">Critical encryption caveat</h5>
+            <p>
+              Switching the active encryptor is not enough if existing ciphertext was created by X. Store an algorithm/key
+              version with every ciphertext, keep both implementations available for decryption, and usually write new data
+              with Y while reading old X data. Re-encrypt existing data gradually and only remove X after every old value has
+              been migrated and verified. Never rotate or expose keys through a feature flag; keep keys in KMS/Secrets
+              Manager and use key IDs/versioned envelopes.
+            </p>
+            <pre><code class="language-text">Ciphertext: {algorithm: X, keyId: key-17, payload: ...}
+
+Read: select decryptor from ciphertext.algorithm
+Write: use current strategy Y
+Migration: read with X -&gt; decrypt -&gt; encrypt with Y -&gt; verify -&gt; persist</code></pre>
+            <h5 class="text-warning">What if strict consistency is required?</h5>
+            <p>
+              A distributed rollout is eventually consistent for a short period unless the request path consults a strongly
+              consistent central store. For a security-critical cutover, use a versioned policy and reject or route requests
+              when an instance has not acknowledged the required version. For most services, dual decrypt support plus a
+              gradual feature-flag rollout gives availability and safe rollback without a restart.
+            </p>
+            <p>
+              Interview answer: “I would register both beans and select them through a runtime strategy service. For one
+              instance, an atomic reference or refreshable configuration is enough. For many instances, use a centralized
+              feature flag/config store plus versioned change events so every instance switches without restart. Because
+              this is encryption, I would version ciphertext and keys, keep old decryption support, audit the change, and
+              roll out gradually rather than changing one local bean reference blindly.”
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="springboot">
+        <h2 class="accordion-header" id="defaultAutowireTypeTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#defaultAutowireTypeTopBody">What is the default autowire type in Spring?</button>
+        </h2>
+        <div id="defaultAutowireTypeTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              The answer depends on which Spring configuration style the interviewer means. With annotation-based dependency
+              injection, <code>@Autowired</code> resolves dependencies primarily <strong>by type</strong>. If exactly one bean
+              of that type exists, Spring injects it. If multiple candidates exist, use <code>@Primary</code> or
+              <code>@Qualifier</code>. With XML bean configuration, the default <code>autowire</code> mode is
+              <strong>no</strong>, meaning dependencies are not automatically wired unless configured explicitly.
+            </p>
+            <h5 class="text-warning">Annotation-based example</h5>
+            <pre><code class="language-java">@Service
+class OrderService {
+    private final PaymentClient paymentClient;
+
+    @Autowired // optional when this is the only constructor
+    OrderService(PaymentClient paymentClient) {
+        this.paymentClient = paymentClient;
+    }
+}
+
+@Component
+class StripePaymentClient implements PaymentClient { }</code></pre>
+            <p>
+              If <code>StripePaymentClient</code> is the only <code>PaymentClient</code> bean, it is selected by type. In
+              modern Spring, a class with one constructor does not need the <code>@Autowired</code> annotation.
+            </p>
+            <h5 class="text-warning">Multiple beans of the same type</h5>
+            <pre><code class="language-java">@Bean
+@Primary
+PaymentClient defaultPaymentClient() {
+    return new StripePaymentClient();
+}
+
+@Bean("adyenPaymentClient")
+PaymentClient adyenPaymentClient() {
+    return new AdyenPaymentClient();
+}
+
+OrderService(
+    @Qualifier("adyenPaymentClient") PaymentClient client) {
+    this.paymentClient = client;
+}</code></pre>
+            <ul><li><code>@Primary</code> selects one default candidate when injection is by type.</li><li><code>@Qualifier</code> selects a specific bean and is clearer when different consumers need different implementations.</li><li>Without a unique candidate, primary, or qualifier, startup fails with <code>NoUniqueBeanDefinitionException</code>.</li></ul>
+            <h5 class="text-warning">Other injection annotations</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Annotation/style</th><th>Selection behavior</th></tr></thead><tbody><tr><td><code>@Autowired</code></td><td>By type, then qualifier/primary resolution</td></tr><tr><td><code>@Resource</code></td><td>Usually by name first, then type fallback depending on the name</td></tr><tr><td><code>@Inject</code></td><td>JSR-330 type-based injection; use qualifiers for ambiguity</td></tr><tr><td>XML <code>autowire="no"</code></td><td>Default: no automatic wiring; explicit property/constructor references are required</td></tr><tr><td>XML <code>autowire="byType"</code></td><td>Automatically matches a compatible property type</td></tr></tbody></table>
+            <h5 class="text-warning">Important distinction</h5>
+            <p>
+              “By type” is the default resolution rule for <code>@Autowired</code>, not a bean scope or bean lifecycle type.
+              It does not mean every field is automatically injected: the constructor, field, setter, or method must be
+              registered for injection through the relevant annotation/convention. Constructor injection is generally
+              preferred because required dependencies are explicit, immutable, and validated during bean creation.
+            </p>
+            <p>
+              Interview answer: “For annotation-based Spring DI, <code>@Autowired</code> resolves by type. If multiple beans
+              match, <code>@Primary</code> or <code>@Qualifier</code> is needed. In XML, the default autowire mode is
+              <code>no</code>; automatic by-type wiring must be enabled explicitly.”
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="springboot">
+        <h2 class="accordion-header" id="defaultSpringBeanTypeTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#defaultSpringBeanTypeTopBody">What is the default bean type or scope in Spring?</button>
+        </h2>
+        <div id="defaultSpringBeanTypeTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              The default Spring bean scope is <strong>singleton</strong>. Spring creates one bean instance per Spring
+              application context and returns the same instance whenever that bean is injected or looked up from that
+              context. Singleton means one instance per container, not necessarily one instance for the entire JVM or all
+              application instances in a distributed deployment.
+            </p>
+            <pre><code class="language-java">@Component
+class PricingService { }
+
+@Service
+class OrderService {
+    private final PricingService pricing;
+
+    OrderService(PricingService pricing) {
+        this.pricing = pricing;
+    }
+}
+
+// Every injection in this ApplicationContext receives the same
+// PricingService object by default.</code></pre>
+            <h5 class="text-warning">Default bean behavior</h5>
+            <ul><li><strong>Scope:</strong> singleton.</li><li><strong>Creation:</strong> singleton beans are eagerly created during context startup by default, unless lazy initialization is enabled or the bean is otherwise lazy.</li><li><strong>Lifecycle:</strong> Spring creates, injects dependencies, runs initialization callbacks, uses the bean, and invokes destruction callbacks when the context closes.</li><li><strong>Thread safety:</strong> singleton scope does not make the bean thread-safe. Avoid mutable request-specific fields; use local variables, immutable state, or proper synchronization.</li><li><strong>Bean name:</strong> a component's default name is commonly the class name with the first character lowercased, such as <code>pricingService</code>; an explicit name can be supplied.</li></ul>
+            <h5 class="text-warning">Other common scopes</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Scope</th><th>Behavior</th><th>Typical use</th></tr></thead><tbody><tr><td>singleton</td><td>One instance per Spring context</td><td>Stateless services, repositories, clients, configuration</td></tr><tr><td>prototype</td><td>New instance each time the container requests it</td><td>Short-lived stateful objects; caller manages destruction</td></tr><tr><td>request</td><td>One instance per HTTP request</td><td>Request-specific web state</td></tr><tr><td>session</td><td>One instance per HTTP session</td><td>State tied to a browser session</td></tr><tr><td>application</td><td>One instance per ServletContext</td><td>Web application context state</td></tr><tr><td>websocket</td><td>One instance per WebSocket session</td><td>WebSocket-specific state</td></tr></tbody></table>
+            <pre><code class="language-java">@Component
+@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+class ReportBuilder { }
+
+@RequestScope
+class RequestContext { }
+
+@Lazy
+@Component
+class ExpensiveClient { }
+
+@Bean("primaryPaymentClient")
+PaymentClient paymentClient() { return new PaymentClient(); }</code></pre>
+            <h5 class="text-warning">Important dependency rule</h5>
+            <p>
+              Injecting a prototype bean directly into a singleton does not create a new prototype for every method call;
+              the dependency is resolved when the singleton is created. Use <code>ObjectProvider&lt;T&gt;</code>, a provider,
+              lookup method, or scoped proxy when a singleton needs a fresh instance repeatedly. Likewise, request/session
+              beans injected into singleton services need a scoped proxy or provider.
+            </p>
+            <p>
+              Interview answer: “The default Spring bean scope is singleton, one instance per application context, and it is
+              eagerly initialized by default. Singleton beans are not automatically thread-safe; they should normally be
+              stateless. Other scopes such as prototype, request, and session must be selected explicitly.”
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="springboot">
+        <h2 class="accordion-header" id="sameTypeBeansQualifierTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#sameTypeBeansQualifierTopBody">How do you create two beans of the same type and use them in two different services?</button>
+        </h2>
+        <div id="sameTypeBeansQualifierTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Define two beans with different names and inject the required one with <code>@Qualifier</code>. If Spring
+              finds two beans of the same type and no qualifier or primary bean identifies the choice, startup fails with
+              <code>NoUniqueBeanDefinitionException</code>.
+            </p>
+            <pre><code class="language-java">public interface PaymentClient {
+    PaymentResult pay(PaymentRequest request);
+}
+
+@Configuration
+class PaymentConfiguration {
+    @Bean("stripePaymentClient")
+    PaymentClient stripePaymentClient() {
+        return new StripePaymentClient();
+    }
+
+    @Bean("adyenPaymentClient")
+    PaymentClient adyenPaymentClient() {
+        return new AdyenPaymentClient();
+    }
+}</code></pre>
+            <h5 class="text-warning">Inject different beans into different services</h5>
+            <pre><code class="language-java">@Service
+class CardPaymentService {
+    private final PaymentClient client;
+
+    CardPaymentService(
+            @Qualifier("stripePaymentClient") PaymentClient client) {
+        this.client = client;
+    }
+}
+
+@Service
+class MarketplacePaymentService {
+    private final PaymentClient client;
+
+    MarketplacePaymentService(
+            @Qualifier("adyenPaymentClient") PaymentClient client) {
+        this.client = client;
+    }
+}</code></pre>
+            <p>
+              Constructor injection makes the dependency explicit and keeps both services testable. The qualifier value
+              must match the bean name; bean names are case-sensitive. With component classes, use qualifiers directly:
+            </p>
+            <pre><code class="language-java">@Component("stripePaymentClient")
+class StripePaymentClient implements PaymentClient { }
+
+@Component("adyenPaymentClient")
+class AdyenPaymentClient implements PaymentClient { }</code></pre>
+            <h5 class="text-warning">Other options</h5>
+            <ul><li><strong><code>@Primary</code>:</strong> mark one bean as the default when most consumers need it; use <code>@Qualifier</code> for the exception.</li><li><strong>Bean name parameter:</strong> <code>PaymentClient(@Qualifier("stripePaymentClient") PaymentClient client)</code> is clearer than relying on parameter-name discovery.</li><li><strong><code>@Resource(name = "...")</code>:</strong> inject by bean name, but constructor injection with <code>@Qualifier</code> is usually preferred.</li><li><strong>All implementations:</strong> inject <code>List&lt;PaymentClient&gt;</code> or <code>Map&lt;String, PaymentClient&gt;</code> when a strategy/registry needs every implementation.</li></ul>
+            <pre><code class="language-java">@Service
+class PaymentRouter {
+    private final Map&lt;String, PaymentClient&gt; clients;
+
+    PaymentRouter(Map&lt;String, PaymentClient&gt; clients) {
+        this.clients = clients;
+    }
+
+    PaymentClient clientFor(String provider) {
+        return clients.get(provider + "PaymentClient");
+    }
+}</code></pre>
+            <h5 class="text-warning">Common mistake</h5>
+            <p>
+              This fails because Spring sees two candidates:
+              <code>PaymentService(PaymentClient client)</code>. Fix it with a qualifier or a primary bean. Also ensure the
+              classes are Spring-managed and do not instantiate them with <code>new</code>, otherwise dependency injection,
+              proxies, configuration, and lifecycle callbacks will not apply.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="springboot">
+        <h2 class="accordion-header" id="springCoreVsBootTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#springCoreVsBootTopBody">Spring Core versus Spring Boot: what is the difference?</button>
+        </h2>
+        <div id="springCoreVsBootTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Spring Core is the foundation of the Spring Framework. It provides the IoC container, dependency injection,
+              bean lifecycle, configuration model, AOP support, and the abstractions used by modules such as Spring MVC,
+              Spring Data, Spring Security, and Spring Transaction Management. Spring Boot is built on top of Spring and
+              reduces the setup needed to create and run production-oriented applications.
+            </p>
+            <table class="table table-dark table-bordered"><thead><tr><th>Area</th><th>Spring Core/Framework</th><th>Spring Boot</th></tr></thead><tbody><tr><td>Purpose</td><td>Provides application framework features and abstractions</td><td>Provides opinionated application setup and operational convenience</td></tr><tr><td>Configuration</td><td>More explicit XML, Java config, component scanning, and bean definitions</td><td>Convention plus auto-configuration and externalized properties</td></tr><tr><td>Dependencies</td><td>Usually selected and versioned manually</td><td>Starters and dependency management provide compatible defaults</td></tr><tr><td>Server</td><td>Typically deployed to an externally configured server for web apps</td><td>Embedded Tomcat, Jetty, or Undertow enables executable JAR deployment</td></tr><tr><td>Operations</td><td>Requires separate choices for health, metrics, and configuration</td><td>Actuator, external config, logging defaults, and production integrations</td></tr></tbody></table>
+            <h5 class="text-warning">Spring Core example</h5>
+            <pre><code class="language-java">@Configuration
+@ComponentScan("com.example.orders")
+@EnableTransactionManagement
+public class AppConfig {
+    @Bean
+    DataSource dataSource() {
+        return createDataSource();
+    }
+}
+
+AnnotationConfigApplicationContext context =
+    new AnnotationConfigApplicationContext(AppConfig.class);
+OrderService service = context.getBean(OrderService.class);</code></pre>
+            <p>
+              In this style, the developer explicitly registers configuration, scans components, creates infrastructure
+              beans, selects dependencies, and manages how the application is launched or deployed. Spring Core still
+              provides dependency injection and lifecycle management; it does not automatically mean XML configuration.
+            </p>
+            <h5 class="text-warning">Spring Boot example</h5>
+            <pre><code class="language-java">@SpringBootApplication
+public class OrdersApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(OrdersApplication.class, args);
+    }
+}
+
+@RestController
+class OrderController {
+    private final OrderService service;
+
+    OrderController(OrderService service) {
+        this.service = service;
+    }
+}</code></pre>
+            <pre><code class="language-xml">&lt;dependency&gt;
+  &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+  &lt;artifactId&gt;spring-boot-starter-web&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+            <p>
+              The starter brings a compatible set of web dependencies. <code>@SpringBootApplication</code> combines
+              <code>@SpringBootConfiguration</code>, <code>@EnableAutoConfiguration</code>, and
+              <code>@ComponentScan</code>. Boot inspects the classpath, properties, and existing beans, then conditionally
+              creates defaults such as an embedded server, MVC infrastructure, JSON converter, and error handling.
+            </p>
+            <h5 class="text-warning">How Boot auto-configuration works</h5>
+            <ol><li>Boot's application context starts.</li><li>Auto-configuration classes are discovered from Boot metadata.</li><li>Conditional annotations check the classpath, properties, missing beans, and application type.</li><li>Matching configuration creates default beans.</li><li>Your explicit bean or property usually takes precedence, and an auto-configuration can be excluded when necessary.</li></ol>
+            <pre><code class="language-java">@SpringBootApplication(exclude = DataSourceAutoConfiguration.class)
+public class Application { }</code></pre>
+            <p>
+              Auto-configuration is not magic or a replacement for understanding Spring. Use the condition evaluation
+              report, startup logs, Actuator, and documentation to see why a bean was or was not created. Add explicit
+              configuration when the default does not match the application requirement.
+            </p>
+            <h5 class="text-warning">Key Spring Boot features</h5>
+            <ul><li><strong>Starters:</strong> curated dependency bundles such as web, data-jpa, security, validation, actuator, and test.</li><li><strong>Dependency management:</strong> a tested BOM manages compatible library versions and reduces dependency conflicts.</li><li><strong>Embedded server:</strong> package a web application as an executable JAR and run it with <code>java -jar</code>.</li><li><strong>Externalized configuration:</strong> properties, YAML, environment variables, profiles, ConfigMaps, Secrets Manager, and <code>@ConfigurationProperties</code>.</li><li><strong>Actuator:</strong> health, metrics, readiness/liveness, info, and operational endpoints when secured and exposed deliberately.</li><li><strong>Testing support:</strong> test slices, embedded application context, Testcontainers integrations, and auto-configured test infrastructure.</li><li><strong>Production deployment:</strong> container images, graceful shutdown, observability integration, and cloud-native configuration patterns.</li></ul>
+            <h5 class="text-warning">Does Spring Boot replace Spring Core?</h5>
+            <p>
+              No. Spring Boot uses Spring Core internally. A Boot application still uses the IoC container, bean definitions,
+              dependency injection, proxies, AOP, transactions, MVC, and other Spring Framework capabilities. Boot is an
+              opinionated bootstrap and runtime layer that removes repetitive setup and provides sensible defaults.
+            </p>
+            <h5 class="text-warning">When would you choose each?</h5>
+            <ul><li>Use Spring Boot for most modern REST APIs, microservices, batch services, messaging applications, and independently deployable applications.</li><li>Use Spring Framework modules without Boot when integrating into an existing container/platform, building a library/framework, or needing complete manual control over infrastructure and lifecycle.</li><li>Even in Boot, override defaults deliberately for security, connection pools, serialization, transactions, thread pools, and production performance.</li></ul>
+            <p>
+              Interview summary: Spring Core provides the container and framework capabilities; Spring Boot provides an
+              opinionated, auto-configured, starter-based, executable, production-friendly way to use Spring. Boot reduces
+              configuration, not the need to understand the underlying Spring behavior.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="java">
+        <h2 class="accordion-header" id="hashSetHashMapPutBooleanTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#hashSetHashMapPutBooleanTopBody">How does HashSet.add convert HashMap.put's return value into a boolean?</button>
+        </h2>
+        <div id="hashSetHashMapPutBooleanTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              A <code>HashSet</code> is internally backed by a <code>HashMap</code>. The set element is stored as the
+              HashMap key, and every key uses the same private dummy value. The value is not the user's value; the key is
+              what provides uniqueness.
+            </p>
+            <pre><code class="language-java">private static final Object PRESENT = new Object();
+private transient HashMap&lt;E, Object&gt; map;
+
+public boolean add(E element) {
+    return map.put(element, PRESENT) == null;
+}</code></pre>
+            <h5 class="text-warning">What does HashMap.put return?</h5>
+            <ul><li>If the key did not exist, <code>put</code> inserts it and returns <code>null</code>.</li><li>If an equal key already existed, <code>put</code> replaces/overwrites the old value and returns the old value.</li></ul>
+            <pre><code class="language-java">Map&lt;String, Integer&gt; map = new HashMap&lt;&gt;();
+
+Integer old1 = map.put("A", 10); // null: new key
+Integer old2 = map.put("A", 20); // 10: existing key overwritten
+
+System.out.println(map.get("A")); // 20</code></pre>
+            <h5 class="text-warning">How does this become Set.add's boolean?</h5>
+            <pre><code class="language-java">Set&lt;String&gt; set = new HashSet&lt;&gt;();
+
+boolean first = set.add("A");  // true
+boolean second = set.add("A"); // false
+
+System.out.println(first);  // true: key was inserted
+System.out.println(second); // false: equal key already existed</code></pre>
+            <p>
+              Internally, the first call is equivalent to <code>map.put("A", PRESENT) == null</code>. Since no key existed,
+              HashMap returns <code>null</code>, so the comparison is true. The second call finds an equal key and returns
+              the previous dummy value <code>PRESENT</code>, so the comparison is false. The dummy value is never converted
+              to a boolean; the comparison with <code>null</code> produces the boolean.
+            </p>
+            <h5 class="text-warning">Why equals and hashCode matter</h5>
+            <p>
+              HashMap first uses the key's hash to find a bucket and then uses <code>equals</code> to decide whether the key
+              already exists. Therefore two objects with the same hash code can both be in a set if they are not equal, while
+              equal objects are treated as duplicates. If a mutable field used by <code>equals</code>/<code>hashCode</code>
+              changes after insertion, the set may no longer find the element correctly.
+            </p>
+            <p>
+              Interview summary: <code>HashSet.add(e)</code> delegates to <code>HashMap.put(e, PRESENT)</code> and returns
+              <code>true</code> when the returned old value is <code>null</code>. It returns <code>false</code> when an equal
+              key was already present, because HashMap returns the existing dummy value.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="springboot">
+        <h2 class="accordion-header" id="requiresNewExceptionFlowTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#requiresNewExceptionFlowTopBody">What happens when an outer transaction calls a REQUIRES_NEW method that throws an exception?</button>
+        </h2>
+        <div id="requiresNewExceptionFlowTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              In this example, <code>AnotherService</code> is a separate Spring bean, so the call goes through the Spring
+              transaction proxy. Assuming the annotation is correctly written as
+              <code>@Transactional(propagation = Propagation.REQUIRES_NEW)</code>, the inner method suspends the outer
+              transaction and starts an independent transaction.
+            </p>
+            <pre><code class="language-text">saveUser() starts Transaction T1
+  -&gt; repo.save(userEntity) participates in T1
+  -&gt; T1 is suspended
+  -&gt; doSomethingElse() starts independent Transaction T2
+  -&gt; anotherRepo.save(...) participates in T2
+  -&gt; RuntimeException is thrown
+  -&gt; T2 rolls back
+  -&gt; T1 is resumed
+  -&gt; exception propagates to saveUser()
+  -&gt; T1 also rolls back by default
+
+Final result: neither write commits.</code></pre>
+            <h5 class="text-warning">Why does the outer transaction also roll back?</h5>
+            <p>
+              <code>REQUIRES_NEW</code> isolates the inner transaction; it does not swallow the exception. The
+              <code>RuntimeException</code> leaves <code>doSomethingElse()</code> and propagates through
+              <code>saveUser()</code>. Spring's default rollback rule marks the outer transaction for rollback when an
+              unchecked exception escapes the transactional method. Therefore the first <code>repo.save</code> is rolled back
+              too.
+            </p>
+            <h5 class="text-warning">What if the outer method catches the exception?</h5>
+            <pre><code class="language-java">@Transactional
+public void saveUser(User user) {
+    repo.save(UserEntityAssembler.toEntity(user));
+
+    try {
+        anotherService.doSomethingElse();
+    } catch (RuntimeException ex) {
+        // T2 already rolled back.
+        // If this exception is fully handled, T1 may commit.
+        log.warn("Independent operation failed", ex);
+    }
+}
+
+// Result when the exception is caught and T1 is not marked rollback-only:
+// userEntity commits; anotherEntity rolls back.</code></pre>
+            <p>
+              The outer transaction can commit after catching the inner exception, provided the outer transaction has not
+              already been marked rollback-only and the catch block does not rethrow. If the inner code or an interceptor
+              marks the participating outer transaction rollback-only, the outer commit can fail with
+              <code>UnexpectedRollbackException</code>. In this exact <code>REQUIRES_NEW</code> case, the inner transaction
+              is separate, so its rollback-only state normally does not mark T1.
+            </p>
+            <h5 class="text-warning">Important variations</h5>
+            <ul><li><strong>Default propagation:</strong> with <code>REQUIRED</code>, both methods use T1; the exception normally rolls back the one shared transaction.</li><li><strong>Checked exception:</strong> Spring does not roll back by default; use <code>rollbackFor</code> when the business rule requires it.</li><li><strong>Self-invocation:</strong> calling a transactional method from another method in the same object bypasses the proxy, so <code>REQUIRES_NEW</code> may not take effect. Calling the injected separate <code>AnotherService</code> bean is the correct proxy-based arrangement.</li><li><strong>Commit timing:</strong> <code>repo.save</code> usually registers the entity; SQL may execute at flush/commit, not exactly at the method call.</li><li><strong>Transaction manager:</strong> both repositories must use the intended transaction manager/data source; separate databases require separate transaction strategy.</li></ul>
+            <p>
+              Interview answer: “The inner <code>REQUIRES_NEW</code> transaction T2 suspends T1 and rolls back when its
+              runtime exception is thrown. Because the exception propagates out of the outer method, T1 also rolls back by
+              default. If the outer method catches and handles the exception without marking T1 rollback-only, T1 commits
+              while T2 remains rolled back. This works only when the call goes through a Spring proxy.”
+            </p>
+          </div>
+        </div>
+      </div>
       <div class="accordion-item" data-category="behavioral">
         <h2 class="accordion-header" id="productionCriticalIssue"><button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#productionCriticalIssueBody">Tell me about a critical production issue you handled.</button></h2>
         <div id="productionCriticalIssueBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava"><div class="accordion-body bg-dark text-light"><p>Use STAR and focus on your ownership: what failed, how customers/business were affected, how you detected and prioritized it, what you did to contain and recover, and how you communicated. Explain the technical evidence that identified the root cause, then give measurable prevention such as an alert, canary, regression test, capacity guard, runbook, or design change.</p></div></div>

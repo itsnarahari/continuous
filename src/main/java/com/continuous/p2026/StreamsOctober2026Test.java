@@ -326,6 +326,29 @@ public class StreamsOctober2026Test {
 //        Group students by grade based on their average marks.
 //                Other coding exercise present in Streams2026.java
 //        How do you reverse the first K elements of a queue using a stack?
+
+        //Interview follow-up: How would you get Map<String, List<String>>
+        // containing only the names of employees earning more than ₹1 lakh, grouped by department?
+        Map<String, List<Employee>> collect25 = employees.stream()
+                .collect(Collectors.groupingBy(Employee::getDepartment, Collectors.filtering(employee1 -> employee1.getSalary() > 100000, Collectors.toList())));
+
+        Map<String, List<String>> collect26 = employees.stream()
+                .collect(Collectors.groupingBy(Employee::getDepartment,
+                        Collectors
+                                .filtering(employee1 -> employee1.getSalary() > 100000, Collectors.mapping(Employee::getName, Collectors.toList()))));
+
+        employees.stream()
+                .filter(e -> e.getSalary() > 100000)
+                .collect(Collectors.groupingBy(
+                        Employee::getDepartment,
+                        Collectors.mapping(Employee::getName, Collectors.toList())
+                ));
+
+//        Next question: How would you calculate the total salary of employees earning above ₹1 lakh in each department using groupingBy() and summingDouble()?
+        Map<String, DoubleSummaryStatistics> collect27 = employees.stream()
+                .filter(e -> e.getSalary() > 100000)
+                .collect(Collectors.groupingBy(Employee::getDepartment, Collectors.summarizingDouble(Employee::getSalary)));
+        
     }
 
 
