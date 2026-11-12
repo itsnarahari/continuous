@@ -178,6 +178,845 @@
         onkeyup="searchQuestions()" />
     </div>
     <div class="accordion" id="accordionSeniorJava">
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaProducerBrokerUnavailableTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaProducerBrokerUnavailableTopBody">What happens when a Kafka producer sends messages while the broker is unavailable?</button>
+        </h2>
+        <div id="kafkaProducerBrokerUnavailableTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              The producer cannot communicate with the broker or receive an acknowledgement. It retries according to its
+              configuration. If the broker or partition leader recovers before the delivery timeout, the send may succeed.
+              Otherwise the send fails and the application receives an exception or asynchronous callback error.
+            </p>
+            <h5 class="text-warning">Important settings</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Setting</th><th>Purpose</th></tr></thead><tbody><tr><td><code>acks=all</code></td><td>Wait for the leader and required in-sync replicas to acknowledge.</td></tr><tr><td><code>retries</code></td><td>Retry failed sends, bounded in practice by delivery timeout.</td></tr><tr><td><code>delivery.timeout.ms</code></td><td>Maximum total time allowed for a send, including retries.</td></tr><tr><td><code>request.timeout.ms</code></td><td>Maximum time waiting for one broker response.</td></tr><tr><td><code>enable.idempotence=true</code></td><td>Prevents duplicate Kafka records caused by producer retries when prerequisites are satisfied.</td></tr></tbody></table>
+            <pre><code class="language-properties">spring.kafka.producer.acks=all
+spring.kafka.producer.retries=2147483647
+spring.kafka.producer.properties.enable.idempotence=true
+spring.kafka.producer.properties.delivery.timeout.ms=120000
+spring.kafka.producer.properties.request.timeout.ms=30000</code></pre>
+            <p>
+              A large retry count does not mean retry forever; <code>delivery.timeout.ms</code> bounds the total attempt.
+              For critical payments or orders, use a Transactional Outbox so the event is persisted in the business database
+              and republished when Kafka recovers. Consumers must still be idempotent.
+            </p>
+            <h5 class="text-warning">Monitoring and alerting</h5>
+            <p>
+              Monitor broker availability, producer error and retry rate, request latency, offline partitions,
+              under-replicated partitions, consumer lag, and outbox backlog. Use Prometheus/Grafana with Alertmanager,
+              CloudWatch for managed Kafka, or the platform's equivalent. Alert on sustained failures and retry spikes, not
+              one transient timeout.
+            </p>
+            <p>
+              <strong>Interview answer:</strong> The producer retries while delivery is possible within the configured
+              timeout. If the broker recovers, the message can succeed; otherwise the callback or send operation fails. I
+              use <code>acks=all</code>, idempotence, bounded retries, alerts for broker/producer/partition health, and an
+              outbox for business-critical events.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaZooKeeperVsKraftTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaZooKeeperVsKraftTopBody">Is ZooKeeper replaced by KRaft, and what does KRaft do?</button>
+        </h2>
+        <div id="kafkaZooKeeperVsKraftTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Yes. Modern Kafka uses KRaft (Kafka Raft) for cluster metadata management and controller coordination instead
+              of requiring a separate ZooKeeper cluster. Older deployments may still use ZooKeeper mode, so always check the
+              deployed Kafka version and migration path.
+            </p>
+            <h5 class="text-warning">What ZooKeeper did</h5>
+            <ul><li>Registered brokers and tracked liveness.</li><li>Supported controller election and cluster coordination.</li><li>Stored/managed metadata for topics, partitions, replicas, and assignments.</li><li>Coordinated reactions to broker failures.</li></ul>
+            <h5 class="text-warning">What KRaft does</h5>
+            <p>
+              KRaft embeds the metadata quorum into Kafka. Controller nodes use Raft consensus, elect an active controller,
+              replicate a metadata log, and coordinate cluster-level changes.
+            </p>
+            <table class="table table-dark table-bordered"><thead><tr><th>Responsibility</th><th>KRaft behavior</th></tr></thead><tbody><tr><td>Broker registration</td><td>Tracks brokers joining and leaving</td></tr><tr><td>Controller election</td><td>Uses a controller quorum and Raft consensus</td></tr><tr><td>Metadata</td><td>Replicates topic, partition, replica, and assignment metadata</td></tr><tr><td>Failure coordination</td><td>Updates cluster state and coordinates leadership/replica changes</td></tr></tbody></table>
+            <pre><code class="language-text">Broker 2 fails
+  -&gt; KRaft quorum detects the membership change
+  -&gt; Active controller updates cluster metadata
+  -&gt; Eligible replicas can become partition leaders
+  -&gt; Producers and consumers refresh metadata</code></pre>
+            <p>
+              Brokers still store log segments and serve producer/consumer requests. KRaft controllers manage metadata and
+              coordinate operations; they do not replace the broker message-storage role. Use an appropriate odd-sized
+              controller quorum so a majority can survive failures.
+            </p>
+            <table class="table table-dark table-bordered"><thead><tr><th>Feature</th><th>ZooKeeper mode</th><th>KRaft mode</th></tr></thead><tbody><tr><td>Architecture</td><td>Kafka plus external ZooKeeper</td><td>Kafka plus built-in controller quorum</td></tr><tr><td>Consensus</td><td>ZooKeeper coordination</td><td>Raft consensus</td></tr><tr><td>Metadata</td><td>External coordination store</td><td>Kafka metadata log</td></tr><tr><td>Operations</td><td>Two systems to operate</td><td>Fewer moving parts</td></tr></tbody></table>
+            <p>
+              <strong>Interview answer:</strong> ZooKeeper handled broker registration, metadata, controller election, and
+              coordination in older Kafka clusters. KRaft replaces that external dependency with Kafka's controller quorum
+              and replicated metadata log using Raft. Brokers still store and serve messages, while KRaft manages metadata and
+              cluster operations.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="soapApiSpringBootTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#soapApiSpringBootTopBody">SOAP API: purpose, REST comparison, Spring Boot implementation, security, and validation</button>
+        </h2>
+        <div id="soapApiSpringBootTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              SOAP (Simple Object Access Protocol) is an XML-based messaging protocol with a strict contract. It is common
+              in banking, insurance, payment gateways, government systems, and legacy enterprise integrations where WSDL,
+              standardized faults, WS-Security, and reliable messaging are important.
+            </p>
+            <h5 class="text-warning">SOAP communication flow</h5>
+            <pre><code class="language-text">Client
+  -&gt; XML SOAP request
+  -&gt; Spring Web Services endpoint
+  -&gt; validation and business service
+  -&gt; database
+  &lt;- XML SOAP response or SOAP Fault</code></pre>
+            <h5 class="text-warning">SOAP vs REST</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Feature</th><th>SOAP</th><th>REST</th></tr></thead><tbody><tr><td>Type</td><td>Protocol</td><td>Architectural style</td></tr><tr><td>Message</td><td>XML envelope</td><td>JSON commonly, also XML</td></tr><tr><td>Contract</td><td>WSDL/XSD</td><td>OpenAPI commonly</td></tr><tr><td>Security</td><td>WS-Security and TLS</td><td>TLS, OAuth2, JWT, mTLS</td></tr><tr><td>Errors</td><td>SOAP Fault</td><td>HTTP status and error body</td></tr><tr><td>Performance</td><td>Verbose XML and parsing overhead</td><td>Often lighter with JSON</td></tr><tr><td>Standards</td><td>WS-* specifications</td><td>HTTP conventions</td></tr><tr><td>Best fit</td><td>Strict enterprise contracts and message security</td><td>Lightweight web APIs and mobile clients</td></tr></tbody></table>
+            <p>
+              SOAP is not automatically more secure than REST. Security depends on TLS, authentication, WS-Security,
+              authorization, certificate management, and correct configuration.
+            </p>
+            <h5 class="text-warning">Spring Boot SOAP implementation</h5>
+            <p>
+              A contract-first implementation defines the XSD/WSDL first and generates JAXB classes from it. For a
+              <code>CreateCustomer</code> operation, the XSD can require <code>name</code>, <code>email</code>, and
+              <code>age</code>:
+            </p>
+            <pre><code class="language-xml">&lt;xs:element name="CreateCustomerRequest"&gt;
+  &lt;xs:complexType&gt;
+    &lt;xs:sequence&gt;
+      &lt;xs:element name="name" type="xs:string" minOccurs="1"/&gt;
+      &lt;xs:element name="email" type="xs:string" minOccurs="1"/&gt;
+      &lt;xs:element name="age" type="xs:int" minOccurs="1"/&gt;
+    &lt;/xs:sequence&gt;
+  &lt;/xs:complexType&gt;
+&lt;/xs:element&gt;</code></pre>
+            <pre><code class="language-xml">&lt;dependency&gt;
+  &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+  &lt;artifactId&gt;spring-boot-starter-web-services&lt;/artifactId&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+  &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+  &lt;artifactId&gt;spring-boot-starter-validation&lt;/artifactId&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+  &lt;groupId&gt;org.glassfish.jaxb&lt;/groupId&gt;
+  &lt;artifactId&gt;jaxb-runtime&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+            <p>
+              In Java 17+, JAXB is no longer bundled with the JDK, so the Jakarta XML Binding API/runtime must be supplied
+              through dependencies. Maven JAXB/XJC tooling can generate request and response classes during the build.
+            </p>
+            <pre><code class="language-java">@Endpoint
+public class CustomerEndpoint {
+    private static final String NAMESPACE = "http://example.com/customer";
+    private final Validator validator;
+
+    public CustomerEndpoint(Validator validator) {
+        this.validator = validator;
+    }
+
+    @PayloadRoot(namespace = NAMESPACE, localPart = "CreateCustomerRequest")
+    @ResponsePayload
+    public CreateCustomerResponse create(
+            @RequestPayload CreateCustomerRequest request) {
+        Set&lt;ConstraintViolation&lt;CreateCustomerRequest&gt;&gt; errors =
+            validator.validate(request);
+        if (!errors.isEmpty()) {
+            throw new IllegalArgumentException(errors.stream()
+                .map(ConstraintViolation::getMessage)
+                .collect(Collectors.joining(", ")));
+        }
+        return customerService.create(request);
+    }
+}</code></pre>
+            <ul><li><code>@Endpoint</code> marks a Spring-WS endpoint.</li><li><code>@PayloadRoot</code> maps the XML namespace and root element to the operation.</li><li><code>@RequestPayload</code> unmarshals XML into the generated Java type.</li><li><code>@ResponsePayload</code> marshals the returned Java type into XML.</li></ul>
+            <pre><code class="language-java">@Configuration
+@EnableWs
+class SoapConfig extends WsConfigurerAdapter {
+    @Bean
+    XsdSchema customerSchema() {
+        return new SimpleXsdSchema(new ClassPathResource("customer.xsd"));
+    }
+
+    @Bean
+    DefaultWsdl11Definition customerWsdl(XsdSchema customerSchema) {
+        DefaultWsdl11Definition definition = new DefaultWsdl11Definition();
+        definition.setPortTypeName("CustomerPort");
+        definition.setLocationUri("/ws");
+        definition.setTargetNamespace("http://example.com/customer");
+        definition.setSchema(customerSchema);
+        return definition;
+    }
+}</code></pre>
+            <p>
+              The generated WSDL is commonly exposed under a URL such as <code>/ws/customer.wsdl</code>; the exact name
+              depends on the bean and servlet mapping.
+            </p>
+            <h5 class="text-warning">Request validation: four layers</h5>
+            <ol>
+              <li><strong>Structural:</strong> XSD validates element presence, order, XML types, and schema shape.</li>
+              <li><strong>Field-level:</strong> Bean Validation checks <code>@NotBlank</code>, <code>@Email</code>, <code>@Min</code>, <code>@Max</code>, <code>@Size</code>, and <code>@Pattern</code>.</li>
+              <li><strong>Business:</strong> the service checks eligibility, duplicate customer, authorization, and state rules.</li>
+              <li><strong>Database:</strong> unique, NOT NULL, foreign-key, and check constraints protect integrity.</li>
+            </ol>
+            <pre><code class="language-java">public class CreateCustomerRequest {
+    @NotBlank(message = "Customer name is required")
+    @Size(max = 100)
+    private String name;
+
+    @NotBlank(message = "Email is required")
+    @Email(message = "Invalid email format")
+    private String email;
+
+    @Min(value = 18, message = "Age must be at least 18")
+    @Max(value = 120, message = "Age must be at most 120")
+    private int age;
+}</code></pre>
+            <p>
+              XSD and Bean Validation complement each other. XSD knows that <code>age</code> must be an integer and that
+              required elements exist; Bean Validation knows that a name cannot be whitespace and that age must be within a
+              business range. A <code>PayloadValidatingInterceptor</code> can validate requests and responses against the XSD.
+            </p>
+            <h5 class="text-warning">SOAP authentication options</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Approach</th><th>Typical use</th></tr></thead><tbody><tr><td>HTTP Basic</td><td>Simple internal integration over HTTPS; credentials are in the HTTP header.</td></tr><tr><td>mTLS</td><td>Trusted system-to-system authentication using client certificates.</td></tr><tr><td>WS-Security UsernameToken</td><td>Credentials in the SOAP header for clients using WS-* standards.</td></tr><tr><td>WS-Security signature/encryption</td><td>Message integrity, sender verification, and confidentiality across intermediaries.</td></tr><tr><td>SAML</td><td>Enterprise identity federation.</td></tr></tbody></table>
+            <p>
+              Basic authentication is Base64-encoded, not encrypted, so it must use HTTPS. In production use a secure
+              password encoder or external identity store, never hardcoded credentials, and restrict the SOAP endpoint with
+              appropriate Spring Security rules.
+            </p>
+            <h5 class="text-warning">What is WS-Security?</h5>
+            <p>
+              WS-Security is a SOAP message-security standard. It supports UsernameToken authentication, XML digital
+              signatures for integrity and sender verification, XML encryption for confidentiality, timestamps for expiry,
+              replay protection, and X.509 certificates. WSS4J interceptors are commonly used with Spring-WS.
+            </p>
+            <h5 class="text-warning">Transport-level vs message-level security</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Concern</th><th>Transport-level</th><th>Message-level</th></tr></thead><tbody><tr><td>Standard</td><td>HTTPS/TLS</td><td>WS-Security</td></tr><tr><td>Protects</td><td>Connection between two endpoints</td><td>SOAP message content and headers</td></tr><tr><td>Intermediaries</td><td>Protection ends at TLS termination</td><td>Can remain protected across intermediaries</td></tr><tr><td>Complexity</td><td>Lower</td><td>Higher XML/security configuration</td></tr><tr><td>Typical use</td><td>Always for network confidentiality</td><td>End-to-end message signing/encryption requirements</td></tr></tbody></table>
+            <p>
+              Enterprise payment integrations may use both: HTTPS protects each network hop, while WS-Security signs and
+              encrypts the payment message and adds timestamp/replay controls.
+            </p>
+            <h5 class="text-warning">SOAP exception handling</h5>
+            <p>
+              SOAP reports failures using a structured SOAP Fault rather than a normal success response. SOAP 1.1 commonly
+              uses <code>Client</code>, <code>Server</code>, <code>MustUnderstand</code>, and <code>VersionMismatch</code>;
+              SOAP 1.2 uses a more detailed hierarchy such as <code>Sender</code> and <code>Receiver</code>.
+            </p>
+            <pre><code class="language-xml">&lt;soap:Fault&gt;
+  &lt;faultcode&gt;soap:Client&lt;/faultcode&gt;
+  &lt;faultstring&gt;Customer name is required; Invalid email&lt;/faultstring&gt;
+&lt;/soap:Fault&gt;</code></pre>
+            <p>
+              In Spring-WS, configure <code>SoapFaultMappingExceptionResolver</code> or a custom
+              <code>EndpointExceptionResolver</code> to map validation and business exceptions to safe client/server faults.
+              Log the full exception internally with a correlation ID, but never expose stack traces, SQL details, tokens, or
+              sensitive customer data.
+            </p>
+            <h5 class="text-warning">Consume an external SOAP service</h5>
+            <pre><code class="language-java">@Bean
+Jaxb2Marshaller policyMarshaller() {
+    Jaxb2Marshaller marshaller = new Jaxb2Marshaller();
+    marshaller.setContextPath("com.example.policy.generated");
+    return marshaller;
+}
+
+@Bean
+WebServiceTemplate webServiceTemplate(Jaxb2Marshaller marshaller) {
+    WebServiceTemplate template = new WebServiceTemplate(marshaller);
+    template.setDefaultUri("https://provider.example.com/policy");
+    return template;
+}
+
+public GetPolicyDetailsResponse getPolicy(String policyNumber) {
+    GetPolicyDetailsRequest request = new GetPolicyDetailsRequest();
+    request.setPolicyNumber(policyNumber);
+    return (GetPolicyDetailsResponse) template.marshalSendAndReceive(request);
+}</code></pre>
+            <p>
+              Generate request/response classes from the provider's WSDL, configure <code>Jaxb2Marshaller</code>, call
+              <code>WebServiceTemplate.marshalSendAndReceive</code>, and configure mTLS or WSS4J authentication, connection
+              and read timeouts, bounded retries for transient faults, circuit breaking, tracing, and safe fault handling.
+              Never retry a financial operation without an idempotency key or provider-supported duplicate-detection token.
+            </p>
+            <h5 class="text-warning">What is JAXB?</h5>
+            <p>
+              JAXB (Jakarta XML Binding) maps Java objects to XML and XML back to Java. Marshalling is Java object -&gt; XML;
+              unmarshalling is XML -&gt; Java. Annotations include <code>@XmlRootElement</code>, <code>@XmlElement</code>,
+              <code>@XmlAttribute</code>, <code>@XmlAccessorType</code>, and <code>@XmlTransient</code>. Spring's
+              <code>Jaxb2Marshaller</code> manages this conversion for SOAP clients and endpoints.
+            </p>
+            <h5 class="text-warning">Senior-level follow-up questions</h5>
+            <ol>
+              <li><strong>Client certificate:</strong> configure an SSL context with a client keystore and truststore, protect them in a secret manager, and attach it to the SOAP HTTP transport.</li>
+              <li><strong>WSS4J:</strong> add a WSS4J security interceptor, configure UsernameToken or X.509 signature/encryption actions, callback handlers, keystores, timestamps, and replay protection.</li>
+              <li><strong>Generate classes from WSDL:</strong> configure Maven JAXB/XJC generation in the build and treat generated sources as build output, not hand-maintained business code.</li>
+              <li><strong>Timeouts/retries:</strong> set connect/read timeouts, retry only transient failures with exponential backoff and a limit, and use a circuit breaker and idempotency for writes.</li>
+              <li><strong>Duplicate transactions:</strong> send an idempotency/reference key, enforce a database unique constraint, and reconcile provider responses before retrying an uncertain timeout.</li>
+              <li><strong>Unknown XSD element:</strong> schema validation may reject it with a client fault, depending on schema strictness and namespace handling; evolve the contract compatibly and do not silently ignore security-critical fields.</li>
+              <li><strong>Cross-field validation:</strong> create a class-level custom Bean Validation constraint, for example ensuring <code>startDate &lt;= endDate</code>, and return all violations in a structured SOAP Fault.</li>
+            </ol>
+            <p>
+              <strong>Interview-ready answer:</strong> SOAP is useful for strict enterprise contracts, standardized faults,
+              WS-Security, and legacy banking or insurance integrations. In Spring Boot I use contract-first XSD/WSDL,
+              generated JAXB classes, Spring Web Services endpoints, XSD plus Bean Validation, and structured SOAP Faults. For
+              clients I use <code>WebServiceTemplate</code> with timeouts, secure authentication, bounded retries, tracing,
+              and idempotency. I choose REST when a simpler, lightweight HTTP/JSON API is sufficient.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="devops">
+        <h2 class="accordion-header" id="productionTroubleshootingPreparationTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#productionTroubleshootingPreparationTopBody">Production troubleshooting preparation: framework, tools, and interview simulation</button>
+        </h2>
+        <div id="productionTroubleshootingPreparationTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              For a senior Java backend developer, production troubleshooting is not just checking logs. The expectation is
+              to identify the root cause systematically, reduce user impact, communicate clearly, and prevent recurrence.
+            </p>
+            <h5 class="text-warning">The troubleshooting framework</h5>
+            <pre><code class="language-text">Identify symptom
+    -&gt; Assess impact
+    -&gt; Check monitoring and logs
+    -&gt; Identify bottleneck
+    -&gt; Mitigate safely
+    -&gt; Find root cause
+    -&gt; Prevent recurrence</code></pre>
+            <ol>
+              <li><strong>Identify the symptom:</strong> Is it high latency, errors, low throughput, a crash, or incorrect data?</li>
+              <li><strong>Assess the impact:</strong> How many users, APIs, tenants, regions, or services are affected?</li>
+              <li><strong>Check evidence:</strong> Correlate metrics, structured logs, traces, deployment history, and alerts.</li>
+              <li><strong>Identify the bottleneck:</strong> Check CPU, memory, JVM/GC, threads, database, connection pools, network, and downstream systems.</li>
+              <li><strong>Mitigate:</strong> Roll back, disable a feature, shift traffic, scale safely, stop a retry storm, or apply a controlled workaround.</li>
+              <li><strong>Find root cause:</strong> Use thread/heap dumps, JFR, traces, query plans, locks, and configuration comparison.</li>
+              <li><strong>Prevent recurrence:</strong> Add regression tests, alerts, capacity planning, deployment checks, and an RCA action with an owner.</li>
+            </ol>
+            <h5 class="text-warning">Production areas to master</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Area</th><th>Typical issues</th></tr></thead><tbody><tr><td>API performance</td><td>High latency, timeouts, 5xx responses, throttling, and low throughput</td></tr><tr><td>JVM</td><td>High CPU, memory leaks, OOM, frequent GC, and long stop-the-world pauses</td></tr><tr><td>Multithreading</td><td>Thread starvation, deadlocks, blocked threads, race conditions, and executor exhaustion</td></tr><tr><td>Database</td><td>Slow queries, locks, missing indexes, transaction problems, and connection-pool exhaustion</td></tr><tr><td>Microservices</td><td>Downstream failure, timeout chains, retries, circuit breakers, and cascading failures</td></tr><tr><td>Kafka</td><td>Consumer lag, hot partitions, duplicate events, failed consumers, and rebalance storms</td></tr><tr><td>Spring Boot</td><td>Startup failures, profile/configuration errors, bean cycles, and incorrect properties</td></tr><tr><td>AWS</td><td>Availability-zone issues, scaling limits, load-balancer health, IAM, and network problems</td></tr><tr><td>Deployments</td><td>UAT/production differences, schema compatibility, canary failures, and rollback safety</td></tr></tbody></table>
+            <h5 class="text-warning">Tools and their purpose</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Tool</th><th>Use</th></tr></thead><tbody><tr><td>Prometheus</td><td>Collect application, JVM, database, and infrastructure metrics</td></tr><tr><td>Grafana</td><td>Visualize throughput, latency, errors, saturation, and alerts</td></tr><tr><td>ELK/Splunk/OpenSearch</td><td>Search structured logs and correlate failures</td></tr><tr><td>OpenTelemetry</td><td>Trace request time across services, databases, and external calls</td></tr><tr><td>Spring Boot Actuator</td><td>Health, metrics, environment, thread, and connection-pool visibility</td></tr><tr><td>JConsole/VisualVM</td><td>JVM, heap, thread, and runtime inspection</td></tr><tr><td>Java Flight Recorder</td><td>Low-overhead CPU, memory, thread, lock, and latency analysis</td></tr><tr><td>JMeter/Gatling</td><td>Load and performance testing before or after a fix</td></tr><tr><td>AWS CloudWatch</td><td>AWS infrastructure, container, load-balancer, RDS, and application metrics</td></tr></tbody></table>
+            <h5 class="text-warning">Interview simulation: API response time increased</h5>
+            <p>
+              A Spring Boot microservice in AWS normally responds in 200 milliseconds, but today it takes 5–8 seconds.
+              There was no recent deployment. The application is running, some requests succeed, and others time out.
+            </p>
+            <p><strong>How I would investigate:</strong></p>
+            <ol>
+              <li>Confirm scope: affected endpoint, regions, tenants, request types, time window, error rate, and p50/p95/p99 latency.</li>
+              <li>Check the ALB/API Gateway for target health, throttling, connection time, target response time, and uneven routing.</li>
+              <li>Use distributed traces to split the 5–8 seconds across application code, database, and downstream services.</li>
+              <li>Inspect application metrics for active threads, queue depth, CPU, GC pauses, heap, Hikari active/pending connections, and timeout counts.</li>
+              <li>Check database slow queries, locks, execution plans, connection saturation, and recent data-volume changes.</li>
+              <li>Check downstream latency, rate limits, DNS/network errors, retry volume, circuit-breaker state, and external incidents.</li>
+              <li>Compare configuration and dependency health across healthy and unhealthy instances; verify no scheduled batch or traffic spike is competing for resources.</li>
+              <li>Mitigate based on evidence: disable a feature, reduce traffic, scale a safe bottleneck, stop retries, fail over, or roll back a configuration change.</li>
+              <li>After recovery, reproduce with a production-like load test, identify the root cause, and add a test, dashboard, alert, or capacity control.</li>
+            </ol>
+            <p>
+              <strong>Senior-level answer:</strong> I would not guess or restart everything first. I would correlate latency,
+              errors, traces, resource saturation, database behavior, downstream calls, and recent environmental changes.
+              I would apply the least risky mitigation to restore service, preserve evidence, prove the root cause, and then
+              complete an RCA with a permanent prevention action.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="sql">
+        <h2 class="accordion-header" id="countStarVsCountColumnTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#countStarVsCountColumnTopBody">COUNT(*) vs COUNT(salary): what is the difference?</button>
+        </h2>
+        <div id="countStarVsCountColumnTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              <code>COUNT(*)</code> counts every row, including rows containing NULL values. <code>COUNT(salary)</code>
+              counts only rows where the <code>salary</code> column is not NULL.
+            </p>
+            <h5 class="text-warning">Example employee table</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>emp_id</th><th>name</th><th>salary</th></tr></thead><tbody><tr><td>1</td><td>John</td><td>50000</td></tr><tr><td>2</td><td>Smith</td><td>NULL</td></tr><tr><td>3</td><td>David</td><td>60000</td></tr><tr><td>4</td><td>Peter</td><td>NULL</td></tr><tr><td>5</td><td>Ram</td><td>70000</td></tr></tbody></table>
+            <pre><code class="language-sql">SELECT COUNT(*) FROM employee;
+-- Result: 5
+
+SELECT COUNT(salary) FROM employee;
+-- Result: 3</code></pre>
+            <p>
+              The first query counts all five employee rows. The second counts only the three employees whose salary has a
+              value. This behavior also applies to expressions such as <code>COUNT(email)</code> or
+              <code>COUNT(department_id)</code>.
+            </p>
+            <h5 class="text-warning">COUNT(1) vs COUNT(*)</h5>
+            <ul>
+              <li><code>COUNT(*)</code> counts all rows.</li>
+              <li><code>COUNT(1)</code> evaluates a non-NULL constant for each row, so it also counts all rows.</li>
+              <li>Modern database optimizers generally produce equivalent plans, but <code>COUNT(*)</code> communicates the intent more clearly.</li>
+            </ul>
+            <p>
+              <strong>Interview answer:</strong> <code>COUNT(*)</code> counts every row, while <code>COUNT(column)</code>
+              ignores rows where that column is NULL. <code>COUNT(1)</code> also counts every row because the constant is
+              non-NULL.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="behavioral">
+        <h2 class="accordion-header" id="howDoYouCodeReviewTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#howDoYouCodeReviewTopBody">How do you perform a code review and what do you check?</button>
+        </h2>
+        <div id="howDoYouCodeReviewTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              I treat code review as a quality and knowledge-sharing step, not as a search for mistakes in a person. I first
+              understand the requirement and scope, then review the change in small logical units. I use automated checks for
+              formatting and common defects so the discussion can focus on design, correctness, and risk.
+            </p>
+            <h5 class="text-warning">Review process</h5>
+            <ol>
+              <li>Read the ticket, acceptance criteria, API contract, database impact, and related design before reading every line.</li>
+              <li>Check whether the pull request is focused, reasonably sized, and includes the required tests and migration notes.</li>
+              <li>Run or inspect the build, unit tests, integration tests, static analysis, and relevant local scenarios.</li>
+              <li>Review the happy path, failure paths, edge cases, and operational behavior.</li>
+              <li>Give specific, respectful comments with the reason and a suggested direction; distinguish blocking findings from suggestions.</li>
+              <li>Re-review the updated code and confirm that tests and deployment checks pass before approval.</li>
+            </ol>
+            <h5 class="text-warning">What I check</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Area</th><th>Review questions</th></tr></thead><tbody><tr><td>Correctness</td><td>Does it satisfy the requirement? Are state transitions, calculations, validation, and error paths correct?</td></tr><tr><td>Design</td><td>Is the responsibility in the right layer? Is coupling controlled? Does it follow project patterns and SOLID principles?</td></tr><tr><td>API behavior</td><td>Are HTTP methods, status codes, request/response models, pagination, compatibility, and idempotency correct?</td></tr><tr><td>Security</td><td>Are authentication, authorization, input validation, secrets, logging, injection, and sensitive-data handling safe?</td></tr><tr><td>Database</td><td>Are queries efficient? Any N+1 calls, missing indexes, unsafe migrations, long transactions, or concurrency problems?</td></tr><tr><td>Performance</td><td>Will it add unnecessary network calls, memory growth, blocking work, retry storms, or connection-pool pressure?</td></tr><tr><td>Concurrency</td><td>Are shared state, locks, transactions, duplicate events, and thread-safety handled correctly?</td></tr><tr><td>Resilience</td><td>Are timeouts, retries, circuit breakers, fallbacks, dead-letter handling, and partial failures appropriate?</td></tr><tr><td>Testing</td><td>Do tests cover success, validation, boundary values, exceptions, security, integration, and regression scenarios?</td></tr><tr><td>Observability</td><td>Are structured logs, correlation/TraceId, useful metrics, alerts, and safe error details present?</td></tr><tr><td>Maintainability</td><td>Is the code readable, cohesive, documented where needed, and free from duplication or unnecessary complexity?</td></tr><tr><td>Deployment</td><td>Are configuration, feature flags, backward compatibility, rollback, and database migration order safe?</td></tr></tbody></table>
+            <h5 class="text-warning">Example Spring Boot review</h5>
+            <p>
+              For a new payment endpoint, I would verify request validation and authorization, idempotency-key handling,
+              transaction boundaries, duplicate debit protection, downstream payment timeouts, safe retry behavior, audit
+              records, non-sensitive logs, database indexes, tests for timeout and duplicate requests, and metrics for success
+              and failure rates. I would not approve it only because the happy-path unit test passes.
+            </p>
+            <h5 class="text-warning">How I give feedback</h5>
+            <ul>
+              <li>Block only issues that can cause incorrect behavior, security risk, data loss, outage, or serious maintainability cost.</li>
+              <li>Explain the impact: for example, “This retry can duplicate a payment because the downstream call is not idempotent.”</li>
+              <li>Ask questions when context is unclear instead of assuming the author's intent.</li>
+              <li>Suggest alternatives, but respect the team's agreed conventions and avoid rewriting code for personal preference.</li>
+              <li>Recognize good decisions as well as identifying risks, and discuss larger design concerns synchronously when comments become complex.</li>
+            </ul>
+            <p>
+              <strong>Interview answer:</strong> I start with the requirement and scope, then check correctness, design,
+              security, performance, database and concurrency behavior, resilience, tests, observability, maintainability, and
+              deployment safety. I use automation for repeatable checks, give clear severity-based feedback, and approve only
+              after the important risks are addressed and the tests pass.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaNoKeyPartitioningTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaNoKeyPartitioningTopBody">How does Kafka distribute messages when no key is assigned?</button>
+        </h2>
+        <div id="kafkaNoKeyPartitioningTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              When a producer does not assign a key, Kafka does not use key hashing to select a partition. The producer's
+              partitioner chooses a partition. With modern Kafka Java clients, the default partitioner uses a sticky
+              partitioning strategy: it keeps sending records to one available partition while building a batch, then selects
+              another partition when the batch is ready or the current batch changes.
+            </p>
+            <h5 class="text-warning">Key versus no key</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Message</th><th>Partition selection</th><th>Ordering</th></tr></thead><tbody><tr><td>Key provided</td><td>Hash of the key maps records to a partition</td><td>Same key is ordered within its partition</td></tr><tr><td>No key</td><td>Default partitioner uses sticky partitioning for batching</td><td>No global ordering across partitions</td></tr></tbody></table>
+            <h5 class="text-warning">Example without keys</h5>
+            <pre><code class="language-text">P0: M1, M2, M3
+P1: M4, M5
+P2: M6, M7, M8
+P3: M9, M10</code></pre>
+            <p>
+              This is illustrative, not a guaranteed exact distribution. Kafka may place a batch of keyless messages on one
+              partition and later switch to another. Sticky partitioning improves producer batching and reduces request
+              overhead compared with selecting a different partition for every record.
+            </p>
+            <h5 class="text-warning">How sticky partitioning works</h5>
+            <p>
+              Assume the producer has four partitions and sends records without keys. The partitioner initially selects P0
+              and keeps sending records there while the producer builds a batch. When the batch is ready, or its linger time
+              expires, the producer sends it and selects another available partition, such as P2, for the next batch.
+            </p>
+            <pre><code class="language-text">M1 -&gt; P0
+M2 -&gt; P0
+M3 -&gt; P0
+M4 -&gt; P0       batch becomes ready and is sent
+M5 -&gt; P2
+M6 -&gt; P2       next batch is building</code></pre>
+            <p>
+              The switch is not necessarily triggered only when <code>batch.size</code> is reached. Producer batching and
+              readiness logic, including <code>linger.ms</code>, determine when records are sent and when the sticky partition
+              changes. For example:
+            </p>
+            <pre><code class="language-properties">spring.kafka.producer.batch-size=16384
+spring.kafka.producer.properties.linger.ms=5</code></pre>
+            <ul>
+              <li><code>batch.size</code> is the target maximum batch size in bytes for one partition.</li>
+              <li><code>linger.ms</code> allows the producer to wait briefly for more records so a batch can become larger.</li>
+              <li>Sticky partitioning improves batching efficiency and reduces network request overhead; it does not provide ordering across partitions.</li>
+              <li>Older Kafka clients or explicitly configured custom partitioners may use round-robin-style behavior, so verify the client version and configuration.</li>
+            </ul>
+            <h5 class="text-warning">What ordering is guaranteed?</h5>
+            <p>
+              Kafka preserves the order of records within each partition. For example, P0 guarantees <code>M1 -&gt; M2 -&gt;
+              M3</code> and P1 guarantees <code>M4 -&gt; M5</code>, but Kafka does not guarantee whether a consumer observes
+              M1 before M4. There is no global ordering across multiple partitions.
+            </p>
+            <h5 class="text-warning">When should a key be used?</h5>
+            <p>
+              Use a stable business key when all events for an entity need ordered processing, such as
+              <code>customerId</code>, <code>orderId</code>, or <code>accountId</code>. Do not use a key that creates a hot
+              partition, such as one celebrity user for nearly all traffic, unless that tradeoff is intentional.
+            </p>
+            <p>
+              If the default behavior is not suitable, a custom partitioner can be configured. Older client versions or
+              explicitly configured partitioners may use a round-robin style distribution, so always verify the Kafka client
+              version and producer configuration.
+            </p>
+            <p>
+              <strong>Interview-ready answer:</strong> When no key is supplied, Kafka's modern default producer partitioner
+              uses sticky partitioning. It sends a group of records to one partition to build an efficient batch and then
+              switches partitions. Kafka guarantees ordering only within an individual partition, not across the topic. If
+              per-entity ordering is required, I use a stable key so related messages go to the same partition.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaRecoveredConsumerTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaRecoveredConsumerTopBody">What happens when a crashed Kafka consumer comes back online?</button>
+        </h2>
+        <div id="kafkaRecoveredConsumerTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              When the crashed consumer reconnects to the same consumer group, Kafka treats it as a newly joined member.
+              It sends heartbeats, the group coordinator detects the membership change, and another rebalance is triggered.
+              The assignment strategy then recalculates which consumer owns each partition.
+            </p>
+            <h5 class="text-warning">Example</h5>
+            <p>
+              Initially C2 owns P1. After C2 crashes, C1 temporarily owns P1. When C2 returns, Kafka may redistribute the
+              partitions like this:
+            </p>
+            <table class="table table-dark table-bordered"><thead><tr><th>Consumer</th><th>Partitions after recovery</th></tr></thead><tbody><tr><td>C1</td><td>P0</td></tr><tr><td>C2</td><td>P1</td></tr><tr><td>C3</td><td>P2</td></tr><tr><td>C4</td><td>P3</td></tr></tbody></table>
+            <p>
+              C2 may receive P1 again, but Kafka does not guarantee that it gets its original partition. It could receive a
+              different partition depending on the Range, RoundRobin, Sticky, or CooperativeSticky assignment strategy and
+              the membership of the entire group.
+            </p>
+            <h5 class="text-warning">Where does the recovered consumer resume?</h5>
+            <p>
+              It resumes from the last committed offset of whichever partition it receives. If C1 processed P1 records while
+              C2 was down, those records are not processed again after a successful commit. Records processed but not committed
+              before a crash can be redelivered, so consumers must be idempotent.
+            </p>
+            <h5 class="text-warning">How can unnecessary rebalancing be reduced?</h5>
+            <ul>
+              <li>Use a cooperative assignment strategy to move only the partitions that need to move.</li>
+              <li>Use static membership with a stable <code>group.instance.id</code> when instances have stable identities; a short restart may avoid a full reassignment.</li>
+              <li>Tune <code>session.timeout.ms</code>, heartbeat settings, and <code>max.poll.interval.ms</code> carefully rather than making failure detection unnecessarily slow.</li>
+              <li>Monitor rebalance duration, consumer lag, partition ownership, commit failures, and duplicate processing.</li>
+            </ul>
+            <p>
+              <strong>Interview point:</strong> Kafka does not guarantee that a recovered consumer gets its original partition
+              back. The group coordinator and partition assignment strategy calculate the new assignment, and the consumer
+              continues from the committed offset of its newly assigned partition.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaConsumerCrashReassignmentTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaConsumerCrashReassignmentTopBody">Four Kafka partitions and four consumers: what happens when one consumer crashes?</button>
+        </h2>
+        <div id="kafkaConsumerCrashReassignmentTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Initially, each consumer in the same consumer group owns one partition. If one consumer crashes, Kafka detects
+              that it is no longer sending heartbeats or polling within the configured timeout. The group coordinator then
+              starts a rebalance and assigns the crashed consumer's partition to one of the remaining consumers.
+            </p>
+            <h5 class="text-warning">Before the failure</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Consumer</th><th>Partition</th></tr></thead><tbody><tr><td>C1</td><td>P0</td></tr><tr><td>C2</td><td>P1</td></tr><tr><td>C3</td><td>P2</td></tr><tr><td>C4</td><td>P3</td></tr></tbody></table>
+            <h5 class="text-warning">If C2 crashes</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Consumer</th><th>Partitions after rebalance</th></tr></thead><tbody><tr><td>C1</td><td>P0, possibly P1</td></tr><tr><td>C3</td><td>P2, possibly P1</td></tr><tr><td>C4</td><td>P3, possibly P1</td></tr></tbody></table>
+            <p>
+              The exact owner of P1 depends on the partition assignment strategy, such as Range, RoundRobin, Sticky, or
+              CooperativeSticky. Kafka does not guarantee that the first remaining consumer receives it; the group leader
+              calculates the assignment and distributes it.
+            </p>
+            <h5 class="text-warning">Where does processing resume?</h5>
+            <p>
+              The replacement consumer starts from the partition's last committed offset. If C2 processed a message but
+              crashed before committing its offset, that message is delivered again. If the offset was committed before the
+              business operation completed, a message can potentially be skipped, so offset commit timing must match the
+              processing design.
+            </p>
+            <pre><code class="language-text">C2 processes P1 offset 250
+C2 crashes before committing offset 251
+Rebalance assigns P1 to C3
+C3 resumes from committed offset 250
+Offset 250 may be processed again</code></pre>
+            <h5 class="text-warning">Important configuration and design points</h5>
+            <ul>
+              <li>Failure detection depends on heartbeats, <code>session.timeout.ms</code>, and poll behavior; detection is not necessarily immediate.</li>
+              <li>If processing exceeds <code>max.poll.interval.ms</code>, Kafka may consider the consumer unhealthy and rebalance the group.</li>
+              <li>Use cooperative rebalancing where appropriate to reduce unnecessary partition movement and pauses.</li>
+              <li>Use idempotency keys, database unique constraints, upserts, or a processed-event table to handle redelivery safely.</li>
+              <li>Monitor consumer lag, rebalance count, partition ownership, commit failures, and processing errors.</li>
+              <li>With 4 partitions and 3 remaining consumers, all partitions can still be processed, but one consumer owns two partitions and throughput may decrease.</li>
+            </ul>
+            <p>
+              <strong>Interview answer:</strong> Kafka detects the crashed consumer through missed heartbeats or polling
+              timeouts, triggers a consumer-group rebalance, and assigns the abandoned partition to one of the remaining
+              consumers. That consumer resumes from the last committed offset. Because records after the committed offset may
+              be redelivered, I design consumers to be idempotent and monitor rebalance and lag metrics.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="behavioral">
+        <h2 class="accordion-header" id="aiToolsInterviewQuestionsTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#aiToolsInterviewQuestionsTopBody">AI tools in software development: usage, validation, and code review</button>
+        </h2>
+        <div id="aiToolsInterviewQuestionsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <h5 class="text-warning">18. Have you used AI tools?</h5>
+            <p>
+              Yes. I have used tools such as ChatGPT and GitHub Copilot to improve productivity while keeping full ownership
+              of the result. I use them to understand unfamiliar Java or Spring Boot code, generate boilerplate, suggest unit
+              tests, analyze stack traces, explain SQL, improve documentation, and propose refactoring options.
+            </p>
+            <p>
+              I treat AI as an assistant, not as an authority. I do not copy generated code directly into production without
+              reviewing, testing, and validating it against the project's standards and business requirements.
+            </p>
+            <h5 class="text-warning">19. How do you use AI and verify generated code?</h5>
+            <p>
+              I provide the requirement and only the necessary non-sensitive context, ask for an initial implementation or
+              alternatives, and then validate the result systematically.
+            </p>
+            <pre><code class="language-java">@PostMapping("/employees")
+public ResponseEntity&lt;Employee&gt; createEmployee(
+        @Valid @RequestBody EmployeeRequest request) {
+    return ResponseEntity.ok(employeeService.save(request));
+}</code></pre>
+            <table class="table table-dark table-bordered"><thead><tr><th>Validation area</th><th>What I check</th></tr></thead><tbody><tr><td>Functional correctness</td><td>It actually satisfies the requirement and all acceptance criteria.</td></tr><tr><td>Business logic</td><td>Rules, authorization, state transitions, and transaction boundaries are correct.</td></tr><tr><td>Input validation</td><td><code>@Valid</code>, null handling, size limits, and malformed input behavior.</td></tr><tr><td>Security</td><td>Authentication, authorization, secrets, injection risks, unsafe deserialization, and data exposure.</td></tr><tr><td>Exception handling</td><td>Correct status codes, useful error responses, logging, and no swallowed failures.</td></tr><tr><td>Performance</td><td>N+1 queries, unnecessary calls, blocking operations, memory usage, and concurrency behavior.</td></tr><tr><td>Maintainability</td><td>Project conventions, readability, coupling, design principles, and dependency impact.</td></tr><tr><td>Testing</td><td>Happy path, boundary cases, failures, concurrency, integration, and contract tests.</td></tr></tbody></table>
+            <p>
+              I then compile the application, run unit and integration tests, test the API with representative inputs, review
+              database execution plans where relevant, run static analysis such as SonarQube, and complete a manual review
+              before merging.
+            </p>
+            <p>
+              <strong>Suggested answer:</strong> I use AI to generate an initial implementation or suggest improvements, but
+              I verify business logic, security, exception handling, performance, and edge cases. I compile it, run automated
+              tests and static analysis, perform API and integration testing, and review it manually before production use.
+            </p>
+            <h5 class="text-warning">20. If you review the AI code again, what is the benefit?</h5>
+            <p>
+              AI reduces repetitive effort and gives me a fast starting point; human review provides correctness,
+              architectural judgment, security ownership, and business context. I do not need to start boilerplate, test
+              scaffolding, documentation, or an initial analysis from zero, but I still decide whether the result belongs in
+              the codebase.
+            </p>
+            <table class="table table-dark table-bordered"><thead><tr><th>Activity</th><th>How AI helps</th></tr></thead><tbody><tr><td>Boilerplate</td><td>DTOs, mappings, controllers, builders, and configuration drafts</td></tr><tr><td>Testing</td><td>Initial JUnit, Mockito, edge-case, and parameterized test suggestions</td></tr><tr><td>Debugging</td><td>Possible causes from stack traces and focused investigation ideas</td></tr><tr><td>Review</td><td>Potential null handling, code smells, missing tests, and obvious defects</td></tr><tr><td>SQL</td><td>Query alternatives and indexing questions to validate with execution plans</td></tr><tr><td>Legacy code</td><td>Explanation of unfamiliar flows, dependencies, and refactoring options</td></tr></tbody></table>
+            <p>
+              For a service with 20 methods, AI can produce a first set of tests and identify likely gaps quickly. I still
+              verify that tests assert meaningful behavior rather than merely increasing coverage, and I run them against the
+              real application behavior.
+            </p>
+            <h5 class="text-warning">Responsible-use follow-ups</h5>
+            <ul>
+              <li>Never paste credentials, customer data, payment information, proprietary source, or confidential architecture into an unapproved AI tool.</li>
+              <li>Use the organization's approved tool, privacy settings, access controls, and retention policy.</li>
+              <li>Check generated code for security vulnerabilities, dependency licenses, copied material, and outdated APIs.</li>
+              <li>Verify generated SQL with schema knowledge, tests, execution plans, transaction behavior, and authorization rules.</li>
+              <li>AI-generated tests can miss requirements or encode the same bug as the implementation, so use independent test cases and reviews.</li>
+              <li>AI cannot replace accountable developers, domain experts, or code reviewers; it can act as an additional productivity and review aid.</li>
+            </ul>
+            <p>
+              <strong>Interview-ready answer:</strong> AI helps me move faster on repetitive work, understand unfamiliar code,
+              generate test ideas, and explore solutions. I remain responsible for the output: I protect confidential data,
+              review the design and security, compile and test the code, run static analysis, verify performance and edge
+              cases, and obtain normal peer approval before merging.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="devops">
+        <h2 class="accordion-header" id="blueGreenVsCanaryTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#blueGreenVsCanaryTopBody">Blue-Green deployment vs Canary deployment: how do they work?</button>
+        </h2>
+        <div id="blueGreenVsCanaryTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Both strategies release a new application version with reduced production risk. Blue-Green switches traffic
+              between two complete environments, while Canary gradually exposes a small percentage of users to the new version.
+            </p>
+            <h5 class="text-warning">1. Blue-Green deployment</h5>
+            <pre><code class="language-text">Blue:  stable version v1, currently serving 100%
+Green: new version v2, deployed and smoke-tested
+
+Load balancer switches 100% traffic from Blue to Green.
+Blue remains available temporarily for fast rollback.</code></pre>
+            <p>
+              Example: a Spring Boot application runs v1 in the Blue EC2 or ECS environment. We deploy v2 to Green, validate
+              health and smoke-test endpoints, then change the ALB target group or CodeDeploy routing to Green. If v2 fails,
+              route traffic back to Blue.
+            </p>
+            <ul><li><strong>Advantages:</strong> fast cutover, fast rollback, and independent validation.</li><li><strong>Disadvantages:</strong> additional infrastructure cost, two versions running together, and database compatibility challenges.</li></ul>
+            <h5 class="text-warning">2. Canary deployment</h5>
+            <pre><code class="language-text">Initial:  v1 = 95%, v2 canary = 5%
+Next:     v1 = 75%, v2 canary = 25%
+Next:     v1 = 50%, v2 canary = 50%
+Final:    v1 = 0%,  v2 = 100%</code></pre>
+            <p>
+              Example: for 10,000 requests per minute, route 500 requests to v2 and 9,500 to v1. Monitor the canary's error
+              rate, p95/p99 latency, resource usage, database behavior, and business metrics such as payment success. Increase
+              traffic only when healthy; otherwise reduce canary traffic to zero.
+            </p>
+            <ul><li><strong>Advantages:</strong> smaller blast radius, real production validation, gradual rollout, and early regression detection.</li><li><strong>Disadvantages:</strong> more complex routing and monitoring, two versions coexisting, and users may see different behavior.</li></ul>
+            <h5 class="text-warning">Comparison</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Feature</th><th>Blue-Green</th><th>Canary</th></tr></thead><tbody><tr><td>Traffic switch</td><td>Usually 100% at once</td><td>Gradual percentage-based rollout</td></tr><tr><td>Initial exposure</td><td>All users after cutover</td><td>Small controlled user group</td></tr><tr><td>Rollback</td><td>Switch back to old environment</td><td>Reduce new-version traffic to zero</td></tr><tr><td>Risk</td><td>Cutover risk</td><td>Lower blast radius</td></tr><tr><td>Best for</td><td>Quick environment switch</td><td>Gradual production validation</td></tr></tbody></table>
+            <h5 class="text-warning">AWS implementation</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>AWS service</th><th>Purpose</th></tr></thead><tbody><tr><td>ALB</td><td>Route traffic between target groups or service versions</td></tr><tr><td>EC2 Auto Scaling/ECS</td><td>Run and scale application instances or containers</td></tr><tr><td>AWS CodeDeploy</td><td>Manage Blue-Green and controlled traffic shifting</td></tr><tr><td>CloudWatch</td><td>Monitor errors, latency, resources, and business alarms</td></tr><tr><td>Route 53</td><td>DNS-level routing when required</td></tr></tbody></table>
+            <p>
+              With ECS and CodeDeploy, deploy the new task set, run health checks, shift traffic gradually, and use
+              CloudWatch alarms to stop or roll back automatically.
+            </p>
+            <h5 class="text-warning">Payment canary scenario</h5>
+            <p>
+              If payment failures rise from 0.1% to 5% after 10 minutes at 5% canary traffic, stop the rollout immediately,
+              route traffic back to the stable version, inspect logs and traces, and check database changes, gateway responses,
+              timeouts, and business metrics. After fixing and testing the cause, restart the canary gradually.
+            </p>
+            <p>
+              Routing traffic back does not undo payments already processed by v2. Payment APIs therefore need idempotency
+              keys, durable transaction records, audit trails, and reconciliation before and after the rollout.
+            </p>
+            <p>
+              <strong>Interview answer:</strong> Blue-Green keeps two production environments and switches traffic from the
+              stable environment to the new one, giving a fast rollback. Canary sends a small percentage of real traffic to
+              the new version and increases it gradually based on technical and business metrics. I choose Canary when
+              limiting blast radius is more important, Blue-Green when quick cutover is the priority, and I keep database
+              changes backward-compatible in both cases.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="springboot">
+        <h2 class="accordion-header" id="validVsValidatedTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#validVsValidatedTopBody">@Valid vs @Validated: what is the difference?</button>
+        </h2>
+        <div id="validVsValidatedTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Both trigger Jakarta Bean Validation in Spring Boot. <code>@Valid</code> is the standard Jakarta validation
+              annotation and is commonly used for basic object and nested-object validation. <code>@Validated</code> is
+              Spring-specific and adds validation-group support; it is also used with Spring's method-validation proxy.
+            </p>
+            <h5 class="text-warning">1. @Valid: basic request and nested validation</h5>
+            <pre><code class="language-java">public class EmployeeRequest {
+    @NotBlank
+    private String name;
+
+    @Min(18)
+    private int age;
+
+    @Email
+    private String email;
+}
+
+@PostMapping("/employees")
+public ResponseEntity&lt;String&gt; create(
+        @Valid @RequestBody EmployeeRequest request) {
+    return ResponseEntity.ok("Created");
+}</code></pre>
+            <p>
+              If a constraint fails, Spring MVC normally returns a validation error response such as HTTP 400. For nested
+              DTOs, put <code>@Valid</code> on the nested field to cascade validation:
+            </p>
+            <pre><code class="language-java">public class EmployeeRequest {
+    @NotBlank
+    private String name;
+
+    @Valid
+    private AddressRequest address;
+}
+
+public class AddressRequest {
+    @NotBlank
+    private String city;
+}</code></pre>
+            <p>
+              If <code>@Valid</code> is omitted from <code>address</code>, constraints inside <code>AddressRequest</code>
+              are not cascaded automatically.
+            </p>
+            <h5 class="text-warning">2. @Validated: validation groups</h5>
+            <pre><code class="language-java">public interface CreateGroup {}
+public interface UpdateGroup {}
+
+public class EmployeeRequest {
+    @NotBlank(groups = CreateGroup.class)
+    private String name;
+
+    @NotNull(groups = CreateGroup.class)
+    private Integer age;
+
+    @NotNull(groups = UpdateGroup.class)
+    private Long employeeId;
+}
+
+@PostMapping("/employees")
+public ResponseEntity&lt;String&gt; create(
+        @Validated(CreateGroup.class)
+        @RequestBody EmployeeRequest request) {
+    return ResponseEntity.ok("Created");
+}
+
+@PutMapping("/employees")
+public ResponseEntity&lt;String&gt; update(
+        @Validated(UpdateGroup.class)
+        @RequestBody EmployeeRequest request) {
+    return ResponseEntity.ok("Updated");
+}</code></pre>
+            <p>
+              Groups allow different rules for different operations, such as create and update. Without specifying a group,
+              constraints in the default group are applied.
+            </p>
+            <h5 class="text-warning">3. Method-level validation</h5>
+            <pre><code class="language-java">@Service
+@Validated
+public class EmployeeService {
+    public Employee getEmployee(@Min(1) Long employeeId) {
+        return repository.findById(employeeId);
+    }
+}</code></pre>
+            <p>
+              <code>@Validated</code> on the Spring bean enables method validation through a proxy. The method parameter or
+              return value must have constraints such as <code>@Min</code>, <code>@NotNull</code>, or <code>@Size</code>.
+              The validation starter and method-validation infrastructure must be present. As with other proxy features,
+              self-invocation within the same bean can bypass method validation.
+            </p>
+            <h5 class="text-warning">Key differences</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Feature</th><th>@Valid</th><th>@Validated</th></tr></thead><tbody><tr><td>Package</td><td><code>jakarta.validation.Valid</code></td><td><code>org.springframework.validation.annotation.Validated</code></td></tr><tr><td>Standard annotation</td><td>Yes, Jakarta Bean Validation</td><td>No, Spring-specific</td></tr><tr><td>Basic object validation</td><td>Yes</td><td>Yes</td></tr><tr><td>Nested validation</td><td>Yes, when placed on nested field</td><td>Yes, with cascading rules</td></tr><tr><td>Validation groups</td><td>No group-selection attribute</td><td>Yes</td></tr><tr><td>Method-level validation</td><td>Not by itself</td><td>Enabled by placing it on the Spring class</td></tr></tbody></table>
+            <h5 class="text-warning">JPMC interview tip</h5>
+            <p>
+              The most important difference is validation-group support. I use <code>@Valid</code> for ordinary request-body
+              and nested DTO validation. I use <code>@Validated</code> when create and update operations need different rules,
+              or when enabling method-level validation on a Spring service.
+            </p>
+            <p>
+              <strong>Interview answer:</strong> <code>@Valid</code> is the standard Jakarta annotation for validating an
+              object and cascading into nested objects. <code>@Validated</code> is Spring-specific, supports validation
+              groups, and is used with Spring method validation. If we forget <code>@Valid</code> on a nested DTO, the nested
+              object's constraints will not be validated automatically.
+            </p>
+          </div>
+        </div>
+      </div>
       <div class="accordion-item" data-category="devops">
         <h2 class="accordion-header" id="throughputOneThousandToTwoFiftyTop">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#throughputOneThousandToTwoFiftyTopBody">The application should handle 1,000 requests per minute but processes only 250: where do you analyze?</button>
@@ -600,6 +1439,17 @@ class CheckoutService {
               and some managed Kafka services can scale broker capacity or storage. Kafka partitions and broker topology
               still require capacity planning and controlled changes.
             </p>
+            <h5 class="text-warning">Does Kafka autoscale by default?</h5>
+            <p>
+              No. Kafka automatically coordinates consumer-group membership, assigns partitions, and rebalances when
+              consumers join or leave. It does not automatically create consumer pods, increase partitions, or add brokers
+              merely because consumer lag rises. An external orchestrator or managed-cloud feature is needed for scaling.
+            </p>
+            <p>
+              In Kubernetes, KEDA can watch consumer-group lag and change the Spring Boot deployment replica count. On ECS,
+              use CloudWatch lag metrics with Application Auto Scaling. On EC2, use CloudWatch alarms with an Auto Scaling
+              Group. In a self-managed VM setup, use a custom lag monitor and controlled scaling automation.
+            </p>
             <h5 class="text-warning">What can scale?</h5>
             <table class="table table-dark table-bordered"><thead><tr><th>Component</th><th>How scaling works</th></tr></thead><tbody><tr><td>Consumers</td><td>Scale application instances using lag, CPU, or processing latency. One partition is assigned to only one consumer in a group.</td></tr><tr><td>Producers</td><td>Scale producer application instances behind a load balancer; Kafka distributes writes across partitions.</td></tr><tr><td>Partitions</td><td>Increase manually or through an approved automation process. They cannot normally be decreased.</td></tr><tr><td>Brokers</td><td>Add brokers and rebalance partition replicas; managed services may offer capacity autoscaling depending on the provider.</td></tr><tr><td>Storage</td><td>Cloud-managed Kafka may expand storage automatically; self-managed clusters need disk planning or automation.</td></tr></tbody></table>
             <h5 class="text-warning">Consumer autoscaling example in Kubernetes</h5>
@@ -630,6 +1480,29 @@ spec:
               KEDA or an HPA-style controller observes consumer lag and changes the number of pods. When lag falls, it can
               scale down to the minimum. Configure cooldowns and stabilization windows so temporary spikes do not cause
               constant scaling and rebalancing.
+            </p>
+            <h5 class="text-warning">Partition limitation during peak load</h5>
+            <p>
+              If the <code>orders</code> topic has only 3 partitions and KEDA scales the consumer deployment from 3 to 8
+              pods, only 3 consumers can actively consume. Seven pods remain idle because one partition is assigned to only
+              one consumer in a group. Lag can therefore remain high if the topic has too few partitions or if the database
+              and downstream service are the real bottleneck.
+            </p>
+            <h5 class="text-warning">Does Kafka autoscale partitions?</h5>
+            <p>
+              No. Partition changes are normally an administrative operation. For example, an operator can increase a topic
+              from 3 to 6 partitions with the Kafka CLI:
+            </p>
+            <pre><code class="language-bash">kafka-topics.sh \
+  --bootstrap-server kafka:9092 \
+  --alter \
+  --topic orders \
+  --partitions 6</code></pre>
+            <p>
+              Kafka then rebalances the consumer group and the new partitions can be assigned. Existing records are not
+              redistributed automatically, partitions cannot normally be decreased, and increasing partitions can change
+              key-to-partition mapping and affect per-key ordering. Automated partition expansion is possible through the
+              Kafka Admin API, but should be controlled by capacity rules rather than triggered by one short lag spike.
             </p>
             <h5 class="text-warning">Broker scaling</h5>
             <p>
