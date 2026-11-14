@@ -179,6 +179,462 @@
     </div>
     <div class="accordion" id="accordionSeniorJava">
       <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="dualWriteProblemTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#dualWriteProblemTopBody">What is the Dual Write problem and how do we overcome it?</button>
+        </h2>
+        <div id="dualWriteProblemTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              The Dual Write problem occurs when one business operation must update two independent systems, such as saving
+              an order in MySQL and publishing an <code>OrderCreated</code> event to Kafka. Spring's
+              <code>@Transactional</code> does not automatically make a MySQL transaction and a Kafka operation one atomic
+              transaction.
+            </p>
+            <pre><code class="language-java">@Transactional
+public void createOrder(Order order) {
+    orderRepository.save(order); // Write 1: MySQL
+    kafkaTemplate.send("order-created",
+        new OrderCreated(order.getId())); // Write 2: Kafka
+}</code></pre>
+            <h5 class="text-warning">What can go wrong?</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>MySQL</th><th>Kafka</th><th>Result</th></tr></thead><tbody><tr><td>Succeeds</td><td>Succeeds</td><td>Correct</td></tr><tr><td>Succeeds</td><td>Fails</td><td>Order exists, downstream services never receive the event</td></tr><tr><td>Fails</td><td>Succeeds</td><td>Event exists for an order that was not saved</td></tr><tr><td>Fails</td><td>Fails</td><td>No order and no event</td></tr></tbody></table>
+            <h5 class="text-warning">Transactional Outbox pattern</h5>
+            <p>
+              Save the business record and an event record in the same local database transaction. The event is not sent to
+              Kafka directly from the request transaction.
+            </p>
+            <pre><code class="language-java">@Transactional
+public void createOrder(Order order) {
+    orderRepository.save(order);
+
+    outboxRepository.save(new OutboxEvent(
+        order.getId(), "ORDER_CREATED", "PENDING"));
+}</code></pre>
+            <p>
+              If the transaction commits, both the order and outbox row are saved. If it rolls back, both are rolled back.
+              A separate publisher reads pending outbox events and sends them to Kafka.
+            </p>
+            <pre><code class="language-java">@Scheduled(fixedDelay = 5000)
+public void publishOutboxEvents() {
+    List&lt;OutboxEvent&gt; events =
+        outboxRepository.findByStatus("PENDING");
+
+    for (OutboxEvent event : events) {
+        kafkaTemplate.send("order-created", event.getPayload())
+            .whenComplete((result, exception) -&gt; {
+                if (exception == null) markAsPublished(event);
+            });
+    }
+}</code></pre>
+            <p>
+              This is simplified illustrative code. Production code needs reliable row claiming, concurrency handling,
+              retries, failure recovery, and safe status updates. A crash after Kafka accepts the event but before the outbox
+              row is marked published can publish the event again, so consumers must be idempotent.
+            </p>
+            <h5 class="text-warning">CDC with Debezium</h5>
+            <pre><code class="language-text">Spring Boot saves order + outbox row in MySQL transaction
+    -&gt; MySQL binlog
+    -&gt; Debezium CDC
+    -&gt; Kafka Connect
+    -&gt; Kafka event
+    -&gt; downstream consumers</code></pre>
+            <p>
+              Debezium reads the database transaction log and publishes outbox changes without continuous application-level
+              polling. Polling is simpler and often suitable for small/medium systems; CDC provides near-real-time delivery
+              and scales well, but adds Kafka Connect/Debezium infrastructure and operations.
+            </p>
+            <table class="table table-dark table-bordered"><thead><tr><th>Concern</th><th>Polling publisher</th><th>Debezium CDC</th></tr></thead><tbody><tr><td>Mechanism</td><td>Queries pending outbox rows</td><td>Reads database change log</td></tr><tr><td>Complexity</td><td>Relatively simple</td><td>More infrastructure</td></tr><tr><td>Latency</td><td>Depends on polling interval</td><td>Near real time</td></tr><tr><td>Database load</td><td>Repeated queries</td><td>Reads transaction log</td></tr></tbody></table>
+            <h5 class="text-warning">What about Kafka transactions?</h5>
+            <p>
+              Kafka transactions provide atomicity for operations within Kafka, such as publishing multiple Kafka records and
+              committing consumed offsets. They do not automatically make a MySQL transaction and Kafka transaction atomic
+              together. For MySQL plus Kafka, the Transactional Outbox pattern is generally preferred.
+            </p>
+            <p>
+              <strong>Interview-ready answer:</strong> Dual Write occurs when an application updates two independent systems,
+              such as saving an order in MySQL and publishing an event to Kafka. One operation can succeed while the other
+              fails, creating inconsistency. I solve it by saving the business data and an outbox event in the same database
+              transaction, then publishing the outbox through a retrying publisher or Debezium CDC. Consumers are idempotent
+              to handle duplicate delivery.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="springboot">
+        <h2 class="accordion-header" id="testingInterviewQuestionsTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#testingInterviewQuestionsTopBody">Spring Boot testing: 15 interview questions with detailed examples</button>
+        </h2>
+        <div id="testingInterviewQuestionsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <h5 class="text-warning">1. Unit testing vs component testing</h5>
+            <p>
+              A unit test tests one small unit, usually a class or method, in isolation. Dependencies are replaced with
+              mocks or fakes, so the test is fast and identifies logic errors. A component test loads one application
+              component or slice, such as Spring MVC, and verifies how several real framework pieces work together.
+            </p>
+            <pre><code class="language-java">// Unit test: service logic with a mocked repository
+@ExtendWith(MockitoExtension.class)
+class OrderServiceTest {
+    @Mock OrderRepository repository;
+    @InjectMocks OrderService service;
+
+    @Test
+    void rejectsDuplicateOrder() {
+        when(repository.existsById("O-1")).thenReturn(true);
+        assertThrows(DuplicateOrderException.class,
+            () -&gt; service.create("O-1"));
+    }
+}</code></pre>
+            <p>
+              A component test could use <code>@WebMvcTest(OrderController.class)</code> to test controller, JSON binding,
+              validation, exception handling, and Spring MVC routing together while mocking only the service boundary.
+            </p>
+            <h5 class="text-warning">2. @Mock vs @MockBean vs @MockitoBean</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Annotation</th><th>Where it works</th><th>What it does</th></tr></thead><tbody><tr><td><code>@Mock</code></td><td>Mockito test</td><td>Creates a Mockito mock; it does not add it to the Spring application context.</td></tr><tr><td><code>@MockBean</code></td><td>Spring Boot test</td><td>Creates/replaces a mock in the Spring context so an autowired bean receives it.</td></tr><tr><td><code>@MockitoBean</code></td><td>Spring Framework test context</td><td>Modern Spring-supported Mockito bean override; useful in newer Spring Boot/Spring versions.</td></tr></tbody></table>
+            <pre><code class="language-java">@ExtendWith(MockitoExtension.class)
+class UnitTest {
+    @Mock PaymentClient client; // Mockito only
+}
+
+@WebMvcTest(PaymentController.class)
+class ControllerTest {
+    @MockitoBean PaymentService service; // Spring context mock
+}</code></pre>
+            <p>
+              Use <code>@Mock</code> for a pure unit test. Use <code>@MockBean</code> in existing Boot tests where it is
+              supported, or <code>@MockitoBean</code> in modern Spring test setups. They are not interchangeable because a
+              plain Mockito mock is invisible to Spring dependency injection.
+            </p>
+            <h5 class="text-warning">3. @SpringBootTest vs @WebMvcTest</h5>
+            <p>
+              <code>@SpringBootTest</code> loads the full application context and is appropriate for end-to-end integration
+              behavior across controllers, services, repositories, configuration, and messaging. It is slower.
+              <code>@WebMvcTest</code> loads only the MVC slice and is faster for controller behavior, JSON mapping,
+              validation, security filters, and HTTP status checks.
+            </p>
+            <pre><code class="language-java">@SpringBootTest
+@AutoConfigureMockMvc
+class FullApplicationTest { }
+
+@WebMvcTest(OrderController.class)
+class OrderControllerTest {
+    @Autowired MockMvc mockMvc;
+    @MockitoBean OrderService service;
+}</code></pre>
+            <h5 class="text-warning">4. Testing REST APIs with MockMvc</h5>
+            <p>
+              <code>MockMvc</code> sends requests through Spring MVC without starting a real HTTP server. It verifies routing,
+              request JSON, validation, status codes, response JSON, headers, and exception handling.
+            </p>
+            <pre><code class="language-java">@WebMvcTest(OrderController.class)
+class OrderControllerTest {
+    @Autowired MockMvc mockMvc;
+    @MockitoBean OrderService service;
+
+    @Test
+    void createsOrder() throws Exception {
+        when(service.create(any())).thenReturn(new OrderResponse("O-1"));
+
+        mockMvc.perform(post("/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"productId\":\"P-1\",\"quantity\":2}"))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.orderId").value("O-1"));
+    }
+}</code></pre>
+            <h5 class="text-warning">5. Database integration without production database</h5>
+            <p>
+              Use a repository slice test with <code>@DataJpaTest</code> for JPA mappings and queries. For behavior that
+              depends on a real database engine, use Testcontainers with a disposable PostgreSQL/MySQL container. Never point
+              tests at production; use isolated schemas and test data.
+            </p>
+            <pre><code class="language-java">@DataJpaTest
+class OrderRepositoryTest {
+    @Autowired OrderRepository repository;
+
+    @Test
+    void findsPendingOrders() {
+        repository.save(new Order("O-1", Status.PENDING));
+        assertThat(repository.findByStatus(Status.PENDING)).hasSize(1);
+    }
+}</code></pre>
+            <h5 class="text-warning">6. What is Testcontainers?</h5>
+            <p>
+              Testcontainers is a Java library that allows us to run real dependencies like MySQL, PostgreSQL, Kafka, and
+              Redis inside Docker containers during automated testing.
+            </p>
+            <h5 class="text-warning">Why do we need Testcontainers?</h5>
+            <p>
+              Suppose an Employee Spring Boot application uses Spring Data JPA and MySQL. Mocking the repository is fast and
+              tests business logic, but it does not verify actual SQL execution, JPA mappings, or database connectivity.
+              Testcontainers starts a temporary real MySQL database specifically for the integration test.
+            </p>
+            <h5 class="text-warning">How does it work?</h5>
+            <ol><li>JUnit starts the integration test.</li><li>Testcontainers starts a MySQL 8.0 Docker container.</li><li>Spring Boot connects using dynamically assigned connection details.</li><li>The test saves, updates, retrieves, and deletes records.</li><li>The temporary container is stopped and removed after the test.</li></ol>
+            <p>You need Docker or a compatible container runtime running, but you do not need to manually install MySQL on the laptop.</p>
+            <h5 class="text-warning">Maven dependencies</h5>
+            <pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-boot-starter-test&lt;/artifactId&gt;
+    &lt;scope&gt;test&lt;/scope&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;org.testcontainers&lt;/groupId&gt;
+    &lt;artifactId&gt;junit-jupiter&lt;/artifactId&gt;
+    &lt;scope&gt;test&lt;/scope&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;org.testcontainers&lt;/groupId&gt;
+    &lt;artifactId&gt;mysql&lt;/artifactId&gt;
+    &lt;scope&gt;test&lt;/scope&gt;
+&lt;/dependency&gt;</code></pre>
+            <p>Use a Testcontainers version compatible with the Spring Boot and Java versions, typically managed through the Testcontainers BOM.</p>
+            <h5 class="text-warning">Spring Boot integration test</h5>
+            <pre><code class="language-java">@SpringBootTest
+@Testcontainers
+class EmployeeIntegrationTest {
+    @Container
+    static MySQLContainer&lt;?&gt; mysql =
+        new MySQLContainer&lt;&gt;("mysql:8.0")
+            .withDatabaseName("employee_db")
+            .withUsername("test")
+            .withPassword("test");
+
+    @DynamicPropertySource
+    static void configureProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", mysql::getJdbcUrl);
+        registry.add("spring.datasource.username", mysql::getUsername);
+        registry.add("spring.datasource.password", mysql::getPassword);
+    }
+
+    @Autowired EmployeeRepository repository;
+
+    @Test
+    void shouldSaveEmployee() {
+        Employee employee = new Employee();
+        employee.setName("Rahul");
+        Employee saved = repository.save(employee);
+        assertNotNull(saved.getId());
+        assertTrue(repository.findById(saved.getId()).isPresent());
+    }
+}</code></pre>
+            <p>
+              <code>@DynamicPropertySource</code> supplies the actual connection URL, username, and password of the temporary
+              MySQL container to Spring Boot.
+            </p>
+            <h5 class="text-warning">What else can we test?</h5>
+            <ul><li><strong>MySQL/PostgreSQL:</strong> JPA repositories, SQL queries, transactions, and migrations.</li><li><strong>Apache Kafka:</strong> Real producer/consumer communication, serialization, and event processing.</li><li><strong>Redis:</strong> Caching, expiration, and Redis operations.</li><li><strong>MongoDB:</strong> Document persistence and repository integration.</li></ul>
+            <h5 class="text-warning">Testcontainers vs Mockito vs H2</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Feature</th><th>Mockito</th><th>H2</th><th>Testcontainers</th></tr></thead><tbody><tr><td>Real database</td><td>No</td><td>In-memory</td><td>Real database engine</td></tr><tr><td>Docker required</td><td>No</td><td>No</td><td>Yes</td></tr><tr><td>MySQL compatibility</td><td>Not applicable</td><td>Not always identical</td><td>Yes, with MySQL container</td></tr><tr><td>Speed</td><td>Very fast</td><td>Fast</td><td>Usually slower</td></tr><tr><td>Best suited for</td><td>Unit tests</td><td>Lightweight DB tests</td><td>Realistic integration tests</td></tr></tbody></table>
+            <p>H2 is useful, but it may behave differently from MySQL or PostgreSQL. Testcontainers catches database-specific issues that mocked repositories or H2 might miss.</p>
+            <h5 class="text-warning">Can Testcontainers start MySQL and Kafka together?</h5>
+            <p>Yes. Testcontainers supports Kafka just like MySQL, PostgreSQL, and Redis.</p>
+            <pre><code class="language-java">@SpringBootTest
+@Testcontainers
+class OrderIntegrationTest {
+    @Container
+    static MySQLContainer&lt;?&gt; mysql =
+        new MySQLContainer&lt;&gt;("mysql:8.0");
+
+    @Container
+    static KafkaContainer kafka =
+        new KafkaContainer(DockerImageName.parse("apache/kafka:latest"));
+
+    @DynamicPropertySource
+    static void configureProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", mysql::getJdbcUrl);
+        registry.add("spring.datasource.username", mysql::getUsername);
+        registry.add("spring.datasource.password", mysql::getPassword);
+        registry.add("spring.kafka.bootstrap-servers", kafka::getBootstrapServers);
+    }
+}</code></pre>
+            <p>
+              This allows the test to verify that an order is saved in MySQL, an <code>OrderCreated</code> event is
+              published to Kafka, and a consumer receives and processes it. For asynchronous Kafka consumption, use Awaitility
+              or bounded polling rather than arbitrary <code>Thread.sleep()</code>.
+            </p>
+            <p>
+              <strong>Interview-ready answer:</strong> Testcontainers starts real dependencies such as MySQL, Kafka, Redis,
+              or PostgreSQL inside temporary Docker containers. In Spring Boot I use <code>@Testcontainers</code> and
+              <code>@Container</code>, configure dynamic connection properties, and execute repository or messaging tests
+              against the real infrastructure. The containers are cleaned up after the tests, making integration tests
+              realistic and repeatable.
+            </p>
+            <h5 class="text-warning">7. Mocking external REST API calls</h5>
+            <p>
+              Do not call a real payment, maps, or email provider from ordinary tests. Mock at the client boundary for unit
+              tests, and use WireMock, MockWebServer, or a Testcontainers-based stub for integration tests so the application
+              still performs a real HTTP call against predictable responses.
+            </p>
+            <pre><code class="language-java">@ExtendWith(MockitoExtension.class)
+class PaymentServiceTest {
+    @Mock PaymentClient paymentClient;
+    @InjectMocks PaymentService service;
+
+    @Test
+    void handlesProviderTimeout() {
+        when(paymentClient.charge(any()))
+            .thenThrow(new SocketTimeoutException());
+        assertThrows(PaymentUnavailableException.class,
+            () -&gt; service.pay(request()));
+    }
+}</code></pre>
+            <p>
+              Test success, timeout, 4xx/5xx response, malformed response, slow response, retry, circuit breaker, and
+              idempotency behavior. Keep the stub contract versioned so tests do not drift from the provider contract.
+            </p>
+            <h5 class="text-warning">8. Testing Kafka producers and consumers</h5>
+            <p>
+              For a producer, verify topic, key, payload, headers, serialization, and error handling. For a consumer, verify
+              deserialization, business processing, acknowledgement/offset behavior, retries, dead-letter publishing, and
+              idempotency. Use Embedded Kafka for fast Spring Kafka tests or Testcontainers Kafka for production-like behavior.
+            </p>
+            <pre><code class="language-java">@SpringBootTest
+@EmbeddedKafka(partitions = 1, topics = "orders")
+class OrderKafkaTest {
+    @Autowired KafkaTemplate&lt;String, OrderCreated&gt; template;
+    @Autowired OrderRepository repository;
+
+    @Test
+    void consumesOrderEvent() {
+        template.send("orders", "O-1", new OrderCreated("O-1"));
+        await().atMost(Duration.ofSeconds(10))
+            .untilAsserted(() -&gt;
+                assertThat(repository.existsById("O-1")).isTrue());
+    }
+}</code></pre>
+            <h5 class="text-warning">9. What is code coverage and how does JaCoCo calculate it?</h5>
+            <p>
+              Code coverage measures which executable code was exercised by tests; it does not prove that the code is correct.
+              JaCoCo instruments compiled Java bytecode while tests run, records execution probes, and reports counters such
+              as instructions, lines, branches, methods, and classes. A typical Maven build runs tests and generates the
+              report with <code>jacoco-maven-plugin</code>, which SonarQube can consume.
+            </p>
+            <pre><code class="language-xml">&lt;plugin&gt;
+  &lt;groupId&gt;org.jacoco&lt;/groupId&gt;
+  &lt;artifactId&gt;jacoco-maven-plugin&lt;/artifactId&gt;
+  &lt;version&gt;0.8.12&lt;/version&gt;
+  &lt;executions&gt;
+    &lt;execution&gt;&lt;goals&gt;&lt;goal&gt;prepare-agent&lt;/goal&gt;&lt;/goals&gt;&lt;/execution&gt;
+    &lt;execution&gt;&lt;id&gt;report&lt;/id&gt;&lt;phase&gt;test&lt;/phase&gt;
+      &lt;goals&gt;&lt;goal&gt;report&lt;/goal&gt;&lt;/goals&gt;
+    &lt;/execution&gt;
+  &lt;/executions&gt;
+&lt;/plugin&gt;</code></pre>
+            <h5 class="text-warning">10. Statement vs branch vs line coverage</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Metric</th><th>Meaning</th><th>Example</th></tr></thead><tbody><tr><td>Line coverage</td><td>Whether executable source lines ran</td><td>A line inside an if block was executed</td></tr><tr><td>Instruction/statement coverage</td><td>Whether bytecode instructions ran</td><td>More fine-grained than source-line counting</td></tr><tr><td>Branch coverage</td><td>Whether each decision outcome ran</td><td>Both true and false paths of <code>if</code> were tested</td></tr></tbody></table>
+            <p>
+              A test can produce 100% line coverage while missing a false branch. For example, testing only a successful
+              payment does not prove that decline, timeout, and duplicate-payment paths work. Coverage is a signal for gaps,
+              not a substitute for meaningful assertions and domain tests.
+            </p>
+            <h5 class="text-warning">11. Testing exception scenarios</h5>
+            <pre><code class="language-java">@Test
+void rejectsInsufficientBalance() {
+    when(accountRepository.balance("A-1"))
+        .thenReturn(BigDecimal.TEN);
+
+    assertThatThrownBy(() -&gt; service.debit("A-1", BigDecimal.valueOf(20)))
+        .isInstanceOf(InsufficientBalanceException.class)
+        .hasMessage("Insufficient balance");
+}
+
+@Test
+void returnsBadRequestForInvalidInput() throws Exception {
+    mockMvc.perform(post("/orders")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"quantity\":0}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.errors").isArray());
+}</code></pre>
+            <p>
+              Test both the thrown exception and the externally visible behavior: status code, SOAP Fault or error body,
+              transaction outcome, logging/correlation, and whether retry or fallback behavior is correct.
+            </p>
+            <h5 class="text-warning">12. Testing asynchronous methods</h5>
+            <p>
+              Avoid arbitrary <code>Thread.sleep</code>. Inject a test executor when possible, return a
+              <code>CompletableFuture</code>, or use Awaitility to wait for a condition with a timeout. Verify completion,
+              failure, retry, context propagation, and that the test does not leave background work running.
+            </p>
+            <pre><code class="language-java">@Test
+void processesAsyncNotification() {
+    service.sendAsync("O-1");
+
+    await().atMost(Duration.ofSeconds(5))
+        .untilAsserted(() -&gt;
+            verify(notificationClient).send("O-1"));
+}</code></pre>
+            <h5 class="text-warning">13. Testing transactional rollback</h5>
+            <p>
+              Use an integration test with a real transaction-capable database. Execute a service method that writes data and
+              throws a rollback-triggering exception, then verify that the database has no partial rows. A test annotated with
+              <code>@Transactional</code> commonly rolls back at test completion, but that alone does not prove the service's
+              failure path rolled back.
+            </p>
+            <pre><code class="language-java">@SpringBootTest
+class TransferTransactionTest {
+    @Autowired TransferService service;
+    @Autowired AccountRepository accounts;
+
+    @Test
+    void rollsBackDebitWhenCreditFails() {
+        assertThrows(RuntimeException.class,
+            () -&gt; service.transfer("A-1", "B-1", amount()));
+
+        assertThat(accounts.findBalance("A-1"))
+            .isEqualByComparingTo("100.00");
+        assertThat(accounts.findBalance("B-1"))
+            .isEqualByComparingTo("50.00");
+    }
+}</code></pre>
+            <p>
+              Also test checked exceptions with <code>rollbackFor</code>, caught exceptions, <code>REQUIRES_NEW</code>,
+              self-invocation, and multiple data sources when those are part of the design. Use Testcontainers when database
+              behavior matters.
+            </p>
+            <h5 class="text-warning">14. Testing security and role-based authorization</h5>
+            <pre><code class="language-java">@WebMvcTest(AdminController.class)
+class AdminControllerSecurityTest {
+    @Autowired MockMvc mockMvc;
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void normalUserCannotReadAdminData() throws Exception {
+        mockMvc.perform(get("/admin/reports"))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void adminCanReadAdminData() throws Exception {
+        mockMvc.perform(get("/admin/reports"))
+            .andExpect(status().isOk());
+    }
+}</code></pre>
+            <p>
+              Also test unauthenticated requests, wrong roles, method-level security, tenant boundaries, CSRF for browser
+              sessions, JWT claim mapping, and that sensitive data is not returned. For state-changing CSRF-protected requests,
+              use <code>with(csrf())</code> in MockMvc tests.
+            </p>
+            <h5 class="text-warning">15. Smoke vs sanity vs regression testing</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Type</th><th>Purpose</th><th>Example</th></tr></thead><tbody><tr><td>Smoke</td><td>Broad, shallow check that the build/deployment is usable</td><td>Health endpoint, login, create order, and one read flow after deployment</td></tr><tr><td>Sanity</td><td>Narrow check that a specific fix or feature works</td><td>After fixing tax calculation, verify the affected tax scenarios and nearby behavior</td></tr><tr><td>Regression</td><td>Wider suite confirming existing behavior did not break</td><td>Run checkout, payment, refund, authentication, and reporting tests after a change</td></tr></tbody></table>
+            <p>
+              A typical pipeline runs unit tests and static analysis first, component/integration tests next, smoke tests after
+              deployment, and the broader regression suite before or during promotion. In production, smoke and health tests
+              should be safe, small, observable, and non-destructive.
+            </p>
+            <p>
+              <strong>Interview answer:</strong> I use a testing pyramid: fast unit tests for business logic, component tests
+              for Spring slices, integration tests with Testcontainers for real databases and Kafka, and a small number of
+              end-to-end tests. I verify success and failure paths, security, transactions, async behavior, and meaningful
+              coverage. Smoke tests validate deployment health, sanity tests validate a focused change, and regression tests
+              protect existing functionality.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
         <h2 class="accordion-header" id="kafkaProducerBrokerUnavailableTop">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaProducerBrokerUnavailableTopBody">What happens when a Kafka producer sends messages while the broker is unavailable?</button>
         </h2>
