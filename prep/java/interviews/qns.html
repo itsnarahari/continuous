@@ -178,6 +178,1167 @@
         onkeyup="searchQuestions()" />
     </div>
     <div class="accordion" id="accordionSeniorJava">
+      <div class="accordion-item" data-category="other">
+        <h2 class="accordion-header" id="aiMlProductRecommendationsTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#aiMlProductRecommendationsTopBody">How would you use AI/ML to recommend products based on purchase history?</button>
+        </h2>
+        <div id="aiMlProductRecommendationsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <h5 class="text-warning">Real-world example</h5>
+            <p>
+              Suppose a customer purchased an iPhone 16, AirPods, and Apple Watch. The system can recommend an iPhone case,
+              wireless charger, AirPods accessories, or a screen protector instead of relying on manually defined rules.
+            </p>
+            <h5 class="text-warning">Architecture flow</h5>
+            <pre><code class="language-text">Customer purchases product
+  -&gt; Order Service saves purchase in MySQL
+  -&gt; Order Service publishes PurchaseCompleted to Kafka
+  -&gt; Recommendation Service consumes the event
+  -&gt; Purchase history identifies preferences
+  -&gt; ML model generates recommendations
+  -&gt; Recommendations are stored in Redis
+  -&gt; Recommendation API returns products quickly</code></pre>
+            <h5 class="text-warning">Recommendation algorithms</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Algorithm</th><th>How it works</th><th>Example</th></tr></thead><tbody><tr><td>Collaborative filtering</td><td>Uses similar customers' behavior</td><td>Customers who bought iPhones also bought chargers</td></tr><tr><td>Content-based filtering</td><td>Uses product attributes</td><td>A smartphone buyer receives smartphone accessories</td></tr><tr><td>Hybrid recommendation</td><td>Combines both approaches</td><td>Uses customer preferences and similar-customer behavior</td></tr></tbody></table>
+            <p>Start with a hybrid recommendation system as the product catalog and purchase data grow.</p>
+            <h5 class="text-warning">Spring Boot integration</h5>
+            <pre><code class="language-text">Spring Boot Order Service
+          |
+        Kafka
+          |
+Recommendation Service
+          |
+      ML Model (Python)
+          |
+        Redis
+          |
+Spring Boot Recommendation API
+          |
+       Customer</code></pre>
+            <table class="table table-dark table-bordered"><thead><tr><th>Component</th><th>Technology</th></tr></thead><tbody><tr><td>Backend</td><td>Java + Spring Boot</td></tr><tr><td>Event streaming</td><td>Kafka</td></tr><tr><td>ML development</td><td>Python, Scikit-learn, or TensorFlow</td></tr><tr><td>Model serving</td><td>FastAPI</td></tr><tr><td>Cache</td><td>Redis</td></tr><tr><td>Database</td><td>MySQL</td></tr><tr><td>Monitoring</td><td>Prometheus + Grafana</td></tr></tbody></table>
+            <h5 class="text-warning">Important challenges</h5>
+            <ul><li><strong>Cold start:</strong> Use popular products, categories, and contextual recommendations for new customers.</li><li><strong>Scalability:</strong> Generate recommendations asynchronously instead of calculating them on every API request.</li><li><strong>Performance:</strong> Cache recommendations in Redis.</li><li><strong>Freshness:</strong> Update recommendations when new purchases occur.</li><li><strong>Privacy:</strong> Use customer data according to consent and applicable privacy requirements.</li><li><strong>Evaluation:</strong> Measure click-through rate, conversion rate, and recommendation revenue.</li></ul>
+            <p>
+              <strong>Interview-ready answer:</strong> I would combine collaborative and content-based filtering. When a
+              customer purchases a product, the Order Service publishes a purchase event to Kafka. A Recommendation Service
+              consumes it and updates customer preferences. An ML model generates personalized recommendations based on
+              purchase history and similar customer behavior. I would store recommendations in Redis and expose them through
+              a Spring Boot REST API for low-latency responses, while handling cold-start customers and measuring conversion.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="other">
+        <h2 class="accordion-header" id="validateAiArchitectureTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#validateAiArchitectureTopBody">Would you implement an architecture suggested by an AI coding assistant without validation?</button>
+        </h2>
+        <div id="validateAiArchitectureTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              No. I would use AI coding assistants as productivity tools, not as final architecture decision-makers. The
+              engineering team remains accountable for validating and approving the design.
+            </p>
+            <h5 class="text-warning">Example</h5>
+            <p>
+              If an AI assistant suggests a Spring Boot payment architecture using microservices, Kafka, Redis, MySQL, and
+              Kubernetes, the design may sound reasonable, but I would not implement it immediately.
+            </p>
+            <h5 class="text-warning">Validation checklist</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Area</th><th>What I check</th></tr></thead><tbody><tr><td>Functional requirements</td><td>Does it satisfy the actual business requirements?</td></tr><tr><td>Scalability</td><td>Can it handle expected traffic and growth?</td></tr><tr><td>Performance</td><td>Does it meet latency and throughput targets?</td></tr><tr><td>Security</td><td>Are authentication, authorization, encryption, and secrets handled correctly?</td></tr><tr><td>Reliability</td><td>What happens if Kafka, Redis, MySQL, or a downstream service fails?</td></tr><tr><td>Consistency</td><td>How are duplicate payments and inconsistent transactions prevented?</td></tr><tr><td>Cost</td><td>Is the infrastructure cost justified?</td></tr><tr><td>Maintainability</td><td>Can the team operate and evolve the design?</td></tr></tbody></table>
+            <h5 class="text-warning">Challenging an AI recommendation</h5>
+            <p>If AI recommends Kafka for payment processing, I would ask:</p>
+            <ul><li>Do we really need asynchronous communication?</li><li>What happens if Kafka is unavailable?</li><li>How do we prevent duplicate payment processing?</li><li>How do we maintain transaction consistency?</li><li>Do we need the Transactional Outbox pattern?</li><li>How do we handle retries and dead-letter queues?</li></ul>
+            <h5 class="text-warning">Architecture validation process</h5>
+            <ol><li>Gather business and non-functional requirements.</li><li>Ask AI to propose possible architectures.</li><li>Compare alternatives and trade-offs.</li><li>Validate security and reliability.</li><li>Build a proof of concept where necessary.</li><li>Conduct architecture and code reviews.</li><li>Document decisions using Architecture Decision Records.</li><li>Approve and implement the solution.</li></ol>
+            <p>
+              <strong>Interview-ready answer:</strong> I would not blindly implement an AI-generated architecture. I would
+              validate it against business requirements, scalability, performance, security, reliability, maintainability, and
+              cost. If it recommends Kafka for payments, I would evaluate delivery guarantees, duplicate processing, transaction
+              consistency, retries, and failure scenarios. I would build a proof of concept where necessary, conduct an
+              architecture review, document the decision, and then approve implementation.
+            </p>
+            <p><strong>Important distinction:</strong> AI/ML recommendation questions evaluate event-driven architecture and AI integration; AI-architecture validation questions evaluate engineering judgment and technical leadership.</p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="springboot">
+        <h2 class="accordion-header" id="seamlessUserSessionTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#seamlessUserSessionTopBody">How do you maintain a seamless user session without forcing repeated logins?</button>
+        </h2>
+        <div id="seamlessUserSessionTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              I would implement short-lived access tokens, long-lived refresh tokens, and automatic token refresh. This is a
+              standard approach for banking, e-commerce, and enterprise applications.
+            </p>
+            <h5 class="text-warning">1. Authentication architecture</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Token</th><th>Example validity</th><th>Purpose</th></tr></thead><tbody><tr><td>Access Token</td><td>15 minutes</td><td>Access protected APIs</td></tr><tr><td>Refresh Token</td><td>7 days</td><td>Generate new access tokens</td></tr></tbody></table>
+            <p>The client securely stores both tokens.</p>
+            <h5 class="text-warning">2. Automatic token refresh flow</h5>
+            <pre><code class="language-text">10:00 AM - Customer logs in
+10:15 AM - Access token expires
+10:20 AM - API returns HTTP 401
+          - Client calls /auth/refresh with refresh token
+          - Server validates refresh token
+          - Server issues new access and refresh tokens
+          - Client securely stores new tokens
+          - Client retries the original API request
+          - Customer does not notice the refresh</code></pre>
+            <h5 class="text-warning">3. Spring Boot refresh endpoint</h5>
+            <pre><code class="language-java">@PostMapping("/refresh")
+public ResponseEntity&lt;AuthResponse&gt; refresh(
+        @RequestBody RefreshRequest request) {
+    AuthResponse response = authService
+        .refreshToken(request.getRefreshToken());
+    return ResponseEntity.ok(response);
+}
+
+public AuthResponse refreshToken(String refreshToken) {
+    RefreshToken storedToken = refreshTokenRepository
+        .findByTokenHash(hash(refreshToken))
+        .orElseThrow(InvalidTokenException::new);
+
+    validateRefreshToken(storedToken);
+    String newAccessToken = jwtService.generateAccessToken(
+        storedToken.getUserId());
+    String newRefreshToken = jwtService.generateRefreshToken(
+        storedToken.getUserId());
+
+    rotateRefreshToken(storedToken, newRefreshToken);
+    return new AuthResponse(newAccessToken, newRefreshToken);
+}</code></pre>
+            <p>
+              In production, refresh-token rotation and revocation should happen atomically so concurrent refresh requests
+              cannot both reuse the same old token.
+            </p>
+            <h5 class="text-warning">4. Frontend interceptor</h5>
+            <pre><code class="language-javascript">axios.interceptors.response.use(
+  response =&gt; response,
+  async error =&gt; {
+    if (error.response?.status === 401) {
+      const newToken = await refreshAccessToken();
+      error.config.headers.Authorization = `Bearer ${newToken}`;
+      return axios(error.config);
+    }
+    return Promise.reject(error);
+  }
+);</code></pre>
+            <p>
+              This is simplified pseudocode. Production implementations must prevent infinite refresh loops, coordinate
+              concurrent refresh requests, and handle refresh failure. Use a single-flight refresh mechanism so that if ten
+              API calls fail simultaneously, the client makes one refresh request and then retries the pending calls.
+            </p>
+            <h5 class="text-warning">5. Multiple devices</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Device</th><th>Access token</th><th>Refresh token</th></tr></thead><tbody><tr><td>Mobile</td><td>AT1</td><td>RT1</td></tr><tr><td>Laptop</td><td>AT2</td><td>RT2</td></tr><tr><td>Tablet</td><td>AT3</td><td>RT3</td></tr></tbody></table>
+            <p>
+              Maintain a separate refresh-token session for each device. If the mobile access token expires, only the mobile
+              session is refreshed. If the user logs out from mobile, revoke RT1 while the laptop and tablet sessions remain active.
+            </p>
+            <h5 class="text-warning">6. Security considerations</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Concern</th><th>Solution</th></tr></thead><tbody><tr><td>Access token stolen</td><td>Short expiry</td></tr><tr><td>Refresh token stolen</td><td>Rotation and reuse detection</td></tr><tr><td>User logs out</td><td>Revoke refresh token</td></tr><tr><td>Password changed</td><td>Revoke active sessions according to policy</td></tr><tr><td>Multiple devices</td><td>Separate session records</td></tr><tr><td>Concurrent API failures</td><td>Single-flight token refresh</td></tr><tr><td>Refresh token expired</td><td>Ask the user to log in again</td></tr><tr><td>Browser token theft</td><td>Secure, HttpOnly, SameSite cookies</td></tr></tbody></table>
+            <p>For mobile apps, use platform-secure storage such as iOS Keychain or Android Keystore-backed storage.</p>
+            <h5 class="text-warning">7. Sliding session expiration</h5>
+            <p>
+              With a seven-day refresh-token validity, active use can rotate the token and give the new token another seven
+              days from the refresh time. Set an absolute maximum session lifetime, such as 30 days, so the session cannot
+              continue indefinitely.
+            </p>
+            <pre><code class="language-text">Day 1: Login, refresh token expires in 7 days
+Day 2: Rotate token, new expiry is 7 days from now
+Day 3: Rotate again
+Day 4: Same process
+Absolute maximum session lifetime: 30 days</code></pre>
+            <p>
+              <strong>Interview-ready answer:</strong> I would use short-lived JWT access tokens and longer-lived refresh
+              tokens. When the access token expires, the frontend automatically calls the refresh endpoint. The authentication
+              server validates expiration and revocation, then issues a new access token with refresh-token rotation and reuse
+              detection. An HTTP interceptor retries the failed request, using a single-flight mechanism for concurrent 401s.
+              Each device has a separate session and refresh token, allowing individual-device or all-device logout.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="springboot">
+        <h2 class="accordion-header" id="multiDeviceRefreshTokenLogoutTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#multiDeviceRefreshTokenLogoutTopBody">If a user logs out from one of three devices, should all refresh tokens be revoked?</button>
+        </h2>
+        <div id="multiDeviceRefreshTokenLogoutTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              For normal device-level logout, revoke only the refresh token associated with the device that initiated logout.
+              The sessions on the other devices remain active. Revoke all sessions only for logout-all or security-related
+              events.
+            </p>
+            <h5 class="text-warning">Example</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Device</th><th>Refresh token</th><th>Status before logout</th></tr></thead><tbody><tr><td>Mobile phone</td><td>RT1</td><td>Active</td></tr><tr><td>Laptop</td><td>RT2</td><td>Active</td></tr><tr><td>Tablet</td><td>RT3</td><td>Active</td></tr></tbody></table>
+            <p>If the user logs out from the mobile phone:</p>
+            <table class="table table-dark table-bordered"><thead><tr><th>Device</th><th>Refresh token</th><th>Status after logout</th></tr></thead><tbody><tr><td>Mobile phone</td><td>RT1</td><td>Revoked</td></tr><tr><td>Laptop</td><td>RT2</td><td>Active</td></tr><tr><td>Tablet</td><td>RT3</td><td>Active</td></tr></tbody></table>
+            <p>The user can continue using the laptop and tablet without logging in again.</p>
+            <h5 class="text-warning">Refresh-token table</h5>
+            <pre><code class="language-sql">CREATE TABLE refresh_tokens (
+    id BIGINT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    device_id VARCHAR(255),
+    token_hash VARCHAR(512),
+    expires_at TIMESTAMP,
+    revoked BOOLEAN DEFAULT FALSE
+);</code></pre>
+            <pre><code class="language-java">public void logout(String refreshToken) {
+    String tokenHash = hash(refreshToken);
+    RefreshToken token = refreshTokenRepository
+        .findByTokenHash(tokenHash)
+        .orElseThrow(InvalidTokenException::new);
+
+    token.setRevoked(true);
+    refreshTokenRepository.save(token);
+}</code></pre>
+            <p>When refreshing an access token, check whether the corresponding refresh token is revoked.</p>
+            <h5 class="text-warning">Different logout scenarios</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>User action</th><th>Expected behavior</th></tr></thead><tbody><tr><td>Logout from this device</td><td>Revoke this device's session</td></tr><tr><td>Logout from all devices</td><td>Revoke all active sessions</td></tr><tr><td>Password changed</td><td>Usually revoke all refresh tokens</td></tr><tr><td>Account compromised</td><td>Revoke all sessions immediately</td></tr><tr><td>Refresh-token reuse detected</td><td>Revoke the affected token family; potentially all sessions according to policy</td></tr></tbody></table>
+            <h5 class="text-warning">Architect-level design</h5>
+            <pre><code class="language-text">User 101
+  |-- Session A (Mobile)  -&gt; RT1
+  |-- Session B (Laptop)  -&gt; RT2
+  |-- Session C (Tablet)  -&gt; RT3</code></pre>
+            <p>
+              Associate each login session with a unique <code>session_id</code> or <code>device_id</code> and a refresh token.
+              This makes individual session revocation and logout-all functionality straightforward.
+            </p>
+            <p>
+              <strong>Interview-ready answer:</strong> I would revoke only the refresh token associated with the device that
+              initiated logout. Each login session should have its own session identifier and refresh token. For logout-all or
+              security events such as password compromise, I would revoke all active sessions for that user.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="springboot">
+        <h2 class="accordion-header" id="revokedRefreshTokenLogoutTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#revokedRefreshTokenLogoutTopBody">What happens if a logged-out user's refresh token is still valid?</button>
+        </h2>
+        <div id="revokedRefreshTokenLogoutTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              The refresh token must be rejected, even if it has six days remaining before its original expiry. During logout,
+              the authentication service should revoke the refresh token server-side so it cannot be used again.
+            </p>
+            <h5 class="text-warning">1. Refresh-token record</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>user_id</th><th>token_hash</th><th>expires_at</th><th>revoked</th></tr></thead><tbody><tr><td>101</td><td>abc123</td><td>Nov 20</td><td>false</td></tr></tbody></table>
+            <pre><code class="language-java">public void logout(String refreshToken) {
+    RefreshToken token = refreshTokenRepository
+        .findByTokenHash(hash(refreshToken))
+        .orElseThrow();
+
+    token.setRevoked(true);
+    refreshTokenRepository.save(token);
+}</code></pre>
+            <h5 class="text-warning">2. Validate the token during refresh</h5>
+            <p>When the client calls <code>POST /api/auth/refresh</code>, the authentication service validates:</p>
+            <ol><li>Does the refresh token record exist?</li><li>Is its signature valid?</li><li>Has it expired?</li><li>Has it been revoked?</li><li>Is it the correct token type?</li></ol>
+            <pre><code class="language-java">public AuthResponse refresh(String refreshToken) {
+    RefreshToken storedToken = refreshTokenRepository
+        .findByTokenHash(hash(refreshToken))
+        .orElseThrow(InvalidTokenException::new);
+
+    if (storedToken.isRevoked()
+            || storedToken.getExpiresAt()
+                .isBefore(Instant.now())) {
+        throw new InvalidTokenException(
+            "Refresh token is expired or revoked");
+    }
+
+    return generateNewAccessToken(storedToken.getUserId());
+}</code></pre>
+            <p>The API returns HTTP 401 Unauthorized:</p>
+            <pre><code class="language-json">{
+  "error": "INVALID_REFRESH_TOKEN",
+  "message": "Refresh token has been revoked. Please log in again."
+}</code></pre>
+            <h5 class="text-warning">3. Architect-level considerations</h5>
+            <ul><li>Store hashed refresh tokens rather than raw tokens.</li><li>Revoke refresh tokens on logout.</li><li>Implement refresh-token rotation.</li><li>Detect reuse of previously rotated tokens.</li><li>Allow “log out from all devices” to revoke all active sessions for the user.</li></ul>
+            <p>
+              With stateless JWT refresh tokens and no database or revocation store, client-side logout alone does not
+              invalidate the token. Use server-side revocation tracking or a short-lived token strategy.
+            </p>
+            <p>
+              <strong>Interview-ready answer:</strong> When a user logs out, I revoke the refresh token in the database. Even
+              if it has six days of validity remaining, the authentication server checks its revocation status during refresh
+              and rejects it with HTTP 401. I would also implement refresh-token rotation and reuse detection to prevent token
+              replay attacks.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="springboot">
+        <h2 class="accordion-header" id="refreshTokenAccessTokenTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#refreshTokenAccessTokenTopBody">How do you generate a new access token using a refresh token?</button>
+        </h2>
+        <div id="refreshTokenAccessTokenTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              We typically implement the OAuth 2.0 Refresh Token Grant. When a user logs in, the authentication server issues
+              a short-lived access token and a longer-lived refresh token.
+            </p>
+            <table class="table table-dark table-bordered"><thead><tr><th>Token</th><th>Example expiry</th><th>Purpose</th></tr></thead><tbody><tr><td>Access Token</td><td>15 minutes</td><td>Access protected APIs</td></tr><tr><td>Refresh Token</td><td>7 days</td><td>Obtain a new access token</td></tr></tbody></table>
+            <h5 class="text-warning">Complete flow</h5>
+            <ol><li>User logs in with username and password.</li><li>Authentication server validates credentials.</li><li>Server generates an access token and refresh token.</li><li>Client uses the access token to call backend APIs.</li><li>Access token expires after 15 minutes.</li><li>Client sends the refresh token to the authentication server.</li><li>Server validates it and issues a new access token.</li><li>User does not need to enter credentials again.</li></ol>
+            <h5 class="text-warning">Refresh API</h5>
+            <pre><code class="language-http">POST /api/v1/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "eyJhbGciOiJIUzI1NiJ9..."
+}
+
+{
+  "accessToken": "new-access-token",
+  "refreshToken": "new-refresh-token",
+  "tokenType": "Bearer",
+  "expiresIn": 900
+}</code></pre>
+            <p><code>expiresIn: 900</code> represents 900 seconds, or 15 minutes.</p>
+            <h5 class="text-warning">Spring Boot implementation</h5>
+            <pre><code class="language-java">public AuthResponse login(LoginRequest request) {
+    authenticationManager.authenticate(
+        new UsernamePasswordAuthenticationToken(
+            request.getUsername(), request.getPassword()));
+
+    String accessToken =
+        jwtService.generateAccessToken(request.getUsername());
+    String refreshToken =
+        jwtService.generateRefreshToken(request.getUsername());
+
+    return new AuthResponse(accessToken, refreshToken);
+}
+
+@PostMapping("/refresh")
+public ResponseEntity&lt;AuthResponse&gt; refresh(
+        @RequestBody RefreshRequest request) {
+    return ResponseEntity.ok(
+        authService.refreshToken(request.getRefreshToken()));
+}</code></pre>
+            <pre><code class="language-java">public AuthResponse refreshToken(String refreshToken) {
+    if (!jwtService.isValid(refreshToken)) {
+        throw new InvalidTokenException("Invalid refresh token");
+    }
+    if (!jwtService.isRefreshToken(refreshToken)) {
+        throw new InvalidTokenException("Not a refresh token");
+    }
+
+    String username = jwtService.extractUsername(refreshToken);
+    String newAccessToken = jwtService.generateAccessToken(username);
+    return new AuthResponse(newAccessToken, refreshToken);
+}</code></pre>
+            <p>
+              This example reuses the existing refresh token. A more secure production implementation generally rotates refresh tokens.
+            </p>
+            <h5 class="text-warning">Security considerations</h5>
+            <ul><li>Reject expired refresh tokens.</li><li>Verify the JWT signature, expected issuer, audience, and token type.</li><li>Never accept an access token as a refresh token.</li><li>Rotate refresh tokens and invalidate the old token after use.</li><li>Support logout and refresh-token revocation.</li><li>Store browser refresh tokens securely, preferably in an HttpOnly, Secure, SameSite cookie.</li><li>Detect reuse of an already-rotated refresh token and revoke the affected token family.</li></ul>
+            <h5 class="text-warning">Refresh-token rotation</h5>
+            <pre><code class="language-text">Initial login:
+Access Token A1 - expires in 15 minutes
+Refresh Token R1 - valid for 7 days
+
+Refresh request using R1:
+Access Token A2 - new token
+Refresh Token R2 - new token
+R1 - invalidated
+
+Only R2 can be used for the next refresh.</code></pre>
+            <p>
+              Store a refresh-token record or token hash with user ID, expiration, revocation status, token family/session ID,
+              and reuse-detection information. This supports logout, rotation, and revocation.
+            </p>
+            <h5 class="text-warning">Custom JWT vs OAuth 2.0 Authorization Server</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Approach</th><th>Implementation</th></tr></thead><tbody><tr><td>Custom JWT authentication</td><td>Generate and validate access and refresh JWTs yourself</td></tr><tr><td>OAuth 2.0 Authorization Server</td><td>Use the standard refresh-token grant</td></tr></tbody></table>
+            <pre><code class="language-http">POST /oauth2/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=refresh_token&amp;
+refresh_token=YOUR_REFRESH_TOKEN&amp;
+client_id=your-client</code></pre>
+            <p>
+              With Spring Authorization Server, the authorization server validates the refresh token and issues a new access
+              token according to its configured policies.
+            </p>
+            <p>
+              <strong>Interview-ready answer:</strong> When a user logs in, the authentication server generates a short-lived
+              access token and a longer-lived refresh token. When the access token expires, the client sends the refresh token
+              to the authentication server. The server validates its signature or stored record, expiration, revocation status,
+              and token type, then generates a new access token. In production, I prefer refresh-token rotation, where the old
+              refresh token is invalidated and a new one is issued.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="rateLimitExceptionTryCatchTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#rateLimitExceptionTryCatchTopBody">Can rate-limit exceptions be handled with try-catch instead of retry?</button>
+        </h2>
+        <div id="rateLimitExceptionTryCatchTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Yes. Resilience4j's <code>RequestNotPermitted</code> exception can be handled with try-catch instead of a
+              fallback method or retry mechanism. If the requirement is simply to return a default response when the rate
+              limit is exceeded, try-catch is valid.
+            </p>
+            <h5 class="text-warning">1. Using try-catch</h5>
+            <pre><code class="language-java">@Service
+public class OrderService {
+    @RateLimiter(name = "orderRateLimiter")
+    public String getOrders(Long customerId) {
+        return "Orders retrieved successfully";
+    }
+}
+
+@GetMapping("/{customerId}")
+public ResponseEntity&lt;String&gt; getOrders(
+        @PathVariable Long customerId) {
+    try {
+        String result = orderService.getOrders(customerId);
+        return ResponseEntity.ok(result);
+    } catch (RequestNotPermitted ex) {
+        return ResponseEntity
+            .status(HttpStatus.TOO_MANY_REQUESTS)
+            .body("Too many requests. Please try again later.");
+    }
+}</code></pre>
+            <p>
+              When the rate limit is exceeded, Resilience4j throws <code>RequestNotPermitted</code>. The exception
+              propagates to the controller, the catch block handles it, and the API returns HTTP 429.
+            </p>
+            <h5 class="text-warning">2. Try-catch vs fallbackMethod vs Retry</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Approach</th><th>Purpose</th></tr></thead><tbody><tr><td>try-catch</td><td>Handle the exception explicitly</td></tr><tr><td><code>fallbackMethod</code></td><td>Automatically invoke an alternative method</td></tr><tr><td>Retry</td><td>Attempt an operation again after a failure</td></tr></tbody></table>
+            <p>
+              Retry and RateLimiter solve different problems. RateLimiter controls how frequently an operation can execute.
+              Retry attempts an operation again after a failure. Try-catch handles the exception without necessarily retrying.
+            </p>
+            <h5 class="text-warning">3. Production recommendation</h5>
+            <p>
+              For a larger application, prefer centralized exception handling with <code>@RestControllerAdvice</code> instead
+              of repeating try-catch blocks in every controller.
+            </p>
+            <pre><code class="language-java">@RestControllerAdvice
+public class GlobalExceptionHandler {
+    @ExceptionHandler(RequestNotPermitted.class)
+    public ResponseEntity&lt;String&gt; handleRateLimit(
+            RequestNotPermitted exception) {
+        return ResponseEntity
+            .status(HttpStatus.TOO_MANY_REQUESTS)
+            .body("Rate limit exceeded. Try again later.");
+    }
+}</code></pre>
+            <p>
+              Use <code>@RestControllerAdvice</code> for consistent API error handling, unless a particular endpoint needs a
+              different response.
+            </p>
+            <p>
+              <strong>Interview-ready answer:</strong> Yes, we can handle Resilience4j's
+              <code>RequestNotPermitted</code> exception using try-catch. Alternatively, we can configure a fallback method
+              or use global exception handling with <code>@RestControllerAdvice</code>. Retry is not mandatory because rate
+              limiting controls request frequency; it does not automatically require retrying failed requests.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="resilience4jRateLimiterVsBulkheadTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#resilience4jRateLimiterVsBulkheadTopBody">What is the difference between Resilience4j @RateLimiter and @Bulkhead?</button>
+        </h2>
+        <div id="resilience4jRateLimiterVsBulkheadTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Both restrict incoming work, but they solve different problems. <code>@RateLimiter</code> controls how often
+              calls are permitted over time. <code>@Bulkhead</code> controls how many calls can execute concurrently so one
+              slow operation cannot consume all available application capacity.
+            </p>
+            <h5 class="text-warning">@RateLimiter: control call rate</h5>
+            <pre><code class="language-java">@RateLimiter(name = "invoiceRateLimiter")
+public Invoice generateInvoice(Long orderId) {
+    return invoiceGenerator.generate(orderId);
+}</code></pre>
+            <pre><code class="language-yaml">resilience4j:
+  ratelimiter:
+    instances:
+      invoiceRateLimiter:
+        limitForPeriod: 3
+        limitRefreshPeriod: 1s
+        timeoutDuration: 0s</code></pre>
+            <p>
+              This permits at most 3 calls during each configured refresh period. It protects an external provider or
+              expensive operation from excessive request frequency. When no permission is available, Resilience4j throws
+              <code>RequestNotPermitted</code>, which can be handled with a fallback.
+            </p>
+            <h5 class="text-warning">@Bulkhead: limit concurrent execution</h5>
+            <pre><code class="language-java">@Bulkhead(
+    name = "paymentBulkhead",
+    type = Bulkhead.Type.SEMAPHORE,
+    fallbackMethod = "paymentFallback")
+public PaymentResponse charge(PaymentRequest request) {
+    return paymentClient.charge(request);
+}
+
+public PaymentResponse paymentFallback(
+        PaymentRequest request,
+        BulkheadFullException exception) {
+    return PaymentResponse.unavailable();
+}</code></pre>
+            <pre><code class="language-yaml">resilience4j:
+  bulkhead:
+    instances:
+      paymentBulkhead:
+        maxConcurrentCalls: 20
+        maxWaitDuration: 0</code></pre>
+            <p>
+              This allows at most 20 calls to execute at the same time. If the payment provider becomes slow and all 20
+              permits are occupied, additional calls fail fast with <code>BulkheadFullException</code> instead of creating an
+              unbounded queue.
+            </p>
+            <h5 class="text-warning">Real-world difference</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Concern</th><th>@RateLimiter</th><th>@Bulkhead</th></tr></thead><tbody><tr><td>Controls</td><td>Calls per time period</td><td>Calls executing at one time</td></tr><tr><td>Main problem</td><td>Too many requests too quickly</td><td>Slow calls consuming all capacity</td></tr><tr><td>Typical exception</td><td><code>RequestNotPermitted</code></td><td><code>BulkheadFullException</code></td></tr><tr><td>Example</td><td>Only 3 invoice requests/second</td><td>Only 20 payment calls concurrently</td></tr><tr><td>Protection</td><td>Provider quotas and request frequency</td><td>Thread/service capacity and isolation</td></tr></tbody></table>
+            <h5 class="text-warning">Can we use both?</h5>
+            <p>
+              Yes. For example, a payment service can allow only 10 payment requests per second with
+              <code>@RateLimiter</code> and only 5 simultaneous calls with <code>@Bulkhead</code>. The rate limiter protects
+              the provider's request quota, while the bulkhead protects the application's threads and connections when the
+              provider becomes slow.
+            </p>
+            <p>
+              In a typical resilience chain, configure a timeout to stop long calls, a bulkhead to isolate concurrency, a
+              rate limiter to control frequency, and bounded retries only for safe transient failures. The exact decorator
+              order should be chosen deliberately because it changes which limit is checked first.
+            </p>
+            <h5 class="text-warning">Important distributed-systems point</h5>
+            <p>
+              The standard Resilience4j rate limiter and bulkhead state are local to a JVM instance. If three service
+              instances each allow 10 calls per second, the aggregate may be approximately 30 calls per second. For a global
+              rate limit across instances, use an API Gateway or distributed Redis-based limiter. A local bulkhead is still
+              useful because it isolates capacity independently inside each instance.
+            </p>
+            <p>
+              <strong>Interview-ready answer:</strong> <code>@RateLimiter</code> limits how frequently calls are accepted,
+              while <code>@Bulkhead</code> limits how many calls can run concurrently. I use a rate limiter for provider
+              quotas and traffic frequency, and a bulkhead to prevent slow downstream calls from exhausting threads or other
+              resources. They can be combined, with fallbacks for <code>RequestNotPermitted</code> and
+              <code>BulkheadFullException</code>.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="resilience4jRateLimiterFallbackTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#resilience4jRateLimiterFallbackTopBody">How would you implement fallback handling using Resilience4j's @RateLimiter?</button>
+        </h2>
+        <div id="resilience4jRateLimiterFallbackTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Use Resilience4j's <code>@RateLimiter</code> annotation with the <code>fallbackMethod</code> attribute. For
+              example, an Order Service allows a maximum of 3 calls per second. When the limit is exceeded, a predefined
+              fallback response is returned instead of exposing the exception.
+            </p>
+            <h5 class="text-warning">1. Maven dependencies</h5>
+            <pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;io.github.resilience4j&lt;/groupId&gt;
+    &lt;artifactId&gt;resilience4j-spring-boot3&lt;/artifactId&gt;
+&lt;/dependency&gt;
+
+&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-boot-starter-actuator&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+            <p>Use dependency management to select a Resilience4j version compatible with the Spring Boot version.</p>
+            <h5 class="text-warning">2. Configure rate limiting</h5>
+            <pre><code class="language-yaml">resilience4j:
+  ratelimiter:
+    instances:
+      orderRateLimiter:
+        limitForPeriod: 3
+        limitRefreshPeriod: 1s
+        timeoutDuration: 0s</code></pre>
+            <table class="table table-dark table-bordered"><thead><tr><th>Property</th><th>Value</th><th>Explanation</th></tr></thead><tbody><tr><td><code>limitForPeriod</code></td><td>3</td><td>Maximum 3 permitted calls</td></tr><tr><td><code>limitRefreshPeriod</code></td><td>1s</td><td>Permission count refreshes every second</td></tr><tr><td><code>timeoutDuration</code></td><td>0s</td><td>Reject immediately if no permission is available</td></tr></tbody></table>
+            <h5 class="text-warning">3. Implement @RateLimiter with fallback</h5>
+            <pre><code class="language-java">@Service
+public class OrderService {
+    @RateLimiter(
+        name = "orderRateLimiter",
+        fallbackMethod = "orderFallback")
+    public String getOrders(Long customerId) {
+        return "Orders retrieved for customer: " + customerId;
+    }
+
+    public String orderFallback(
+            Long customerId,
+            RequestNotPermitted exception) {
+        return "Too many requests. Please try again later.";
+    }
+}</code></pre>
+            <p>
+              The fallback method must have the same original arguments and one additional exception parameter. Resilience4j
+              automatically invokes it when the rate limiter rejects a call.
+            </p>
+            <h5 class="text-warning">4. Expose the API</h5>
+            <pre><code class="language-java">@RestController
+@RequestMapping("/api/orders")
+public class OrderController {
+    private final OrderService orderService;
+
+    public OrderController(OrderService orderService) {
+        this.orderService = orderService;
+    }
+
+    @GetMapping("/{customerId}")
+    public ResponseEntity&lt;String&gt; getOrders(
+            @PathVariable Long customerId) {
+        String response = orderService.getOrders(customerId);
+        return ResponseEntity.ok(response);
+    }
+}</code></pre>
+            <h5 class="text-warning">5. Runtime behavior</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Call</th><th>Result</th></tr></thead><tbody><tr><td>Call 1</td><td>Allowed</td></tr><tr><td>Call 2</td><td>Allowed</td></tr><tr><td>Call 3</td><td>Allowed</td></tr><tr><td>Call 4</td><td>Fallback</td></tr></tbody></table>
+            <p>Calls 1–3 return <code>Orders retrieved for customer: 101</code>. The fourth call returns <code>Too many requests. Please try again later.</code>.</p>
+            <h5 class="text-warning">6. Return HTTP 429 in production</h5>
+            <p>
+              If the fallback returns a String, the controller may return HTTP 200 even though the request was rate-limited.
+              In production, return HTTP 429:
+            </p>
+            <pre><code class="language-java">public ResponseEntity&lt;ApiResponse&gt; orderFallback(
+        Long customerId,
+        RequestNotPermitted exception) {
+    ApiResponse response = new ApiResponse(
+        "FAILED", "Too many requests. Please try again later.");
+
+    return ResponseEntity
+        .status(HttpStatus.TOO_MANY_REQUESTS)
+        .body(response);
+}</code></pre>
+            <p>The original service method must return the same compatible type, such as <code>ResponseEntity&lt;ApiResponse&gt;</code>.</p>
+            <h5 class="text-warning">7. Architect-level limitations</h5>
+            <p>
+              Resilience4j's standard <code>@RateLimiter</code> maintains rate-limit state inside the JVM. With three Order
+              Service instances, each instance can allow 3 calls per second, producing a potential aggregate capacity of 9
+              calls per second.
+            </p>
+            <pre><code class="language-text">Instance 1: 3/sec
+Instance 2: 3/sec
+Instance 3: 3/sec
+Potential aggregate: 9/sec</code></pre>
+            <p>
+              If the requirement is 3 requests per second across the entire application, use centralized API Gateway rate
+              limiting with Redis or a distributed rate limiter. Also remember that <code>@RateLimiter</code> works through
+              Spring AOP proxies; calling the annotated method from another method in the same class can bypass the limiter.
+            </p>
+            <p>
+              <strong>Interview-ready answer:</strong> I would use Resilience4j's <code>@RateLimiter</code>, configure the
+              permitted calls and refresh interval in <code>application.yml</code>, and define a fallback with
+              <code>fallbackMethod</code>. When the limit is exceeded, Resilience4j throws
+              <code>RequestNotPermitted</code>, and the fallback returns a meaningful HTTP 429 response. If the limit must
+              apply across multiple service instances, I would use centralized rate limiting with Redis or an API Gateway.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="rateLimitDefaultResponseTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#rateLimitDefaultResponseTopBody">Instead of HTTP 429, how would you return a default response when the rate limit is exceeded?</button>
+        </h2>
+        <div id="rateLimitDefaultResponseTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              In Spring Cloud Gateway, customize the rate-limit rejection handling instead of using the default response.
+              There are two approaches depending on whether the requirement is a custom error body or a fallback response.
+            </p>
+            <h5 class="text-warning">1. Custom JSON response with HTTP 429</h5>
+            <pre><code class="language-json">{
+  "status": "FAILED",
+  "message": "Too many requests. Please try again after some time.",
+  "code": "RATE_LIMIT_EXCEEDED"
+}</code></pre>
+            <pre><code class="language-java">@Configuration
+public class RateLimitConfig {
+    @Bean
+    public KeyResolver userKeyResolver() {
+        return exchange -&gt; Mono.just("user-101");
+    }
+
+    @Bean
+    public RateLimiter&lt;Response&gt; customRateLimiter() {
+        return new RedisRateLimiter(3, 3);
+    }
+}</code></pre>
+            <p>
+              For the response customization, implement a gateway filter or customize the gateway's rate-limiter rejection
+              handling so that it writes the JSON body.
+            </p>
+            <h5 class="text-warning">2. Fallback response using a custom GatewayFilter</h5>
+            <pre><code class="language-java">if (rateLimitExceeded) {
+    exchange.getResponse().setStatusCode(
+        HttpStatus.TOO_MANY_REQUESTS);
+    exchange.getResponse().getHeaders().setContentType(
+        MediaType.APPLICATION_JSON);
+
+    String response = """
+        {
+          "status": "FAILED",
+          "message": "Please try again later"
+        }
+        """;
+
+    return exchange.getResponse().writeWith(Mono.just(
+        exchange.getResponse().bufferFactory().wrap(
+            response.getBytes())));
+}</code></pre>
+            <p>
+              This is illustrative logic. A production implementation should use a properly ordered custom filter or customize
+              the rate limiter's denial handling. Do not independently check a second rate-limit counter, because that can
+              produce inconsistent decisions.
+            </p>
+            <h5 class="text-warning">3. Can we return HTTP 200 with a default response?</h5>
+            <pre><code class="language-json">{
+  "status": "SUCCESS",
+  "message": "Default response returned",
+  "data": []
+}</code></pre>
+            <p>
+              Technically, HTTP 200 can be returned, but it is generally not recommended for a rate-limited request.
+            </p>
+            <ul><li>Monitoring systems may count it as a successful request.</li><li>Clients cannot clearly distinguish a real success from rate limiting.</li><li>Retry mechanisms may not behave correctly.</li></ul>
+            <p>
+              <strong>Recommendation:</strong> return HTTP 429 with a meaningful JSON body and optionally a
+              <code>Retry-After</code> header. This preserves correct HTTP semantics while still giving clients a consistent
+              default response body.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="threeApiCallsPerSecondTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#threeApiCallsPerSecondTopBody">How would you configure a rate limit of 3 API calls per second?</button>
+        </h2>
+        <div id="threeApiCallsPerSecondTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>To configure 3 API calls per second, use Spring Cloud Gateway's Redis-backed <code>RequestRateLimiter</code>.</p>
+            <h5 class="text-warning">1. Spring Cloud Gateway configuration</h5>
+            <pre><code class="language-yaml">spring:
+  cloud:
+    gateway:
+      routes:
+        - id: order-service
+          uri: lb://ORDER-SERVICE
+          predicates:
+            - Path=/api/orders/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userKeyResolver}"
+                redis-rate-limiter.replenishRate: 3
+                redis-rate-limiter.burstCapacity: 3
+                redis-rate-limiter.requestedTokens: 1</code></pre>
+            <h5 class="text-warning">2. What do these properties mean?</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Property</th><th>Value</th><th>Meaning</th></tr></thead><tbody><tr><td><code>replenishRate</code></td><td>3</td><td>Adds 3 tokens per second</td></tr><tr><td><code>burstCapacity</code></td><td>3</td><td>Maximum bucket capacity</td></tr><tr><td><code>requestedTokens</code></td><td>1</td><td>Each API request consumes 1 token</td></tr></tbody></table>
+            <h5 class="text-warning">3. How does it work?</h5>
+            <p>It uses a token bucket with a rate of 3 requests per second:</p>
+            <table class="table table-dark table-bordered"><thead><tr><th>Request</th><th>Result</th></tr></thead><tbody><tr><td>Initial tokens</td><td>3</td></tr><tr><td>Request 1</td><td>Allowed</td></tr><tr><td>Request 2</td><td>Allowed</td></tr><tr><td>Request 3</td><td>Allowed</td></tr><tr><td>4th request immediately</td><td>HTTP 429 Too Many Requests</td></tr></tbody></table>
+            <p>Tokens refill at 3 per second, up to a maximum of 3.</p>
+            <h5 class="text-warning">4. Multiple API Gateway instances</h5>
+            <p>
+              If there are three API Gateway instances, all three share the same Redis-backed rate-limit state. Therefore,
+              the limit remains 3 requests per second per resolved key, not 3 requests per second per gateway instance.
+            </p>
+            <pre><code class="language-text">User A: 3 requests/second
+User B: 3 requests/second
+User C: 3 requests/second</code></pre>
+            <p>Each user gets an independent bucket when the key resolver identifies users.</p>
+            <p>
+              <strong>Interview-ready answer:</strong> I would configure Spring Cloud Gateway's RedisRateLimiter with
+              <code>replenishRate = 3</code>, <code>burstCapacity = 3</code>, and <code>requestedTokens = 1</code>. Redis
+              maintains the shared token-bucket state, allowing three requests per second per user across multiple gateway
+              instances. Additional requests are rejected with HTTP 429.
+            </p>
+            <p>
+              One subtle point: this allows bursts of up to three requests. It is not a strict fixed-window rule that spaces
+              requests exactly 333 milliseconds apart.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="apiVsMethodRateLimitingTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#apiVsMethodRateLimitingTopBody">Can rate limiting be implemented at method level as well as API level?</button>
+        </h2>
+        <div id="apiVsMethodRateLimitingTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              Yes! Rate limiting can be implemented at both API level and method level. In fact, for enterprise applications,
+              combining both can provide better protection. Let's understand with a real-world e-commerce example.
+            </p>
+            <h5 class="text-warning">1. API-level rate limiting</h5>
+            <p>This is implemented at the API Gateway.</p>
+            <table class="table table-dark table-bordered"><thead><tr><th>API</th><th>Rate limit</th></tr></thead><tbody><tr><td>GET /products</td><td>100 requests/second</td></tr><tr><td>POST /orders</td><td>10 requests/second</td></tr><tr><td>POST /payments</td><td>5 requests/second</td></tr></tbody></table>
+            <p>The gateway checks incoming requests before forwarding them to the microservices. Its purpose is to protect backend services from excessive incoming traffic.</p>
+            <h5 class="text-warning">2. Method-level rate limiting</h5>
+            <p>
+              This is implemented inside the application, typically at the service or method level. Imagine an Order Service
+              with <code>createOrder()</code>, <code>cancelOrder()</code>, and <code>generateInvoice()</code>. Suppose
+              <code>generateInvoice()</code> is computationally expensive. You might want to allow only 5 executions per
+              second, even if the API Gateway allows 100 requests per second for the overall service.
+            </p>
+            <pre><code class="language-java">@Service
+public class OrderService {
+    public Order createOrder() {
+        // Business logic
+    }
+
+    public void cancelOrder(Long orderId) {
+        // Business logic
+    }
+
+    public void generateInvoice(Long orderId) {
+        // Business logic
+    }
+}</code></pre>
+            <pre><code class="language-java">@Service
+public class InvoiceService {
+    private final Bucket bucket = Bucket.builder()
+        .addLimit(Bandwidth.builder()
+            .capacity(5)
+            .refillGreedy(5, Duration.ofSeconds(1))
+            .build())
+        .build();
+
+    public Invoice generateInvoice(Long orderId) {
+        if (!bucket.tryConsume(1)) {
+            throw new RateLimitExceededException(
+                "Invoice generation limit exceeded");
+        }
+        return new Invoice();
+    }
+}</code></pre>
+            <p>
+              This is a simplified local bucket implementation. This particular bucket is stored in application memory. If
+              you have five Order Service instances, each instance gets its own bucket and the effective aggregate limit could
+              become 25 requests per second. For centralized method-level limits across multiple instances, use a distributed
+              Bucket4j configuration backed by a shared store, or implement an atomic Redis-based limiter.
+            </p>
+            <h5 class="text-warning">3. API-level vs method-level</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Feature</th><th>API-level</th><th>Method-level</th></tr></thead><tbody><tr><td>Implemented at</td><td>API Gateway</td><td>Application</td></tr><tr><td>Scope</td><td>HTTP endpoint/route</td><td>Business method or operation</td></tr><tr><td>Technology</td><td>Spring Cloud Gateway + Redis</td><td>Bucket4j + Redis</td></tr><tr><td>Protects</td><td>Backend services</td><td>Expensive business operations</td></tr><tr><td>Example</td><td>100 product requests/second</td><td>5 invoice generations/second</td></tr></tbody></table>
+            <h5 class="text-warning">4. What I recommend in production</h5>
+            <p>Use layered rate limiting:</p>
+            <ul><li><strong>Gateway:</strong> Control incoming traffic per user, IP, API key, or tenant.</li><li><strong>Service layer:</strong> Protect expensive business operations.</li><li><strong>Distributed storage:</strong> Use Redis when limits must be shared across application instances.</li></ul>
+            <p>
+              If a method is called internally by another service, API Gateway rate limiting may not protect it. Method-level
+              limiting can protect the operation regardless of how it is invoked.
+            </p>
+            <h5 class="text-warning">5. Interview question</h5>
+            <p>
+              Suppose the API Gateway allows 100 requests per second, the Order Service has 5 instances, and invoice
+              generation should be limited to 10 requests per second across the entire application. The correct architectural
+              choice is a Redis-backed distributed bucket, because the requirement is 10 requests per second across all five
+              instances, not 10 per instance.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="centralizedRateLimitingGatewayTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#centralizedRateLimitingGatewayTopBody">How would you implement centralized rate limiting across microservices using an API Gateway?</button>
+        </h2>
+        <div id="centralizedRateLimitingGatewayTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              For an e-commerce platform with User, Product, Order, Payment, and Inventory services, all external requests
+              pass through an API Gateway. The gateway authenticates the request, checks a shared Redis-backed rate limiter,
+              and forwards only allowed traffic to the microservices.
+            </p>
+            <pre><code class="language-text">Mobile/Web client
+        |
+        v
+   API Gateway
+        |
+   Rate Limiter
+        |
+   Redis Cluster
+        |
+  User/Product/Order Services
+        |
+  Payment/Inventory Services</code></pre>
+            <p>
+              Rate limiting happens before requests reach the microservices. Redis provides shared state across multiple API
+              Gateway instances; otherwise a user could bypass a local limit by sending requests through different gateways.
+            </p>
+            <h5 class="text-warning">Example limits</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>API</th><th>Limit</th></tr></thead><tbody><tr><td>Login</td><td>5 requests/minute</td></tr><tr><td>Product</td><td>100 requests/second</td></tr><tr><td>Order</td><td>10 requests/second</td></tr><tr><td>Payment</td><td>5 requests/second</td></tr><tr><td>General APIs</td><td>60 requests/second</td></tr></tbody></table>
+            <p>
+              If an Order API allows 10 requests per second and a customer sends 12, the first 10 are allowed and the next 2
+              receive HTTP 429 Too Many Requests. Rejected requests never reach Order Service.
+            </p>
+            <h5 class="text-warning">Token Bucket algorithm</h5>
+            <p>
+              Suppose the Order API has a refill rate of 10 tokens per second and a bucket capacity of 10. Initially the
+              bucket contains 10 tokens. Each request consumes one token. After 10 requests the bucket is empty; tokens
+              gradually refill and short bursts are allowed while the average rate remains controlled.
+            </p>
+            <h5 class="text-warning">Spring Cloud Gateway and Redis</h5>
+            <pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-cloud-starter-gateway&lt;/artifactId&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-boot-starter-data-redis-reactive&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+            <pre><code class="language-yaml">spring:
+  data:
+    redis:
+      host: localhost
+      port: 6379</code></pre>
+            <h5 class="text-warning">KeyResolver</h5>
+            <p>
+              The key can be a user ID for authenticated customers, IP address for anonymous traffic, API key for partners,
+              or tenant ID for organizations. The identity header must be populated by trusted gateway authentication logic
+              after validating the JWT; never trust a client-supplied identity header directly.
+            </p>
+            <pre><code class="language-java">@Configuration
+public class RateLimitConfig {
+    @Bean
+    public KeyResolver userKeyResolver() {
+        return exchange -&gt; {
+            String userId = exchange.getRequest()
+                .getHeaders().getFirst("X-Authenticated-User");
+
+            if (userId == null || userId.isBlank()) {
+                return Mono.error(new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED));
+            }
+            return Mono.just(userId);
+        };
+    }
+}</code></pre>
+            <h5 class="text-warning">Route-specific configuration</h5>
+            <pre><code class="language-yaml">spring:
+  cloud:
+    gateway:
+      routes:
+        - id: order-service
+          uri: lb://ORDER-SERVICE
+          predicates:
+            - Path=/api/orders/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userKeyResolver}"
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 10
+                redis-rate-limiter.requestedTokens: 1
+
+        - id: product-service
+          uri: lb://PRODUCT-SERVICE
+          predicates:
+            - Path=/api/products/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userKeyResolver}"
+                redis-rate-limiter.replenishRate: 100
+                redis-rate-limiter.burstCapacity: 100</code></pre>
+            <p>
+              In Spring Cloud Gateway, <code>replenishRate</code> is tokens per second, not per minute. For 10 requests per
+              minute, configure an appropriate lower rate or a custom limiter that supports the required interval.
+            </p>
+            <h5 class="text-warning">Different subscription plans</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Plan</th><th>Order API limit</th></tr></thead><tbody><tr><td>Free</td><td>5 requests/second</td></tr><tr><td>Premium</td><td>20 requests/second</td></tr><tr><td>Enterprise</td><td>100 requests/second</td></tr></tbody></table>
+            <p>
+              After JWT validation, the gateway extracts the customer ID and subscription plan, retrieves the applicable
+              policy, and maintains the token bucket for that customer and API. Policies can be stored in a database or
+              distributed configuration store and cached in the gateway.
+            </p>
+            <h5 class="text-warning">Production considerations</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Concern</th><th>Approach</th></tr></thead><tbody><tr><td>Multiple gateways</td><td>Shared Redis rate-limit state</td></tr><tr><td>Redis failure</td><td>Define fail-open or fail-closed policy</td></tr><tr><td>Consistency</td><td>Atomic Redis operations or Lua scripts</td></tr><tr><td>Anonymous traffic</td><td>IP-based limiting</td></tr><tr><td>Authenticated traffic</td><td>User ID or API key</td></tr><tr><td>Different plans</td><td>Dynamic policies</td></tr><tr><td>Excess traffic</td><td>HTTP 429 response</td></tr><tr><td>Malicious traffic</td><td>WAF, bot detection, and IP restrictions</td></tr><tr><td>Direct service calls</td><td>Additional service-to-service limits or resilience controls</td></tr></tbody></table>
+            <p>
+              Monitor rejected requests, Redis health, gateway latency, policy errors, and backend protection using
+              Prometheus and Grafana. Redis operations should be atomic so concurrent gateway instances cannot incorrectly
+              allow more requests than the policy permits.
+            </p>
+            <h5 class="text-warning">Complete request flow</h5>
+            <pre><code class="language-text">Client sends request
+  -&gt; Gateway authenticates user
+  -&gt; Gateway identifies user/API/plan
+  -&gt; Redis-backed limiter checks shared token bucket
+  -&gt; Allowed: forward to microservice
+  -&gt; Exceeded: return HTTP 429
+  -&gt; Metrics and alerts are recorded</code></pre>
+            <p>
+              <strong>Interview-ready answer:</strong> I would implement centralized rate limiting at the API Gateway using
+              Spring Cloud Gateway and Redis. After authentication, I would identify the client using user ID, API key, tenant,
+              or IP and apply a Token Bucket policy. Redis keeps the state shared across gateway instances. I would configure
+              different limits for different APIs and subscription plans, return HTTP 429 when the limit is exceeded, and
+              monitor rejected requests, Redis health, and gateway latency with Prometheus and Grafana.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="springboot">
+        <h2 class="accordion-header" id="singleOrdersApiViewsTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#singleOrdersApiViewsTopBody">How would you design a single API to fetch current orders, latest orders, and complete order history?</button>
+        </h2>
+        <div id="singleOrdersApiViewsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>
+              I would expose one endpoint and support the different use cases through query parameters, pagination, sorting,
+              and filtering.
+            </p>
+            <h5 class="text-warning">1. API design</h5>
+            <pre><code class="language-text">GET /api/v1/orders?view=current
+GET /api/v1/orders?view=latest&amp;limit=10
+GET /api/v1/orders?view=history&amp;page=0&amp;size=20
+
+GET /api/v1/orders?status=PROCESSING&amp;page=0&amp;size=20
+GET /api/v1/orders?fromDate=2026-01-01&amp;toDate=2026-11-14
+GET /api/v1/orders?sortBy=createdAt&amp;direction=DESC</code></pre>
+            <h5 class="text-warning">2. Define each view</h5>
+            <ul><li><strong>Current orders:</strong> Currently active orders such as PLACED, CONFIRMED, PROCESSING, and SHIPPED.</li><li><strong>Latest orders:</strong> Most recently created orders, regardless of status, usually with a small maximum limit.</li><li><strong>Order history:</strong> All orders, including DELIVERED, CANCELLED, and other statuses.</li></ul>
+            <p>Clarify these business definitions with the interviewer and make them configurable according to requirements.</p>
+            <h5 class="text-warning">3. Spring Boot implementation</h5>
+            <pre><code class="language-java">@GetMapping("/orders")
+public Page&lt;OrderResponse&gt; getOrders(
+        @RequestParam(defaultValue = "history") String view,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "20") int size) {
+    return orderService.getOrders(view, page, size);
+}</code></pre>
+            <pre><code class="language-java">public Page&lt;OrderResponse&gt; getOrders(
+        String view, int page, int size) {
+    Pageable pageable = PageRequest.of(page, size,
+        Sort.by("createdAt").descending());
+
+    return switch (view.toLowerCase()) {
+        case "current" -&gt; orderRepository
+            .findByStatusIn(ACTIVE_STATUSES, pageable);
+        case "latest" -&gt; orderRepository.findAll(pageable);
+        case "history" -&gt; orderRepository.findAll(pageable);
+        default -&gt; throw new IllegalArgumentException(
+            "Invalid order view");
+    };
+}</code></pre>
+            <p>
+              For latest orders, enforce a maximum limit such as 10 or 20. In production, validate the view with an enum,
+              restrict allowed sort fields and page size, and return HTTP 400 for unsupported values.
+            </p>
+            <h5 class="text-warning">4. Database design and indexes</h5>
+            <pre><code class="language-sql">CREATE INDEX idx_orders_customer_created
+ON orders(customer_id, created_at DESC);
+
+CREATE INDEX idx_orders_customer_status_created
+ON orders(customer_id, order_status, created_at DESC);</code></pre>
+            <p>
+              These indexes help when fetching a customer's orders, filtering by status, and sorting by creation time. For a
+              large history, use cursor-based pagination with <code>(created_at, id)</code> instead of large offset values.
+            </p>
+            <h5 class="text-warning">5. Architecture and performance considerations</h5>
+            <ul><li><strong>Authentication:</strong> Derive customer ID from the authenticated user's JWT/security context instead of trusting a client-supplied customer ID.</li><li><strong>Pagination:</strong> Never return unlimited order history in one request.</li><li><strong>Sorting:</strong> Default to newest first.</li><li><strong>Filtering:</strong> Support status and date-range filters.</li><li><strong>Validation:</strong> Restrict page size and allowed sort fields.</li><li><strong>Performance:</strong> Add suitable indexes and inspect slow queries.</li><li><strong>Caching:</strong> Consider caching latest orders if the read pattern justifies it, with proper invalidation.</li></ul>
+            <p>
+              <strong>Interview-ready answer:</strong> I would expose a single <code>GET /api/v1/orders</code> endpoint and
+              use query parameters to support different views. Current orders filter active statuses, latest orders sort by
+              creation time descending with a limit, and complete history returns all statuses using pagination. I would use
+              Controller, Service, and Repository layers, customer-based composite indexes, safe sorting, and cursor pagination
+              for large histories. I would derive the customer ID from the authenticated security context to prevent access
+              to another customer's orders.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="springboot">
+        <h2 class="accordion-header" id="restClientVsWebClientTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#restClientVsWebClientTopBody">REST Client vs WebClient: when would you use each?</button>
+        </h2>
+        <div id="restClientVsWebClientTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>The key difference is:</p>
+            <ul><li><strong>RestClient:</strong> synchronous, blocking HTTP client.</li><li><strong>WebClient:</strong> non-blocking, reactive HTTP client.</li></ul>
+            <p>Both are used to communicate with external REST APIs or other microservices.</p>
+            <h5 class="text-warning">1. RestClient vs WebClient</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Feature</th><th>RestClient</th><th>WebClient</th></tr></thead><tbody><tr><td>Programming model</td><td>Synchronous</td><td>Reactive</td></tr><tr><td>I/O behavior</td><td>Blocking</td><td>Non-blocking</td></tr><tr><td>Introduced</td><td>Spring 6.1</td><td>Spring 5</td></tr><tr><td>Package</td><td><code>org.springframework.web.client</code></td><td><code>org.springframework.web.reactive.function.client</code></td></tr><tr><td>Return type</td><td>Actual response object</td><td><code>Mono</code>/<code>Flux</code></td></tr><tr><td>Backpressure</td><td>No reactive backpressure</td><td>Supported</td></tr><tr><td>Best suited for</td><td>Traditional Spring MVC applications</td><td>Reactive and high-concurrency applications</td></tr><tr><td>Complexity</td><td>Simple</td><td>More complex</td></tr></tbody></table>
+            <p>RestClient is the modern synchronous alternative to RestTemplate. For new synchronous Spring applications, prefer RestClient over RestTemplate.</p>
+            <h5 class="text-warning">2. RestClient example</h5>
+            <pre><code class="language-java">@Service
+public class PaymentService {
+    private final RestClient restClient;
+
+    public PaymentService(RestClient.Builder builder) {
+        this.restClient = builder
+            .baseUrl("http://payment-service")
+            .build();
+    }
+
+    public PaymentResponse getPayment(Long orderId) {
+        return restClient.get()
+            .uri("/payments/{id}", orderId)
+            .retrieve()
+            .body(PaymentResponse.class);
+    }
+}</code></pre>
+            <p>
+              The calling thread waits for Payment Service. Once the response arrives, execution continues and the response
+              is returned as a <code>PaymentResponse</code> object. The calling thread remains occupied while waiting.
+            </p>
+            <h5 class="text-warning">3. WebClient example</h5>
+            <pre><code class="language-java">@Service
+public class PaymentService {
+    private final WebClient webClient;
+
+    public PaymentService(WebClient.Builder builder) {
+        this.webClient = builder
+            .baseUrl("http://payment-service")
+            .build();
+    }
+
+    public Mono&lt;PaymentResponse&gt; getPayment(Long orderId) {
+        return webClient.get()
+            .uri("/payments/{id}", orderId)
+            .retrieve()
+            .bodyToMono(PaymentResponse.class);
+    }
+}</code></pre>
+            <p>
+              The calling thread does not need to wait for the response. WebClient handles asynchronous I/O, and when the
+              response arrives the result is emitted through <code>Mono</code>. Threads can perform other work while waiting.
+            </p>
+            <h5 class="text-warning">4. Real-world scenario</h5>
+            <p>
+              Imagine an application receives 10,000 concurrent requests and each request calls Customer, Payment, and
+              Inventory services. With RestClient and traditional Spring MVC, each request thread waits for external responses;
+              many threads can remain occupied. The architecture can still scale using thread pools, connection pooling, and
+              Java virtual threads.
+            </p>
+            <p>
+              With WebClient and a reactive programming model, non-blocking I/O allows a relatively small number of event-loop
+              threads to manage many concurrent network operations. This is useful when the application spends significant time
+              waiting for external services.
+            </p>
+            <h5 class="text-warning">5. Can WebClient call multiple APIs concurrently?</h5>
+            <pre><code class="language-java">Mono&lt;Customer&gt; customer = webClient.get()
+    .uri("/customers/101")
+    .retrieve().bodyToMono(Customer.class);
+
+Mono&lt;Payment&gt; payment = webClient.get()
+    .uri("/payments/101")
+    .retrieve().bodyToMono(Payment.class);
+
+return Mono.zip(customer, payment)
+    .map(tuple -&gt; new OrderResponse(
+        tuple.getT1(), tuple.getT2()));</code></pre>
+            <p>Both requests can execute concurrently, and <code>Mono.zip()</code> combines their results.</p>
+            <h5 class="text-warning">6. Important interview follow-ups</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Question</th><th>Key point</th></tr></thead><tbody><tr><td>Is WebClient always faster?</td><td>No. It depends on workload and architecture.</td></tr><tr><td>Can WebClient be used in Spring MVC?</td><td>Yes. It does not require a reactive server.</td></tr><tr><td>Can WebClient be used synchronously?</td><td>Yes, using <code>.block()</code>, but this sacrifices non-blocking benefits.</td></tr><tr><td>Is RestClient replacing RestTemplate?</td><td>It is the modern synchronous alternative.</td></tr><tr><td>Does WebClient require Spring WebFlux?</td><td>It requires WebFlux client dependencies, but not necessarily a WebFlux server.</td></tr><tr><td>Can RestClient handle high concurrency?</td><td>Yes, with suitable thread pools, connection pooling, and virtual threads.</td></tr></tbody></table>
+            <h5 class="text-warning">7. Recommendation</h5>
+            <p>
+              For a new Java 21/Spring Boot microservices application, choose RestClient for straightforward synchronous
+              service-to-service communication. Choose WebClient when you need non-blocking I/O, reactive pipelines, or high
+              concurrency involving many network calls. Do not introduce reactive programming just because WebClient is
+              available; it adds complexity and is most beneficial when the application remains non-blocking end to end.
+            </p>
+          </div>
+        </div>
+      </div>
       <div class="accordion-item" data-category="microservices">
         <h2 class="accordion-header" id="dualWriteProblemTop">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#dualWriteProblemTopBody">What is the Dual Write problem and how do we overcome it?</button>
