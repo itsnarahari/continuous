@@ -178,6 +178,454 @@
         onkeyup="searchQuestions()" />
     </div>
     <div class="accordion" id="accordionSeniorJava">
+      <div class="accordion-item" data-category="devops">
+        <h2 class="accordion-header" id="helmKubernetesPackageManagerTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#helmKubernetesPackageManagerTopBody">What is Helm in Kubernetes?</button>
+        </h2>
+        <div id="helmKubernetesPackageManagerTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p><strong>Helm is a package manager for Kubernetes.</strong> Think of it as a tool that helps you deploy, configure, upgrade, and roll back applications on Kubernetes without manually managing multiple YAML files.</p>
+
+            <h5 class="text-warning">1. Why do we need Helm?</h5>
+            <p>Suppose you have a Spring Boot microservice called <code>payment-service</code>.</p>
+            <p>To deploy it on EKS, you may need several Kubernetes YAML files:</p>
+            <ul><li><code>deployment.yaml</code> – creates application pods.</li><li><code>service.yaml</code> – exposes the pods.</li><li><code>configmap.yaml</code> – manages application configuration.</li><li><code>ingress.yaml</code> – manages external access.</li><li><code>hpa.yaml</code> – configures autoscaling.</li></ul>
+            <p>Managing these files separately for 20 microservices and multiple environments can become difficult.</p>
+            <p>Helm solves this by grouping Kubernetes resources into a <strong>Helm Chart</strong>.</p>
+
+            <h5 class="text-warning">2. How Helm works</h5>
+            <pre><code class="language-text">Helm Chart
+Templates + values.yaml + chart metadata
+        |
+Helm CLI
+Renders templates using environment-specific values
+        |
+Kubernetes / AWS EKS
+Creates or updates Deployments, Services, ConfigMaps, etc.</code></pre>
+
+            <h5 class="text-warning">3. Example</h5>
+            <pre><code class="language-text">payment-service/
+ ├── Chart.yaml
+ ├── values.yaml
+ └── templates/
+      ├── deployment.yaml
+      ├── service.yaml
+      └── ingress.yaml</code></pre>
+            <p><code>values.yaml</code>:</p>
+            <pre><code class="language-yaml">replicaCount: 3
+
+image:
+  repository: payment-service
+  tag: v2
+
+service:
+  port: 8080</code></pre>
+            <p>You can use different values for different environments:</p>
+            <ul><li>DEV: 1 replica</li><li>UAT: 2 replicas</li><li>PROD: 3 replicas</li></ul>
+
+            <h5 class="text-warning">4. Important Helm commands</h5>
+            <pre><code class="language-bash"># Install application
+helm install payment-service ./payment-service
+
+# Upgrade application
+helm upgrade payment-service ./payment-service \
+  --set image.tag=v2
+
+# Check deployed releases
+helm list
+
+# View release history
+helm history payment-service
+
+# Roll back to previous revision
+helm rollback payment-service 1
+
+# Uninstall application
+helm uninstall payment-service</code></pre>
+
+            <h5 class="text-warning">5. How Helm fits into CI/CD</h5>
+            <pre><code class="language-text">Developer pushes code
+        |
+Jenkins / GitHub Actions
+        |
+Build and test Spring Boot app
+        |
+Build Docker image
+        |
+Push image to AWS ECR
+        |
+Helm upgrade
+        |
+AWS EKS
+        |
+Kubernetes deploys new version</code></pre>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p><strong>"Helm is a package manager for Kubernetes. We use Helm Charts to package Kubernetes resources such as Deployments, Services, ConfigMaps, and Ingress. It supports reusable templates and environment-specific configurations. In our CI/CD pipeline, after building and pushing the Docker image to ECR, we use Helm to deploy or upgrade the application in EKS. Helm also maintains release history, which helps us roll back to a previous release."</strong></p>
+
+            <p><strong>Remember the distinction:</strong></p>
+            <ul><li>Docker packages your application.</li><li>Kubernetes manages your containers.</li><li>Helm packages and manages Kubernetes deployment configurations.</li><li>Argo Rollouts manages progressive deployment strategies such as canary and metric-based rollback.</li></ul>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="devops">
+      <div class="accordion-item" data-category="devops">
+        <h2 class="accordion-header" id="kubernetesAutomaticRollback5xxTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kubernetesAutomaticRollback5xxTopBody">How would you implement automatic Kubernetes rollback when HTTP 5xx errors cross a threshold?</button>
+        </h2>
+        <div id="kubernetesAutomaticRollback5xxTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>You're thinking in the right direction. Kubernetes YAML does configure deployment behavior, but <strong>automatic rollback based on HTTP 500 errors is not built into a standard Kubernetes Service YAML or Deployment YAML.</strong></p>
+            <p>There are two separate responsibilities:</p>
+
+            <h5 class="text-warning">1. Kubernetes Deployment YAML</h5>
+            <p>It controls how pods are replaced.</p>
+            <pre><code class="language-yaml">strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 1
+    maxUnavailable: 0</code></pre>
+            <p>This ensures Kubernetes maintains available replicas during the rollout.</p>
+
+            <h5 class="text-warning">2. Automatic rollback</h5>
+            <p>For automatic rollback based on application errors, you need an additional deployment controller or progressive delivery tool, such as <strong>Argo Rollouts</strong> or <strong>Flagger</strong>.</p>
+            <p>For example, Argo Rollouts can:</p>
+            <ul><li>Send 5% of traffic to the new version.</li><li>Monitor HTTP 500 rates using Prometheus metrics.</li><li>Automatically abort the rollout if the error rate crosses a configured threshold.</li><li>Keep or restore traffic on the stable version.</li></ul>
+
+            <h5 class="text-warning">Important interview distinction</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Component</th><th>Responsibility</th></tr></thead><tbody><tr><td>Service YAML</td><td>Routes traffic to matching pods</td></tr><tr><td>Deployment YAML</td><td>Manages replicas and rolling updates</td></tr><tr><td>Readiness probe</td><td>Determines whether a pod receives traffic</td></tr><tr><td>Argo Rollouts / Flagger</td><td>Progressive deployment and metric-based rollback</td></tr><tr><td>Prometheus</td><td>Provides metrics for rollout analysis</td></tr></tbody></table>
+
+            <p><strong>Interview answer:</strong> "Kubernetes Deployment YAML handles rolling updates, but for automatic rollback based on HTTP 500 errors, I would integrate Argo Rollouts with Prometheus metrics."</p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="devops">
+      <div class="accordion-item" data-category="devops">
+        <h2 class="accordion-header" id="readinessProbeBusinessErrorsTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#readinessProbeBusinessErrorsTopBody">What happens if a new version passes readiness but returns HTTP 500 errors in production?</button>
+        </h2>
+        <div id="readinessProbeBusinessErrorsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>This is an important production scenario. <strong>A readiness probe only confirms that the application is ready to receive traffic; it does not guarantee that every business operation will succeed.</strong></p>
+            <p>For example, the new Spring Boot version starts successfully and its health endpoint returns HTTP 200, but its payment API starts returning HTTP 500 because of a code bug or downstream dependency issue.</p>
+
+            <h5 class="text-warning">1. Detect the problem</h5>
+            <p>Monitor the new version for:</p>
+            <ul><li>HTTP 5xx error rate</li><li>p95/p99 response latency</li><li>Failed payment transactions</li><li>Exception rate in application logs</li><li>Downstream dependency failures</li></ul>
+            <p>Use CloudWatch, Prometheus/Grafana, and distributed tracing to identify the issue.</p>
+
+            <h5 class="text-warning">2. Stop or pause the rollout</h5>
+            <p>If the error rate crosses the agreed threshold, stop the deployment.</p>
+            <pre><code class="language-bash">kubectl rollout pause deployment/payment-service</code></pre>
+            <p>This prevents Kubernetes from continuing to replace the remaining old pods.</p>
+
+            <h5 class="text-warning">3. Roll back to the stable version</h5>
+            <pre><code class="language-bash">kubectl rollout undo deployment/payment-service
+kubectl rollout status deployment/payment-service
+kubectl get pods</code></pre>
+            <p>The previous stable version should receive traffic again.</p>
+
+            <h5 class="text-warning">4. Investigate the root cause</h5>
+            <p>Check:</p>
+            <ul><li>Application logs and stack traces</li><li>Recent code changes</li><li>Environment variables and configuration</li><li>Database queries and schema compatibility</li><li>External API responses and timeouts</li><li>Differences between old and new versions</li></ul>
+            <p>Fix the issue, test it, and deploy again.</p>
+
+            <h5 class="text-warning">5. Prevent this from happening again</h5>
+            <p>Use <strong>canary deployment</strong>.</p>
+            <ol><li>Deploy the new version.</li><li>Route a small percentage of traffic, say 5%, to it.</li><li>Monitor errors and latency.</li><li>If healthy, gradually increase traffic to 25%, 50%, and 100%.</li><li>If error rates increase, route traffic back to the stable version.</li></ol>
+            <p>The percentages are illustrative; actual thresholds should be based on service traffic and SLOs.</p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p><strong>"Readiness probes only verify that a pod can receive traffic; they don't validate business-level success. So I would monitor the new version's 5xx rate, latency, and business metrics. If the error rate crosses a defined threshold, I would pause the rollout and roll back to the previous stable version. I would then use logs and distributed tracing to identify the root cause. To reduce the risk, I prefer canary deployments, where we expose the new version to a small percentage of traffic and gradually increase it after validating production metrics."</strong></p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="devops">
+      <div class="accordion-item" data-category="devops">
+        <h2 class="accordion-header" id="zeroDowntimeDeploymentTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#zeroDowntimeDeploymentTopBody">How do you implement zero-downtime deployment?</button>
+        </h2>
+        <div id="zeroDowntimeDeploymentTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>In a Java Spring Boot application deployed on AWS EKS, I would implement zero-downtime deployment using a rolling deployment or blue-green deployment, along with readiness probes and backward-compatible database changes.</p>
+
+            <h5 class="text-warning">1. Rolling deployment in Kubernetes</h5>
+            <p>Suppose we have 3 replicas of <code>payment-service</code>.</p>
+            <ol><li>Kubernetes starts a new pod with the latest application version.</li><li>It waits until the new pod passes its readiness probe.</li><li>The new pod becomes available to receive traffic.</li><li>Kubernetes terminates one old pod.</li><li>It repeats this process until all old pods are replaced.</li></ol>
+            <p><strong>Deployment flow</strong></p>
+            <pre><code class="language-text">Old version: 3 pods
+New version: 3 pods
+
+1. Start new pod - old pods continue serving traffic.
+2. Readiness probe succeeds - new pod receives traffic.
+3. Terminate one old pod gracefully.
+4. Repeat until all old pods are replaced.</code></pre>
+            <pre><code class="language-yaml">spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: payment-service
+          image: payment-service:v2
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5</code></pre>
+            <ul><li><code>maxSurge: 1</code>: Kubernetes can create one extra pod during deployment.</li><li><code>maxUnavailable: 0</code>: Kubernetes should not intentionally reduce the available replica count during the rollout.</li><li><code>readinessProbe</code>: Prevents traffic from reaching a pod until it is ready.</li></ul>
+
+            <h5 class="text-warning">2. Graceful shutdown</h5>
+            <p>When an old pod is terminated:</p>
+            <ul><li>Kubernetes removes it from service endpoints.</li><li>The application should stop accepting new requests.</li><li>Existing requests should be allowed to finish within the termination grace period.</li><li>The application should close resources gracefully.</li></ul>
+            <p>In Spring Boot, configure graceful shutdown:</p>
+            <pre><code class="language-yaml">server:
+  shutdown: graceful
+
+spring:
+  lifecycle:
+    timeout-per-shutdown-phase: 25s</code></pre>
+
+            <h5 class="text-warning">3. Database compatibility</h5>
+            <p>This is very important.</p>
+            <p>Suppose version 1 uses a column called <code>customer_name</code>, and version 2 changes it to <code>full_name</code>. You cannot immediately remove <code>customer_name</code>, because old and new application versions may run simultaneously.</p>
+            <p>Use the <strong>expand-and-contract approach</strong>:</p>
+            <ol><li>Add the new column without removing the old one.</li><li>Deploy code that supports both columns.</li><li>Migrate existing data.</li><li>Switch application reads and writes to the new column.</li><li>Remove the old column in a later deployment.</li></ol>
+
+            <h5 class="text-warning">4. Monitoring and rollback</h5>
+            <p>During deployment, monitor:</p>
+            <ul><li>HTTP 5xx error rate</li><li>Response time (p95/p99)</li><li>CPU and memory</li><li>Pod restarts</li><li>Readiness and liveness probe failures</li></ul>
+            <p>If the new version causes issues, roll back:</p>
+            <pre><code class="language-bash">kubectl rollout undo deployment/payment-service
+kubectl rollout status deployment/payment-service
+kubectl rollout history deployment/payment-service</code></pre>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p><strong>"I implement zero-downtime deployment using Kubernetes rolling updates. I maintain multiple replicas and configure <code>maxUnavailable: 0</code> and <code>maxSurge: 1</code>, so Kubernetes starts a new pod before terminating an existing one. Readiness probes ensure traffic reaches only healthy pods, and graceful shutdown allows in-flight requests to complete. I also ensure database changes are backward-compatible using the expand-and-contract approach. During deployment, I monitor error rates, latency, and pod health, and if anything goes wrong, I roll back to the previous stable version. For applications requiring more controlled releases, I can use blue-green or canary deployment."</strong></p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="devops">
+      <div class="accordion-item" data-category="devops">
+        <h2 class="accordion-header" id="dockerDeploymentFailureTroubleshootingTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#dockerDeploymentFailureTroubleshootingTopBody">If the Docker image builds successfully but the application fails after deployment, how do you troubleshoot?</button>
+        </h2>
+        <div id="dockerDeploymentFailureTroubleshootingTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>This is an excellent senior-level interview question because a successful Docker build does not guarantee a successful application deployment.</p>
+            <p>The image only proves that the application was packaged. It doesn't prove that the application can start, connect to dependencies, or serve traffic correctly in the target environment.</p>
+            <p>Let's approach this as a real production incident.</p>
+
+            <h5 class="text-warning">1. First, understand where the failure occurs</h5>
+            <p>Suppose:</p>
+            <ul><li>Payment Service Docker image builds successfully.</li><li>Image is pushed to Amazon ECR.</li><li>Jenkins deploys it to AWS EKS.</li><li>Kubernetes creates the pod.</li><li>But the application fails after deployment.</li></ul>
+            <p>I would troubleshoot in layers rather than immediately restarting the pod.</p>
+            <pre><code class="language-text">Docker image created successfully
+  -&gt; Kubernetes deployment
+  -&gt; Pod startup and application logs
+  -&gt; Configuration, secrets and dependencies
+  -&gt; Readiness, liveness and traffic routing
+  -&gt; Fix, verify and restore service</code></pre>
+
+            <h5 class="text-warning">2. Step-by-step troubleshooting</h5>
+            <p><strong>Step 1: Check the pod status</strong></p>
+            <pre><code class="language-bash">kubectl get pods -n production</code></pre>
+            <table class="table table-dark table-bordered"><thead><tr><th>Status</th><th>Possible reason</th></tr></thead><tbody><tr><td>CrashLoopBackOff</td><td>Application repeatedly crashes</td></tr><tr><td>ImagePullBackOff</td><td>Image cannot be pulled</td></tr><tr><td>Pending</td><td>Scheduling or resource issue</td></tr><tr><td>Running but 0/1 Ready</td><td>Readiness probe failing</td></tr><tr><td>OOMKilled</td><td>Container exceeded memory limit</td></tr></tbody></table>
+            <pre><code class="language-text">NAME                     READY   STATUS
+payment-service-abc123   0/1     CrashLoopBackOff</code></pre>
+            <p>The application is repeatedly restarting.</p>
+
+            <p><strong>Step 2: Check application logs</strong></p>
+            <pre><code class="language-bash">kubectl logs payment-service-abc123 -n production
+kubectl logs payment-service-abc123 -n production --previous</code></pre>
+            <p>If the container has restarted, check its previous logs. For example, you might find:</p>
+            <pre><code class="language-text">APPLICATION FAILED TO START
+
+Failed to configure a DataSource
+
+Connection refused: database-host:5432</code></pre>
+            <p>Now we have a possible root cause: database connectivity.</p>
+
+            <p><strong>Step 3: Describe the pod</strong></p>
+            <pre><code class="language-bash">kubectl describe pod payment-service-abc123 -n production</code></pre>
+            <p>This gives information about container state and restart count, events, failed probes, resource limits, image pull errors, and volume mount failures.</p>
+            <pre><code class="language-text">Readiness probe failed:
+HTTP probe failed with status code 503</code></pre>
+            <p>This means Kubernetes cannot consider the application ready to receive traffic.</p>
+
+            <p><strong>Step 4: Check environment configuration and secrets</strong></p>
+            <p>This is a very common real-world issue. The application may work in UAT but fail in production because:</p>
+            <ul><li>Database URL is incorrect.</li><li>Password or secret is missing.</li><li>Wrong Spring profile is active.</li><li>External API URL is incorrect.</li><li>Required environment variable is not configured.</li></ul>
+            <pre><code class="language-yaml">env:
+  - name: SPRING_PROFILES_ACTIVE
+    value: production</code></pre>
+            <p>Check deployment configuration and secret references without printing actual secret values into logs or terminals.</p>
+
+            <p><strong>Step 5: Check database and external dependencies</strong></p>
+            <p>Suppose the application starts but cannot connect to the database. Verify:</p>
+            <ol><li>Is the database available?</li><li>Is the endpoint correct?</li><li>Can the EKS pod reach the database network?</li><li>Are security groups and network policies allowing traffic?</li><li>Are database credentials valid?</li><li>Is the connection pool exhausted?</li></ol>
+            <p>For a Spring Boot service, also inspect HikariCP connection pool metrics and database logs.</p>
+
+            <p><strong>Step 6: Check readiness and liveness probes</strong></p>
+            <pre><code class="language-yaml">readinessProbe:
+  httpGet:
+    path: /actuator/health/readiness
+    port: 8080
+  initialDelaySeconds: 20
+  periodSeconds: 10
+
+livenessProbe:
+  httpGet:
+    path: /actuator/health/liveness
+    port: 8080
+  initialDelaySeconds: 30
+  periodSeconds: 15</code></pre>
+            <p>Readiness probe:</p>
+            <ul><li>Determines whether the pod can receive traffic.</li><li>If it fails, Kubernetes removes the pod from ready service endpoints.</li><li>It does not restart the container.</li></ul>
+            <p>Liveness probe:</p>
+            <ul><li>Determines whether the application is stuck or unhealthy.</li><li>If it fails repeatedly, Kubernetes restarts the container.</li></ul>
+            <p>A startup probe can also be used when an application needs more time to initialize.</p>
+
+            <h5 class="text-warning">3. What if the application is running but users get HTTP 500?</h5>
+            <p>Suppose:</p>
+            <pre><code class="language-text">Pod status: Running
+Readiness: Healthy
+HTTP response: 500</code></pre>
+            <p>I would investigate application exceptions and stack traces, database query failures, downstream service failures, recent configuration or deployment changes, and trace IDs across microservices.</p>
+            <table class="table table-dark table-bordered"><thead><tr><th>Tool</th><th>Purpose</th></tr></thead><tbody><tr><td>CloudWatch</td><td>AWS logs and metrics</td></tr><tr><td>Prometheus</td><td>Application and infrastructure metrics</td></tr><tr><td>Grafana</td><td>Monitoring dashboards</td></tr><tr><td>OpenTelemetry</td><td>Distributed tracing</td></tr><tr><td>ELK</td><td>Centralized log analysis</td></tr></tbody></table>
+            <p>For example, if Payment Service calls Customer Service and Customer Service returns HTTP 500, distributed tracing helps identify where the request failed.</p>
+
+            <h5 class="text-warning">4. What if the new deployment causes production failures?</h5>
+            <p>This is where you should demonstrate ownership.</p>
+            <ol><li>Assess impact and severity.</li><li>Stop further rollout.</li><li>Check error rate, latency and business metrics.</li><li>Roll back to the last known-good image if the new release is responsible.</li><li>Verify service recovery.</li><li>Investigate the root cause.</li><li>Fix and redeploy after validation.</li></ol>
+            <pre><code class="language-bash">helm history payment-service -n production
+helm rollback payment-service 4 -n production</code></pre>
+            <p>Here, 4 is an example of the previous known-good revision; in production, choose the verified revision.</p>
+            <p>Remember: rolling back application code is not always sufficient if the release introduced an incompatible database migration.</p>
+
+            <h5 class="text-warning">5. Practical troubleshooting command cheat sheet</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Command</th><th>Why</th></tr></thead><tbody><tr><td><code>kubectl get pods</code></td><td>Check pod status</td></tr><tr><td><code>kubectl describe pod &lt;pod&gt;</code></td><td>Inspect events and probes</td></tr><tr><td><code>kubectl logs &lt;pod&gt;</code></td><td>Application logs</td></tr><tr><td><code>kubectl logs &lt;pod&gt; --previous</code></td><td>Logs from previous container</td></tr><tr><td><code>kubectl get events</code></td><td>Cluster and pod events</td></tr><tr><td><code>kubectl top pods</code></td><td>CPU and memory usage</td></tr><tr><td><code>kubectl get svc</code></td><td>Check services</td></tr><tr><td><code>kubectl get endpoints</code></td><td>Check ready backend endpoints</td></tr><tr><td><code>helm history &lt;release&gt;</code></td><td>Deployment revisions</td></tr><tr><td><code>helm rollback &lt;release&gt; &lt;revision&gt;</code></td><td>Roll back release</td></tr></tbody></table>
+
+            <h5 class="text-warning">6. How to answer the interviewer in 90 seconds</h5>
+            <p><strong>"First, I would identify whether the failure is at the container level, application startup level, or runtime level.</strong></p>
+            <p><strong>Since the Docker image has built successfully, I would check the Kubernetes pod status using kubectl get pods.</strong></p>
+            <p><strong>If the pod is restarting, I would inspect application logs using kubectl logs and previous container logs, and use kubectl describe pod to identify events, resource issues and probe failures.</strong></p>
+            <p><strong>Next, I would verify production configuration, environment variables, secrets, database connectivity and external dependencies.</strong></p>
+            <p><strong>If the application is running but not receiving traffic, I would inspect readiness and liveness probes, Kubernetes services and endpoints.</strong></p>
+            <p><strong>I would also check CloudWatch logs, Prometheus metrics and distributed traces to identify errors and latency across dependent microservices.</strong></p>
+            <p><strong>If the deployment is causing production impact, I would stop the rollout and restore the previous known-good version, then investigate the root cause and redeploy after validation.</strong></p>
+            <p><strong>Finally, I would add appropriate automated checks to prevent the same issue from reaching production again."</strong></p>
+
+            <h5 class="text-warning">7. JPMC mock interview scenario</h5>
+            <p>Your Spring Boot application is deployed successfully to EKS.</p>
+            <pre><code class="language-bash">kubectl get pods</code></pre>
+            <pre><code class="language-text">NAME                     READY   STATUS
+payment-service-abc123   0/1     Running</code></pre>
+            <p>You check logs:</p>
+            <pre><code class="language-text">Started PaymentApplication in 18 seconds</code></pre>
+            <p>There are no exceptions, but the pod is not receiving traffic. What would you investigate next, and which Kubernetes commands would you execute?</p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="java">
+      <div class="accordion-item" data-category="devops">
+        <h2 class="accordion-header" id="twentyMicroservicesCicdTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#twentyMicroservicesCicdTopBody">You have 20 microservices. How would you design the CI/CD pipeline for them?</button>
+        </h2>
+        <div id="twentyMicroservicesCicdTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>For a JPMorgan Chase Software Engineer III interview, I would design a centralized CI/CD platform with independent pipelines for each microservice.</p>
+            <p><strong>Key principle:</strong> One common CI/CD framework, but each microservice can build, test, release, and roll back independently.</p>
+
+            <h5 class="text-warning">1. High-level CI/CD architecture</h5>
+            <pre><code class="language-text">20 Git repositories: Service A ... Service T
+  -&gt; CI: Jenkins / GitHub Actions
+  -&gt; SonarQube, linting, unit/integration/contract tests
+  -&gt; Maven/Gradle build, SAST and dependency/container scans
+  -&gt; Docker image with immutable version / commit SHA
+  -&gt; Amazon ECR
+  -&gt; CD: Helm / Kubernetes
+       DEV: automatic
+       QA / UAT: integration testing
+       PROD: approval + controlled rollout</code></pre>
+
+            <h5 class="text-warning">2. Explain each stage</h5>
+            <p><strong>Source control:</strong> Each microservice has its own repository, such as <code>payment-service</code>, <code>customer-service</code>, <code>order-service</code>, <code>notification-service</code>, and <code>inventory-service</code>. Developers create feature branches and raise pull requests.</p>
+            <p>On PR creation, compile code, run unit tests, check quality, run security scans, and require code review and passing checks before merging.</p>
+            <p><strong>Build and test:</strong></p>
+            <pre><code class="language-bash">mvn clean verify</code></pre>
+            <table class="table table-dark table-bordered"><thead><tr><th>Test</th><th>Purpose</th></tr></thead><tbody><tr><td>Unit tests</td><td>Validate individual methods</td></tr><tr><td>Integration tests</td><td>Validate DB and external integrations</td></tr><tr><td>Contract tests</td><td>Verify service-to-service API compatibility</td></tr><tr><td>Code quality</td><td>SonarQube</td></tr><tr><td>Security</td><td>SAST and dependency vulnerability scans</td></tr></tbody></table>
+            <p>For 20 services, contract testing is especially important because one service's API change may affect several other services.</p>
+
+            <p><strong>Docker image creation:</strong></p>
+            <pre><code class="language-dockerfile">FROM eclipse-temurin:21-jre
+COPY target/payment-service.jar app.jar
+ENTRYPOINT ["java", "-jar", "/app.jar"]</code></pre>
+            <pre><code class="language-bash">docker build -t payment-service:1.0.5 .
+docker push &lt;registry&gt;/payment-service:1.0.5</code></pre>
+            <p>Use immutable tags, preferably including the commit SHA. Avoid relying on <code>latest</code>. Store images in Amazon ECR.</p>
+
+            <p><strong>Deployment:</strong> Use Kubernetes with Helm charts.</p>
+            <pre><code class="language-text">helm/
+  payment-service/
+  customer-service/
+  order-service/
+  notification-service/</code></pre>
+            <pre><code class="language-bash">helm upgrade --install payment-service \
+  ./helm/payment-service \
+  --namespace production \
+  --set image.tag=1.0.5</code></pre>
+            <table class="table table-dark table-bordered"><thead><tr><th>Environment</th><th>Deployment strategy</th></tr></thead><tbody><tr><td>DEV</td><td>Automatic after successful CI</td></tr><tr><td>QA</td><td>Automatic or controlled promotion</td></tr><tr><td>UAT</td><td>Testing and business validation</td></tr><tr><td>PROD</td><td>Approval, controlled rollout and monitoring</td></tr></tbody></table>
+            <p>Promote the same tested image between environments. Don't rebuild a different image for production.</p>
+
+            <h5 class="text-warning">3. Managing 20 services</h5>
+            <p>Don't create 20 completely different pipeline implementations. Create a reusable pipeline template:</p>
+            <pre><code class="language-text">shared-cicd/
+    java-build.yml
+    unit-test.yml
+    security-scan.yml
+    docker-build.yml
+    deploy-helm.yml</code></pre>
+            <p>Each service supplies its own name, Java version, build tool, namespace, Helm chart, and whether SonarQube and contract tests are enabled. All 20 services reuse the same pipeline framework.</p>
+            <p>Benefits: consistent security and quality checks, less duplicated pipeline code, easier maintenance, independent deployments, and centralized governance.</p>
+
+            <h5 class="text-warning">4. If only one microservice changes</h5>
+            <p>Suppose only Payment Service changes. Should we deploy all 20 services? No.</p>
+            <pre><code class="language-text">Payment Service changed
+  -&gt; Payment CI pipeline
+  -&gt; Build + Test + Scan
+  -&gt; Payment Docker image
+  -&gt; Deploy Payment Service</code></pre>
+            <p>Only that service's pipeline should execute its deployment stages, unless another service needs a coordinated change. Run relevant consumer contract and integration tests to catch compatibility problems.</p>
+
+            <h5 class="text-warning">5. Production failure and rollback</h5>
+            <ul><li>Rolling deployment for normal low-risk releases.</li><li>Canary deployment for gradual traffic exposure.</li><li>Blue-green deployment for rapid traffic switching.</li><li>Automated health checks and rollback criteria.</li></ul>
+            <pre><code class="language-text">Version 1.0.4 -&gt; 100% traffic
+Deploy Version 1.0.5
+  -&gt; Send 5% traffic to 1.0.5
+  -&gt; Check errors, latency, health
+       Healthy   -&gt; Increase traffic
+       Unhealthy -&gt; Rollback to 1.0.4</code></pre>
+            <p>Monitor HTTP 5xx error rate, p95/p99 latency, CPU and memory, pod restarts, and business-specific metrics.</p>
+
+            <h5 class="text-warning">6. Senior-level considerations</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Concern</th><th>Solution</th></tr></thead><tbody><tr><td>Secrets management</td><td>AWS Secrets Manager / Kubernetes secrets with encryption and access controls</td></tr><tr><td>Infrastructure consistency</td><td>Terraform</td></tr><tr><td>Configuration management</td><td>Environment-specific configuration</td></tr><tr><td>Image vulnerabilities</td><td>Container scanning</td></tr><tr><td>Database migrations</td><td>Flyway or Liquibase</td></tr><tr><td>Service compatibility</td><td>Consumer-driven contract tests</td></tr><tr><td>Deployment visibility</td><td>Centralized logs, metrics and tracing</td></tr><tr><td>Rollback</td><td>Previous known-good image and compatible database changes</td></tr><tr><td>Pipeline permissions</td><td>Least-privilege IAM roles</td></tr><tr><td>Auditability</td><td>Deployment history and approval records</td></tr></tbody></table>
+            <p>Database migration warning: Application rollback is not always sufficient. Use backward-compatible, expand-and-contract migrations so old and new application versions can coexist.</p>
+
+            <h5 class="text-warning">7. Interview answer</h5>
+            <p><strong>"For 20 microservices, I would implement a centralized CI/CD framework with independent pipelines for each microservice. Each service would maintain its own Git repository. On a pull request, the pipeline would run compilation, unit tests, integration tests, code-quality checks and security scans.</strong></p>
+            <p><strong>After merge, Jenkins or GitHub Actions would build the Spring Boot application, package it into a Docker image, scan it and push it to Amazon ECR using an immutable tag. Helm and Kubernetes would deploy the service to DEV, QA and UAT, followed by production deployment with required approvals.</strong></p>
+            <p><strong>I would use reusable pipeline templates so all 20 services follow common standards while remaining independently deployable. For production, I would use rolling or canary deployments with health checks and automated rollback based on error rates and latency, with CloudWatch, Prometheus and Grafana for monitoring.</strong></p>
+            <p><strong>This approach gives us independent releases, consistency, security, scalability and faster recovery."</strong></p>
+          </div>
+        </div>
+      </div>
       <div class="accordion-item" data-category="java">
         <h2 class="accordion-header" id="javaSemaphoreCompleteGuideTop">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#javaSemaphoreCompleteGuideTopBody">Semaphore Java: Complete Interview Guide</button>
