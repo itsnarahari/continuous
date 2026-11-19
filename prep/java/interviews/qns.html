@@ -178,6 +178,1039 @@
         onkeyup="searchQuestions()" />
     </div>
     <div class="accordion" id="accordionSeniorJava">
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="sqsVsSnsRestBasedTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#sqsVsSnsRestBasedTopBody">SQS vs SNS: Is SNS REST-based?</button>
+        </h2>
+        <div id="sqsVsSnsRestBasedTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>Amazon SQS and Amazon SNS are both AWS messaging services, but they solve different problems. SNS supports REST-based AWS APIs, but SNS itself is a managed publish/subscribe service, not simply a REST messaging service.</p>
+
+            <h5 class="text-warning">1. SQS vs SNS</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Feature</th><th>Amazon SQS</th><th>Amazon SNS</th></tr></thead><tbody><tr><td>Full form</td><td>Simple Queue Service</td><td>Simple Notification Service</td></tr><tr><td>Messaging model</td><td>Queue-based</td><td>Publish/Subscribe</td></tr><tr><td>Communication</td><td>Point-to-point</td><td>One-to-many</td></tr><tr><td>Consumption</td><td>Consumers poll the queue</td><td>SNS pushes to subscribers</td></tr><tr><td>Message storage</td><td>Stores messages until consumed or expired</td><td>Delivers to subscribers; is not a durable queue by itself</td></tr><tr><td>Multiple consumers</td><td>Competing consumers share messages</td><td>Multiple subscribers receive copies</td></tr><tr><td>Retry</td><td>Visibility timeout and redrive/DLQ</td><td>Delivery retries depend on subscriber protocol</td></tr><tr><td>Typical use</td><td>Background processing</td><td>Broadcasting events and notifications</td></tr></tbody></table>
+
+            <h5 class="text-warning">2. How SQS works</h5>
+            <p>For a banking payment-processing example:</p>
+            <ol><li>Spring Boot sends a payment event to SQS.</li><li>SQS stores the message.</li><li>A consumer polls SQS.</li><li>The consumer processes the message.</li><li>On success, the consumer deletes the message.</li><li>If processing fails, the message becomes visible again after the visibility timeout.</li><li>After configured retries, it can move to a Dead Letter Queue.</li></ol>
+            <p><strong>Important:</strong> SQS Standard queues provide at-least-once delivery, so consumers should be idempotent.</p>
+
+            <h5 class="text-warning">3. How SNS works</h5>
+            <p>When a customer completes a payment, the Payment Service can publish one event to an SNS topic. SNS broadcasts copies to independent subscribers:</p>
+            <pre><code class="language-text">Payment Service
+       |
+       v
+   SNS Topic
+    /  |  \
+ Email SMS Audit</code></pre>
+            <p>SNS supports subscribers such as SQS queues, AWS Lambda, HTTP/HTTPS endpoints, email, and SMS. Each subscriber receives its own copy.</p>
+
+            <h5 class="text-warning">4. Is SNS REST-based?</h5>
+            <p>SNS provides AWS APIs that can be called over HTTPS. You can publish through the AWS SDK or the HTTPS API. With the Java SDK, you do not need to construct REST requests manually:</p>
+            <pre><code class="language-java">@Service
+public class NotificationPublisher {
+    private final SnsClient snsClient;
+
+    public NotificationPublisher(SnsClient snsClient) {
+        this.snsClient = snsClient;
+    }
+
+    public void publish(String topicArn, String message) {
+        PublishRequest request = PublishRequest.builder()
+            .topicArn(topicArn)
+            .message(message)
+            .build();
+
+        snsClient.publish(request);
+    }
+}</code></pre>
+            <p><strong>Distinction:</strong> SNS is a managed pub/sub service; HTTPS is one way to access its API; and an HTTP/HTTPS endpoint can subscribe to a topic so SNS sends notifications to it.</p>
+
+            <h5 class="text-warning">5. SNS + SQS fan-out</h5>
+            <p>Publish a payment event once to SNS, and SNS delivers copies to separate SQS queues:</p>
+            <pre><code class="language-text">Payment Service -> SNS Topic
+                    |-- SQS 1 -> Email worker
+                    |-- SQS 2 -> SMS worker
+                    |-- SQS 3 -> Audit worker</code></pre>
+            <p>Each service independently polls its queue and processes its own copy. If the email service is down, SMS and audit can continue independently.</p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">Amazon SQS is a queue-based messaging service used for asynchronous point-to-point communication. It stores messages until consumers poll and process them. Amazon SNS is a publish-subscribe service used to broadcast messages to multiple subscribers. SNS supports fan-out delivery to SQS, Lambda, HTTP/HTTPS endpoints, email, and SMS. We can combine SNS and SQS to achieve scalable, loosely coupled event-driven architecture.</blockquote>
+            <p><strong>Example choice:</strong> If a payment service must send the same <code>PaymentCompleted</code> event to three independent microservices and each service must process its copy even if temporarily offline, use <strong>SNS + SQS</strong>.</p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+      <div class="accordion-item" data-category="java">
+        <h2 class="accordion-header" id="mergeOverlappingIntervalsTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#mergeOverlappingIntervalsTopBody">Merge overlapping intervals</button>
+        </h2>
+        <div id="mergeOverlappingIntervalsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p><strong>Input:</strong></p>
+            <pre><code class="language-text">[[1, 3], [2, 6], [8, 10], [9, 12]]</code></pre>
+            <p><strong>Expected output:</strong></p>
+            <pre><code class="language-text">[[1, 6], [8, 12]]</code></pre>
+
+            <h5 class="text-warning">Approach</h5>
+            <p>First sort intervals by their starting values. If the current interval overlaps with the previous merged interval, extend the end value. Otherwise, add a new interval.</p>
+
+            <h5 class="text-warning">Java implementation</h5>
+            <pre><code class="language-java">import java.util.*;
+
+public class MergeIntervals {
+    public static int[][] merge(int[][] intervals) {
+        if (intervals == null || intervals.length &lt;= 1) {
+            return intervals;
+        }
+
+        Arrays.sort(intervals,
+            (a, b) -&gt; Integer.compare(a[0], b[0]));
+
+        List&lt;int[]&gt; result = new ArrayList&lt;&gt;();
+        int[] current = intervals[0];
+
+        for (int i = 1; i &lt; intervals.length; i++) {
+            int[] next = intervals[i];
+
+            if (next[0] &lt;= current[1]) {
+                // Overlapping intervals
+                current[1] = Math.max(current[1], next[1]);
+            } else {
+                result.add(current);
+                current = next;
+            }
+        }
+
+        result.add(current);
+        return result.toArray(new int[result.size()][]);
+    }
+
+    public static void main(String[] args) {
+        int[][] intervals = {
+            {1, 3}, {2, 6}, {8, 10}, {9, 12}
+        };
+
+        int[][] result = merge(intervals);
+        for (int[] interval : result) {
+            System.out.println(Arrays.toString(interval));
+        }
+    }
+}</code></pre>
+            <p><strong>Output:</strong></p>
+            <pre><code class="language-text">[1, 6]
+[8, 12]</code></pre>
+
+            <h5 class="text-warning">Complexity</h5>
+            <ul><li>Sorting: O(n log n).</li><li>Merging: O(n).</li><li>Total: O(n log n).</li><li>Additional space: O(n) for the output, plus sorting implementation overhead.</li></ul>
+            <p>If the input is already sorted, merging takes O(n) time. An in-place version can reduce auxiliary space to O(1), excluding the output representation.</p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="java">
+      <div class="accordion-item" data-category="java">
+        <h2 class="accordion-header" id="implementLruCacheTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#implementLruCacheTopBody">Implement an LRU Cache</button>
+        </h2>
+        <div id="implementLruCacheTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p><strong>LRU</strong> means Least Recently Used. The goal is <strong>O(1) average time</strong> for both <code>get</code> and <code>put</code>.</p>
+            <p>For a cache with capacity 3:</p>
+            <pre><code class="language-text">put(1, 100)
+put(2, 200)
+put(3, 300)
+
+Most recently used first: 3 -&gt; 2 -&gt; 1
+get(1)
+New order: 1 -&gt; 3 -&gt; 2
+put(4, 400)
+Key 2 is evicted because it is least recently used.</code></pre>
+
+            <h5 class="text-warning">Internal data structures</h5>
+            <ul><li><code>HashMap</code> finds a node in O(1) average time.</li><li>A doubly linked list moves and removes nodes in O(1) time.</li></ul>
+            <p>The head represents the most recently used entry and the tail represents the least recently used entry. Dummy head and tail nodes simplify insertion and removal.</p>
+
+            <h5 class="text-warning">Complete Java implementation</h5>
+            <pre><code class="language-java">import java.util.HashMap;
+import java.util.Map;
+
+class LRUCache {
+    class Node {
+        int key;
+        int value;
+        Node prev;
+        Node next;
+
+        Node(int key, int value) {
+            this.key = key;
+            this.value = value;
+        }
+    }
+
+    private final int capacity;
+    private final Map&lt;Integer, Node&gt; map;
+    private final Node head = new Node(-1, -1);
+    private final Node tail = new Node(-1, -1);
+
+    public LRUCache(int capacity) {
+        this.capacity = capacity;
+        this.map = new HashMap&lt;&gt;();
+        head.next = tail;
+        tail.prev = head;
+    }
+
+    public int get(int key) {
+        Node node = map.get(key);
+        if (node == null) {
+            return -1;
+        }
+
+        remove(node);
+        addToFront(node);
+        return node.value;
+    }
+
+    public void put(int key, int value) {
+        if (map.containsKey(key)) {
+            Node existing = map.get(key);
+            remove(existing);
+            existing.value = value;
+            addToFront(existing);
+            return;
+        }
+
+        if (map.size() == capacity) {
+            Node leastRecentlyUsed = tail.prev;
+            remove(leastRecentlyUsed);
+            map.remove(leastRecentlyUsed.key);
+        }
+
+        Node newNode = new Node(key, value);
+        map.put(key, newNode);
+        addToFront(newNode);
+    }
+
+    private void remove(Node node) {
+        node.prev.next = node.next;
+        node.next.prev = node.prev;
+    }
+
+    private void addToFront(Node node) {
+        node.next = head.next;
+        node.prev = head;
+        head.next.prev = node;
+        head.next = node;
+    }
+}</code></pre>
+
+            <h5 class="text-warning">Test it</h5>
+            <pre><code class="language-java">public class Main {
+    public static void main(String[] args) {
+        LRUCache cache = new LRUCache(2);
+
+        cache.put(1, 100);
+        cache.put(2, 200);
+        System.out.println(cache.get(1)); // 100
+
+        cache.put(3, 300); // Evicts key 2
+        System.out.println(cache.get(2)); // -1
+        System.out.println(cache.get(3)); // 300
+    }
+}</code></pre>
+
+            <h5 class="text-warning">Why O(1)?</h5>
+            <ul><li><code>HashMap.get()</code> is O(1) average.</li><li>Removing a node from a doubly linked list is O(1).</li><li>Adding a node to the front is O(1).</li><li>Removing the least recently used node is O(1).</li></ul>
+            <p>Therefore, both <code>get()</code> and <code>put()</code> are O(1) average time.</p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="behavioral">
+      <div class="accordion-item" data-category="behavioral">
+        <h2 class="accordion-header" id="challengingProductionIssueStarTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#challengingProductionIssueStarTopBody">What was the most challenging production issue you resolved?</button>
+        </h2>
+        <div id="challengingProductionIssueStarTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>For a Farm Bureau PIC project, a Spring Batch migration or production batch-processing issue is a strong example because it connects Java 17, Spring Batch, DB2, Hibernate, Control-M, and production support. Use this only if it matches an incident you actually handled.</p>
+
+            <h5 class="text-warning">STAR answer: Spring Batch job failure during production processing</h5>
+            <p><strong>Situation:</strong> In my Farm Bureau project, we were migrating legacy Spring Batch functionality to Java 17. The application processed business data using Spring Batch, DB2, and Hibernate. During production execution, we encountered a batch-processing failure and the job did not complete successfully.</p>
+            <p><strong>Task:</strong> My responsibility was to investigate the failure, identify the root cause, ensure data consistency, and get the batch processing completed without introducing duplicate or missing records.</p>
+            <p><strong>Action:</strong> I started by analyzing the application logs and Spring Batch execution details to identify the step where the job was failing. I checked the relevant DB2 records and compared the migrated implementation with the legacy application to determine whether the issue was related to business logic, data mapping, or database interaction. After identifying the issue, I made the necessary code correction, validated the behavior against the legacy implementation, and tested the affected scenarios. I also verified the processed records to ensure rerunning the failed job would not introduce duplicate processing.</p>
+            <p><strong>Result:</strong> After the correction, we validated the batch execution and confirmed that the affected processing completed successfully. This reinforced the importance of understanding legacy business behavior, maintaining data consistency, and investigating production issues systematically.</p>
+
+            <h5 class="text-warning">Possible follow-up questions</h5>
+            <ol><li>How did you identify the failed batch step?</li><li>How does Spring Batch maintain job execution status?</li><li>What is the difference between <code>JobInstance</code> and <code>JobExecution</code>?</li><li>How do you restart a failed batch job?</li><li>How do you prevent duplicate processing during a restart?</li><li>How do chunk-oriented processing and transaction boundaries work?</li><li>How would you investigate a batch job that works in UAT but fails in production?</li></ol>
+            <p><strong>Interview tip:</strong> Do not memorize this as a story. Be ready to explain the actual root cause, the SQL or code you changed, and how you verified the fix.</p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="redisTtlExpiryBackgroundJobTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#redisTtlExpiryBackgroundJobTopBody">Does Redis run a background job to check TTL and expiry?</button>
+        </h2>
+        <div id="redisTtlExpiryBackgroundJobTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>Yes. Redis uses two mechanisms to expire keys:</p>
+            <ol><li><strong>Passive expiration (lazy expiration)</strong></li><li><strong>Active expiration (background expiration cycle)</strong></li></ol>
+
+            <h5 class="text-warning">1. Passive expiration</h5>
+            <p>Redis checks a key's TTL when an application accesses that key.</p>
+            <pre><code class="language-redis">SET user:101 "Hari" EX 10
+GET user:101</code></pre>
+            <p>After 10 seconds, Redis checks the expiration time when processing <code>GET</code>, deletes the expired key, and returns:</p>
+            <pre><code class="language-text">(nil)</code></pre>
+
+            <h5 class="text-warning">2. Active expiration</h5>
+            <p>If nobody accesses the key after its TTL expires, Redis periodically runs an internal active expiration cycle:</p>
+            <ul><li>Redis samples keys that have expiration times.</li><li>It checks whether those keys have expired.</li><li>It deletes expired keys.</li><li>If many sampled keys are expired, it can perform additional checks.</li></ul>
+            <p>This is periodic work performed internally by Redis, not a separate scheduled job that you need to configure.</p>
+
+            <h5 class="text-warning">Important distinction</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Mechanism</th><th>When does it happen?</th></tr></thead><tbody><tr><td>Passive expiration</td><td>When an expired key is accessed</td></tr><tr><td>Active expiration</td><td>Periodically, even without key access</td></tr></tbody></table>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">Redis uses lazy expiration and active expiration. Lazy expiration removes a key when it is accessed after its TTL. Active expiration periodically samples keys with expiration metadata and removes expired keys in the background. Therefore, Redis does not need to scan every key continuously.</blockquote>
+            <p><strong>Important:</strong> TTL reaching zero does not guarantee that the key's memory is reclaimed at that exact millisecond. Active expiration is periodic, so an unaccessed expired key may remain in memory briefly.</p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="redisDistributedCacheSpringBootTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#redisDistributedCacheSpringBootTopBody">How do you configure Redis as a distributed cache in Spring Boot?</button>
+        </h2>
+        <div id="redisDistributedCacheSpringBootTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>Suppose Customer Service runs in three application instances behind a load balancer. All instances connect to the same Redis deployment, so a customer cached by Instance 1 can be read by Instance 3 without another MySQL query.</p>
+            <pre><code class="language-text">Load Balancer
+   |-- App Instance 1 --+
+   |-- App Instance 2 --+--&gt; Shared Redis --&gt; Shared MySQL
+   |-- App Instance 3 --+</code></pre>
+
+            <h5 class="text-warning">1. Maven dependencies</h5>
+            <pre><code class="language-xml">&lt;dependencies&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+        &lt;artifactId&gt;spring-boot-starter-web&lt;/artifactId&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+        &lt;artifactId&gt;spring-boot-starter-cache&lt;/artifactId&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+        &lt;artifactId&gt;spring-boot-starter-data-redis&lt;/artifactId&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+        &lt;artifactId&gt;spring-boot-starter-data-jpa&lt;/artifactId&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;com.mysql&lt;/groupId&gt;
+        &lt;artifactId&gt;mysql-connector-j&lt;/artifactId&gt;
+        &lt;scope&gt;runtime&lt;/scope&gt;
+    &lt;/dependency&gt;
+&lt;/dependencies&gt;</code></pre>
+            <p>Use the Spring Boot parent or BOM to manage versions. Spring Data Redis uses Lettuce by default in the standard Spring Boot setup.</p>
+
+            <h5 class="text-warning">2. Start Redis locally</h5>
+            <pre><code class="language-bash">docker run -d --name redis-cache -p 6379:6379 redis:7
+docker exec -it redis-cache redis-cli
+PING</code></pre>
+            <p>The expected response is <code>PONG</code>. In production, use a managed Redis-compatible service or a properly configured Redis deployment with authentication, TLS, backups or persistence where needed, monitoring, and high availability.</p>
+
+            <h5 class="text-warning">3. Configure Redis and cache</h5>
+            <pre><code class="language-yaml">spring:
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 2s
+  cache:
+    type: redis
+  datasource:
+    url: jdbc:mysql://localhost:3306/customerdb
+    username: root
+    password: password
+  jpa:
+    hibernate:
+      ddl-auto: update</code></pre>
+            <p>In production, provide host, credentials, and TLS settings through environment variables or a secrets manager rather than hardcoding them.</p>
+            <pre><code class="language-java">@SpringBootApplication
+@EnableCaching
+public class CustomerApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(CustomerApplication.class, args);
+    }
+}</code></pre>
+
+            <h5 class="text-warning">4. Configure different TTLs</h5>
+            <p>For example: customers 10 minutes, products 30 minutes, and categories 2 hours.</p>
+            <pre><code class="language-java">@Configuration
+@EnableCaching
+public class RedisCacheConfig {
+    @Bean
+    public RedisCacheManager cacheManager(
+            RedisConnectionFactory connectionFactory) {
+
+        RedisCacheConfiguration defaults =
+            RedisCacheConfiguration.defaultCacheConfig()
+                .entryTtl(Duration.ofMinutes(10))
+                .disableCachingNullValues();
+
+        Map&lt;String, RedisCacheConfiguration&gt; caches = new HashMap&lt;&gt;();
+        caches.put("customers", defaults.entryTtl(Duration.ofMinutes(10)));
+        caches.put("products", defaults.entryTtl(Duration.ofMinutes(30)));
+        caches.put("categories", defaults.entryTtl(Duration.ofHours(2)));
+
+        return RedisCacheManager.builder(connectionFactory)
+            .cacheDefaults(defaults)
+            .withInitialCacheConfigurations(caches)
+            .build();
+    }
+}</code></pre>
+            <p>Spring Boot can auto-configure a Redis cache manager. Defining this bean gives explicit control over per-cache TTLs.</p>
+
+            <h5 class="text-warning">5. Important cache annotations</h5>
+            <p><strong>@Cacheable:</strong> reads from cache first and executes the method only on a miss.</p>
+            <pre><code class="language-java">@Cacheable(value = "customers", key = "#id")
+public Customer getCustomer(Long id) {
+    System.out.println("Fetching from MySQL");
+    return repository.findById(id).orElseThrow();
+}</code></pre>
+            <p>The first request for <code>101</code> loads MySQL and stores <code>customers::101</code> in Redis. Later requests return the cached value without executing the method.</p>
+
+            <p><strong>@CachePut:</strong> always executes the method and updates the cache with the returned value.</p>
+            <pre><code class="language-java">@CachePut(value = "customers", key = "#id")
+public Customer updateCustomer(Long id, CustomerRequest request) {
+    Customer customer = repository.findById(id).orElseThrow();
+    customer.setName(request.name());
+    customer.setEmail(request.email());
+    return repository.save(customer);
+}</code></pre>
+            <p>Unlike <code>@Cacheable</code>, <code>@CachePut</code> does not skip method execution on a cache hit. For transaction-sensitive updates, ensure the cache update is not visible before the database commits; after-commit invalidation is often safer.</p>
+
+            <p><strong>@CacheEvict:</strong> removes stale data.</p>
+            <pre><code class="language-java">@CacheEvict(value = "customers", key = "#id")
+public void deleteCustomer(Long id) {
+    repository.deleteById(id);
+}
+
+@CacheEvict(value = "customers", allEntries = true)
+public void clearCustomerCache() {
+    // Spring clears every entry in the customers cache.
+}</code></pre>
+            <p><code>allEntries = true</code> clears every entry in that named cache, not every key in the entire Redis server.</p>
+
+            <p><strong>@Caching:</strong> combines multiple operations.</p>
+            <pre><code class="language-java">@Caching(evict = {
+    @CacheEvict(value = "customers", key = "#id"),
+    @CacheEvict(value = "customersByCity", allEntries = true)
+})
+public void updateCustomerCity(Long id, String city) {
+    Customer customer = repository.findById(id).orElseThrow();
+    customer.setCity(city);
+    repository.save(customer);
+}</code></pre>
+
+            <p><strong>@CacheConfig:</strong> defines common cache names at class level.</p>
+            <pre><code class="language-java">@Service
+@CacheConfig(cacheNames = "customers")
+public class CustomerService {
+    @Cacheable(key = "#id")
+    public Customer getCustomer(Long id) { return repository.findById(id).orElseThrow(); }
+
+    @CacheEvict(key = "#id")
+    public void deleteCustomer(Long id) { repository.deleteById(id); }
+}</code></pre>
+
+            <h5 class="text-warning">6. Complete service example</h5>
+            <pre><code class="language-java">@Service
+@RequiredArgsConstructor
+@CacheConfig(cacheNames = "customers")
+public class CustomerService {
+    private final CustomerRepository repository;
+
+    @Cacheable(key = "#id")
+    public Customer getCustomer(Long id) {
+        return repository.findById(id).orElseThrow();
+    }
+
+    @CachePut(key = "#id")
+    public Customer updateCustomer(Long id, CustomerRequest request) {
+        Customer customer = repository.findById(id).orElseThrow();
+        customer.setName(request.name());
+        customer.setEmail(request.email());
+        return repository.save(customer);
+    }
+
+    @CacheEvict(key = "#id")
+    public void deleteCustomer(Long id) { repository.deleteById(id); }
+
+    @CacheEvict(allEntries = true)
+    public void clearCache() { }
+}</code></pre>
+
+            <h5 class="text-warning">7. Verify entries and TTL</h5>
+            <pre><code class="language-bash">docker exec -it redis-cache redis-cli
+KEYS *
+GET customers::101
+TTL customers::101
+EXPIRE customers::101 600</code></pre>
+            <table class="table table-dark table-bordered"><thead><tr><th>TTL result</th><th>Meaning</th></tr></thead><tbody><tr><td>600</td><td>Expires in 600 seconds</td></tr><tr><td>-1</td><td>Key exists but has no expiration</td></tr><tr><td>-2</td><td>Key does not exist</td></tr></tbody></table>
+            <p>Avoid <code>KEYS *</code> in a large production Redis database because it can block Redis. Prefer <code>SCAN</code>.</p>
+
+            <h5 class="text-warning">8. Useful annotation options</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Annotation</th><th>Useful attributes</th><th>Purpose</th></tr></thead><tbody><tr><td>@Cacheable</td><td>value, key, condition, unless, sync</td><td>Read/cache a result</td></tr><tr><td>@CachePut</td><td>value, key, condition</td><td>Always execute and update cache</td></tr><tr><td>@CacheEvict</td><td>value, key, allEntries, beforeInvocation</td><td>Remove cache entries</td></tr><tr><td>@Caching</td><td>cacheable, put, evict</td><td>Combine operations</td></tr><tr><td>@CacheConfig</td><td>cacheNames, keyGenerator</td><td>Common class-level settings</td></tr></tbody></table>
+            <pre><code class="language-java">@Cacheable(value = "customers", key = "#id", unless = "#result == null")
+public Customer getCustomer(Long id) { return repository.findById(id).orElse(null); }
+
+@Cacheable(value = "customers", key = "#id", condition = "#id &gt; 0")
+public Customer getValidCustomer(Long id) { return repository.findById(id).orElseThrow(); }
+
+@Cacheable(value = "customers", key = "#id", sync = true)
+public Customer getWithSingleFlight(Long id) { return repository.findById(id).orElseThrow(); }</code></pre>
+            <p><code>sync = true</code> is cache-provider-dependent synchronization for concurrent misses within a cache. It is not a distributed lock that coordinates all application instances.</p>
+
+            <h5 class="text-warning">9. Production pitfalls</h5>
+            <ul><li><strong>Self-invocation:</strong> Spring caching annotations work through AOP proxies. Calling an annotated method from another method in the same class normally bypasses the proxy. Invoke it through another Spring-managed bean.</li><li><strong>Transaction consistency:</strong> if a database update succeeds but cache invalidation fails, stale data can remain. Use a database transaction, Transactional Outbox, Kafka, and a retryable invalidation consumer where stronger reliability is required.</li><li><strong>Cache stampede:</strong> use TTL jitter, <code>sync = true</code> where appropriate, distributed locking when cross-instance coordination is required, or Refresh-Ahead.</li><li><strong>Serialization:</strong> choose a deliberate serializer such as JSON and consider version compatibility, type information, deserialization security, and DTO changes. Avoid Java native serialization as a long-term cross-version format.</li><li><strong>Multiple instances:</strong> all instances must use the same shared Redis deployment, compatible cache names, keys, serializers, and TTL policies. A shared Redis instance is not automatically highly available; configure replication, failover, monitoring, and backups as required.</li></ul>
+
+            <h5 class="text-warning">Interview-ready summary</h5>
+            <p>I would add <code>spring-boot-starter-cache</code> and <code>spring-boot-starter-data-redis</code>, configure Redis as the cache type, enable caching with <code>@EnableCaching</code>, and define a <code>RedisCacheManager</code> for per-cache TTLs. I would use <code>@Cacheable</code> for reads, <code>@CachePut</code> for updates, <code>@CacheEvict</code> for deletes or invalidation, and <code>@Caching</code> when multiple cache operations are needed. All application instances connect to the same Redis deployment, while MySQL remains the source of truth.</p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="whyRedisIsFastInternalsTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#whyRedisIsFastInternalsTopBody">Why is Redis so fast and how does it work internally?</button>
+        </h2>
+        <div id="whyRedisIsFastInternalsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>Redis is extremely fast mainly because it keeps data in memory (RAM), uses efficient data structures, and minimizes expensive operations such as disk I/O and network round trips.</p>
+
+            <h5 class="text-warning">1. Why is Redis so fast?</h5>
+            <p>For a customer lookup, a MySQL path may involve network communication, SQL parsing, query execution, an index or storage lookup, and result construction. A Redis path typically involves network communication, an in-memory data-structure lookup, and the result.</p>
+            <ul><li><strong>In-memory storage:</strong> Redis primarily serves data from RAM.</li><li><strong>Efficient data structures:</strong> Hash tables, lists, sets, sorted sets, and other structures are optimized for common operations.</li><li><strong>Low overhead:</strong> Simple commands avoid much of the SQL parsing and query-planning overhead.</li><li><strong>Efficient event processing:</strong> Redis uses an event-driven architecture and multiplexes client connections.</li><li><strong>Persistent connections:</strong> Redis can process many commands over TCP connections without creating a connection for every command.</li></ul>
+
+            <h5 class="text-warning">2. How Redis stores data internally</h5>
+            <pre><code class="language-text">SET customer:101 '{"id":101,"name":"Rahul","city":"Hyderabad"}'</code></pre>
+            <p>Conceptually, Redis maintains a key-value mapping. Internally, it uses a dictionary implemented with hash tables for key lookup. When searching for <code>customer:101</code>, Redis calculates a hash of the key and locates the corresponding bucket. The expected lookup complexity is approximately <code>O(1)</code>.</p>
+
+            <h5 class="text-warning">3. How Redis READ works internally</h5>
+            <pre><code class="language-text">GET customer:101</code></pre>
+            <ol><li>Spring Boot sends the <code>GET</code> command.</li><li>Redis receives TCP data.</li><li>Redis parses the command.</li><li>It hashes the key and locates the dictionary entry.</li><li>It reads the value from RAM.</li><li>It sends the response back to Spring Boot.</li></ol>
+            <p>For a simple <code>GET</code>, Redis does not execute a SQL query or access a database table. It is not simply reading a random memory address; it processes the command and uses its internal data structures to locate the value.</p>
+
+            <h5 class="text-warning">4. How Redis WRITE works internally</h5>
+            <pre><code class="language-text">SET customer:101 '{"id":101,"name":"Ravi"}'</code></pre>
+            <ol><li>Redis receives the <code>SET</code> command.</li><li>It parses the key and value.</li><li>It calculates the key's hash.</li><li>It finds the existing dictionary entry or insertion location.</li><li>It creates or updates the entry.</li><li>It stores the value in memory.</li><li>It sends an acknowledgment to the client.</li></ol>
+            <p>A basic <code>SET</code> is typically <code>O(1)</code> on average.</p>
+
+            <h5 class="text-warning">5. Is Redis single-threaded?</h5>
+            <p>Redis is often described as single-threaded, but that needs context:</p>
+            <ul><li>A main thread primarily processes commands sequentially.</li><li>This simplifies coordination of shared data structures.</li><li>It avoids locking the same data structure across multiple command-execution threads.</li><li>Modern Redis versions can use additional threads for network I/O, background persistence, asynchronous memory reclamation, and other background work.</li></ul>
+            <p>Therefore, command execution is primarily single-threaded, but Redis as a whole is not strictly single-threaded.</p>
+
+            <h5 class="text-warning">6. How can single-threaded Redis handle thousands of clients?</h5>
+            <p>Redis uses I/O multiplexing, typically through mechanisms such as <code>epoll</code> on Linux, to monitor many client connections without creating one operating-system thread per client.</p>
+            <ol><li>Clients A, B, and C maintain connections to Redis.</li><li>The event loop detects which sockets have data ready.</li><li>Redis processes the available <code>GET</code> and <code>SET</code> commands.</li><li>The event loop continues monitoring all connections.</li></ol>
+
+            <h5 class="text-warning">7. Does Redis store data permanently?</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Persistence</th><th>How it works</th></tr></thead><tbody><tr><td>RDB</td><td>Periodic snapshots of the dataset.</td></tr><tr><td>AOF</td><td>Records write operations so they can be replayed.</td></tr><tr><td>No persistence</td><td>Data exists only in memory and can be lost after a crash.</td></tr></tbody></table>
+            <p>Even with persistence enabled, the recovery point depends on the configured snapshot or AOF durability policy.</p>
+
+            <h5 class="text-warning">8. Redis compared with MySQL</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Feature</th><th>Redis</th><th>MySQL</th></tr></thead><tbody><tr><td>Primary storage</td><td>RAM-oriented</td><td>Disk-backed with buffer pool</td></tr><tr><td>Data model</td><td>Key-value and rich data structures</td><td>Relational tables</td></tr><tr><td>Query</td><td>Key/command based</td><td>SQL</td></tr><tr><td>Simple key lookup</td><td>Expected O(1) hash lookup</td><td>Depends on index and query plan</td></tr><tr><td>Transactions</td><td>Commands, MULTI/EXEC, Lua, and related mechanisms</td><td>ACID transactions</td></tr><tr><td>Persistence</td><td>Optional/configurable</td><td>Durable database storage</td></tr><tr><td>Typical purpose</td><td>Caching, counters, sessions, queues</td><td>Primary application data</td></tr></tbody></table>
+            <p>MySQL also caches frequently accessed pages in RAM through the InnoDB buffer pool, so a MySQL lookup is not necessarily a disk read. Redis is often faster for simple cache operations, but actual performance depends on workload, network, data structures, and configuration.</p>
+
+            <h5 class="text-warning">9. Real-world Spring Boot example</h5>
+            <p>Suppose Customer Service receives 10,000 profile requests:</p>
+            <pre><code class="language-text">Without Redis:
+10,000 requests -> MySQL -> 10,000 database lookups
+
+With Redis Cache-Aside:
+10,000 requests -> Redis
+                  |-- 9,500 cache hits
+                  |-- 500 cache misses -> MySQL -> populate Redis</code></pre>
+            <p>These illustrative numbers show Redis handling 9,500 reads and reducing database lookups from 10,000 to 500.</p>
+
+            <h5 class="text-warning">10. Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">Redis is fast because it primarily stores data in RAM and uses optimized data structures such as hash tables for efficient key lookup. When a client sends a GET command, Redis receives the request through its event-driven networking architecture, parses the command, calculates the key's hash, locates the value in memory, and returns it. Redis primarily executes commands on a single main thread, which simplifies concurrency control, and uses I/O multiplexing to handle many client connections without creating a separate thread for every connection. Modern Redis also uses additional threads for certain background and I/O tasks. Because it avoids much of the disk I/O and SQL processing involved in traditional database queries, Redis can deliver very low-latency operations.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="redisCachingStrategiesTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#redisCachingStrategiesTopBody">Redis caching strategies with examples</button>
+        </h2>
+        <div id="redisCachingStrategiesTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>Redis caching strategies define how an application reads data from Redis, writes data to Redis, and keeps Redis synchronized with the database.</p>
+            <p>For Java and Spring Boot microservices, the six important strategies are:</p>
+            <ol><li>Cache-Aside (Lazy Loading)</li><li>Read-Through</li><li>Write-Through</li><li>Write-Behind (Write-Back)</li><li>Write-Around</li><li>Refresh-Ahead</li></ol>
+            <p><strong>Example architecture:</strong> an e-commerce Customer Service uses Spring Boot, Redis as the cache, and MySQL as the primary database. Redis stores frequently accessed customer data to reduce database queries.</p>
+
+            <h5 class="text-warning">1. Cache-Aside (Lazy Loading)</h5>
+            <p><strong>Most commonly used.</strong> The application manages the cache itself.</p>
+            <p>For customer ID 101:</p>
+            <ol><li>Application checks Redis.</li><li>On a cache miss, it fetches the customer from MySQL.</li><li>It stores the result in Redis.</li><li>It returns the customer details.</li></ol>
+            <p>On the next request, Redis returns the cached customer directly, so no MySQL query is required.</p>
+            <pre><code class="language-java">@Service
+@RequiredArgsConstructor
+public class CustomerService {
+
+    private final CustomerRepository repository;
+    private final RedisTemplate&lt;String, Customer&gt; redisTemplate;
+
+    public Customer getCustomer(Long id) {
+        String key = "customer:" + id;
+        Customer cached = redisTemplate.opsForValue().get(key);
+
+        if (cached != null) {
+            return cached; // Cache hit
+        }
+
+        Customer customer = repository.findById(id).orElseThrow();
+        redisTemplate.opsForValue().set(key, customer, Duration.ofMinutes(10));
+        return customer;
+    }
+}</code></pre>
+            <p><strong>Use for:</strong> customer profiles, product details, category information, and frequently accessed reference data.</p>
+
+            <h5 class="text-warning">2. Read-Through Cache</h5>
+            <p>The application requests data from the cache layer, and the cache layer loads the database when the data is missing.</p>
+            <ol><li>Application requests customer 101 from the cache.</li><li>Cache checks Redis.</li><li>If the data exists, it returns it.</li><li>If it does not exist, a cache loader fetches it from MySQL, stores it in Redis, and returns it.</li></ol>
+            <p><strong>Difference:</strong> with Cache-Aside, the application explicitly checks Redis and queries MySQL. With Read-Through, the cache provider or application-side cache loader handles the miss and database loading.</p>
+            <p><strong>Use when:</strong> the caching library or infrastructure provides a cache loader. Redis itself does not automatically load data from MySQL.</p>
+
+            <h5 class="text-warning">3. Write-Through Cache</h5>
+            <p>Whenever data is updated, the write workflow updates both the database and cache.</p>
+            <p>For a customer changing their name from Rahul to Ravi:</p>
+            <ol><li>Update MySQL.</li><li>Update Redis with Ravi.</li><li>Return success.</li></ol>
+            <p><strong>Advantages:</strong> cache contains the updated data immediately after the workflow. <strong>Disadvantages:</strong> every write also performs a cache operation, and Redis and the database are separate systems, so atomic consistency is not guaranteed without additional coordination.</p>
+            <p><strong>Use for:</strong> frequently read data that must remain relatively fresh.</p>
+
+            <h5 class="text-warning">4. Write-Behind (Write-Back) Cache</h5>
+            <p>The application writes to Redis first. The database update happens asynchronously later.</p>
+            <pre><code class="language-java">// Update Redis immediately
+redisTemplate.opsForValue().increment("product:101:views");
+
+// A background worker periodically persists accumulated counts to MySQL.</code></pre>
+            <p><strong>Advantages:</strong> very fast writes and the ability to combine many updates into fewer database writes. <strong>Disadvantages:</strong> data can be lost if Redis fails before persistence, so reliable background processing, retries, and recovery are required.</p>
+            <p><strong>Use for:</strong> analytics, page views, counters, and high-volume metrics. It is generally not suitable for critical payment or financial records.</p>
+
+            <h5 class="text-warning">5. Write-Around Cache</h5>
+            <p>The application writes directly to MySQL and does not populate Redis during the write. Redis is populated only when a later read occurs.</p>
+            <pre><code class="language-java">@Transactional
+public void updateCustomer(Long id, String name) {
+    Customer customer = repository.findById(id).orElseThrow();
+    customer.setName(name);
+    repository.save(customer);
+
+    TransactionSynchronizationManager.registerSynchronization(
+        new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                redisTemplate.delete("customer:" + id);
+            }
+        }
+    );
+}</code></pre>
+            <p><strong>Advantages:</strong> avoids caching data that may never be read again and reduces cache pollution. <strong>Disadvantages:</strong> the first read after a write incurs a database query.</p>
+            <p><strong>Use for:</strong> write-heavy applications where newly written data is not necessarily read immediately.</p>
+
+            <h5 class="text-warning">6. Refresh-Ahead Cache</h5>
+            <p>Frequently accessed data is refreshed before its TTL expires.</p>
+            <ol><li>Redis stores popular product details with a ten-minute TTL.</li><li>A background process monitors expiry or access patterns.</li><li>Before expiry, it fetches fresh details from MySQL and updates Redis.</li><li>Users continue receiving cached data without waiting for a cache miss.</li></ol>
+            <p><strong>Use for:</strong> frequently accessed data where cache misses and latency spikes should be minimized. It requires proactive refresh logic; Redis does not automatically know when to refresh MySQL.</p>
+
+            <h5 class="text-warning">7. Comparison</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Strategy</th><th>Read behavior</th><th>Write behavior</th></tr></thead><tbody><tr><td>Cache-Aside</td><td>Application checks cache; loads DB on miss</td><td>Application updates DB and invalidates cache</td></tr><tr><td>Read-Through</td><td>Cache layer loads DB on miss</td><td>Separate write strategy</td></tr><tr><td>Write-Through</td><td>Read from cache</td><td>Update DB and cache in write workflow</td></tr><tr><td>Write-Behind</td><td>Read from cache</td><td>Redis first; DB updated asynchronously</td></tr><tr><td>Write-Around</td><td>Read from cache; miss loads DB</td><td>Write DB directly; invalidate cache</td></tr><tr><td>Refresh-Ahead</td><td>Cache serves data while background refresh occurs</td><td>Refresh cache proactively</td></tr></tbody></table>
+
+            <h5 class="text-warning">8. Which strategy would you choose?</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Data</th><th>Suggested strategy</th></tr></thead><tbody><tr><td>Customer profile</td><td>Cache-Aside</td></tr><tr><td>Product catalog</td><td>Cache-Aside with TTL or Refresh-Ahead</td></tr><tr><td>Frequently accessed configuration</td><td>Read-Through or Cache-Aside</td></tr><tr><td>Product view counter</td><td>Write-Behind</td></tr><tr><td>Payment transaction</td><td>Database transaction first; cache invalidation or update afterward</td></tr><tr><td>Frequently updated, rarely read data</td><td>Write-Around</td></tr></tbody></table>
+            <p><strong>Important:</strong> Redis should not be the source of truth for critical payment transactions. MySQL or another durable transactional database should own that data.</p>
+
+            <h5 class="text-warning">9. Common Redis problems</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Problem</th><th>Meaning</th><th>Typical solution</th></tr></thead><tbody><tr><td>Cache penetration</td><td>Repeated requests for nonexistent data</td><td>Cache negative results or use a Bloom filter</td></tr><tr><td>Cache breakdown</td><td>One popular key expires and many requests hit the database</td><td>Distributed lock or single-flight loading</td></tr><tr><td>Cache stampede</td><td>Many keys expire together and overload the database</td><td>TTL jitter or Refresh-Ahead</td></tr><tr><td>Cache inconsistency</td><td>Redis and the database contain different values</td><td>Invalidation, outbox, or versioning</td></tr><tr><td>Hot key</td><td>One Redis key receives too much traffic</td><td>Local caching, replication, or sharding strategies</td></tr></tbody></table>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="redisStaleCacheAfterDbUpdateTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#redisStaleCacheAfterDbUpdateTopBody">How do you solve stale Redis data after a successful database update?</button>
+        </h2>
+        <div id="redisStaleCacheAfterDbUpdateTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>This is a Redis cache consistency problem: the database has the latest customer information, but Redis still contains the old value. The common solution is <strong>Cache-Aside with cache invalidation after a successful database update</strong>.</p>
+
+            <h5 class="text-warning">1. Understand the problem</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>State</th><th>Database</th><th>Redis</th></tr></thead><tbody><tr><td>Before update</td><td>Customer: Rahul</td><td>Customer: Rahul</td></tr><tr><td>After database update</td><td>Customer: Ravi</td><td>Customer: Rahul (stale)</td></tr></tbody></table>
+            <p>A subsequent read from Redis can return Rahul instead of Ravi.</p>
+
+            <h5 class="text-warning">2. Update the database, then invalidate Redis</h5>
+            <ol><li>Update the database.</li><li>Commit the database transaction successfully.</li><li>Delete the corresponding Redis cache entry.</li><li>Let the next read fetch fresh data from the database and repopulate Redis.</li></ol>
+
+            <h5 class="text-warning">3. Spring Boot implementation</h5>
+            <pre><code class="language-java">@Service
+@RequiredArgsConstructor
+public class CustomerService {
+
+    private final CustomerRepository repository;
+    private final StringRedisTemplate redisTemplate;
+
+    @Transactional
+    public void updateCustomer(Long id, String name) {
+        Customer customer = repository.findById(id)
+            .orElseThrow(() -&gt; new RuntimeException("Customer not found"));
+
+        customer.setName(name);
+        repository.save(customer);
+
+        // Invalidate only after the transaction commits.
+        TransactionSynchronizationManager.registerSynchronization(
+            new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    redisTemplate.delete("customer:" + id);
+                }
+            }
+        );
+    }
+}</code></pre>
+            <p><code>afterCommit()</code> ensures invalidation happens only after a successful database commit. If the transaction rolls back, the cache is not unnecessarily deleted.</p>
+
+            <h5 class="text-warning">4. What if Redis deletion fails?</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Approach</th><th>Purpose</th></tr></thead><tbody><tr><td>TTL</td><td>Automatically expires stale entries after a configured period.</td></tr><tr><td>Retry invalidation</td><td>Retries a failed Redis deletion.</td></tr><tr><td>Transactional Outbox</td><td>Reliably publishes an invalidation event after the database commit.</td></tr><tr><td>Event-driven invalidation</td><td>Other services remove local or shared cache entries after receiving the event.</td></tr></tbody></table>
+            <p>For distributed microservices, the <strong>Transactional Outbox</strong> pattern is particularly useful. The database update and outbox event are saved in the same transaction. A background publisher sends the event to Kafka, and a consumer invalidates the Redis key.</p>
+
+            <h5 class="text-warning">5. Other approaches</h5>
+            <ul><li><strong>Cache update:</strong> Update Redis with the new customer data. This makes the new value available immediately but requires careful ordering and failure handling.</li><li><strong>Cache invalidation:</strong> Delete the key and let the next read repopulate it. This is often simpler and safer.</li><li><strong>TTL:</strong> Use expiry as an additional safeguard, not as the only consistency mechanism when freshness matters.</li></ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">I would use the Cache-Aside pattern with cache invalidation. First, I update the database and ensure the transaction commits successfully. Then I invalidate the corresponding Redis key. When the next request arrives, it gets the latest data from the database and repopulates Redis. I would perform invalidation after transaction commit to avoid deleting the cache when the database transaction rolls back. For distributed systems, I would consider the Transactional Outbox pattern with Kafka to reliably propagate cache invalidation events. I would also configure TTL as a fallback.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="springboot">
+      <div class="accordion-item" data-category="java">
+        <h2 class="accordion-header" id="completableFutureThreadPoolStarvationTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#completableFutureThreadPoolStarvationTopBody">Why can a CompletableFuture task block other tasks?</button>
+        </h2>
+        <div id="completableFutureThreadPoolStarvationTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>The most common reason is <strong>thread pool starvation</strong>, especially when <code>CompletableFuture.supplyAsync()</code> uses the default <code>ForkJoinPool.commonPool()</code>.</p>
+
+            <h5 class="text-warning">1. Why does this happen?</h5>
+            <pre><code class="language-java">CompletableFuture.supplyAsync(() -&gt; {
+    callExternalApi(); // Blocking operation
+    return "Success";
+});</code></pre>
+            <p>By default, <code>supplyAsync()</code> uses <code>ForkJoinPool.commonPool()</code>, which has a limited number of worker threads, typically related to the number of available processors.</p>
+            <p>For example:</p>
+            <ul><li>You submit 100 tasks.</li><li>Each task calls an external API that takes 10 seconds.</li><li>All available worker threads become blocked waiting for responses.</li><li>Other tasks cannot get a worker thread to execute.</li></ul>
+            <p>This situation is called <strong>thread pool starvation</strong>.</p>
+
+            <h5 class="text-warning">2. Other possible reasons</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Reason</th><th>Explanation</th></tr></thead><tbody><tr><td>Blocking operations</td><td><code>Thread.sleep()</code>, <code>get()</code>, JDBC calls, and HTTP calls block threads.</td></tr><tr><td>Limited thread pool</td><td>There are not enough worker threads for submitted tasks.</td></tr><tr><td>Nested blocking</td><td>One task waits for another future using <code>join()</code> or <code>get()</code>.</td></tr><tr><td>CPU-intensive tasks</td><td>Long-running computations occupy worker threads.</td></tr><tr><td>Shared resource bottleneck</td><td>The database connection pool or HTTP connection pool is exhausted.</td></tr></tbody></table>
+
+            <h5 class="text-warning">3. Fix: use a dedicated executor</h5>
+            <p>Use a separate executor for blocking I/O tasks instead of consuming common-pool workers:</p>
+            <pre><code class="language-java">ExecutorService executor =
+        Executors.newFixedThreadPool(20);
+
+CompletableFuture&lt;String&gt; future =
+        CompletableFuture.supplyAsync(
+            () -&gt; callExternalApi(),
+            executor
+        );</code></pre>
+
+            <h5 class="text-warning">4. Java 21 virtual threads</h5>
+            <p>For many concurrent blocking I/O calls, virtual threads can be useful:</p>
+            <pre><code class="language-java">try (var executor =
+         Executors.newVirtualThreadPerTaskExecutor()) {
+
+    List&lt;CompletableFuture&lt;String&gt;&gt; futures =
+        IntStream.range(0, 100)
+            .mapToObj(i -&gt; CompletableFuture.supplyAsync(
+                () -&gt; callExternalApi(), executor))
+            .toList();
+
+    CompletableFuture.allOf(
+        futures.toArray(new CompletableFuture[0])
+    ).join();
+}</code></pre>
+            <p>Virtual threads are lightweight, but they do not increase the capacity of an external API or database. Use appropriate concurrency limits, timeouts, and connection-pool sizing.</p>
+
+            <h5 class="text-warning">5. Production troubleshooting</h5>
+            <ol><li>Check thread dumps using <code>jcmd &lt;pid&gt; Thread.print</code>.</li><li>Identify threads blocked in HTTP calls, JDBC calls, or <code>get()</code>/<code>join()</code>.</li><li>Check common-pool activity using <code>ForkJoinPool.commonPool().toString()</code>.</li><li>Check database and HTTP connection-pool utilization.</li><li>Check external API response times and configured timeouts.</li></ol>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">A CompletableFuture task can block other tasks due to thread pool starvation. By default, supplyAsync uses ForkJoinPool.commonPool(). If we execute blocking operations such as external API calls or database queries in this pool, worker threads may remain occupied waiting for responses. Other tasks then wait for available workers. I would identify blocking operations using thread dumps and monitor pool utilization. I would use a dedicated executor for blocking I/O or Java 21 virtual threads, along with timeouts and concurrency limits.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="springboot">
+        <h2 class="accordion-header" id="beanCurrentlyInCreationCircularDependencyTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#beanCurrentlyInCreationCircularDependencyTopBody">How do you identify a circular dependency causing BeanCurrentlyInCreationException?</button>
+        </h2>
+        <div id="beanCurrentlyInCreationCircularDependencyTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <h5 class="text-warning">1. What is a circular dependency?</h5>
+            <p>It occurs when one bean depends on another bean, and the second bean directly or indirectly depends back on the first.</p>
+            <p><strong>Example:</strong> <code>OrderService</code> depends on <code>PaymentService</code>, while <code>PaymentService</code> depends on <code>OrderService</code>: <code>A -&gt; B -&gt; A</code>.</p>
+            <pre><code class="language-java">@Service
+public class OrderService {
+    private final PaymentService paymentService;
+
+    public OrderService(PaymentService paymentService) {
+        this.paymentService = paymentService;
+    }
+}
+
+@Service
+public class PaymentService {
+    private final OrderService orderService;
+
+    public PaymentService(OrderService orderService) {
+        this.orderService = orderService;
+    }
+}</code></pre>
+            <p>When Spring creates <code>OrderService</code>, it needs <code>PaymentService</code>. While creating <code>PaymentService</code>, Spring needs <code>OrderService</code>, which is already being created and is not fully initialized. This can result in <code>BeanCurrentlyInCreationException</code>.</p>
+
+            <h5 class="text-warning">2. How do you identify it?</h5>
+            <ol><li>Check the Spring Boot startup logs for <code>BeanCurrentlyInCreationException</code>.</li><li>Inspect the dependency chain. Spring may display a cycle such as <code>orderService -&gt; paymentService -&gt; orderService</code>.</li><li>Inspect the affected injection points: constructor injection, <code>@Autowired</code> fields, setters, and indirect dependencies through other beans.</li><li>Trace the full chain if more than two beans are involved.</li></ol>
+
+            <h5 class="text-warning">3. Preferred fix: refactor the design</h5>
+            <p>If both services depend on each other, identify the shared responsibility and extract it into a third service:</p>
+            <pre><code class="language-text">OrderService ------+
+                   +--&gt; OrderPaymentCoordinator
+PaymentService ----+</code></pre>
+            <p>The goal is to remove the cycle and make dependency direction clear.</p>
+
+            <h5 class="text-warning">4. Use @Lazy as a temporary workaround</h5>
+            <pre><code class="language-java">@Service
+public class PaymentService {
+    private final OrderService orderService;
+
+    public PaymentService(@Lazy OrderService orderService) {
+        this.orderService = orderService;
+    }
+}</code></pre>
+            <p><code>@Lazy</code> injects a lazy-resolution proxy and postpones the actual bean resolution until it is needed. It can break some constructor cycles, but it does not fix the underlying design problem.</p>
+
+            <h5 class="text-warning">5. Use events</h5>
+            <p>If <code>PaymentService</code> only needs to notify <code>OrderService</code> that payment succeeded, publish an application event instead of directly depending on <code>OrderService</code>:</p>
+            <pre><code class="language-java">applicationEventPublisher.publishEvent(
+    new PaymentCompletedEvent(orderId)
+);</code></pre>
+            <p>An event listener can handle the update separately.</p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">I would first check the Spring Boot startup logs for BeanCurrentlyInCreationException and inspect the bean dependency chain. Spring often prints a circular-reference diagram showing which beans depend on each other. Then I would inspect constructor injection, field injection, and setter injection to identify the cycle. I would preferably refactor the design by extracting shared responsibilities or using application events. @Lazy can be a workaround, but I would not use it as the first solution.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="java">
+        <h2 class="accordion-header" id="concurrentHashMapSameBucketTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#concurrentHashMapSameBucketTopBody">Can ConcurrentHashMap update same-bucket keys simultaneously?</button>
+        </h2>
+        <div id="concurrentHashMapSameBucketTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>In Java 8 and later, if two threads update different keys that belong to the <strong>same bucket (bin)</strong> in a <code>ConcurrentHashMap</code>, the updates generally cannot execute simultaneously because they contend for the same bin-level synchronization.</p>
+            <ol><li>Thread 1 acquires the lock on that bin.</li><li>Thread 2 has to wait.</li><li>Thread 1 completes its update and releases the lock.</li><li>Thread 2 can then acquire the lock and update.</li></ol>
+            <p>We are not guaranteed which thread gets the lock first. The order is not guaranteed to be FIFO.</p>
+            <h5 class="text-warning">Important distinction</h5>
+            <ul><li><strong>Different bins:</strong> Updates can generally happen concurrently.</li><li><strong>Same bin:</strong> Updates may need to wait for each other.</li><li><strong>Reads:</strong> Generally do not acquire the bin lock.</li></ul>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="java">
+        <h2 class="accordion-header" id="concurrentHashMapVsSynchronizedMapTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#concurrentHashMapVsSynchronizedMapTopBody">Why is ConcurrentHashMap better than Collections.synchronizedMap()?</button>
+        </h2>
+        <div id="concurrentHashMapVsSynchronizedMapTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <h5 class="text-warning">1. Collections.synchronizedMap()</h5>
+            <pre><code class="language-java">Map&lt;String, Integer&gt; map =
+    Collections.synchronizedMap(new HashMap&lt;&gt;());</code></pre>
+            <ul><li>It uses a single mutex (lock) for the entire map.</li><li>Only one thread can execute a synchronized map operation at a time.</li><li>Even if two threads access different keys, their operations can block each other.</li></ul>
+            <p>For example, Thread 1 updates key <code>A</code> and acquires the map lock. Thread 2 wants to read key <code>B</code>, but must wait until Thread 1 releases the lock.</p>
+
+            <h5 class="text-warning">2. ConcurrentHashMap</h5>
+            <pre><code class="language-java">Map&lt;String, Integer&gt; map = new ConcurrentHashMap&lt;&gt;();</code></pre>
+            <p>In Java 8 and later:</p>
+            <ul><li>It uses CAS (Compare-And-Swap) for certain updates when possible.</li><li>It uses synchronization on individual bins (buckets) when needed for updates.</li><li>Threads updating different bins can generally proceed concurrently.</li><li>Reads are generally non-blocking and do not acquire the map's main update locks.</li></ul>
+            <p>For example, Thread 1 updates key <code>A</code> in bucket 1 and Thread 2 updates key <code>B</code> in bucket 5. They can proceed concurrently when there is no contention involving those bins.</p>
+
+            <h5 class="text-warning">3. Quick comparison</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Operation</th><th>SynchronizedMap</th><th>ConcurrentHashMap</th></tr></thead><tbody><tr><td>Read</td><td>Whole-map lock</td><td>Generally non-blocking</td></tr><tr><td>Write</td><td>Whole-map lock</td><td>CAS / bin-level synchronization</td></tr><tr><td>Different buckets</td><td>Block each other</td><td>Can proceed concurrently</td></tr><tr><td>Concurrent performance</td><td>Lower under contention</td><td>Generally better under contention</td></tr></tbody></table>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <p><strong>ConcurrentHashMap</strong> is generally better for heavily concurrent access because it avoids one global lock for every operation. <code>Collections.synchronizedMap()</code> serializes map operations behind a single mutex, whereas <code>ConcurrentHashMap</code> uses non-blocking reads and CAS or bin-level synchronization for updates, allowing unrelated operations to proceed concurrently.</p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="java">
+        <h2 class="accordion-header" id="hashMapConcurrentAccessFixTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#hashMapConcurrentAccessFixTopBody">How do you fix inconsistent HashMap results under concurrent access?</button>
+        </h2>
+        <div id="hashMapConcurrentAccessFixTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>The issue is that <code>HashMap</code> is not thread-safe. When multiple threads read and modify the same <code>HashMap</code> simultaneously, race conditions, lost updates, and inconsistent results can occur.</p>
+
+            <h5 class="text-warning">1. Use ConcurrentHashMap (recommended)</h5>
+            <p>If multiple threads need to access and update the map concurrently, use <code>ConcurrentHashMap</code>.</p>
+            <p>Before:</p>
+            <pre><code class="language-java">Map&lt;String, Integer&gt; map = new HashMap&lt;&gt;();
+
+// Multiple threads updating this map
+map.put("A", 100);</code></pre>
+            <p>After:</p>
+            <pre><code class="language-java">Map&lt;String, Integer&gt; map = new ConcurrentHashMap&lt;&gt;();
+
+map.put("A", 100);
+map.put("B", 200);</code></pre>
+            <p><code>ConcurrentHashMap</code> supports concurrent reads and updates without locking the entire map for every operation.</p>
+
+            <h5 class="text-warning">2. Compound operations must also be atomic</h5>
+            <p>This code is not thread-safe as a combined operation, even with <code>ConcurrentHashMap</code>:</p>
+            <pre><code class="language-java">map.put("count", map.get("count") + 1);</code></pre>
+            <p>Two threads could read <code>10</code> simultaneously and both write <code>11</code>, causing one increment to be lost.</p>
+            <p>Use <code>merge()</code>:</p>
+            <pre><code class="language-java">map.merge("count", 1, Integer::sum);</code></pre>
+            <p>Or use <code>compute()</code>:</p>
+            <pre><code class="language-java">map.compute("count", (key, value) -&gt;
+    value == null ? 1 : value + 1
+);</code></pre>
+            <p>These operations perform the update atomically for that key.</p>
+
+            <h5 class="text-warning">3. Use Collections.synchronizedMap()</h5>
+            <p>If you want to retain a regular <code>HashMap</code>, you can wrap it:</p>
+            <pre><code class="language-java">Map&lt;String, Integer&gt; map =
+    Collections.synchronizedMap(new HashMap&lt;&gt;());
+
+map.put("A", 100);</code></pre>
+            <p>This synchronizes individual map operations. When iterating, synchronize on the map:</p>
+            <pre><code class="language-java">synchronized (map) {
+    for (Map.Entry&lt;String, Integer&gt; entry : map.entrySet()) {
+        System.out.println(entry);
+    }
+}</code></pre>
+
+            <h5 class="text-warning">4. Which approach should you choose?</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Feature</th><th>HashMap</th><th>SynchronizedMap</th><th>ConcurrentHashMap</th></tr></thead><tbody><tr><td>Thread-safe</td><td>No</td><td>Yes</td><td>Yes</td></tr><tr><td>Concurrent reads</td><td>No guarantee</td><td>Synchronized</td><td>Supported</td></tr><tr><td>Concurrent updates</td><td>No guarantee</td><td>One operation at a time</td><td>Supported</td></tr><tr><td>Locking</td><td>None</td><td>Whole-map mutex</td><td>Fine-grained coordination</td></tr><tr><td>Best use</td><td>Single-threaded</td><td>Simple synchronized access</td><td>Concurrent applications</td></tr></tbody></table>
+
+            <h5 class="text-warning">5. Real-time Spring Boot example</h5>
+            <p>Imagine multiple requests updating product inventory simultaneously:</p>
+            <pre><code class="language-java">@Service
+public class InventoryService {
+
+    private final Map&lt;String, Integer&gt; inventory =
+            new ConcurrentHashMap&lt;&gt;();
+
+    public void addStock(String productId, int quantity) {
+        inventory.merge(productId, quantity, Integer::sum);
+    }
+
+    public Integer getStock(String productId) {
+        return inventory.get(productId);
+    }
+}</code></pre>
+            <p>This protects concurrent updates to the in-memory map.</p>
+            <p><strong>Important:</strong> This only protects data within one JVM instance. If the Spring Boot application runs on multiple Kubernetes pods, each pod has its own map. For shared inventory, use a database with atomic updates or another distributed coordination mechanism.</p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">HashMap is not thread-safe, so concurrent modifications can cause race conditions and lost updates. I would replace it with ConcurrentHashMap, which supports concurrent access using finer-grained synchronization and CAS-based operations. For compound operations such as incrementing a counter, I would use atomic methods like merge() or compute() rather than separate get() and put() calls. If the data must be shared across multiple application instances, I would use a database or distributed cache instead of an in-memory map.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="exponentialBackoffJitterTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#exponentialBackoffJitterTopBody">What are exponential backoff and jitter in retry mechanisms?</button>
+        </h2>
+        <div id="exponentialBackoffJitterTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>Exponential backoff and jitter are retry techniques used in distributed systems and microservices when an operation fails temporarily, such as calling an external REST API, connecting to a database, or publishing a message to Kafka.</p>
+
+            <h5 class="text-warning">1. Why do we need retries?</h5>
+            <p>Imagine your Payment Service calls an external Bank API. The bank API is temporarily unavailable, so your service receives a timeout or HTTP 503. You may want to retry instead of immediately failing the request.</p>
+            <p>However, if 1,000 requests fail at the same time and all retry immediately, they may overload the already-unhealthy bank API. This is called a <strong>retry storm</strong>.</p>
+
+            <h5 class="text-warning">2. What is exponential backoff?</h5>
+            <p>Instead of retrying after a fixed delay, progressively increase the waiting time after each failed attempt.</p>
+            <table class="table table-dark table-bordered"><thead><tr><th>Attempt</th><th>Waiting time</th></tr></thead><tbody><tr><td>Initial request</td><td>Immediately</td></tr><tr><td>Retry 1</td><td>1 second</td></tr><tr><td>Retry 2</td><td>2 seconds</td></tr><tr><td>Retry 3</td><td>4 seconds</td></tr><tr><td>Retry 4</td><td>8 seconds</td></tr><tr><td>Retry 5</td><td>16 seconds</td></tr></tbody></table>
+            <p><strong>Formula:</strong> <code>delay = min(initialDelay * 2^n, maximumDelay)</code>, where <code>n</code> is the retry number starting from zero.</p>
+            <p>It gives the failing external service more time to recover and avoids continuously sending requests while it is unhealthy.</p>
+
+            <h5 class="text-warning">3. What is jitter?</h5>
+            <p>With exponential backoff alone, 1,000 requests that fail together may all retry after 1 second, then 2 seconds, then 4 seconds. This creates synchronized retry traffic.</p>
+            <p><strong>Jitter</strong> adds randomness to the waiting time. Instead of every request retrying after exactly 2 seconds:</p>
+            <ul><li>Request A retries after 1.6 seconds.</li><li>Request B retries after 2.3 seconds.</li><li>Request C retries after 1.8 seconds.</li><li>Request D retries after 2.5 seconds.</li></ul>
+            <p><strong>Full-jitter formula:</strong> <code>delay = random(0, min(initialDelay * 2^n, maximumDelay))</code></p>
+            <p>This spreads retry traffic over time and reduces synchronized load.</p>
+
+            <h5 class="text-warning">4. Java example: exponential backoff with jitter</h5>
+            <pre><code class="language-java">import java.util.concurrent.ThreadLocalRandom;
+
+public class RetryExample {
+
+    public static void main(String[] args) throws InterruptedException {
+        int maxRetries = 5;
+        long initialDelay = 1000; // 1 second
+        long maxDelay = 10000;    // 10 seconds
+
+        for (int attempt = 0; attempt &lt; maxRetries; attempt++) {
+            try {
+                callBankApi();
+                System.out.println("Payment successful");
+                return;
+            } catch (RuntimeException ex) {
+                long exponentialDelay = Math.min(
+                    initialDelay * (1L &lt;&lt; attempt),
+                    maxDelay
+                );
+
+                // Full jitter: random delay between 0 and exponentialDelay
+                long delay = ThreadLocalRandom.current()
+                    .nextLong(exponentialDelay + 1);
+
+                System.out.println(
+                    "Attempt failed. Retrying after " + delay + " ms"
+                );
+                Thread.sleep(delay);
+            }
+        }
+
+        throw new RuntimeException("Payment failed after retries");
+    }
+
+    static void callBankApi() {
+        // Simulate external API failure
+        throw new RuntimeException("Bank API unavailable");
+    }
+}</code></pre>
+
+            <h5 class="text-warning">5. Production considerations</h5>
+            <ul><li>Retry only transient failures, such as timeouts, HTTP 429, and selected HTTP 5xx responses.</li><li>Do not retry permanent failures, such as invalid payment details or HTTP 400.</li><li>Set a maximum retry count and an overall timeout.</li><li>Use an idempotency key for payment requests to prevent duplicate payments.</li><li>Use a circuit breaker to stop calling a dependency that is consistently failing.</li></ul>
+
+            <h5 class="text-warning">6. Where do we use this in real projects?</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Scenario</th><th>Why it is useful</th></tr></thead><tbody><tr><td>External REST API calls</td><td>Handle temporary outages</td></tr><tr><td>Payment gateway</td><td>Recover from temporary timeouts with idempotency protection</td></tr><tr><td>Kafka consumers</td><td>Retry transient processing failures</td></tr><tr><td>Database connections</td><td>Handle temporary connection issues</td></tr><tr><td>Cloud services</td><td>Handle throttling and temporary service errors</td></tr></tbody></table>
+
+            <h5 class="text-warning">7. Interview-ready answer</h5>
+            <p><strong>Exponential backoff</strong> is a retry mechanism where the waiting time increases exponentially after each failed attempt, for example 1, 2, 4, and 8 seconds. It prevents repeatedly hitting an unhealthy downstream service and gives it time to recover.</p>
+            <p><strong>Jitter</strong> adds a random delay to those retry intervals. It prevents multiple clients from retrying simultaneously, which avoids synchronized traffic spikes and retry storms.</p>
+            <p>We generally combine both techniques with a maximum retry count, timeout, idempotency, and circuit breaker.</p>
+            <p><strong>Remember:</strong></p>
+            <ul><li><strong>Retry:</strong> Try the failed operation again.</li><li><strong>Exponential backoff:</strong> Increase the waiting time between retries.</li><li><strong>Jitter:</strong> Randomize the waiting time to spread out retries.</li><li><strong>Circuit breaker:</strong> Temporarily stop sending requests to a failing service.</li></ul>
+            <p>For payment APIs, if the bank processes the payment successfully but the response times out, retrying without an idempotency key could charge the customer twice.</p>
+          </div>
+        </div>
+      </div>
       <div class="accordion-item" data-category="devops">
         <h2 class="accordion-header" id="helmKubernetesPackageManagerTop">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#helmKubernetesPackageManagerTopBody">What is Helm in Kubernetes?</button>
