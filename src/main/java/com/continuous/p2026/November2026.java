@@ -36,22 +36,24 @@ public class November2026 {
 //        System.out.println("Is Array Sorted: "+ isArrayIsSorted(sortedArray));
 //        System.out.println("Is Array Sorted: "+ isArrayIsSorted(unSortedArray));
 //        removeDuplicateFromSortedArray(sortedArray);
-        int[] arr44 = leftRotateTheArrayByOnePlace(arr, arr.length);
-        System.out.println(Arrays.toString(arr44));
-        int[] arr45 = leftRotateTheArrayByDPlaces(arr, 2);
-        System.out.println(Arrays.toString(arr));
-        System.out.println(Arrays.toString(arr45));
-        int[] arr1 = {1,2,2,3,4,5};
-        int[] arr2 = {2, 3, 4, 4, 5, 6};
-        List<Integer> theUnionOfTwoSortedArray = findTheUnionOfTwoSortedArray(arr1, arr1.length, arr2, arr2.length);
-        System.out.println(theUnionOfTwoSortedArray);
-        Set<Integer> union = findUnion(arr1, arr2);
-        System.out.println(union);
-        int[] arr3 = {0, 1, 0, 3, 12};
-        System.out.println(Arrays.toString(moveZerosToEnd(arr3, arr3.length)));
-        System.out.println(isAnagram("silent", "listen"));
+//        int[] arr44 = leftRotateTheArrayByOnePlace(arr, arr.length);
+//        System.out.println(Arrays.toString(arr44));
+//        int[] arr45 = leftRotateTheArrayByDPlaces(arr, 2);
+//        System.out.println(Arrays.toString(arr));
+//        System.out.println(Arrays.toString(arr45));
+//        int[] arr1 = {1,2,2,3,4,5};
+//        int[] arr2 = {2, 3, 4, 4, 5, 6};
+//        List<Integer> theUnionOfTwoSortedArray = findTheUnionOfTwoSortedArray(arr1, arr1.length, arr2, arr2.length);
+//        System.out.println(theUnionOfTwoSortedArray);
+//        Set<Integer> union = findUnion(arr1, arr2);
+//        System.out.println(union);
+//        int[] arr3 = {0, 1, 0, 3, 12};
+//        System.out.println(Arrays.toString(moveZerosToEnd(arr3, arr3.length)));
+//        System.out.println(isAnagram("silent", "listen"));
 
-        lengthOfLongestSubstring("abcbadb");
+        //lengthOfLongestSubstring("abcbadb");
+        boolean armstrongPractice = isArmstrongPractice(153);
+        System.out.printf("arm"+ armstrongPractice);
     }
 
     // abcbadb
@@ -232,6 +234,30 @@ public class November2026 {
         return rev==temp;
     }
 
+    public static boolean isArmstrongPractice(int original){
+       int number = original;
+       int countOfDigits=0;
+
+       while (number!=0){
+           number /=10;
+           countOfDigits++;
+       }
+        System.out.println(countOfDigits);
+
+       number = original;
+       int result = 0;
+       while (number!=0){
+           int rem = number%10;
+           int accumlator=1;
+           for (int i = 0; i < countOfDigits; i++) {
+               accumlator = accumlator*rem;
+           }
+           result = result+accumlator;
+           number = number/10;
+       }
+       return result == original;
+    }
+
     public static boolean isArmstrong(int original){
         int counter=0;
         int number = original;
@@ -277,7 +303,7 @@ public class November2026 {
     //Find maximum and minimum
     public static int min(int[] arr){
 
-        if(arr.length<=0){
+        if(arr.length == 0){
             return -1;
         }
         int min = arr[0];
@@ -329,4 +355,15 @@ public class November2026 {
         return rev;
     }
 
-}
+    public static int[] reverseAnArrayPractice(int[] arr) {
+        int[] rev = new int[arr.length];
+        int pos=0;
+
+        for (int i = arr.length-1; i >=0 ; i--) {
+            rev[pos] = arr[i];
+            pos++;
+        }
+        return rev;
+    }
+
+    }
