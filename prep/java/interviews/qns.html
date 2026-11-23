@@ -178,6 +178,232 @@
         onkeyup="searchQuestions()" />
     </div>
     <div class="accordion" id="accordionSeniorJava">
+      <div class="accordion-item" data-category="java">
+        <h2 class="accordion-header" id="java17FeaturesTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#java17FeaturesTopBody">Java 17 features with examples</button>
+        </h2>
+        <div id="java17FeaturesTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>Java 17 is an LTS release. The headline Java 17 feature is <strong>sealed classes</strong>. During a Java 8-to-17 migration, several features introduced in Java 14, 15, and 16 are also commonly adopted because they are finalized by Java 17.</p>
+
+            <h5 class="text-warning">1. Sealed classes and interfaces (Java 17)</h5>
+            <p>Sealed types restrict which classes or interfaces may extend or implement them. This is useful when the domain has a controlled set of valid subtypes.</p>
+            <pre><code class="language-java">public sealed interface PaymentResult
+        permits Success, Failure { }
+
+public final class Success implements PaymentResult { }
+
+public final class Failure implements PaymentResult { }</code></pre>
+            <p>A permitted subtype must be <code>final</code>, <code>sealed</code>, or <code>non-sealed</code>. This makes domain modeling and exhaustive branching safer.</p>
+
+            <h5 class="text-warning">2. Pattern matching for instanceof (finalized in Java 16)</h5>
+            <p>Java can test a type and declare the correctly typed variable in one expression.</p>
+            <pre><code class="language-java">if (value instanceof String text &amp;&amp; !text.isBlank()) {
+    System.out.println(text.toUpperCase());
+}</code></pre>
+            <p>It removes the old explicit cast and reduces accidental casting errors.</p>
+
+            <h5 class="text-warning">3. Records (finalized in Java 16)</h5>
+            <p>Records are concise immutable data carriers with generated constructor, accessors, <code>equals</code>, <code>hashCode</code>, and <code>toString</code>.</p>
+            <pre><code class="language-java">public record CustomerResponse(
+        Long id,
+        String name,
+        String email) { }
+
+CustomerResponse response =
+    new CustomerResponse(101L, "Rahul", "r@example.com");
+System.out.println(response.name());</code></pre>
+            <p>Use records for DTOs and value objects when immutability and a transparent data model are appropriate. A record is shallowly immutable; referenced mutable objects still need defensive handling.</p>
+
+            <h5 class="text-warning">4. Text blocks (finalized in Java 15)</h5>
+            <p>Text blocks make multi-line strings easier to read, especially JSON, SQL, and HTML.</p>
+            <pre><code class="language-java">String json = """
+    {
+      ""id"": 101,
+      ""name"": ""Rahul""
+    }
+    """;</code></pre>
+
+            <h5 class="text-warning">5. Switch expressions (finalized in Java 14)</h5>
+            <p>Switch can return a value and use arrow labels without accidental fall-through.</p>
+            <pre><code class="language-java">String label = switch (status) {
+    case "PENDING", "PROCESSING" -&gt; "In progress";
+    case "SUCCESS" -&gt; "Completed";
+    case "FAILED" -&gt; "Failed";
+    default -&gt; "Unknown";
+};</code></pre>
+
+            <h5 class="text-warning">6. Pattern matching for switch (preview in Java 17)</h5>
+            <p>Java 17 previewed type patterns in switch. Preview features require explicit compiler and runtime flags and should be adopted only when the project accepts preview compatibility.</p>
+            <pre><code class="language-java">// Preview feature in Java 17
+static String describe(Object value) {
+    return switch (value) {
+        case Integer i -&gt; "integer: " + i;
+        case String s -&gt; "text: " + s;
+        default -&gt; "other";
+    };
+}</code></pre>
+
+            <h5 class="text-warning">7. Enhanced pseudo-random number generators</h5>
+            <p>Java 17 adds a common API for selecting and using different random-generator algorithms.</p>
+            <pre><code class="language-java">RandomGenerator generator =
+    RandomGeneratorFactory
+        .of("L64X128MixRandom")
+        .create();
+
+int value = generator.nextInt(1, 100);</code></pre>
+            <p>This is useful when an application needs a particular algorithm or wants to select generators through a common API. Do not use ordinary random generators for security tokens; use <code>SecureRandom</code>.</p>
+
+            <h5 class="text-warning">8. Strong encapsulation of JDK internals</h5>
+            <p>Java 17 strongly encapsulates internal JDK APIs. Legacy libraries that depend on internal packages such as <code>sun.*</code> may fail or require upgrades and supported alternatives.</p>
+            <pre><code class="language-text">Problem during migration:
+java.lang.InaccessibleObjectException
+
+Preferred fix:
+Upgrade the dependency or use a supported public API.
+Temporary workaround:
+Use --add-opens only after assessing the security and maintenance impact.</code></pre>
+
+            <h5 class="text-warning">9. Foreign Function and Memory API (incubator)</h5>
+            <p>Java 17 incubated an API for interacting with native code and native memory as an alternative direction to unsafe JNI access.</p>
+            <pre><code class="language-java">// Incubator API example; package and API can change.
+// Use only with the matching JDK module and preview/incubator flags.
+MemorySegment segment = MemorySegment.allocateNative(1024);
+segment.close();</code></pre>
+            <p>In production, verify the exact JDK 17 incubator API and prefer stable APIs where possible.</p>
+
+            <h5 class="text-warning">10. Vector API (second incubator)</h5>
+            <p>The Vector API enables explicit SIMD-style computations for workloads such as numerical processing, image operations, and analytics.</p>
+            <pre><code class="language-java">// Incubator API; requires the matching JDK module.
+var species = IntVector.SPECIES_PREFERRED;
+var vector = IntVector.broadcast(species, 2);
+var result = vector.add(vector);</code></pre>
+            <p>Use it only after profiling confirms that vectorized computation is valuable.</p>
+
+            <h5 class="text-warning">11. Additional Java 17 platform changes</h5>
+            <ul><li>macOS/AArch64 support was added to the JDK.</li><li>The Security Manager was deprecated for removal; modern applications should use stronger platform and application security controls.</li><li>Always-strict floating-point semantics were restored without requiring the old strict modifier.</li><li>Garbage collectors, startup behavior, and runtime performance received continued improvements; benchmark the actual application during migration.</li></ul>
+
+            <h5 class="text-warning">12. Java 17 migration interview points</h5>
+            <ul><li>Check strong encapsulation and libraries that access JDK internals.</li><li>Replace removed or obsolete Java EE modules with compatible Jakarta or third-party dependencies where required.</li><li>Test reflection, proxy generation, serialization, TLS, garbage collection, and container memory settings.</li><li>Adopt records, sealed types, text blocks, switch expressions, and pattern matching where they improve clarity rather than rewriting code unnecessarily.</li><li>Do not use preview or incubator features in production without an explicit compatibility decision.</li></ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">Java 17 is an LTS release whose headline feature is sealed classes and interfaces. In a Java 8-to-17 migration, I would also adopt finalized features such as records, pattern matching for instanceof, text blocks, and switch expressions. Java 17 previewed pattern matching for switch and included incubator APIs such as Foreign Function and Memory and Vector API. I would also check strong encapsulation of JDK internals because older libraries may fail with InaccessibleObjectException. For production, I would verify dependency compatibility, reflection and proxy behavior, container memory, TLS, garbage collection, and avoid preview features unless the project explicitly accepts them.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="java">
+      <div class="accordion-item" data-category="java">
+        <h2 class="accordion-header" id="java21FeaturesTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#java21FeaturesTopBody">Java 21 features with examples</button>
+        </h2>
+        <div id="java21FeaturesTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>Java 21 is an LTS release. The most important interview topics are virtual threads, pattern matching improvements, record patterns, sequenced collections, and the preview concurrency and language features.</p>
+
+            <h5 class="text-warning">1. Virtual threads (final)</h5>
+            <p>Virtual threads are lightweight threads managed by the JVM. They are useful for high-concurrency blocking I/O such as REST calls, JDBC calls, and file operations.</p>
+            <pre><code class="language-java">try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+    Future&lt;String&gt; result = executor.submit(() -&gt; callExternalService());
+    System.out.println(result.get());
+}</code></pre>
+            <p>They reduce the need for large platform-thread pools, but they do not increase database or downstream-service capacity. Use connection limits, timeouts, and backpressure.</p>
+
+            <h5 class="text-warning">2. Record patterns (final)</h5>
+            <p>Record patterns destructure record values conveniently, including nested records.</p>
+            <pre><code class="language-java">record Point(int x, int y) {}
+
+static String describe(Object value) {
+    if (value instanceof Point(int x, int y)) {
+        return "x=" + x + ", y=" + y;
+    }
+    return "unknown";
+}</code></pre>
+
+            <h5 class="text-warning">3. Pattern matching for switch (final)</h5>
+            <p>Switch can match types and use guarded cases with <code>when</code>:</p>
+            <pre><code class="language-java">static String classify(Object value) {
+    return switch (value) {
+        case Integer i when i &gt; 0 -&gt; "positive integer";
+        case Integer i -&gt; "zero or negative integer";
+        case String s -&gt; "text: " + s;
+        case null -&gt; "null value";
+        default -&gt; "other";
+    };
+}</code></pre>
+            <p>This reduces casting and makes the compiler help with exhaustive handling.</p>
+
+            <h5 class="text-warning">4. Sequenced collections (final)</h5>
+            <p>Java 21 adds common APIs for collections with a defined encounter order.</p>
+            <pre><code class="language-java">SequencedCollection&lt;String&gt; names = new ArrayList&lt;&gt;();
+names.add("A");
+names.add("B");
+
+String first = names.getFirst();
+String last = names.getLast();
+SequencedCollection&lt;String&gt; reversed = names.reversed();</code></pre>
+            <p>The APIs make first, last, and reversed access consistent across ordered collection types.</p>
+
+            <h5 class="text-warning">5. String templates (preview)</h5>
+            <p>String templates provide structured interpolation and can support processors for validation or safe formatting.</p>
+            <pre><code class="language-java">String name = "Rahul";
+// Preview feature in Java 21; enable preview at compile and run time.
+String message = STR."Hello, \{name}";</code></pre>
+            <p>Because this was a preview feature in Java 21, check the JDK version and project policy before using it in production.</p>
+
+            <h5 class="text-warning">6. Unnamed patterns and variables (preview)</h5>
+            <p>Use an underscore when a matched variable is intentionally unused.</p>
+            <pre><code class="language-java">// Preview syntax in Java 21
+if (value instanceof String _) {
+    System.out.println("It is a String");
+}</code></pre>
+
+            <h5 class="text-warning">7. Unnamed classes and instance main methods (preview)</h5>
+            <p>Java 21 previewed a simpler entry point for small programs and beginners:</p>
+            <pre><code class="language-java">// Preview feature in Java 21
+void main() {
+    System.out.println("Hello Java 21");
+}</code></pre>
+            <p>This is aimed at reducing ceremony for small programs; normal public classes and static <code>main</code> methods remain standard production style.</p>
+
+            <h5 class="text-warning">8. Scoped values (preview)</h5>
+            <p>Scoped values provide an efficient way to share immutable context with a bounded call tree, which is useful for request or trace context.</p>
+            <pre><code class="language-java">static final ScopedValue&lt;String&gt; TRACE_ID = ScopedValue.newInstance();
+
+ScopedValue.where(TRACE_ID, "abc-123").run(() -&gt; {
+    log(TRACE_ID.get());
+});</code></pre>
+            <p>They are an alternative to some ThreadLocal use cases, especially with virtual threads. This feature was preview in Java 21.</p>
+
+            <h5 class="text-warning">9. Structured concurrency (preview)</h5>
+            <p>Structured concurrency treats related concurrent tasks as one unit, improving cancellation and error handling.</p>
+            <pre><code class="language-java">try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+    var customer = scope.fork(() -&gt; fetchCustomer());
+    var orders = scope.fork(() -&gt; fetchOrders());
+
+    scope.join().throwIfFailed();
+    return new Result(customer.get(), orders.get());
+}</code></pre>
+            <p>If one child fails, the scope can cancel the other related task. This was preview in Java 21, so enable preview features only when the project accepts that compatibility policy.</p>
+
+            <h5 class="text-warning">10. Generational ZGC</h5>
+            <p>Java 21 adds generational support to ZGC. It separates young and old objects to improve garbage-collection efficiency for applications with many short-lived objects.</p>
+            <pre><code class="language-bash">java -XX:+UseZGC -XX:+ZGenerational -jar application.jar</code></pre>
+            <p>Choose a collector based on measured latency, throughput, heap size, and workload. Do not change collectors without testing and monitoring.</p>
+
+            <h5 class="text-warning">11. Key encapsulation mechanism API</h5>
+            <p>The KEM API provides a standard abstraction for cryptographic key encapsulation mechanisms used in secure key exchange.</p>
+            <pre><code class="language-java">KEM kem = KEM.getInstance("DHKEM");
+// Use a provider-supported KEM algorithm and key configuration.
+KEM.Encapsulator encapsulator = kem.newEncapsulator(publicKey);</code></pre>
+            <p>The exact algorithm and provider support must be checked for the deployed JDK and security requirements.</p>
+
+            <h5 class="text-warning">12. Important interview summary</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Feature</th><th>Status in Java 21</th><th>Typical use</th></tr></thead><tbody><tr><td>Virtual threads</td><td>Final</td><td>High-concurrency blocking I/O</td></tr><tr><td>Record patterns</td><td>Final</td><td>Destructuring records</td></tr><tr><td>Pattern matching for switch</td><td>Final</td><td>Type-based branching</td></tr><tr><td>Sequenced collections</td><td>Final</td><td>First, last, and reverse ordered access</td></tr><tr><td>String templates</td><td>Preview</td><td>Structured string interpolation</td></tr><tr><td>Unnamed patterns and variables</td><td>Preview</td><td>Ignore unused pattern variables</td></tr><tr><td>Scoped values</td><td>Preview</td><td>Immutable request context</td></tr><tr><td>Structured concurrency</td><td>Preview</td><td>Manage related concurrent tasks</td></tr><tr><td>Generational ZGC</td><td>Final capability</td><td>Low-latency garbage collection</td></tr></tbody></table>
+            <blockquote class="border-start border-info border-3 ps-3">The most important Java 21 features I would highlight are virtual threads for scalable blocking I/O, record patterns and pattern matching for switch for clearer type-safe code, sequenced collections for ordered access, and generational ZGC for low-latency workloads. I would also mention that String Templates, Scoped Values, Structured Concurrency, unnamed patterns, and unnamed classes were preview features in Java 21 and should be enabled deliberately.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="java">
       <div class="accordion-item" data-category="microservices">
         <h2 class="accordion-header" id="kafkaMultithreadingTop">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaMultithreadingTopBody">Can Kafka support multithreading?</button>
