@@ -179,6 +179,866 @@
     </div>
     <div class="accordion" id="accordionSeniorJava">
       <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaMultithreadingTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaMultithreadingTopBody">Can Kafka support multithreading?</button>
+        </h2>
+        <div id="kafkaMultithreadingTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p><strong>Yes.</strong> Kafka supports concurrency through partitions, multiple consumer instances, producer internals, and application worker pools. The important rule is that Kafka ordering is guaranteed only within a partition.</p>
+
+            <h5 class="text-warning">1. Kafka's main concurrency model</h5>
+            <ul><li>A topic is divided into partitions.</li><li>Within one consumer group, one partition is assigned to only one active consumer at a time.</li><li>Different partitions can be processed concurrently by different consumers.</li><li>The maximum useful consumer parallelism for a group is normally the number of partitions.</li></ul>
+            <pre><code class="language-text">Topic: orders with 4 partitions
+
+Consumer C1 -> P0
+Consumer C2 -> P1
+Consumer C3 -> P2
+Consumer C4 -> P3</code></pre>
+            <p>If there are 6 consumers and only 4 partitions, 2 consumers remain idle. If there are 2 consumers and 4 partitions, each consumer handles two partitions.</p>
+
+            <h5 class="text-warning">2. Kafka producer multithreading</h5>
+            <p>The Kafka producer client is designed to be thread-safe. Multiple application threads can call <code>send()</code> on the same producer instance, and the producer batches records and sends them asynchronously.</p>
+            <pre><code class="language-java">KafkaProducer&lt;String, String&gt; producer = createProducer();
+
+executor.submit(() -&gt; producer.send(record1));
+executor.submit(() -&gt; producer.send(record2));
+
+// Close only after all sends are complete.
+producer.close();</code></pre>
+            <p>In most applications, reuse one producer per process rather than creating one producer per request. Configure idempotence and acknowledgements appropriately for important events.</p>
+
+            <h5 class="text-warning">3. Kafka consumer threading rule</h5>
+            <p>A Kafka consumer is <strong>not thread-safe</strong>. One consumer instance should be used by one consumer thread. Do not call <code>poll()</code>, <code>commitSync()</code>, or consumer operations concurrently from multiple threads.</p>
+            <p>To increase Kafka consumption concurrency, use multiple consumer instances or configure the framework's listener concurrency. Kafka then assigns partitions across those consumers.</p>
+
+            <h5 class="text-warning">4. Spring Kafka concurrency</h5>
+            <pre><code class="language-java">@KafkaListener(
+    topics = "orders",
+    groupId = "order-service",
+    concurrency = "4"
+)
+public void consume(OrderEvent event) {
+    process(event);
+}</code></pre>
+            <p><code>concurrency = "4"</code> creates four listener consumers for that listener container. It is useful when the topic has at least four partitions. It cannot create more useful parallelism than the partition count.</p>
+            <p>The same can be configured with a container factory:</p>
+            <pre><code class="language-java">factory.setConcurrency(4);</code></pre>
+
+            <h5 class="text-warning">5. Worker-pool pattern</h5>
+            <p>Sometimes one consumer thread polls records and submits work to an application executor. This can improve throughput, but offset management and ordering become more complex.</p>
+            <ul><li>Pause partitions when the worker queue is full.</li><li>Do not commit an offset before its processing succeeds.</li><li>Use bounded queues to create backpressure.</li><li>Preserve ordering for records that share a key or aggregate.</li><li>Use idempotent processing because crashes before commit can cause redelivery.</li></ul>
+            <p>For many workloads, multiple Kafka consumer instances with partition-based concurrency are simpler and safer than manually parallelizing records from one consumer.</p>
+
+            <h5 class="text-warning">6. Ordering and keys</h5>
+            <p>Kafka preserves order inside one partition, not across partitions. If all events for an order or account must be ordered, use that aggregate ID as the message key so they are routed to the same partition. Processing records from the same partition concurrently can break that ordering.</p>
+
+            <h5 class="text-warning">7. Real-time example</h5>
+            <p>Suppose an <code>orders</code> topic has 12 partitions and the Order Service needs to process 10,000 events per second. Start with up to 12 consumer instances or listener concurrency, measure processing time and lag, and scale partitions and consumers based on throughput. If the database supports only a limited number of concurrent writes, use a bounded worker pool and database-aware concurrency instead of blindly adding consumers.</p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">Yes, Kafka supports multithreading mainly through partitions and multiple consumers. A topic partition is processed by only one consumer in a consumer group at a time, so different partitions can be processed concurrently. The Kafka producer is thread-safe, but KafkaConsumer is not; one consumer instance should be owned by one thread. In Spring Kafka I can configure listener concurrency, but useful concurrency cannot exceed the number of partitions. If I use a worker pool, I need bounded queues, correct offset management, backpressure, ordering protection, and idempotent processing.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="microservicesCascadingFailureRecoveryTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#microservicesCascadingFailureRecoveryTopBody">How do you recover from cascading failures in microservices?</button>
+        </h2>
+        <div id="microservicesCascadingFailureRecoveryTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>I would treat cascading failure as an incident requiring immediate containment. The sequence is <strong>stabilize the system -&gt; stop propagation -&gt; recover dependencies gradually -&gt; identify the trigger -&gt; add resilience controls</strong>.</p>
+
+            <h5 class="text-warning">1. Confirm the blast radius</h5>
+            <ul><li>Check error rate, latency, throughput, timeouts, pod restarts, queue depth, and affected services.</li><li>Use distributed traces to identify where requests begin to fail or wait.</li><li>Determine whether the trigger is a deployment, dependency outage, database saturation, traffic spike, retry storm, or resource exhaustion.</li><li>Identify critical business flows such as payments and orders that require special protection.</li></ul>
+
+            <h5 class="text-warning">2. Stop propagation immediately</h5>
+            <ul><li>Pause a faulty deployment or roll back to the last known-good version.</li><li>Open circuit breakers for unhealthy downstream services.</li><li>Stop or reduce retries; uncontrolled retries can amplify the failure.</li><li>Apply rate limits and shed non-critical traffic.</li><li>Disable optional features using feature flags.</li><li>Use bulkheads to isolate dependency-specific threads, queues, and connections.</li><li>Route traffic away from unhealthy instances or regions where safe.</li></ul>
+
+            <h5 class="text-warning">3. Protect critical dependencies</h5>
+            <p>Separate capacity for critical flows. For example, payment calls should not share the same unbounded executor or connection capacity as notification calls. Limit concurrency, set bounded queues, and protect the database from a sudden recovery flood.</p>
+            <p>If a cache has recovered, use warm-up, request coalescing, rate-limited reloads, or stale-but-safe data where appropriate instead of allowing every request to hit the database at once.</p>
+
+            <h5 class="text-warning">4. Recover in a controlled order</h5>
+            <ol><li>Stabilize the database, broker, or primary dependency first.</li><li>Confirm health, capacity, replication, and connection limits.</li><li>Recover one service or traffic slice at a time.</li><li>Gradually close circuit breakers or increase traffic.</li><li>Drain queues and Kafka lag at a rate the database and downstream services can handle.</li><li>Continue monitoring business success metrics, not only HTTP health checks.</li></ol>
+
+            <h5 class="text-warning">5. Investigate the root cause</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Signal</th><th>Possible cause</th></tr></thead><tbody><tr><td>All services retrying the same dependency</td><td>Retry storm and missing backoff or circuit breaker</td></tr><tr><td>Threads and connection pools exhausted</td><td>Slow downstream service or missing bulkhead</td></tr><tr><td>Database CPU and locks high</td><td>Query problem, connection flood, or long transactions</td></tr><tr><td>One service fails and callers wait</td><td>Missing timeout or cancellation boundary</td></tr><tr><td>Queue and Kafka lag grow rapidly</td><td>Consumers slower than producers or downstream backpressure</td></tr><tr><td>Only one pod is overloaded</td><td>Uneven routing, hot key, or pod-specific issue</td></tr></tbody></table>
+            <p>Use logs with correlation IDs, traces, JVM thread dumps, Hikari metrics, database activity, Kafka metrics, load-balancer health, and deployment history.</p>
+
+            <h5 class="text-warning">6. Communicate clearly</h5>
+            <p>Assign an incident lead and owners for application, infrastructure, database, messaging, and communication. Tell stakeholders what is affected, what has been mitigated, what remains uncertain, and when the next update will be provided. Do not make unverified claims that a payment or order failed.</p>
+
+            <h5 class="text-warning">7. Add permanent safeguards</h5>
+            <ul><li>Timeouts on every synchronous downstream call.</li><li>Circuit breakers with suitable sliding windows and half-open recovery.</li><li>Bulkheads for thread pools, connection pools, and dependency-specific concurrency.</li><li>Exponential backoff and jitter for safe transient retries.</li><li>Rate limiting, load shedding, and bounded queues.</li><li>Idempotency for retried writes and payment operations.</li><li>Asynchronous messaging for work that does not need to block the request.</li><li>Capacity limits and alerts for database, Redis, Kafka, and HTTP pools.</li><li>Chaos, load, and failure-injection tests for dependency outages.</li><li>Runbooks and automated rollback or progressive deployment.</li></ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">I would first assess the blast radius and identify the failing dependency using metrics, logs, and distributed traces. I would contain the incident by pausing or rolling back a bad deployment, opening circuit breakers, stopping retry storms, applying rate limits, shedding non-critical traffic, and isolating resources with bulkheads. Then I would stabilize the database or broker and recover services gradually, controlling queue and Kafka-lag drain rates. After the system is stable, I would perform a blameless RCA and add timeouts, backoff, idempotency, bounded queues, capacity alerts, progressive deployments, and failure tests to prevent recurrence.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="lowLatencyMillionsRestApiTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#lowLatencyMillionsRestApiTopBody">How would you design a REST API for millions of requests with low latency?</button>
+        </h2>
+        <div id="lowLatencyMillionsRestApiTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>I would design it as a horizontally scalable, stateless, observable system and work backward from measurable targets such as throughput, p95/p99 latency, availability, consistency, and acceptable error rate.</p>
+
+            <h5 class="text-warning">1. Define requirements first</h5>
+            <ul><li>Expected average and peak requests per second.</li><li>Read/write ratio and payload sizes.</li><li>Latency target, for example p95 below 100 ms.</li><li>Availability, consistency, ordering, and data-loss requirements.</li><li>Whether work must be synchronous or can be asynchronous.</li></ul>
+
+            <h5 class="text-warning">2. Request architecture</h5>
+            <pre><code class="language-text">Clients
+   |
+CDN / WAF / API Gateway
+   |
+Load Balancer
+   |
+Stateless Spring Boot instances
+   |-- Redis cache
+   |-- Read replicas / sharded database
+   |-- Kafka or queue for asynchronous work
+   |-- Downstream services with timeouts</code></pre>
+            <p>Use an API Gateway or load balancer for TLS termination, authentication, request limits, routing, health checks, and protection from abusive traffic. A CDN is useful for cacheable public content.</p>
+
+            <h5 class="text-warning">3. Keep application instances stateless</h5>
+            <ul><li>Do not keep user session or business state only in one JVM.</li><li>Store sessions in a shared store or use appropriately designed tokens.</li><li>Use immutable configuration and externalized secrets.</li><li>Run multiple instances across availability zones.</li><li>Use autoscaling based on CPU, request rate, latency, or queue depth.</li></ul>
+            <p>Stateless instances allow requests to be routed to any healthy pod and make rolling or canary deployments safer.</p>
+
+            <h5 class="text-warning">4. Reduce work on the hot path</h5>
+            <ul><li>Validate early and avoid unnecessary serialization or remote calls.</li><li>Cache frequently read, relatively stable data with Redis and a suitable TTL.</li><li>Use request coalescing or stampede protection for popular keys.</li><li>Use pagination and bounded response sizes.</li><li>Move email, reports, notifications, and other long-running work to Kafka or SQS.</li><li>Use compression only when its CPU cost is justified by network savings.</li></ul>
+
+            <h5 class="text-warning">5. Design the database for the workload</h5>
+            <ul><li>Add indexes based on actual query plans.</li><li>Use connection pooling with a maximum sized for database capacity, not simply application thread count.</li><li>Use read replicas for read-heavy workloads.</li><li>Partition or shard when one database cannot meet storage or throughput requirements.</li><li>Keep transactions short and avoid N+1 queries.</li><li>Use keyset pagination for large ordered datasets.</li><li>Use batching for writes and optimistic or pessimistic locking where business rules require it.</li></ul>
+            <p>Scaling application pods without controlling database connections can overload the database and increase latency.</p>
+
+            <h5 class="text-warning">6. Handle writes and long-running work asynchronously</h5>
+            <p>For operations that do not require an immediate result, accept the request, persist an idempotent command or job, publish it to Kafka or SQS, and return a job or correlation ID. Provide a status endpoint or callback. This keeps request threads free and absorbs traffic spikes.</p>
+
+            <h5 class="text-warning">7. Add resilience controls</h5>
+            <ul><li>Connection and read timeouts for every downstream call.</li><li>Circuit breakers for repeatedly failing dependencies.</li><li>Bulkheads to isolate thread and connection capacity.</li><li>Rate limiting per user, tenant, API key, or route.</li><li>Retries only for transient and idempotent operations, with exponential backoff and jitter.</li><li>Idempotency keys for payment, order, and other retryable writes.</li></ul>
+
+            <h5 class="text-warning">8. Scale and deploy safely</h5>
+            <ul><li>Use multiple availability zones and a health-checked load balancer.</li><li>Configure readiness and liveness probes correctly.</li><li>Use rolling, canary, or blue-green deployment.</li><li>Use load tests and capacity tests before peak events.</li><li>Autoscale pods using HPA and nodes using cluster autoscaling.</li><li>Keep database schema changes backward compatible.</li></ul>
+
+            <h5 class="text-warning">9. Measure the full system</h5>
+            <p>Monitor request rate, p50/p95/p99 latency, 4xx and 5xx errors, saturation, cache hit rate, JVM CPU and GC, thread pools, Hikari metrics, database query latency and locks, Kafka lag, downstream latency, and business success rates. Use structured logs with correlation IDs and distributed tracing to locate slow spans.</p>
+
+            <h5 class="text-warning">10. Example capacity approach</h5>
+            <p>Suppose one Spring Boot instance handles 500 requests per second at the target p95 latency, and the peak is 10,000 requests per second. I would start with at least 20 equivalent instances, then add headroom for failures and traffic variation. I would validate this with load tests and confirm that Redis, the database, downstream services, network, and connection pools can support the same capacity. The number is illustrative; actual capacity must be measured.</p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">I would begin with throughput, peak traffic, p95/p99 latency, availability, and consistency requirements. I would put a WAF and API Gateway in front of a load balancer, run stateless Spring Boot instances across availability zones, and autoscale them based on traffic and saturation. I would use Redis for appropriate read-heavy data, optimize indexed database queries and connection pools, use replicas or sharding when justified, and move long-running work to Kafka or SQS. Every downstream call would have timeouts, and I would use rate limiting, circuit breakers, bulkheads, controlled retries, and idempotency. Finally, I would use tracing and metrics for JVM, application, database, cache, queues, and downstream services, then validate capacity with realistic load tests and deploy using canary or rolling releases.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+      <div class="accordion-item" data-category="java">
+        <h2 class="accordion-header" id="processMillionExcelRecordsStreamingTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#processMillionExcelRecordsStreamingTopBody">How do you process 10 lakh Excel records without loading the entire file into JVM memory?</button>
+        </h2>
+        <div id="processMillionExcelRecordsStreamingTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>I would use a <strong>streaming reader</strong> and process records in bounded chunks. I would never call an API that loads the complete workbook or create a list containing all 10 lakh rows.</p>
+
+            <h5 class="text-warning">1. Recommended architecture</h5>
+            <pre><code class="language-text">Upload file to object storage
+          |
+          v
+Create asynchronous batch job
+          |
+Streaming Excel reader
+          |
+Validate one row at a time
+          |
+Chunk of 500 or 1,000 records
+          |
+Batch database write and commit
+          |
+Release chunk memory and continue</code></pre>
+            <p>The API should normally return a job ID rather than keep an HTTP request open for a large upload. A worker processes the file asynchronously and exposes status, errors, and progress.</p>
+
+            <h5 class="text-warning">2. Use the correct Excel reading mode</h5>
+            <ul><li>For <code>.xlsx</code>, use Apache POI's event/SAX model such as <code>XSSFReader</code> and <code>XMLReader</code>, or a proven streaming library.</li><li>Do not use <code>XSSFWorkbook</code> for a very large workbook if it builds the complete workbook object model in memory.</li><li><code>SXSSFWorkbook</code> is primarily for streaming Excel output; it is not the normal solution for reading a large input file.</li><li>For legacy <code>.xls</code>, use an event-based HSSF reader or convert the file in a controlled streaming process.</li></ul>
+
+            <h5 class="text-warning">3. Spring Batch approach</h5>
+            <p>Spring Batch is useful because it provides chunk transactions, restartability, job metadata, skip and retry policies, and operational visibility.</p>
+            <pre><code class="language-java">@Bean
+public Step importStep(JobRepository jobRepository,
+                       PlatformTransactionManager transactionManager) {
+    return new StepBuilder("importStep", jobRepository)
+        .&lt;CustomerRow, CustomerEntity&gt;chunk(1000, transactionManager)
+        .reader(streamingExcelReader())
+        .processor(rowProcessor())
+        .writer(jdbcBatchWriter())
+        .faultTolerant()
+        .skipLimit(100)
+        .skip(InvalidCustomerRowException.class)
+        .build();
+}</code></pre>
+            <p>The reader returns one item at a time. Spring Batch holds only the current chunk, writes it as a batch, commits, and then releases it before reading the next chunk.</p>
+
+            <h5 class="text-warning">4. Memory and database controls</h5>
+            <ul><li>Use a bounded chunk size, such as 500 or 1,000; tune it using memory and database measurements.</li><li>Use JDBC batch inserts or a carefully configured JPA batch writer.</li><li>Avoid calling <code>save()</code> with a list of 10 lakh entities.</li><li>If using JPA, flush and clear the persistence context after each chunk to avoid first-level-cache growth.</li><li>Do not retain row objects, error lists, or cell strings for the entire job.</li><li>Store rejected-row details in a bounded error file or an error table with a retention policy.</li><li>Use backpressure so the reader cannot outrun database or downstream capacity.</li></ul>
+            <pre><code class="language-java">for (CustomerEntity entity : chunk) {
+    entityManager.persist(entity);
+}
+
+entityManager.flush();
+entityManager.clear(); // Release managed entities after the chunk</code></pre>
+
+            <h5 class="text-warning">5. Validation and bad records</h5>
+            <ol><li>Validate required columns, types, formats, duplicates, and business rules row by row.</li><li>Send invalid rows to an error file or error table with row number and reason.</li><li>Use a skip policy only for known data errors; do not hide infrastructure or database failures.</li><li>Reject or quarantine a file when its schema or header is invalid.</li></ol>
+
+            <h5 class="text-warning">6. Transactions and restartability</h5>
+            <p>Commit one chunk at a time. If a chunk fails, roll back that chunk while previously committed chunks remain safe. Configure a unique business key or idempotency key so restarting the job does not create duplicate records. Persist the file name, checksum, job ID, row count, status, and last successful checkpoint.</p>
+            <p>For a financial or critical import, use staging tables and validation before moving data into the final tables. This avoids partially publishing invalid data.</p>
+
+            <h5 class="text-warning">7. Performance and operations</h5>
+            <ul><li>Store the file in S3 or another object store and stream it from there.</li><li>Run the import asynchronously using Spring Batch, a queue, or a dedicated worker.</li><li>Set a maximum file size and validate the file type to protect the service.</li><li>Track rows read, rows processed, rows rejected, throughput, memory, GC, database time, and current status.</li><li>Use a bounded thread pool only after confirming the database can handle parallel writers.</li><li>Use a dead-letter or retry path for transient row or downstream failures.</li></ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">I would not load the complete workbook into the JVM. I would store the file in object storage, start an asynchronous Spring Batch job, and use an event-based or streaming Excel reader that returns one row at a time. I would process rows in bounded chunks, for example 1,000, validate them, batch-write them to the database, commit the chunk, and flush or clear ORM state before continuing. I would add restartability, idempotency, skip handling for invalid rows, progress metrics, backpressure, and monitoring. For very large XLSX files I would use Apache POI's SAX/event model or a proven streaming library; SXSSFWorkbook is mainly for streaming Excel output, not reading the entire input efficiently.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="java">
+      <div class="accordion-item" data-category="sql">
+        <h2 class="accordion-header" id="productionQuerySlowLocalFastTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#productionQuerySlowLocalFastTopBody">Why does a query take 5 seconds in production but milliseconds locally?</button>
+        </h2>
+        <div id="productionQuerySlowLocalFastTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>I would not assume the SQL is correct just because it is fast locally. Production usually differs in data volume, distribution, indexes, statistics, concurrency, hardware, parameters, and network path.</p>
+
+            <h5 class="text-warning">1. Confirm the exact query and scope</h5>
+            <ul><li>Capture the actual SQL, bind parameters, execution time, row count, endpoint, and timestamp.</li><li>Check whether all parameter values are slow or only specific customers, dates, tenants, or statuses.</li><li>Separate database execution time from application time, connection acquisition, serialization, and network transfer.</li><li>Confirm that production is running the same query and application version as local.</li></ul>
+
+            <h5 class="text-warning">2. Compare environments</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Area</th><th>What to compare</th></tr></thead><tbody><tr><td>Data</td><td>Row count, data distribution, skew, nulls, and large tenants</td></tr><tr><td>Schema</td><td>Indexes, constraints, column types, partitions, and views</td></tr><tr><td>Statistics</td><td>Optimizer statistics and last refresh time</td></tr><tr><td>Database</td><td>Version, configuration, CPU, memory, storage, and replicas</td></tr><tr><td>Concurrency</td><td>Locks, active queries, isolation level, and workload at the time</td></tr><tr><td>Application</td><td>Bind types, ORM-generated SQL, connection pool, and transaction scope</td></tr><tr><td>Network</td><td>Database location, latency, DNS, and result-payload size</td></tr></tbody></table>
+
+            <h5 class="text-warning">3. Inspect the production execution plan</h5>
+            <p>Run the database's safe plan analysis, such as <code>EXPLAIN</code> or <code>EXPLAIN ANALYZE</code>, using representative parameters. I look for:</p>
+            <ul><li>Full table scans where an index should be used.</li><li>Incorrect join order or expensive nested loops.</li><li>Large estimated-versus-actual row-count differences.</li><li>Sorts, temporary tables, spills, or excessive memory use.</li><li>Functions or implicit casts preventing index usage.</li><li>Parameter-sensitive plans or stale optimizer statistics.</li></ul>
+            <p>I would avoid running a potentially expensive analysis blindly on a busy production database; use a replica, safe explain mode, or a production-like copy when appropriate.</p>
+
+            <h5 class="text-warning">4. Check data volume and selectivity</h5>
+            <p>A local database may contain 1,000 rows while production contains 200 million. A query can also be fast for a selective local parameter but slow for a production parameter that matches millions of rows. I verify indexes on filter, join, and sort columns and check whether the query returns more data than the API needs.</p>
+
+            <h5 class="text-warning">5. Check locks and concurrency</h5>
+            <p>The query may be logically efficient but waiting behind another transaction. I inspect active sessions, lock waits, long-running transactions, deadlocks, isolation levels, and connection saturation. I also check whether a deployment or batch job created a competing workload.</p>
+
+            <h5 class="text-warning">6. Check the Spring Boot and Hikari path</h5>
+            <ul><li>Hikari active, idle, pending, and acquisition timeout metrics.</li><li>Whether the reported 5 seconds includes waiting for a connection.</li><li>Hibernate-generated SQL, N+1 queries, lazy loading, and persistence-context size.</li><li>Transaction duration and accidental read queries inside a long transaction.</li><li>JDBC driver version, fetch size, result mapping, and payload serialization.</li></ul>
+            <p>If the database executes in 100 ms but the API takes 5 seconds, the time may be in connection acquisition, application processing, network transfer, or multiple hidden queries.</p>
+
+            <h5 class="text-warning">7. Apply a safe fix</h5>
+            <p>Depending on evidence, I may refresh statistics, add or adjust an index, rewrite a join, reduce the result set, use keyset pagination, shorten a transaction, fix an ORM query, or control concurrency. Before adding an index, I check write overhead, storage, and whether it helps the actual production plan.</p>
+
+            <h5 class="text-warning">8. Validate and prevent recurrence</h5>
+            <ol><li>Test with production-like data volume and representative parameters.</li><li>Compare execution plans before and after the change.</li><li>Run load or concurrency tests.</li><li>Deploy gradually and monitor query latency, database CPU, locks, connection pools, and API p95/p99.</li><li>Add slow-query alerts, query-plan review, realistic performance tests, and capacity documentation.</li></ol>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">I would capture the exact production SQL, bind parameters, timing, row count, and correlation ID, then separate database execution time from connection acquisition, application processing, and network time. I would compare production and local data volume, indexes, statistics, schema, database version, configuration, and concurrency. Next I would inspect the production execution plan for scans, bad join order, stale statistics, implicit casts, and estimated-versus-actual row differences. I would also check locks, long transactions, Hikari metrics, and ORM-generated queries. After identifying the cause, I would apply the smallest safe fix, validate it with representative data and load, roll it out gradually, and add monitoring and regression coverage.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="sql">
+      <div class="accordion-item" data-category="java">
+        <h2 class="accordion-header" id="javaOomAfterDaysInvestigationTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#javaOomAfterDaysInvestigationTopBody">How do you investigate an OutOfMemoryError after a Java application runs for several days?</button>
+        </h2>
+        <div id="javaOomAfterDaysInvestigationTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>An <code>OutOfMemoryError</code> after several days often indicates a gradual memory leak, unbounded cache or queue, excessive allocation, classloader leak, direct-memory issue, or a workload that slowly exceeds the configured capacity. I investigate it systematically instead of immediately increasing the heap.</p>
+
+            <h5 class="text-warning">1. Confirm the exact OOM type</h5>
+            <p>First inspect the complete error and logs. The cause matters:</p>
+            <table class="table table-dark table-bordered"><thead><tr><th>Error</th><th>Likely area</th></tr></thead><tbody><tr><td><code>Java heap space</code></td><td>Heap objects remain reachable, excessive allocation, or heap too small</td></tr><tr><td><code>GC overhead limit exceeded</code></td><td>GC spends most of its time collecting very little memory</td></tr><tr><td><code>Metaspace</code></td><td>Class metadata or classloader leak</td></tr><tr><td><code>Direct buffer memory</code></td><td>Off-heap buffers, often networking or NIO</td></tr><tr><td><code>unable to create native thread</code></td><td>Thread leak, native memory, or operating-system limit</td></tr></tbody></table>
+
+            <h5 class="text-warning">2. Assess production impact and stabilize</h5>
+            <ul><li>Check whether one pod or all instances are affected.</li><li>Review restart count, traffic, error rate, latency, and customer impact.</li><li>Capture evidence before restarting if the process is still responsive.</li><li>Remove an unhealthy instance from traffic or restart it through the approved procedure if necessary.</li><li>Scale temporarily only if it reduces impact; scaling does not fix a leak.</li></ul>
+
+            <h5 class="text-warning">3. Enable useful JVM diagnostics</h5>
+            <p>For future occurrences, configure diagnostics before the next failure:</p>
+            <pre><code class="language-bash">-XX:+HeapDumpOnOutOfMemoryError
+-XX:HeapDumpPath=/var/log/java/heapdumps
+-XX:+ExitOnOutOfMemoryError
+-Xlog:gc*:file=/var/log/java/gc.log:time,uptime,level,tags</code></pre>
+            <p>In containers, ensure the heap-dump path has enough disk space and is captured outside the ephemeral container if possible.</p>
+
+            <h5 class="text-warning">4. Check memory and GC trends</h5>
+            <p>Use Prometheus/Grafana, JFR, GC logs, and JVM metrics to compare healthy and unhealthy periods:</p>
+            <ul><li>Heap used after full GC over time.</li><li>Old-generation occupancy and promotion rate.</li><li>Allocation rate and GC pause duration.</li><li>Number and size of threads.</li><li>Metaspace, code cache, direct memory, and native memory.</li><li>Container memory limit versus JVM heap and non-heap usage.</li></ul>
+            <p>If memory after full GC keeps increasing, objects are likely being retained. If it returns to a stable level but the process still exceeds the container limit, investigate native or off-heap memory.</p>
+
+            <h5 class="text-warning">5. Analyze the heap dump</h5>
+            <p>Open the dump with Eclipse MAT, VisualVM, JProfiler, or another approved analyzer. I look at:</p>
+            <ul><li>Largest retained heaps.</li><li>Dominator tree and leak suspects.</li><li>Path to GC roots.</li><li>Collections that grow over time, such as static maps, caches, queues, or session stores.</li><li>Unexpected request, DTO, buffer, or ORM object retention.</li></ul>
+            <p>A large object is not automatically a leak. The important question is why it remains reachable from a GC root.</p>
+
+            <h5 class="text-warning">6. Check common application causes</h5>
+            <ul><li>Unbounded <code>HashMap</code>, cache, queue, or batch list.</li><li>Static collections or singleton fields retaining request data.</li><li>Listeners, callbacks, or ThreadLocal values not cleared.</li><li>Unclosed resources, buffers, or streams.</li><li>Large result sets or ORM persistence contexts held too long.</li><li>Thread leaks and per-thread context.</li><li>Classloader leaks caused by redeployment or dynamically loaded classes.</li><li>Logging or tracing queues that cannot keep up.</li></ul>
+
+            <h5 class="text-warning">7. Check non-heap and container memory</h5>
+            <p>If the heap dump does not explain the memory use, investigate native memory:</p>
+            <ul><li>Use Native Memory Tracking where enabled: <code>jcmd &lt;pid&gt; VM.native_memory summary</code>.</li><li>Check direct buffers and HTTP client or Netty buffer usage.</li><li>Check thread count and thread stack memory.</li><li>Check metaspace and class count.</li><li>Compare the JVM memory settings with the Kubernetes or container memory limit.</li></ul>
+
+            <h5 class="text-warning">8. Reproduce and validate the fix</h5>
+            <ol><li>Create a load or soak test that runs long enough to show the growth trend.</li><li>Fix the confirmed retention or capacity issue, for example by bounding a cache and adding eviction.</li><li>Repeat the test and compare retained heap after full GC.</li><li>Deploy gradually and monitor memory, GC, restart count, and latency.</li><li>Keep heap-dump and alerting configuration in place.</li></ol>
+
+            <h5 class="text-warning">9. What I would avoid</h5>
+            <ul><li>Blindly increasing <code>-Xmx</code>, which may only delay the failure and can cause container OOM kills.</li><li>Forcing full GC repeatedly in production.</li><li>Restarting every instance before collecting evidence.</li><li>Assuming high memory usage alone proves a leak; the key signal is retained memory after GC.</li></ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">I would first identify the exact OutOfMemoryError type and assess the impact across instances. If possible, I would capture a heap dump, GC logs, JFR data, thread information, and JVM metrics before restarting. I would compare heap usage after full GC over time, inspect the dominator tree and GC-root paths, and look for unbounded collections, caches, queues, ThreadLocals, classloaders, ORM contexts, and buffers. If the heap does not explain the growth, I would investigate native memory, direct buffers, threads, metaspace, and container limits. I would reproduce the trend with a soak test, fix the confirmed cause, deploy gradually, and add memory and GC alerts. I would not blindly increase the heap because that can only postpone the failure.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="java">
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="slowApiJavaSpringDatabaseTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#slowApiJavaSpringDatabaseTopBody">How do you identify whether a slow API issue is in Java, Spring Boot, or the database?</button>
+        </h2>
+        <div id="slowApiJavaSpringDatabaseTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>I use an end-to-end, evidence-based process rather than assuming the database or increasing instances immediately. The sequence is <strong>measure the request path -&gt; isolate the slow layer -&gt; mitigate -&gt; confirm the root cause</strong>.</p>
+
+            <h5 class="text-warning">1. Confirm the symptom and scope</h5>
+            <ul><li>Compare normal and current p50, p95, and p99 latency.</li><li>Check throughput, timeout rate, HTTP 5xx responses, and affected endpoints.</li><li>Determine whether all users, one tenant, one region, one pod, or one request type is affected.</li><li>Check whether the issue began after a deployment, configuration change, traffic spike, data change, or downstream incident.</li></ul>
+
+            <h5 class="text-warning">2. Trace the complete request</h5>
+            <pre><code class="language-text">Client / Gateway
+      -> Load Balancer
+      -> Spring MVC/WebFlux
+      -> Controller / Service
+      -> Thread pool and connection pools
+      -> Database / Kafka / downstream API</code></pre>
+            <p>Use correlation IDs and distributed tracing with OpenTelemetry to identify where the request spends its time. A trace might show the application taking 20 ms, the database 2.5 seconds, or a downstream API 3 seconds.</p>
+
+            <h5 class="text-warning">3. Check the Java/JVM layer</h5>
+            <p>I investigate whether the Java process itself is saturated:</p>
+            <ul><li>CPU utilization and hot methods using JFR or a profiler.</li><li>Heap usage, allocation rate, GC frequency, and long pause times.</li><li>Thread dumps for BLOCKED, WAITING, or excessive runnable threads.</li><li>Thread-pool queue depth and executor rejection.</li><li>Lock contention, synchronized blocks, deadlocks, and blocking I/O.</li><li>Memory pressure, OOM events, and thread leaks.</li></ul>
+            <p><strong>Likely Java bottleneck:</strong> high CPU with a hot method, long GC pauses, or many threads blocked on an application lock. A thread dump and JFR recording help confirm it.</p>
+
+            <h5 class="text-warning">4. Check the Spring Boot layer</h5>
+            <p>I check Spring and application-level metrics:</p>
+            <ul><li>Tomcat or Netty active threads, request queue, and rejected requests.</li><li>Spring Boot Actuator HTTP server request metrics by endpoint and status.</li><li>HikariCP active, idle, pending, and timed-out connection requests.</li><li>HTTP client connection-pool utilization and downstream response times.</li><li>Slow filters, interceptors, AOP advice, serialization, validation, and excessive logging.</li><li>Repeated database calls, N+1 queries, unnecessary remote calls, and oversized payloads.</li></ul>
+            <p><strong>Likely Spring Boot bottleneck:</strong> all request threads are waiting for a small Hikari pool, a synchronous downstream call, or a slow controller/service operation while CPU remains low.</p>
+
+            <h5 class="text-warning">5. Check the database layer</h5>
+            <p>I verify:</p>
+            <ul><li>Database CPU, memory, disk I/O, locks, waits, and active sessions.</li><li>Slow-query logs and the actual execution plan using <code>EXPLAIN</code> or <code>EXPLAIN ANALYZE</code>.</li><li>Missing or ineffective indexes, full table scans, expensive joins, and large result sets.</li><li>Long-running transactions, lock contention, deadlocks, and isolation behavior.</li><li>Connection count and whether application pools are exhausting database capacity.</li></ul>
+            <p><strong>Likely database bottleneck:</strong> query duration and database CPU or lock waits increase, Hikari connections remain active, and application threads wait for connections or query results.</p>
+
+            <h5 class="text-warning">6. Use correlation to distinguish the cause</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Observation</th><th>Likely area</th></tr></thead><tbody><tr><td>High CPU and one or more hot Java methods</td><td>Java/JVM or application computation</td></tr><tr><td>Long GC pauses or allocation spike</td><td>JVM memory pressure</td></tr><tr><td>Low CPU, request threads waiting for Hikari connections</td><td>Database latency, locks, or pool sizing</td></tr><tr><td>High database CPU and slow execution plans</td><td>Database queries or database capacity</td></tr><tr><td>Application span is short but downstream span is slow</td><td>External service or network</td></tr><tr><td>Only one pod is slow</td><td>Pod-specific load, data, JVM, node, or connection issue</td></tr></tbody></table>
+
+            <h5 class="text-warning">7. Mitigate safely</h5>
+            <ul><li>Rollback a recent release or disable a feature flag.</li><li>Reduce expensive traffic with rate limiting or caching.</li><li>Scale only after identifying whether the bottleneck can handle more load.</li><li>Optimize the confirmed query or add a safe index after checking write impact.</li><li>Set appropriate connection, read, and downstream timeouts.</li><li>Use circuit breakers and bulkheads to prevent cascading failure.</li></ul>
+            <p>I would not blindly increase Hikari pool size: if the database is already at 95% CPU, more connections can make the problem worse.</p>
+
+            <h5 class="text-warning">8. Verify and prevent recurrence</h5>
+            <p>After the fix, I load-test the affected flow, compare latency and throughput with the baseline, verify business correctness, and monitor the service during a gradual rollout. I then add an alert, dashboard, regression or performance test, query review, or capacity guard based on the root cause.</p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">I would first confirm the latency, error rate, scope, and recent changes. Then I would use distributed tracing to break the request into gateway, Spring Boot, JVM, database, and downstream spans. For Java I would check CPU, GC, thread dumps, locks, and executor queues. For Spring Boot I would check request threads, Actuator metrics, HikariCP, HTTP pools, filters, and N+1 calls. For the database I would check CPU, locks, active connections, slow-query logs, and execution plans. I would mitigate with rollback, feature flags, caching, timeouts, or controlled scaling, then fix the confirmed bottleneck and add tests and alerts to prevent recurrence.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+      <div class="accordion-item" data-category="behavioral">
+        <h2 class="accordion-header" id="jpmcTopTenBehavioralTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#jpmcTopTenBehavioralTopBody">JPMC priority: 10 senior behavioral questions and answers</button>
+        </h2>
+        <div id="jpmcTopTenBehavioralTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>These are the ten questions I would prioritize for a JPMC Senior Java Developer interview. Keep the answers truthful and adapt the examples to incidents you actually handled.</p>
+
+            <h5 class="text-warning">1. Tell me about a critical production issue you resolved.</h5>
+            <p><strong>Situation:</strong> A Spring Boot payment API became slow and some requests timed out during a busy period.</p>
+            <p><strong>Action:</strong> I assessed impact, established incident communication, and compared the current metrics with the last healthy period. Logs and traces showed application threads waiting for database connections. Hikari metrics showed all connections active and requests pending. I analyzed slow queries, locks, and execution plans, then applied the safest mitigation and monitored recovery.</p>
+            <p><strong>Result:</strong> The service recovered, payment status was verified to avoid duplicate processing, and I added query and performance tests, connection-pool alerts, and a runbook. The key is to explain evidence, mitigation, root cause, and prevention.</p>
+
+            <h5 class="text-warning">2. Have you taken ownership beyond your assigned responsibilities?</h5>
+            <p>Yes. During a batch change, I noticed that a restart could process records twice even though restart design was not explicitly assigned to me. I investigated transaction boundaries and existing job metadata, raised the risk, proposed idempotent processing, added failure and restart tests, documented the runbook, and coordinated with scheduling and operations. I monitored the first production run and verified that records were processed without duplicates.</p>
+            <p>For me, ownership means following the problem from requirement through implementation, testing, deployment, monitoring, and successful business outcome.</p>
+
+            <h5 class="text-warning">3. How do you mentor junior developers?</h5>
+            <p>I first understand the developer's current level and learning goal. I explain the business and request flow, use pair programming for difficult tasks, give specific code-review feedback, and encourage unit tests and documentation. I start with a small safe task, provide support, and gradually increase ownership. I measure success by improved confidence, fewer repeated review comments, better test coverage, and independent delivery.</p>
+
+            <h5 class="text-warning">4. Tell me about a technical decision you made.</h5>
+            <p>I describe the problem, alternatives, trade-offs, decision, and measurable result. For example, for read-heavy reference data, I compared query optimization, local caching, and Redis Cache-Aside. I chose a shared Redis cache with TTL and post-commit invalidation because multiple service instances needed the same data and freshness mattered. I validated cache hit rate, database load, p95 latency, failure behavior, and operational cost before and after the change, then documented the decision.</p>
+
+            <h5 class="text-warning">5. How do you handle disagreements with team members?</h5>
+            <p>I listen first and clarify whether the disagreement is about requirements, design, risk, timeline, or implementation. Then I compare the options using reliability, performance, security, maintainability, cost, and business value. I use documentation, metrics, or a proof of concept instead of authority. I record the trade-offs, involve the appropriate decision-maker when needed, and support the final decision professionally even if it was not my preferred option.</p>
+
+            <h5 class="text-warning">6. How do you handle tight deadlines?</h5>
+            <p>I clarify the must-have outcome, break the work into milestones, identify dependencies and risks, and prioritize based on customer and business impact. If the full scope cannot be delivered safely, I propose reducing scope, splitting the release, adding support, or adjusting the date. I protect essential testing, security, monitoring, and rollback controls. I communicate trade-offs early and re-plan when circumstances change instead of hiding risk until the deadline.</p>
+
+            <h5 class="text-warning">7. How do you ensure code quality?</h5>
+            <p>I use shared coding and design standards, small reviewable pull requests, effective code reviews, and automated CI quality gates. I check correctness, security, transactions, concurrency, performance, error handling, observability, maintainability, and backward compatibility. I use unit, integration, contract, regression, and performance tests as appropriate, together with SonarQube and dependency scanning. Production defects become regression tests or process improvements, and quality remains a shared team responsibility.</p>
+
+            <h5 class="text-warning">8. How do you handle production deployment failures?</h5>
+            <ol><li>Pause or stop the rollout and assess customer and business impact.</li><li>Rollback to the last known-good version or disable the feature if required.</li><li>Check pod health, logs, configuration, secrets, database migrations, dependency compatibility, 5xx rate, and latency.</li><li>Verify recovery with smoke tests and business metrics, not only readiness probes.</li><li>Identify the root cause, add a regression test or deployment safeguard, and redeploy gradually.</li></ol>
+            <p>For risky changes, I prefer canary or progressive rollout with Prometheus-based error monitoring and automatic rollback capability.</p>
+
+            <h5 class="text-warning">9. Tell me about a mistake or failure and what you learned.</h5>
+            <p>I once underestimated a database query because the UAT dataset was much smaller than production. When production latency increased, I acknowledged the mistake, helped roll back the affected path, analyzed the execution plan, corrected the query or index, and tested with production-like data. I added a performance test, monitoring alert, and query-review checklist. I learned that functional testing alone is not enough when data volume changes the execution plan.</p>
+
+            <h5 class="text-warning">10. Why should we hire you as a Senior Java Developer?</h5>
+            <p>I bring strong Java and Spring Boot development skills together with production ownership. I can design and implement APIs and microservices, reason about databases, Kafka, concurrency, resilience, and AWS deployment, and explain technical trade-offs to product and business stakeholders. I care about testing, observability, safe releases, mentoring, and maintainability, not just completing a coding task. I would contribute as someone who can deliver features, handle production responsibility, and help the team make sound technical decisions.</p>
+
+            <h5 class="text-warning">How to structure each answer</h5>
+            <p>Use <strong>STAR</strong> where a personal example is requested: Situation, Task, Action, Result. Keep the situation brief, spend most of the answer on what you personally did, and finish with a measurable result or lesson. Never claim an incident or achievement you cannot explain in technical detail.</p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="behavioral">
+      <div class="accordion-item" data-category="behavioral">
+        <h2 class="accordion-header" id="additionalSeniorTechnicalDeliveryTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#additionalSeniorTechnicalDeliveryTopBody">Additional senior technical leadership and delivery questions</button>
+        </h2>
+        <div id="additionalSeniorTechnicalDeliveryTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <h5 class="text-warning">1. Tell me about a technical decision you made that improved the system.</h5>
+            <p>Use a specific decision, explain the problem and trade-offs, and quantify the result. For example, I identified that repeated synchronous calls were increasing latency and coupling. I compared caching, asynchronous processing, and query optimization, then introduced a targeted Cache-Aside approach with TTL and invalidation for read-heavy reference data. I measured cache hit rate, database load, and p95 latency before and after the change. The important points are that I used evidence, considered consistency and failure behavior, and monitored the result after release.</p>
+
+            <h5 class="text-warning">2. How do you choose between monolithic and microservices architecture?</h5>
+            <ol><li>Understand domain boundaries, team ownership, deployment needs, scale, reliability, and compliance.</li><li>Start with the simplest architecture that meets the requirements; a modular monolith can be a good choice.</li><li>Choose microservices when independent scaling, deployment, fault isolation, or team autonomy justifies the distributed-systems cost.</li><li>Evaluate operational maturity: CI/CD, observability, service discovery, security, testing, and incident support.</li><li>Make the decision reversible where possible and document the trade-offs.</li></ol>
+            <p>I would not choose microservices only because they are popular. If the domain is small and the team is limited, a well-modularized monolith may be more reliable and easier to operate.</p>
+
+            <h5 class="text-warning">3. How do you decide whether to introduce a new technology?</h5>
+            <p>I start with the problem, not the technology. I define success criteria, compare the current solution and alternatives, assess total cost, security, support, learning curve, migration risk, performance, and operational impact, then build a proof of concept using a realistic workflow. I involve the team that will maintain it and recommend adoption only when the evidence shows a meaningful benefit. I would begin with a low-risk service and provide documentation, training, monitoring, and rollback.</p>
+
+            <h5 class="text-warning">5. How do you conduct architecture or design reviews?</h5>
+            <ol><li>Share a short design document with context, requirements, assumptions, alternatives, and open questions.</li><li>Review API contracts, data ownership, consistency, transactions, security, scalability, failure handling, observability, and deployment.</li><li>Invite the relevant developers, QA, DevOps, security, database, and product representatives.</li><li>Separate must-fix risks from suggestions and record decisions with an ADR.</li><li>Confirm implementation milestones and revisit the design when assumptions change.</li></ol>
+            <p>A good design review is not an approval ceremony; it should discover risks early and create shared understanding.</p>
+
+            <h5 class="text-warning">6. How do you identify technical debt?</h5>
+            <p>I look for recurring defects, slow delivery, duplicated logic, fragile tests, unclear ownership, unsupported dependencies, manual deployment steps, slow queries, excessive coupling, and workarounds that make changes risky. I combine developer feedback with production metrics such as incident frequency, rollback rate, lead time, and performance degradation. I record the debt, explain its impact, estimate remediation, and prioritize it alongside feature work based on risk and business value.</p>
+
+            <h5 class="text-warning">7. How do you balance performance and maintainability?</h5>
+            <p>I first establish the performance requirement and measure the current bottleneck. I prefer the simplest readable design that meets the target. If optimization is needed, I use profiling, query plans, load tests, and metrics rather than guessing. I document why a more complex approach is necessary, isolate it behind a clear interface, add tests and observability, and avoid premature optimization. Performance work should improve a measured bottleneck without making the whole system difficult to change.</p>
+
+            <h5 class="text-warning">8. How do you ensure backward compatibility?</h5>
+            <ul><li>Keep API fields and event schemas backward compatible.</li><li>Add optional fields before making them required.</li><li>Support old and new versions during a migration window.</li><li>Use expand-and-contract database migrations: add, backfill, dual-read or dual-write if needed, switch consumers, then remove later.</li><li>Use contract tests and consumer-driven compatibility checks.</li><li>Deploy producers before consumers when the new format is supported by both.</li><li>Document deprecation timelines and monitor old-version usage.</li></ul>
+            <p>For Kafka, I would avoid renaming a field in place; I would add the new field, keep the old field during migration, and evolve the schema under a compatibility policy.</p>
+
+            <h5 class="text-warning">9. How do you handle legacy code?</h5>
+            <p>I first understand its behavior through tests, logs, database queries, and a small documented flow. I avoid rewriting everything without evidence. I add characterization and regression tests, define a safe seam around the module, make incremental refactors, and preserve behavior while improving one risk area at a time. For a migration, I use an adapter or strangler approach, compare old and new results, release gradually, and remove the legacy path only after usage and correctness are verified.</p>
+
+            <h5 class="text-warning">10. How do you convince management to approve a technical improvement?</h5>
+            <p>I present the improvement in business terms: customer impact, incident reduction, delivery speed, cost, risk, or regulatory benefit. I show the current baseline, options considered, estimated effort, expected benefit, risks, rollout plan, and measurable success criteria. A small proof of concept or incident data makes the proposal credible. I also offer a phased option so management can approve a controlled first step instead of an open-ended rewrite.</p>
+
+            <h5 class="text-warning">14. What if an issue cannot be reproduced locally?</h5>
+            <ol><li>Collect the exact timestamp, request or correlation ID, user context, inputs, version, configuration, and environment.</li><li>Compare production and local data volume, dependencies, feature flags, permissions, network, JVM, and database versions.</li><li>Use logs, metrics, traces, and production-safe diagnostics to narrow the failing path.</li><li>Reproduce with sanitized production-like data or a staging environment that matches production.</li><li>Add temporary targeted logging or a diagnostic metric, avoiding sensitive data.</li><li>Mitigate safely first if customers are affected, then reproduce with a focused test.</li></ol>
+            <p>I would not dismiss the issue because it works locally; environment and data differences are often the cause.</p>
+
+            <h5 class="text-warning">15. How do you handle recurring production issues?</h5>
+            <p>I treat recurrence as evidence that the previous fix addressed a symptom or that the corrective action was not completed. I review incident history and timelines, group incidents by failure mode, identify common contributing factors, and prioritize a permanent fix. That may include a code change, capacity control, timeout, alert, runbook, test, or ownership change. I assign an owner and due date, then verify the recurrence rate after the fix.</p>
+
+            <h5 class="text-warning">16. How do you prioritize incidents?</h5>
+            <p>I prioritize by customer and business impact, safety or financial risk, number of users, data integrity, regulatory impact, and whether the incident is spreading. A payment failure, data corruption risk, or security issue receives higher priority than a non-critical reporting delay. I use severity definitions and service objectives, assign clear owners, and reassess priority as new evidence arrives.</p>
+
+            <h5 class="text-warning">19. How do you handle a production deployment failure?</h5>
+            <ol><li>Stop or pause the rollout and assess whether the issue is caused by the release.</li><li>Restore the previous known-good version or disable the feature if customer impact is significant.</li><li>Check pod health, logs, configuration, secrets, migrations, dependency compatibility, and error metrics.</li><li>Verify recovery with smoke tests and business metrics.</li><li>Fix the cause in a controlled environment, add a regression test, and redeploy gradually.</li></ol>
+            <p>I would never assume that a pod passing readiness means business behavior is correct; I would monitor HTTP 5xx, latency, and business success metrics.</p>
+
+            <h5 class="text-warning">21. Tell me about a conflict with your manager.</h5>
+            <p>I would describe a professional disagreement, not a personal conflict. For example, if I believed a rushed payment release created unacceptable risk, I would explain the specific evidence, propose a smaller safe scope or phased rollout, and listen to the manager's business constraints. If the final decision remained to release, I would ensure risks and mitigation were documented and support the decision professionally. The key is respectful communication, facts, and alignment after the decision.</p>
+
+            <h5 class="text-warning">22. Tell me about a time you failed.</h5>
+            <p>I would choose a real but recoverable example. For instance, I once underestimated a database change because the test dataset was much smaller than production. When latency increased, I acknowledged the mistake, helped roll back the affected path, analyzed the query plan, fixed the database access, and added realistic performance testing and monitoring. The answer should show accountability, recovery, learning, and a concrete prevention step rather than claiming the failure was someone else's fault.</p>
+
+            <h5 class="text-warning">23. Tell me about a difficult decision you made.</h5>
+            <p>A strong example is choosing to reduce scope rather than release an untested payment change before a fixed deadline. I assessed business value, customer risk, test coverage, rollback complexity, and the cost of delay. I presented options to the product owner, recommended delivering the safe core flow first, and scheduled the remaining enhancement for a later release. The decision was difficult because it traded short-term scope for reliability, but it protected customers and the business.</p>
+
+            <h5 class="text-warning">24. What is your biggest professional achievement?</h5>
+            <p>Choose an achievement with measurable impact and explain your contribution. For example, I helped modernize a legacy batch flow, improved its restartability and data consistency, and supported a production migration. I would explain the original risk, the design and coordination involved, the measurable outcome such as reduced failures or faster recovery, and what I personally owned. Avoid describing only the team's result; clearly separate your contribution.</p>
+
+            <h5 class="text-warning">25. Tell me about a time you worked under pressure.</h5>
+            <p>I would describe a production incident or fixed release deadline. I stayed calm, prioritized customer impact, split the work among owners, communicated facts and next updates, and protected essential testing and rollback. After the immediate delivery, I reviewed what created the pressure and improved planning or automation. Working under pressure should demonstrate structured decisions, not unsustainable heroics.</p>
+
+            <h5 class="text-warning">26. Have you ever challenged your manager's decision?</h5>
+            <p>Yes, when I had evidence that the decision created significant customer, security, reliability, or delivery risk. I raised the concern privately and respectfully, explained the impact, and proposed alternatives. If the manager still chose the original direction and it was ethical and safe, I committed to the decision. If it involved a serious safety, security, or compliance issue, I would use the appropriate escalation path.</p>
+
+            <h5 class="text-warning">27. How do you handle negative feedback?</h5>
+            <ol><li>Listen without becoming defensive.</li><li>Ask for a concrete example and the expected behavior.</li><li>Separate valid improvement points from subjective preference.</li><li>Agree on a specific action and follow up.</li><li>Thank the person and use the feedback to improve.</li></ol>
+            <p>If I disagree, I explain my reasoning respectfully and ask for additional context. I do not ignore feedback simply because it is uncomfortable.</p>
+
+            <h5 class="text-warning">28. What would you do if you disagreed with a client?</h5>
+            <p>I would first understand the client's goal and constraints. Then I would explain the technical consequence in business language, provide alternatives with cost, timeline, risk, and quality trade-offs, and recommend the safest option. If the client chooses a risky approach, I would document the decision, agree on safeguards and acceptance criteria, and involve the appropriate project or architecture owner when necessary. The objective is a trusted outcome, not winning an argument.</p>
+
+            <h5 class="text-warning">30. Why should we hire you as a senior developer?</h5>
+            <p>I combine strong Java and Spring Boot implementation skills with production ownership. I can design APIs and microservices, reason about databases, Kafka, concurrency, resilience, and AWS deployment, and also communicate trade-offs to product and business stakeholders. I do not stop at writing code: I care about testing, observability, safe releases, mentoring, incident response, and long-term maintainability. I would bring dependable execution and help the team make better technical decisions.</p>
+
+            <h5 class="text-warning">31. How do you estimate development tasks?</h5>
+            <ol><li>Clarify requirements, acceptance criteria, assumptions, and unknowns.</li><li>Break the work into design, implementation, database, integration, testing, deployment, and documentation.</li><li>Identify dependencies and risks, especially external teams and migrations.</li><li>Use historical team data and comparable work rather than guessing from code size.</li><li>Include time for review, defects, validation, and release.</li><li>Give a range when uncertainty is high and state what would reduce the uncertainty.</li></ol>
+            <p>I distinguish development time from calendar time. Parallel work, approvals, and dependencies affect the delivery date.</p>
+
+            <h5 class="text-warning">33. How do you coordinate with QA and DevOps?</h5>
+            <p>I involve QA and DevOps early rather than handing work over at the end. I share API contracts, test scenarios, environment needs, database migration order, configuration, observability, deployment, and rollback requirements. We agree on readiness criteria, run integration or contract tests, and review production dashboards after release. This makes quality and operations part of delivery instead of a final gate.</p>
+
+            <h5 class="text-warning">35. What do you do when requirements are unclear?</h5>
+            <ol><li>Write down the ambiguity rather than making hidden assumptions.</li><li>Ask focused questions about user behavior, business rules, edge cases, data ownership, and acceptance criteria.</li><li>Offer examples or a small flow diagram to confirm shared understanding.</li><li>Separate decisions that block development from decisions that can be deferred.</li><li>Document the agreed interpretation and update the acceptance criteria.</li></ol>
+            <p>If a decision is urgent, I state the assumption explicitly, implement behind a feature flag where possible, and confirm it with the product owner.</p>
+
+            <h5 class="text-warning">36. How do you ensure sprint commitments are met?</h5>
+            <p>I help the team make realistic commitments based on capacity, historical velocity, planned leave, support work, and dependencies. We split stories into small testable tasks, define acceptance criteria, identify risks during planning, and review progress frequently. If scope or dependencies change, I raise the impact early and re-plan with the product owner. I do not hide risk until the final day, and I do not treat unfinished work as complete.</p>
+
+            <h5 class="text-warning">37. How do you communicate technical risks?</h5>
+            <p>I communicate risk in terms of probability, impact, affected outcome, evidence, mitigation, owner, and decision date. For example: “The database migration may lock a large table during peak traffic. The impact is elevated write latency. I recommend an online expand-and-contract migration, a maintenance test, and a rollback plan.” I tailor the detail to the audience but never hide material risks behind technical language.</p>
+
+            <h5 class="text-warning">38. How do you handle scope changes during development?</h5>
+            <p>I assess the change against current progress, business value, design impact, testing, dependencies, and deadline. I present options: swap out an equal amount of scope, extend the date, add capacity, or split the change into a later phase. I update acceptance criteria and documentation, communicate the decision to the team, and protect work already completed from uncontrolled rework. Scope changes are manageable when they are explicit and prioritized.</p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="behavioral">
+      <div class="accordion-item" data-category="behavioral">
+        <h2 class="accordion-header" id="remainingTeamLeadershipQuestionsTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#remainingTeamLeadershipQuestionsTopBody">Additional team leadership questions</button>
+        </h2>
+        <div id="remainingTeamLeadershipQuestionsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <h5 class="text-warning">3. How do you delegate tasks?</h5>
+            <p>I delegate based on the outcome required, the person's skills and development goals, workload, and the risk of the task. Delegation is not simply passing work to someone else; I remain accountable for the result.</p>
+            <ol><li>Clarify the business outcome, acceptance criteria, priority, and deadline.</li><li>Choose the right owner based on capability, interest, workload, and learning opportunity.</li><li>Explain context, dependencies, constraints, and decision boundaries.</li><li>Agree on milestones and checkpoints without micromanaging.</li><li>Make support available for design questions or blockers.</li><li>Review the result and provide feedback while giving the developer ownership of the implementation.</li></ol>
+            <blockquote class="border-start border-info border-3 ps-3">I delegate with clear outcomes and context, match work to capability and growth goals, agree on checkpoints, and provide support without taking over. I distribute ownership fairly and remain accountable for the final result.</blockquote>
+
+            <h5 class="text-warning">7. How do you motivate team members?</h5>
+            <p>I do not assume that one motivation works for everyone. I learn what each person values and connect their work to a meaningful outcome.</p>
+            <ol><li>Explain how the work helps customers, the business, or the team's goals.</li><li>Give people appropriate autonomy and ownership.</li><li>Set achievable milestones and recognize progress specifically.</li><li>Provide opportunities to learn, lead a design, or work on a challenging area.</li><li>Remove blockers such as unclear requirements, unnecessary process, or dependency delays.</li><li>Give fair, timely feedback and celebrate team success.</li></ol>
+            <p>For a junior developer, motivation may come from learning and ownership. For an experienced developer, it may come from technical influence, autonomy, or solving a difficult problem. I also watch workload and burnout because sustainable delivery is more effective than short-term pressure.</p>
+            <blockquote class="border-start border-info border-3 ps-3">I motivate people by giving context, ownership, recognition, growth opportunities, and the support needed to succeed. I learn individual preferences instead of using the same approach for everyone, and I remove blockers so the team can make meaningful progress.</blockquote>
+
+            <h5 class="text-warning">8. How do you handle a developer who does not accept feedback?</h5>
+            <ol><li>Give feedback privately and use specific observable examples rather than general criticism.</li><li>Explain the impact on maintainability, reliability, delivery, or the team.</li><li>Ask for their perspective and check whether the feedback is unclear or based on an incorrect assumption.</li><li>Separate objective standards, such as security or production safety, from personal preferences.</li><li>Agree on the expected change and follow up on the next relevant task.</li><li>If the behavior continues, document the examples and involve the manager through the normal process.</li></ol>
+            <p><strong>Example:</strong> If a developer repeatedly rejects feedback about missing tests, I would show the production or regression risk, agree on the test expectation, pair on one example if needed, and then review whether the agreed change is applied. I would not argue in a public code review or make the issue personal.</p>
+            <blockquote class="border-start border-info border-3 ps-3">I would first make sure the feedback is specific, fair, and tied to an agreed standard. I would discuss it privately, listen to the developer's reasoning, explain the impact, and agree on a concrete improvement. If they continued to reject reasonable feedback after support and clarification, I would document the pattern and involve the manager appropriately.</blockquote>
+
+            <h5 class="text-warning">10. How do you help a new developer onboard into your project?</h5>
+            <ol><li><strong>Prepare access:</strong> Repository, development environment, credentials through the approved process, build tools, and local dependencies.</li><li><strong>Explain the context:</strong> Business domain, architecture, service ownership, key users, and important workflows.</li><li><strong>Give a system tour:</strong> Controller, service, repository, database, Kafka or external integrations, deployment, monitoring, and support process.</li><li><strong>Provide documentation:</strong> Setup guide, glossary, architecture diagram, runbook, coding standards, and common troubleshooting steps.</li><li><strong>Start with a safe task:</strong> A small bug fix, test improvement, or low-risk feature that exercises the normal development flow.</li><li><strong>Pair and review:</strong> Pair on the first change and give constructive review feedback.</li><li><strong>Increase ownership:</strong> Move from guided tasks to independent work and then feature ownership.</li><li><strong>Check in regularly:</strong> Ask what is unclear, remove blockers, and improve onboarding material based on repeated questions.</li></ol>
+            <p><strong>Realistic example:</strong> For a Spring Boot service, I would help the developer run the application locally, explain the request flow and database model, show how to test an API and inspect logs, and assign a small endpoint change with unit tests. After the first release, I would walk through monitoring and rollback so onboarding includes production responsibility, not only coding.</p>
+            <blockquote class="border-start border-info border-3 ps-3">I make onboarding structured and gradual. I prepare access and documentation, explain the business and architecture, pair on a small first task, and provide regular feedback. Then I increase ownership as the developer becomes comfortable. I also update the onboarding material when I notice repeated questions, so the next developer can become productive faster.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="behavioral">
+      <div class="accordion-item" data-category="behavioral">
+        <h2 class="accordion-header" id="remainingBehavioralOwnershipTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#remainingBehavioralOwnershipTopBody">Additional ownership and leadership questions</button>
+        </h2>
+        <div id="remainingBehavioralOwnershipTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <h5 class="text-warning">6. Have you ever taken responsibility for a production failure?</h5>
+            <p><strong>Yes.</strong> When I contribute to a production failure, I take responsibility for my part of the issue and focus first on restoring service safely. I do not wait for someone else to discover the problem or blame another team.</p>
+            <ol><li>Confirm the impact and communicate the issue clearly.</li><li>Help mitigate it through rollback, feature disablement, traffic shifting, or another safe action.</li><li>Preserve logs, metrics, traces, deployment details, and data needed for investigation.</li><li>Identify the technical and process causes without hiding mistakes.</li><li>Verify recovery, including business correctness and data consistency.</li><li>Complete a blameless RCA and implement prevention such as regression tests, alerts, review improvements, or safer deployment.</li></ol>
+            <p><strong>Realistic example:</strong> If a query change caused production latency because the test data was much smaller than production data, I would acknowledge my contribution, help roll back the affected path, analyze the query plan, fix the index or query, and add a production-like performance test and alert.</p>
+            <blockquote class="border-start border-info border-3 ps-3">Yes. If my change contributes to a production failure, I take responsibility, help restore the service, and communicate the facts clearly. After recovery, I investigate the root cause with evidence, verify that data and business transactions are correct, and add preventive actions so the issue is less likely to happen again. I focus on accountability and learning rather than blame.</blockquote>
+
+            <h5 class="text-warning">8. How do you work without constant supervision?</h5>
+            <p>I work independently by making the expected outcome, priorities, and decision boundaries clear at the beginning. I do not interpret independence as working silently; I provide visibility and raise risks early.</p>
+            <ol><li>Clarify the requirement, acceptance criteria, deadline, and dependencies.</li><li>Break the work into milestones and create a plan.</li><li>Research unfamiliar areas and make reasonable decisions within my authority.</li><li>Share progress through concise updates, pull requests, or a design note.</li><li>Escalate blockers and significant risks early with possible options.</li><li>Validate the result through tests, code review, monitoring, and documentation.</li><li>Close the task by confirming acceptance and recording follow-up work.</li></ol>
+            <p><strong>Realistic example:</strong> For a new microservice integration, I would independently review the existing API contract, implement the client with timeouts and error handling, add tests and metrics, document configuration, and provide a status update. I would involve the architect only when the change affected a broader design decision or exceeded my authority.</p>
+            <blockquote class="border-start border-info border-3 ps-3">I work independently by clarifying the outcome first, breaking the work into milestones, researching what I need, and making decisions within my responsibility. I keep stakeholders informed through concise updates and raise risks early instead of waiting until the deadline. I validate my work with tests, reviews, monitoring, and documentation, so my manager does not need to supervise every implementation detail.</blockquote>
+
+            <h5 class="text-warning">10. What does leadership mean to you as an individual contributor?</h5>
+            <p>Leadership as an individual contributor means creating positive outcomes through influence, technical judgment, reliability, and support for others, even without direct reports or formal authority.</p>
+            <ul><li><strong>Ownership:</strong> Follow problems through to a successful outcome.</li><li><strong>Technical direction:</strong> Explain trade-offs and help the team make sound decisions.</li><li><strong>Collaboration:</strong> Listen to different views and build alignment.</li><li><strong>Mentoring:</strong> Help others grow through pairing, reviews, and knowledge sharing.</li><li><strong>Quality:</strong> Set a good example with testing, security, observability, and maintainable code.</li><li><strong>Communication:</strong> Make risks, dependencies, and decisions visible.</li><li><strong>Calm incident response:</strong> Help the team focus during production issues.</li><li><strong>Accountability:</strong> Admit mistakes and turn lessons into improvements.</li></ul>
+            <p><strong>Realistic example:</strong> During a production incident, I may not be the manager or incident commander, but I can investigate a service, coordinate with the database team, summarize evidence, help choose a safe mitigation, and document follow-up actions. That is leadership through contribution and influence.</p>
+            <blockquote class="border-start border-info border-3 ps-3">As an individual contributor, I define leadership as creating outcomes through ownership, technical judgment, collaboration, and influence rather than job title. I help the team make good decisions, mentor others, communicate risks, maintain quality, and stay calm during incidents. I lead by making the people and systems around me more effective while remaining accountable for my own work.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="behavioral">
+      <div class="accordion-item" data-category="behavioral">
+        <h2 class="accordion-header" id="seniorBehavioralScenariosTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#seniorBehavioralScenariosTopBody">Senior behavioral scenarios: team, delivery, design, incidents, and ownership</button>
+        </h2>
+        <div id="seniorBehavioralScenariosTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <h5 class="text-warning">1. A junior developer repeatedly delivers poor-quality code. What would you do?</h5>
+            <p>I would treat this as a coaching and performance issue, not immediately as a personal failure.</p>
+            <ol><li><strong>Understand the pattern:</strong> Review specific examples such as missed requirements, defects, weak tests, or repeated review comments.</li><li><strong>Have a private conversation:</strong> Explain the impact and ask whether the problem is unclear requirements, lack of domain knowledge, workload, or a skill gap.</li><li><strong>Set clear expectations:</strong> Agree on concrete improvements, such as unit tests for business rules, validation, error handling, and completing a checklist before review.</li><li><strong>Provide support:</strong> Use pair programming, examples, design walkthroughs, and smaller tasks with clear acceptance criteria.</li><li><strong>Set a review period:</strong> Track progress through specific outcomes and provide regular feedback.</li><li><strong>Escalate fairly:</strong> If there is no improvement after reasonable coaching and support, document the facts and involve the manager according to the performance process.</li></ol>
+            <p><strong>Realistic answer:</strong> I would not rewrite all of the developer's code silently because that hides the learning problem and creates a dependency on me. I would help them improve while protecting the release through review gates and suitable task sizing.</p>
+            <blockquote class="border-start border-info border-3 ps-3">I would first understand the recurring quality issue through specific examples, then discuss it privately and constructively. I would clarify expectations, provide mentoring and pair programming, agree on measurable improvements, and review progress over a defined period. If the issue continued despite support, I would document the pattern and involve the manager fairly. My goal would be to help the developer become successful while protecting the team's delivery and code quality.</blockquote>
+
+            <h5 class="text-warning">2. Your team misses a delivery deadline. How would you handle it?</h5>
+            <ol><li><strong>Confirm the facts:</strong> Identify what was committed, what is complete, what remains, and why the estimate changed.</li><li><strong>Assess impact:</strong> Understand customer, release, dependency, and business consequences.</li><li><strong>Communicate early:</strong> Tell stakeholders the current status, root cause, new realistic forecast, and available options.</li><li><strong>Recover safely:</strong> Reduce scope, split the delivery, add support, or adjust sequencing. Do not remove essential testing or release controls just to claim completion.</li><li><strong>Protect the team:</strong> Avoid blame and focus on process, estimation, dependencies, and changing requirements.</li><li><strong>Improve planning:</strong> Add milestones, dependency tracking, risk buffers, earlier demos, and clearer acceptance criteria.</li></ol>
+            <p><strong>Realistic example:</strong> If a database migration is delayed, I would not wait until the final day. I would deliver the application changes that can be tested independently, escalate the migration dependency, and propose a phased release or feature flag.</p>
+            <blockquote class="border-start border-info border-3 ps-3">I would first understand why the deadline was missed and quantify the impact. Then I would communicate the facts and options early rather than hiding the delay. I would work with the team and product owner to reduce scope, split the release, or re-sequence dependencies while protecting quality. After delivery, I would conduct a blameless review and improve estimation, dependency tracking, and milestone visibility.</blockquote>
+
+            <h5 class="text-warning">3. A senior developer disagrees with your technical design. What would you do?</h5>
+            <ol><li>Listen carefully and restate their concern to make sure I understand it.</li><li>Clarify the decision criteria: reliability, latency, scalability, security, maintainability, cost, and delivery time.</li><li>Compare both designs using documentation, metrics, a proof of concept, or a small test.</li><li>Invite the relevant team members so the decision is not based only on two opinions.</li><li>Document the options, trade-offs, and chosen approach.</li><li>If we cannot agree and the decision needs higher authority, involve the architect or technical owner with an objective summary.</li><li>Support the final decision professionally, even if it is not my preferred option.</li></ol>
+            <p><strong>Example:</strong> If I propose REST but the senior developer proposes Kafka, I would clarify whether the caller needs an immediate response, whether eventual consistency is acceptable, and how ordering, retries, observability, and failure handling differ. The best answer depends on the requirement, not on technology preference.</p>
+            <blockquote class="border-start border-info border-3 ps-3">I welcome disagreement because it can expose risks. I would listen first, compare the designs against objective requirements, and use evidence or a proof of concept where useful. I would document the trade-offs and involve the appropriate decision-maker if necessary. Once the decision is made, I would make sure the team aligns behind it and continues working respectfully.</blockquote>
+
+            <h5 class="text-warning">4. Production goes down during a critical business transaction. How do you lead the response?</h5>
+            <ol><li><strong>Take control calmly:</strong> Establish an incident channel, identify the incident lead, and assign owners for application, database, infrastructure, and communication.</li><li><strong>Assess impact:</strong> Identify affected users, transactions, regions, and whether data correctness or payments are involved.</li><li><strong>Communicate:</strong> Provide confirmed facts, current impact, mitigation, and next update time to stakeholders.</li><li><strong>Mitigate:</strong> Roll back a bad deployment, disable a feature, fail over, stop a faulty consumer, or route traffic to a healthy instance. Avoid unsafe retries for financial operations.</li><li><strong>Preserve evidence:</strong> Capture logs, traces, metrics, deployment history, thread dumps, database state, and correlation IDs before making disruptive changes where possible.</li><li><strong>Restore and verify:</strong> Run smoke tests, verify transaction status and data consistency, and monitor error rates, latency, queues, and business metrics.</li><li><strong>Follow up:</strong> Conduct a blameless RCA and create preventive actions with owners and due dates.</li></ol>
+            <p><strong>Payment-specific point:</strong> If a request timed out, I would not assume it failed. I would check the idempotency key or payment status before allowing a retry, so the customer is not charged twice.</p>
+            <blockquote class="border-start border-info border-3 ps-3">During a critical outage, I focus first on customer safety and service restoration. I establish clear roles, assess impact, communicate regularly, and apply the safest mitigation such as rollback or traffic shifting. I use logs, metrics, traces, and database or messaging state to isolate the cause, then verify both technical recovery and business correctness. Afterward, I lead a blameless RCA and ensure preventive actions are completed.</blockquote>
+
+            <h5 class="text-warning">5. Your manager assigns you a task, but you already have multiple priorities. How do you handle it?</h5>
+            <ol><li>Do not simply say yes to everything and silently miss commitments.</li><li>Summarize my current priorities, deadlines, status, and business impact.</li><li>Ask where the new task should be prioritized relative to existing work.</li><li>Explain the trade-off clearly: what will be delayed, what support is needed, or whether scope can be reduced.</li><li>Update the plan and communicate the new commitment to affected stakeholders.</li><li>Track the new priority and revisit it if an urgent production issue appears.</li></ol>
+            <blockquote class="border-start border-info border-3 ps-3">I would acknowledge the new task, then make my existing commitments and capacity visible. I would ask my manager to help prioritize rather than assuming everything is urgent. I would explain the impact of each option, agree on what moves, update stakeholders, and focus on the highest-value work. This keeps the commitments realistic and avoids hidden delivery risk.</blockquote>
+
+            <h5 class="text-warning">6. How would you handle a team member who is not contributing?</h5>
+            <ol><li><strong>Check facts:</strong> Review work ownership, blockers, attendance, dependencies, and whether the person has been given clear tasks.</li><li><strong>Speak privately:</strong> Ask open questions to understand whether the cause is unclear work, skill gaps, personal circumstances, conflict, or disengagement.</li><li><strong>Clarify expectations:</strong> Agree on specific responsibilities, outcomes, and dates.</li><li><strong>Remove blockers:</strong> Provide mentoring, pairing, context, or better task definition where appropriate.</li><li><strong>Follow up:</strong> Review progress regularly and give direct feedback.</li><li><strong>Escalate when necessary:</strong> If the person remains disengaged despite support, share objective examples with the manager instead of criticizing them publicly.</li></ol>
+            <p>I would also check whether the team process is contributing to the problem. A person may appear inactive because work is blocked by another team or because responsibilities are unclear.</p>
+            <blockquote class="border-start border-info border-3 ps-3">I would first distinguish lack of contribution from a blocker or unclear ownership. I would speak privately, understand the cause, set clear expectations, and offer appropriate support. I would follow up using measurable outcomes. If the behavior continued, I would document the facts and involve the manager through the normal process, while keeping the discussion respectful and confidential.</blockquote>
+
+            <h5 class="text-warning">7. How do you convince your team to adopt a new technology?</h5>
+            <ol><li><strong>Start with the problem:</strong> Explain the current pain, such as latency, operational risk, cost, or maintainability.</li><li><strong>Define success criteria:</strong> Agree on measurable goals before choosing a tool.</li><li><strong>Compare alternatives:</strong> Include the existing solution and evaluate capability, learning curve, support, security, cost, and migration risk.</li><li><strong>Build a proof of concept:</strong> Test the real use case, failure handling, performance, deployment, observability, and team workflow.</li><li><strong>Involve the team:</strong> Ask for concerns and include developers who will operate the solution.</li><li><strong>Plan adoption gradually:</strong> Start with a low-risk service, create documentation, training, standards, and a rollback plan.</li><li><strong>Measure results:</strong> Compare the proof-of-concept metrics with the agreed success criteria.</li></ol>
+            <p><strong>Example:</strong> To introduce Kafka, I would not argue that it is modern. I would show why asynchronous fan-out or buffering solves a specific problem, compare it with REST and SQS, test throughput and failure recovery, and start with a non-critical event flow.</p>
+            <blockquote class="border-start border-info border-3 ps-3">I convince the team through evidence and involvement, not authority. I start with the business or technical problem, define success criteria, compare alternatives, and build a small proof of concept. I invite concerns from the people who will develop and operate it, then plan a gradual rollout with documentation, training, monitoring, and rollback. If the evidence does not support adoption, I am comfortable choosing the existing solution.</blockquote>
+
+            <h5 class="text-warning">8. Tell me about a mistake you made and how you handled it.</h5>
+            <p>A strong answer should be real, specific, and show accountability without presenting a dangerous failure as a success.</p>
+            <p><strong>Example:</strong> During a service change, I underestimated the impact of a database query on production-sized data. The change worked in UAT, but production latency increased because the query scanned more rows than expected.</p>
+            <ol><li><strong>Recognize and own it:</strong> I acknowledged the issue instead of blaming the database or test environment.</li><li><strong>Mitigate:</strong> I worked with the team to roll back or disable the affected path and monitored recovery.</li><li><strong>Investigate:</strong> I used slow-query logs and <code>EXPLAIN</code> to identify the missing or ineffective index and data-volume difference.</li><li><strong>Fix:</strong> I optimized the query, validated the execution plan, and tested with production-like data.</li><li><strong>Communicate:</strong> I explained the impact and action plan clearly to stakeholders.</li><li><strong>Prevent recurrence:</strong> I added a performance test, query review checklist, monitoring alert, and a safer rollout process.</li></ol>
+            <blockquote class="border-start border-info border-3 ps-3">One mistake I made was underestimating how a query would behave with production-sized data because the UAT dataset was much smaller. When latency increased, I took ownership, helped roll back the affected path, analyzed the query plan, and corrected the database access. I then added a production-like performance test and monitoring alert so the same risk would be identified earlier. The important lesson was to validate performance against realistic data volume, not only functional correctness.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="behavioral">
+      <div class="accordion-item" data-category="behavioral">
+        <h2 class="accordion-header" id="ensureCodeQualityTeamTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#ensureCodeQualityTeamTopBody">How do you ensure code quality across your team?</button>
+        </h2>
+        <div id="ensureCodeQualityTeamTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>I treat code quality as a team process rather than relying only on one senior developer's review. My approach combines clear standards, automated checks, thoughtful reviews, testing, mentoring, and production feedback.</p>
+
+            <h5 class="text-warning">Step 1: Define shared standards</h5>
+            <ul><li>Agree on naming, package structure, exception handling, logging, API design, and database conventions.</li><li>Use a team coding standard and document important architectural decisions.</li><li>Define expectations for security, performance, observability, and backward compatibility.</li></ul>
+
+            <h5 class="text-warning">Step 2: Use small, reviewable changes</h5>
+            <p>I encourage developers to create focused pull requests with a clear description, testing notes, screenshots or API examples where relevant, and links to the requirement. Small changes are easier to review and safer to release.</p>
+
+            <h5 class="text-warning">Step 3: Perform effective code reviews</h5>
+            <p>During review, I check:</p>
+            <ul><li>Correctness and business rules.</li><li>Readability, maintainability, and appropriate design.</li><li>Exception handling and failure behavior.</li><li>Validation, authorization, and sensitive-data handling.</li><li>Database queries, transactions, N+1 problems, and resource usage.</li><li>Concurrency, thread safety, idempotency, and retry behavior.</li><li>Tests for normal, edge, and failure scenarios.</li><li>Logging, metrics, tracing, and operational support.</li></ul>
+            <p>I keep comments specific and respectful, distinguish blocking issues from suggestions, and explain the reasoning behind important feedback.</p>
+
+            <h5 class="text-warning">Step 4: Automate quality checks</h5>
+            <p>Quality checks should run automatically in CI/CD so they do not depend on manual memory:</p>
+            <ul><li>Compilation and unit tests.</li><li>Integration and contract tests.</li><li>Static analysis with SonarQube or equivalent.</li><li>Code formatting and style checks.</li><li>Dependency and vulnerability scanning.</li><li>Test coverage thresholds where meaningful.</li><li>Container, API, and database migration validation.</li></ul>
+            <p>For important repositories, I use branch protection so required checks and reviews pass before merging.</p>
+
+            <h5 class="text-warning">Step 5: Build a strong testing strategy</h5>
+            <ul><li>Unit tests for business rules and edge cases.</li><li>Integration tests for Spring, database, Kafka, and transaction behavior.</li><li>Contract tests between microservices.</li><li>Testcontainers or realistic test dependencies when required.</li><li>Regression tests for every production defect.</li><li>Load and performance tests for high-throughput paths.</li></ul>
+
+            <h5 class="text-warning">Step 6: Review design before implementation</h5>
+            <p>For complex changes, I encourage a short design discussion or lightweight document before coding. We review API compatibility, data ownership, transaction boundaries, failure handling, scaling, security, and rollback. This prevents expensive rework later.</p>
+
+            <h5 class="text-warning">Step 7: Mentor and share knowledge</h5>
+            <p>I use pair programming, examples, technical sessions, and constructive reviews to help developers understand the reasoning behind quality practices. The goal is to build independent decision-making rather than create a review bottleneck.</p>
+
+            <h5 class="text-warning">Step 8: Release safely</h5>
+            <ul><li>Use backward-compatible database changes.</li><li>Use feature flags, canary, or rolling deployment where appropriate.</li><li>Verify health checks and smoke tests.</li><li>Monitor error rate, latency, business metrics, and resource usage.</li><li>Keep a tested rollback plan.</li></ul>
+
+            <h5 class="text-warning">Step 9: Learn from production</h5>
+            <p>I use production incidents, support tickets, defects, and performance data to improve standards and tests. A blameless RCA should result in a concrete action such as a regression test, alert, runbook update, or design improvement.</p>
+
+            <h5 class="text-warning">Metrics I monitor</h5>
+            <ul><li>Defect escape rate.</li><li>Test and build failure trends.</li><li>Code review turnaround time.</li><li>Production error rate and rollback frequency.</li><li>Static-analysis findings and vulnerability status.</li><li>Performance and reliability against service objectives.</li></ul>
+            <p>I use metrics to identify improvement opportunities, not to blame individuals.</p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">I ensure code quality through a combination of shared standards, small pull requests, effective code reviews, automated CI checks, and a strong testing strategy. For each change I review correctness, security, performance, transactions, concurrency, exception handling, observability, and maintainability. I use SonarQube, dependency scanning, unit and integration tests, and branch protection to automate quality gates. For complex changes, we review the design before implementation, and after release we use production metrics and RCA findings to add regression tests and improve the process. I also mentor the team so quality becomes a shared responsibility rather than a single person's responsibility.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="behavioral">
+      <div class="accordion-item" data-category="behavioral">
+        <h2 class="accordion-header" id="ownershipBeyondResponsibilitiesTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#ownershipBeyondResponsibilitiesTopBody">Have you taken ownership beyond your assigned responsibilities?</button>
+        </h2>
+        <div id="ownershipBeyondResponsibilitiesTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p><strong>Yes.</strong> I believe ownership means taking responsibility for the complete outcome, not only for the code assigned to me. That includes understanding the business impact, coordinating with other teams, validating production behavior, and following the work through to completion.</p>
+
+            <h5 class="text-warning">Step-by-step approach</h5>
+            <ol><li><strong>Understand the outcome:</strong> Clarify the customer or business problem, success criteria, priority, and risks.</li><li><strong>Look beyond my task:</strong> Check the API contract, database changes, downstream services, deployment process, monitoring, and support impact.</li><li><strong>Identify gaps early:</strong> Raise missing requirements, dependency risks, test gaps, or operational concerns before they become blockers.</li><li><strong>Coordinate proactively:</strong> Work with product, QA, DevOps, database, security, and other service owners instead of waiting for someone else to discover the issue.</li><li><strong>Deliver safely:</strong> Add tests, logging, metrics, documentation, backward-compatible changes, and rollback steps.</li><li><strong>Validate end to end:</strong> Test the complete flow in an environment close to production and verify business results, not only technical success.</li><li><strong>Support the release:</strong> Monitor the deployment, respond to issues, and communicate status clearly.</li><li><strong>Close the loop:</strong> Document decisions, remove temporary workarounds, and add preventive improvements.</li></ol>
+
+            <h5 class="text-warning">Real-time example</h5>
+            <p>Suppose I was assigned to implement a Spring Batch change that updated DB2 records. During testing, I noticed that the requirement did not clearly cover restart behavior and that rerunning a failed job could process some records twice.</p>
+            <p>Although restart design was not explicitly assigned to me, I investigated the existing job metadata and transaction boundaries, discussed the risk with the team, and proposed an idempotent processing approach. I added validation for already-processed records, tested failure and restart scenarios, documented the operational steps, and coordinated with the team responsible for scheduling the job. After deployment, I monitored the first production run and confirmed that the expected records were processed without duplicates.</p>
+
+            <h5 class="text-warning">What ownership does not mean</h5>
+            <ul><li>Taking over everyone else's work without agreement.</li><li>Making decisions outside my authority without involving the right people.</li><li>Hiding risks to make delivery appear successful.</li><li>Working alone instead of building alignment and sharing information.</li></ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">Yes. I have taken ownership beyond my assigned coding tasks when it was necessary to deliver the complete outcome safely. I clarify the business goal, identify dependencies and operational risks, coordinate with the relevant teams, and make sure testing, monitoring, deployment, and rollback are covered. For example, when I noticed that a batch change could process records twice after a restart, I raised the risk, helped design idempotent processing, tested failure scenarios, documented the runbook, and monitored the production release. For me, ownership means following the problem through from implementation to successful production outcome.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="behavioral">
+      <div class="accordion-item" data-category="behavioral">
+        <h2 class="accordion-header" id="managingMultipleTightDeadlinesTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#managingMultipleTightDeadlinesTopBody">How do you manage multiple tasks with tight deadlines?</button>
+        </h2>
+        <div id="managingMultipleTightDeadlinesTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>My approach is to make the priorities and trade-offs visible early. I do not try to work on everything simultaneously; I clarify business impact, order the work, identify risks, and communicate realistic commitments.</p>
+
+            <h5 class="text-warning">Step 1: Clarify all deliverables</h5>
+            <ul><li>List every task, expected outcome, deadline, and owner.</li><li>Clarify acceptance criteria and distinguish must-have work from nice-to-have work.</li><li>Confirm whether deadlines are fixed, negotiable, or dependent on another team.</li></ul>
+
+            <h5 class="text-warning">Step 2: Prioritize by impact and urgency</h5>
+            <p>I usually prioritize in this order:</p>
+            <ol><li>Production incidents, customer impact, security, and regulatory risk.</li><li>Work on the critical path for a committed release.</li><li>Tasks blocking other developers or teams.</li><li>High-value business features.</li><li>Lower-risk improvements and optional work.</li></ol>
+            <p>I also consider effort, dependencies, risk, and whether a task can be parallelized.</p>
+
+            <h5 class="text-warning">Step 3: Break work into smaller milestones</h5>
+            <p>I divide large tasks into independently verifiable pieces such as API contract, database change, implementation, tests, deployment, and validation. This makes progress visible and allows partial delivery if priorities change.</p>
+
+            <h5 class="text-warning">Step 4: Identify dependencies and risks</h5>
+            <ul><li>Check dependencies on product, QA, DevOps, database, security, or external teams.</li><li>Identify likely blockers and create a fallback plan.</li><li>Separate tasks that can run in parallel from tasks that must be sequential.</li><li>Raise risks early instead of waiting until the deadline.</li></ul>
+
+            <h5 class="text-warning">Step 5: Create a realistic plan</h5>
+            <p>I estimate the work, reserve time for testing and deployment, and assign tasks according to team capacity and skill. I avoid committing the entire team at 100% capacity because that leaves no room for defects or urgent work.</p>
+
+            <h5 class="text-warning">Step 6: Communicate trade-offs</h5>
+            <p>If all tasks cannot be completed safely by the deadline, I present options clearly:</p>
+            <ul><li>Reduce scope and deliver the must-have feature.</li><li>Split the release into phases.</li><li>Add appropriate team support.</li><li>Move a lower-priority task.</li><li>Adjust the deadline.</li></ul>
+            <p>I do not promise an unrealistic date without explaining the quality and delivery risks.</p>
+
+            <h5 class="text-warning">Step 7: Execute with focus</h5>
+            <ul><li>Work on the highest-priority critical-path item first.</li><li>Limit work in progress and avoid unnecessary context switching.</li><li>Use short check-ins to identify blockers.</li><li>Deliver small, reviewable changes rather than one large change at the end.</li></ul>
+
+            <h5 class="text-warning">Step 8: Protect quality</h5>
+            <p>Tight deadlines do not justify skipping essential quality controls. I still require code review, unit and integration tests, security checks, database compatibility, logging, monitoring, and a rollback plan. If scope must be reduced, I reduce optional functionality rather than core safety controls.</p>
+
+            <h5 class="text-warning">Step 9: Re-plan when circumstances change</h5>
+            <p>I review progress against the plan regularly. If a dependency is delayed or a production issue appears, I re-prioritize and communicate the impact immediately rather than silently allowing all deadlines to slip.</p>
+
+            <h5 class="text-warning">Step 10: Close and learn</h5>
+            <p>After delivery, I confirm acceptance, monitor the release, document deferred work, and review whether the estimate and prioritization were accurate. This improves future planning.</p>
+
+            <h5 class="text-warning">Real-time example</h5>
+            <p>Suppose a payment bug, a committed customer feature, and a database migration are all due in the same week. I would first prioritize the payment bug because of customer and financial impact. I would then identify whether the migration blocks the feature, split the feature into a must-have and later enhancements, assign parallel work where safe, and communicate the trade-off to the product owner. I would protect testing and rollback for the payment fix and track progress through short daily check-ins.</p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">When I have multiple tight deadlines, I first clarify the deliverables, acceptance criteria, business impact, and dependencies. I prioritize production, customer, security, and critical-path work, then break the work into smaller milestones and identify risks early. I create a realistic plan with time for testing and deployment, limit work in progress, and communicate trade-offs if the scope cannot safely fit the deadline. I protect essential quality controls such as reviews, tests, monitoring, and rollback. I track progress regularly and re-plan quickly when priorities or dependencies change.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="behavioral">
+      <div class="accordion-item" data-category="behavioral">
+        <h2 class="accordion-header" id="handlingProductionIssueStepsTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#handlingProductionIssueStepsTopBody">How do you handle a production issue?</button>
+        </h2>
+        <div id="handlingProductionIssueStepsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>I use a structured approach: <strong>Detect -&gt; Assess -&gt; Mitigate -&gt; Investigate -&gt; Fix or Roll Back -&gt; Verify -&gt; RCA -&gt; Prevent</strong>. My first priority is reducing customer and business impact while preserving evidence for the investigation.</p>
+
+            <h5 class="text-warning">1. Detect and acknowledge the incident</h5>
+            <ul><li>Receive an alert or report from a customer, support team, monitoring system, or business stakeholder.</li><li>Confirm that the issue is real and identify the affected service, API, job, or feature.</li><li>Create or update the incident record with the start time, symptoms, owner, and current status.</li></ul>
+
+            <h5 class="text-warning">2. Assess impact and severity</h5>
+            <p>I determine:</p>
+            <ul><li>How many users, requests, transactions, or regions are affected.</li><li>Whether the issue involves availability, performance, security, or data correctness.</li><li>Whether payments, orders, regulatory data, or other critical business processes are involved.</li><li>Whether the issue is getting worse or is isolated to one instance or dependency.</li></ul>
+            <p>I assign a severity level and involve the appropriate on-call, platform, database, security, or business teams.</p>
+
+            <h5 class="text-warning">3. Communicate early</h5>
+            <p>I establish one incident communication channel and provide concise updates:</p>
+            <ul><li>What is affected.</li><li>When it started.</li><li>Current customer impact.</li><li>What mitigation is in progress.</li><li>Next update time.</li></ul>
+            <p>I avoid speculation and clearly distinguish confirmed facts from hypotheses.</p>
+
+            <h5 class="text-warning">4. Mitigate the immediate impact</h5>
+            <p>Before attempting a risky permanent fix, I use the safest available mitigation:</p>
+            <ul><li>Rollback the latest deployment if the timing suggests a release problem.</li><li>Disable a feature using a feature flag.</li><li>Stop or pause a faulty batch job or consumer.</li><li>Route traffic away from an unhealthy instance or region.</li><li>Scale capacity when the issue is resource saturation.</li><li>Enable a fallback or temporarily reduce non-critical work.</li></ul>
+            <p>For a payment issue, I would avoid blindly retrying requests and would verify transaction status first.</p>
+
+            <h5 class="text-warning">5. Gather evidence</h5>
+            <p>I compare the last known healthy period with the failure period using:</p>
+            <table class="table table-dark table-bordered"><thead><tr><th>Area</th><th>What I check</th></tr></thead><tbody><tr><td>Logs</td><td>Exceptions, stack traces, correlation IDs, error patterns, and timestamps</td></tr><tr><td>Metrics</td><td>5xx rate, latency, throughput, CPU, memory, GC, restarts, and saturation</td></tr><tr><td>Traces</td><td>Which service or dependency is consuming the request time</td></tr><tr><td>Database</td><td>Slow queries, locks, CPU, connection pool, and transaction duration</td></tr><tr><td>Messaging</td><td>Kafka lag, failed publishes, retries, partitions, and DLQ count</td></tr><tr><td>Infrastructure</td><td>Pods, nodes, load balancer health, network, DNS, and recent changes</td></tr></tbody></table>
+
+            <h5 class="text-warning">6. Isolate the root cause</h5>
+            <p>I narrow the issue layer by layer:</p>
+            <pre><code class="language-text">Client / API Gateway
+        -> Load Balancer
+        -> Spring Boot application
+        -> Thread and connection pools
+        -> Database or Kafka
+        -> Downstream service</code></pre>
+            <p>For example, if API latency is high, CPU is low, application threads are waiting, and Hikari pending connections are high, I investigate slow SQL or database locks before increasing application capacity.</p>
+
+            <h5 class="text-warning">7. Apply and validate the fix</h5>
+            <ul><li>Choose the smallest safe change that addresses the confirmed cause.</li><li>Test it in a production-like environment when possible.</li><li>Use a controlled deployment, canary, or one-instance rollout for risky fixes.</li><li>Monitor error rate, latency, business metrics, and resource usage during the change.</li><li>Keep rollback steps ready.</li></ul>
+
+            <h5 class="text-warning">8. Verify recovery</h5>
+            <p>I do not consider the incident resolved only because the error log has stopped. I verify:</p>
+            <ul><li>Successful request and business transaction rate has returned to normal.</li><li>p95 and p99 latency meet the service objective.</li><li>Queues and Kafka lag are draining at a safe rate.</li><li>No duplicate, missing, or corrupted data was created.</li><li>Dependent services and customer-facing flows work through smoke tests.</li><li>Monitoring remains stable for an agreed observation period.</li></ul>
+
+            <h5 class="text-warning">9. Perform root-cause analysis</h5>
+            <p>After recovery, I document:</p>
+            <ul><li>Timeline of detection, actions, and recovery.</li><li>Customer and business impact.</li><li>Technical root cause and contributing factors.</li><li>Why monitoring or tests did not catch it earlier.</li><li>Which actions reduced or increased the impact.</li></ul>
+            <p>The RCA should be blameless and focused on improving the system.</p>
+
+            <h5 class="text-warning">10. Prevent recurrence</h5>
+            <ul><li>Add a regression, integration, contract, or load test.</li><li>Improve dashboards and alerts for the failed signal.</li><li>Add timeouts, circuit breakers, bulkheads, idempotency, or rate limits where appropriate.</li><li>Improve deployment checks, canary rollout, health probes, or rollback automation.</li><li>Fix documentation, runbooks, and ownership gaps.</li><li>Review capacity planning and remove the underlying bottleneck.</li></ul>
+
+            <h5 class="text-warning">Real-time example</h5>
+            <p>If a Spring Boot payment API's latency increases from 200 ms to 8 seconds, I would first check impact and error rate, then compare recent deployments and configuration. I would inspect distributed traces, thread dumps, Hikari metrics, database CPU, slow queries, locks, and downstream payment latency. If a recent deployment caused the issue, I would roll it back or disable the feature. After recovery, I would verify payment status and duplicate protection, document the root cause, add a regression test and alert, and improve the rollout process.</p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">I handle production issues systematically. First I confirm the symptom, assess the business impact and severity, and establish communication. I then mitigate the issue using rollback, feature flags, traffic shifting, scaling, or a safe fallback. In parallel, I use logs, metrics, distributed traces, thread dumps, database metrics, and infrastructure health to isolate the failing layer. Once the root cause is confirmed, I apply the smallest safe fix, verify technical and business recovery, and monitor the system. Finally, I conduct a blameless RCA and add tests, alerts, runbook updates, or deployment safeguards so the issue does not repeat.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="behavioral">
+      <div class="accordion-item" data-category="behavioral">
+        <h2 class="accordion-header" id="handlingTeamDisagreementsTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#handlingTeamDisagreementsTopBody">How do you handle disagreements within your team?</button>
+        </h2>
+        <div id="handlingTeamDisagreementsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>My approach is to focus on the problem and the project outcome, not on who is right or wrong. Healthy technical disagreement is useful when it helps the team make a better decision.</p>
+
+            <h5 class="text-warning">My approach</h5>
+            <ol><li><strong>Listen first:</strong> Understand each person's concern and avoid interrupting or making assumptions.</li><li><strong>Clarify the decision:</strong> Confirm whether the disagreement is about requirements, design, implementation, risk, timeline, or ownership.</li><li><strong>Use objective criteria:</strong> Compare options using performance, reliability, security, maintainability, delivery impact, and business value.</li><li><strong>Use evidence:</strong> Review documentation, prototypes, metrics, test results, or a small proof of concept rather than relying only on opinions.</li><li><strong>Find common ground:</strong> Identify what everyone agrees on and narrow the disagreement to the remaining trade-off.</li><li><strong>Make the decision:</strong> If the team reaches agreement, document the decision. If not, involve the appropriate architect, product owner, or manager with a clear summary of options and risks.</li><li><strong>Commit as a team:</strong> Once a decision is made, support it professionally even if it was not my preferred option.</li></ol>
+
+            <h5 class="text-warning">Real-time example</h5>
+            <p>Suppose two developers disagree about whether a new Spring Boot service should make a synchronous REST call or publish a Kafka event. I would first clarify the business requirement: does the caller need an immediate response, or is eventual processing acceptable? Then we would compare latency, failure handling, retry behavior, ordering, operational complexity, and consistency requirements. If needed, we would create a small proof of concept and review the results. We would record the decision and its trade-offs in the design documentation.</p>
+
+            <h5 class="text-warning">What I avoid</h5>
+            <ul><li>Turning a technical disagreement into a personal argument.</li><li>Using seniority or authority instead of evidence.</li><li>Continuing the debate after the decision is made.</li><li>Ignoring quieter team members or concerns about risk.</li></ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">When there is a disagreement, I first listen to understand the concerns and clarify the decision we need to make. I separate people from the problem and use objective criteria such as reliability, performance, security, maintainability, timeline, and business value. If necessary, I use a proof of concept or data to compare the options. I document the trade-offs and involve the architect or product owner when the decision is outside the team's authority. Once a decision is made, I make sure the team aligns behind it and continues working together professionally.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="behavioral">
+      <div class="accordion-item" data-category="behavioral">
+        <h2 class="accordion-header" id="mentoredJuniorDevelopersTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#mentoredJuniorDevelopersTopBody">Have you ever mentored junior developers?</button>
+        </h2>
+        <div id="mentoredJuniorDevelopersTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p><strong>Yes.</strong> I have mentored junior developers through code reviews, pair programming, design discussions, and regular knowledge-sharing sessions.</p>
+
+            <h5 class="text-warning">Sample interview answer</h5>
+            <p>In one project, a junior developer was having difficulty understanding the Spring Boot service structure and writing reliable database-related code. I first understood where they needed help instead of taking over the work.</p>
+            <p>I explained the request flow from controller to service to repository, discussed validation and exception handling, and used pair programming for the first few tasks. During code reviews, I focused not only on correcting the code but also on explaining the reasoning behind the suggestions. I also encouraged the developer to write unit tests and gradually take ownership of small features.</p>
+            <p>Over time, the developer became more confident, started completing tasks independently, and required fewer review changes. This experience taught me that effective mentoring combines technical guidance, constructive feedback, and giving people enough ownership to grow.</p>
+
+            <h5 class="text-warning">My mentoring approach</h5>
+            <ol><li>Understand the developer's current skill level and learning goal.</li><li>Break complex work into smaller, achievable tasks.</li><li>Use pair programming and examples for difficult concepts.</li><li>Give specific and respectful code-review feedback.</li><li>Encourage testing, documentation, and asking questions.</li><li>Gradually increase ownership and measure progress through delivery quality and independence.</li></ol>
+
+            <h5 class="text-warning">Short interview version</h5>
+            <blockquote class="border-start border-info border-3 ps-3">Yes. I have mentored junior developers through pair programming, code reviews, technical discussions, and knowledge-sharing sessions. I focus on explaining the reasoning behind a solution rather than simply giving the answer. I start with smaller tasks, provide constructive feedback, encourage unit testing, and gradually increase ownership. My goal is to help the developer become confident and independent while maintaining code quality.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+      <div class="accordion-item" data-category="microservices">
         <h2 class="accordion-header" id="outboxKafkaBacklogRecoveryTop">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#outboxKafkaBacklogRecoveryTopBody">How do you recover 10 lakh Outbox events after Kafka is down?</button>
         </h2>
