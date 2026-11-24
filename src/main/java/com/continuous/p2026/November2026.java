@@ -57,7 +57,7 @@ public class November2026 {
     }
 
     // abcbadb
-    public static int lengthOfLongestSubstring(String s) {
+        public static int lengthOfLongestSubstring(String s) {
         Set<Character> set = new HashSet<>();
         int left = 0;
         int maxLength = 0;
@@ -264,13 +264,13 @@ public class November2026 {
         while (number!=0){
             number/=10;
             counter++;
-        }
+    }
         System.out.println(counter);
-        int digits = String.valueOf(number).length();
+    int digits = String.valueOf(number).length();
         System.out.println("digits "+digits);
 
 
-        int result = 0;
+    int result = 0;
         number  =original;
         while (number!=0){
             int rem = number%10;
