@@ -222,6 +222,2195 @@
         onkeyup="searchQuestions()" />
     </div>
     <div class="accordion" id="accordionSeniorJava">
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="cascadingFailureHandlingTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#cascadingFailureHandlingTopBody">How do you handle cascading failures in microservices?</button>
+        </h2>
+        <div id="cascadingFailureHandlingTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p><strong>Cascading failure</strong> happens when one microservice becomes slow or unavailable and causes dependent services to fail as well.</p>
+
+            <h5 class="text-warning">Real-time example</h5>
+            <p>Suppose Order Service calls Payment Service, and Payment Service calls a Bank API. If the Bank API takes 30 seconds to respond, Payment Service threads may remain blocked. As requests accumulate, its thread pool and database connection pool can become exhausted, eventually causing Order Service requests to fail too.</p>
+
+            <h5 class="text-warning">Patterns used to prevent cascading failures</h5>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Pattern</th><th>Purpose</th></tr></thead>
+              <tbody>
+                <tr><td>Timeout</td><td>Prevents waiting indefinitely for downstream services</td></tr>
+                <tr><td>Circuit Breaker</td><td>Temporarily stops calls to a repeatedly failing dependency</td></tr>
+                <tr><td>Retry</td><td>Retries transient failures with backoff and jitter</td></tr>
+                <tr><td>Bulkhead</td><td>Limits concurrent calls so one dependency cannot exhaust shared resources</td></tr>
+                <tr><td>Fallback</td><td>Returns an alternative response when business rules allow</td></tr>
+                <tr><td>Rate Limiting</td><td>Protects services from excessive traffic</td></tr>
+                <tr><td>Async Messaging</td><td>Decouples non-immediate work through Kafka or SQS</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Spring Boot and Resilience4j example</h5>
+            <pre><code class="language-java">@Service
+public class PaymentService {
+
+    @CircuitBreaker(
+            name = "bankService",
+            fallbackMethod = "fallback")
+    @Bulkhead(name = "bankService")
+    public String processPayment() {
+        return bankClient.processPayment();
+    }
+
+    public String fallback(Throwable ex) {
+        return "Payment service temporarily unavailable";
+    }
+}</code></pre>
+            <p>For real payment operations, the fallback must not claim that payment succeeded. Return an appropriate error or pending status only when supported by the business workflow.</p>
+
+            <h5 class="text-warning">Circuit breaker states</h5>
+            <ul>
+              <li><strong>CLOSED:</strong> Calls are allowed and outcomes are measured.</li>
+              <li><strong>OPEN:</strong> Calls are rejected temporarily without invoking the failing dependency.</li>
+              <li><strong>HALF-OPEN:</strong> A limited number of test calls are allowed. Success can close the circuit; continued failures reopen it.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">If a downstream service becomes unavailable, I would prevent cascading failures using multiple resilience patterns. First, I would configure connection and response timeouts so calling threads do not wait indefinitely. I would implement a Resilience4j circuit breaker so repeated failures open the circuit and temporarily stop calls. I would use a bulkhead to limit concurrent calls and prevent thread-pool exhaustion. I would configure bounded retries with exponential backoff and jitter only for transient and safe-to-retry failures. For non-critical asynchronous operations, I would use Kafka or SQS. Finally, I would configure honest fallbacks and monitor failure rates, latency, and circuit states with Prometheus and Grafana.</blockquote>
+
+            <h5 class="text-warning">Circuit Breaker versus Bulkhead</h5>
+            <ul>
+              <li><strong>Circuit Breaker:</strong> Protects against repeated failures by temporarily stopping calls to an unhealthy dependency.</li>
+              <li><strong>Bulkhead:</strong> Protects resources by limiting concurrent calls to a dependency, even before failures occur.</li>
+            </ul>
+            <p><strong>Remember:</strong> Timeout + Circuit Breaker + Bulkhead + Controlled Retry + Fallback are the main protections against cascading failures.</p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="java">
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="restApiEightSecondsOptimizationTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#restApiEightSecondsOptimizationTopBody">Suppose a REST API takes 8-10 seconds to respond. How would you investigate and optimize it?</button>
+        </h2>
+        <div id="restApiEightSecondsOptimizationTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p><strong>Do not start optimizing without knowing where the 8-10 seconds are being spent.</strong></p>
+
+            <h5 class="text-warning">1. Identify where latency occurs</h5>
+            <ul>
+              <li>Reproduce the issue and inspect application logs.</li>
+              <li>Use distributed tracing to identify the slow component.</li>
+              <li>Break latency into API Gateway, application processing, database queries, and external service calls.</li>
+            </ul>
+
+            <h5 class="text-warning">2. Check application metrics</h5>
+            <ul>
+              <li>CPU and memory utilization.</li>
+              <li>JVM garbage collection.</li>
+              <li>Thread-pool utilization.</li>
+              <li>HikariCP connection-pool usage.</li>
+              <li>Response time, throughput, and error rate.</li>
+            </ul>
+
+            <h5 class="text-warning">3. Optimize database operations</h5>
+            <ul>
+              <li>Check slow SQL queries and execution plans.</li>
+              <li>Add appropriate indexes.</li>
+              <li>Avoid N+1 queries.</li>
+              <li>Use pagination and fetch only required columns.</li>
+              <li>Optimize joins and transaction duration.</li>
+            </ul>
+
+            <h5 class="text-warning">4. Optimize external API calls</h5>
+            <ul>
+              <li>Configure connection and read timeouts.</li>
+              <li>Check whether downstream services are slow or saturated.</li>
+              <li>Execute independent calls concurrently when appropriate.</li>
+              <li>Cache frequently accessed data.</li>
+            </ul>
+
+            <h5 class="text-warning">5. Example: sequential versus concurrent calls</h5>
+            <p>Suppose Customer Service takes 3 seconds, Account Service takes 4 seconds, and Transaction Service takes 2 seconds. Sequential calls take approximately 9 seconds.</p>
+            <pre><code class="language-java">CompletableFuture&lt;Customer&gt; customerFuture =
+        CompletableFuture.supplyAsync(
+                () -&gt; customerClient.getCustomer());
+
+CompletableFuture&lt;Account&gt; accountFuture =
+        CompletableFuture.supplyAsync(
+                () -&gt; accountClient.getAccount());
+
+CompletableFuture&lt;Transaction&gt; txnFuture =
+        CompletableFuture.supplyAsync(
+                () -&gt; transactionClient.getTransactions());
+
+CompletableFuture.allOf(
+        customerFuture, accountFuture, txnFuture).join();
+
+Customer customer = customerFuture.join();
+Account account = accountFuture.join();
+Transaction transaction = txnFuture.join();</code></pre>
+            <p>If the calls are independent, concurrent execution can take approximately 4 seconds, the duration of the slowest call, assuming sufficient thread capacity and no additional overhead.</p>
+            <p>In production, use a dedicated bounded executor, configure timeouts, and handle exceptions instead of relying on common-pool defaults.</p>
+
+            <h5 class="text-warning">6. Apply resilience mechanisms</h5>
+            <ul>
+              <li>Configure circuit breakers and bounded retries.</li>
+              <li>Use bulkheads to isolate downstream failures.</li>
+              <li>Avoid unnecessary retries that increase latency.</li>
+            </ul>
+
+            <h5 class="text-warning">7. Validate the improvement</h5>
+            <p>Perform load testing and compare average response time, p95 and p99 latency, throughput, and error rates before and after the change.</p>
+
+            <h5 class="text-warning">Important follow-ups</h5>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Question</th><th>What to investigate</th></tr></thead>
+              <tbody>
+                <tr><td>How do you identify slow SQL?</td><td>Slow-query logs, EXPLAIN, and APM</td></tr>
+                <tr><td>What is N+1?</td><td>One parent query followed by an additional query for each child</td></tr>
+                <tr><td>What is HikariCP?</td><td>JDBC connection pooling</td></tr>
+                <tr><td>What is p95 latency?</td><td>95% of requests complete within that latency</td></tr>
+                <tr><td>What is p99 latency?</td><td>99% of requests complete within that latency</td></tr>
+                <tr><td>How does caching help?</td><td>Reduces repeated database or service calls</td></tr>
+                <tr><td>CPU is low but API is slow?</td><td>Investigate I/O waits, database, external calls, locks, and connection pools</td></tr>
+                <tr><td>How investigate JVM performance?</td><td>Use JFR, GC logs, heap dumps, and thread dumps</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">If a REST API takes 8-10 seconds, I would first use logs, metrics, and distributed tracing to break down the latency rather than immediately scale the application. I would check JVM and thread metrics, HikariCP, slow SQL and execution plans, locks, and downstream API timings. I would optimize the actual bottleneck, use concurrent calls for independent downstream operations, add caching where appropriate, and apply timeouts, circuit breakers, bulkheads, and bounded retries. Finally, I would load-test and compare p95, p99, throughput, and error rates. My sequence is Measure, Trace, Identify the bottleneck, Optimize, Load test, and Scale only if required.</blockquote>
+
+            <p><strong>Important distinction:</strong> Horizontal scaling helps when the application is resource-constrained. If the bottleneck is a slow database query or external service, adding instances may increase downstream pressure and make the problem worse.</p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="java">
+      <div class="accordion-item" data-category="java">
+        <h2 class="accordion-header" id="javaProcessTenThousandRecordsTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#javaProcessTenThousandRecordsTopBody">How would you improve a Java application processing 10,000 records?</button>
+        </h2>
+        <div id="javaProcessTenThousandRecordsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>I would first identify the bottleneck instead of immediately adding threads or servers.</p>
+
+            <h5 class="text-warning">1. Profile the application</h5>
+            <ul>
+              <li>Measure total processing time and throughput.</li>
+              <li>Check CPU, memory, garbage collection, and thread utilization.</li>
+              <li>Identify slow database queries and external API calls.</li>
+              <li>Use Java Flight Recorder, JProfiler, and application monitoring.</li>
+            </ul>
+
+            <h5 class="text-warning">2. Optimize database operations</h5>
+            <ul>
+              <li>Avoid an individual database query for every record.</li>
+              <li>Use JDBC batch updates or Hibernate batch processing.</li>
+              <li>Add appropriate indexes and avoid N+1 queries.</li>
+              <li>Fetch only required columns.</li>
+              <li>Use pagination or chunk processing instead of loading everything into memory.</li>
+            </ul>
+
+            <h5 class="text-warning">3. Use controlled parallel processing</h5>
+            <p>For independent records, use a bounded thread pool rather than creating one thread per record.</p>
+            <pre><code class="language-java">ExecutorService executor =
+        Executors.newFixedThreadPool(10);
+
+List&lt;CompletableFuture&lt;Void&gt;&gt; futures = records.stream()
+        .map(record -&gt; CompletableFuture.runAsync(
+                () -&gt; processRecord(record), executor))
+        .toList();
+
+CompletableFuture.allOf(
+        futures.toArray(new CompletableFuture[0]))
+        .join();
+
+executor.shutdown();</code></pre>
+            <p>This uses only 10 worker threads and processes records concurrently. In production, handle task failures, apply backpressure, and use bounded batches or queues instead of submitting an unlimited workload eagerly.</p>
+
+            <h5 class="text-warning">4. Add caching</h5>
+            <p>Use Redis or in-memory caching for frequently accessed reference data so the application does not repeatedly query the database for the same information.</p>
+
+            <h5 class="text-warning">5. Scale the application</h5>
+            <p>After optimization, if the application is still under heavy load, deploy multiple stateless instances and use horizontal scaling. Kubernetes HPA can scale using CPU, memory, or custom metrics, while KEDA can scale event-driven workloads.</p>
+
+            <h5 class="text-warning">6. Spring Batch option</h5>
+            <p>Spring Batch is useful for large datasets:</p>
+            <ul>
+              <li><strong>ItemReader:</strong> Reads records from the database in chunks.</li>
+              <li><strong>ItemProcessor:</strong> Applies business logic and validation.</li>
+              <li><strong>ItemWriter:</strong> Writes records in batches.</li>
+            </ul>
+            <p>With a chunk size of 500, 10,000 records require approximately 20 chunk commits if all records are processed successfully.</p>
+
+            <h5 class="text-warning">7. Important considerations</h5>
+            <ul>
+              <li>Do not create 10,000 threads.</li>
+              <li>Choose the pool size based on whether work is CPU-bound or I/O-bound.</li>
+              <li>Ensure the database connection pool and downstream services can handle the concurrency.</li>
+              <li>Handle failures during parallel processing.</li>
+              <li>Prevent duplicate processing with idempotency.</li>
+              <li>Measure throughput, average response time, p95/p99 latency, and error rate.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">For 10,000 records, I would follow Measure, Identify the bottleneck, Optimize, Introduce controlled concurrency, Load test, and then Scale. I would profile CPU, memory, GC, threads, database queries, and external calls; optimize database batching, indexes, pagination, and N+1 queries; use a bounded executor for independent work; cache repeated reference data; and use Spring Batch chunk processing when appropriate. Finally, I would load-test the change and scale stateless instances only after confirming the actual bottleneck.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="java8">
+      <div class="accordion-item" data-category="java8">
+        <h2 class="accordion-header" id="successfulTransactionsByCustomerTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#successfulTransactionsByCustomerTopBody">Using Java Streams, how do you total successful transactions by customer?</button>
+        </h2>
+        <div id="successfulTransactionsByCustomerTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>Given transactions containing a transaction ID, customer ID, amount, and status, filter only successful transactions, group them by customer ID, sum their amounts, and print the totals.</p>
+
+            <h5 class="text-warning">Transaction model</h5>
+            <pre><code class="language-java">class Transaction {
+    private int transactionId;
+    private int customerId;
+    private double amount;
+    private String status;
+
+    // Constructor and getters
+}</code></pre>
+
+            <h5 class="text-warning">Solution</h5>
+            <pre><code class="language-java">Map&lt;Integer, Double&gt; totalsByCustomer = transactions.stream()
+        .filter(txn -&gt; "SUCCESS".equals(txn.getStatus()))
+        .collect(Collectors.groupingBy(
+                Transaction::getCustomerId,
+                Collectors.summingDouble(Transaction::getAmount)
+        ));
+
+totalsByCustomer.forEach((customerId, total) -&gt;
+        System.out.println(
+                "Customer ID: " + customerId
+                        + ", Total: " + total));</code></pre>
+
+            <h5 class="text-warning">Complete example</h5>
+            <pre><code class="language-java">List&lt;Transaction&gt; transactions = Arrays.asList(
+        new Transaction(101, 1, 500, "SUCCESS"),
+        new Transaction(102, 2, 700, "FAILED"),
+        new Transaction(103, 1, 300, "SUCCESS"),
+        new Transaction(104, 2, 200, "SUCCESS"),
+        new Transaction(105, 3, 400, "SUCCESS"),
+        new Transaction(106, 1, 100, "FAILED")
+);
+
+Map&lt;Integer, Double&gt; totalsByCustomer = transactions.stream()
+        .filter(txn -&gt; "SUCCESS".equals(txn.getStatus()))
+        .collect(Collectors.groupingBy(
+                Transaction::getCustomerId,
+                Collectors.summingDouble(Transaction::getAmount)
+        ));
+
+totalsByCustomer.forEach((customerId, total) -&gt;
+        System.out.println(
+                "Customer ID: " + customerId
+                        + ", Total: " + total));</code></pre>
+
+            <h5 class="text-warning">Expected output</h5>
+            <pre><code class="language-text">Customer ID: 1, Total: 800.0
+Customer ID: 2, Total: 200.0
+Customer ID: 3, Total: 400.0</code></pre>
+
+            <h5 class="text-warning">How it works</h5>
+            <ol>
+              <li><code>filter()</code> keeps only transactions whose status is <code>SUCCESS</code>.</li>
+              <li><code>groupingBy(Transaction::getCustomerId)</code> groups records by customer.</li>
+              <li><code>summingDouble(Transaction::getAmount)</code> calculates each customer's total.</li>
+            </ol>
+            <p>Using <code>"SUCCESS".equals(txn.getStatus())</code> avoids a <code>NullPointerException</code> if the status is null. For financial calculations, prefer <code>BigDecimal</code> instead of <code>double</code> to avoid floating-point precision issues.</p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="springboot">
+      <div class="accordion-item" data-category="springboot">
+        <h2 class="accordion-header" id="springBootTestingInterviewGuideTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#springBootTestingInterviewGuideTopBody">Spring Boot Testing Interview Guide: 14 important questions</button>
+        </h2>
+        <div id="springBootTestingInterviewGuideTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <h5 class="text-warning">1. Unit testing versus integration testing</h5>
+            <p><strong>Unit testing</strong> tests a small method or class in isolation. Dependencies are replaced with mocks or fakes, so tests are fast and deterministic. <strong>Integration testing</strong> verifies that multiple components work together, such as a service, repository, database, serialization, or Spring configuration.</p>
+            <pre><code class="language-java">@ExtendWith(MockitoExtension.class)
+class PriceServiceTest {
+    @Mock TaxClient taxClient;
+    @InjectMocks PriceService priceService;
+
+    @Test
+    void calculatesTotal() {
+        when(taxClient.rate()).thenReturn(BigDecimal.TEN);
+        assertEquals(new BigDecimal("110"),
+                priceService.total(new BigDecimal("100")));
+    }
+}</code></pre>
+
+            <h5 class="text-warning">2. Component testing versus unit testing</h5>
+            <p>Unit testing focuses on a small method or class. Component testing verifies a larger functional component independently, potentially containing multiple classes, while isolating external systems. For example, <code>@WebMvcTest(OrderController.class)</code> tests controller routing, validation, JSON binding, and exception handling without loading the complete application.</p>
+
+            <h5 class="text-warning">3. @Mock versus @InjectMocks</h5>
+            <ul><li><code>@Mock</code> creates a Mockito mock of a dependency.</li><li><code>@InjectMocks</code> creates the class under test and injects available mocks into its constructor, fields, or setters.</li></ul>
+            <pre><code class="language-java">@Mock OrderRepository repository;
+@Mock PaymentClient paymentClient;
+@InjectMocks OrderService orderService;</code></pre>
+            <p><code>@InjectMocks</code> does not make the class a Spring bean and does not load Spring configuration.</p>
+
+            <h5 class="text-warning">4. @Mock versus @MockitoBean</h5>
+            <ul><li><code>@Mock</code> is a Mockito annotation and creates a mock only in the test object.</li><li><code>@MockitoBean</code> is Spring test support and replaces or adds a Mockito mock in the Spring application context.</li></ul>
+            <p>Use <code>@Mock</code> in a pure unit test. Use <code>@MockitoBean</code> in <code>@WebMvcTest</code> or another Spring test when a Spring-managed dependency must be mocked. In older Spring Boot versions, the equivalent commonly used annotation is <code>@MockBean</code>.</p>
+
+            <h5 class="text-warning">5. @SpringBootTest versus @WebMvcTest</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Annotation</th><th>Scope</th><th>Use</th></tr></thead><tbody><tr><td><code>@SpringBootTest</code></td><td>Full application context</td><td>Integration testing, wiring, configuration, and critical flows</td></tr><tr><td><code>@WebMvcTest</code></td><td>MVC web slice</td><td>Controller, routing, validation, JSON, and HTTP errors</td></tr></tbody></table>
+            <pre><code class="language-java">@WebMvcTest(OrderController.class)
+class OrderControllerTest {
+    @Autowired MockMvc mockMvc;
+    @MockitoBean OrderService orderService;
+}</code></pre>
+
+            <h5 class="text-warning">6. How do you test REST APIs?</h5>
+            <p>Use <code>MockMvc</code> for fast Spring MVC tests without starting a real server, or <code>WebTestClient</code>/RestAssured for a running application. Verify status, response body, headers, validation, security, and error responses.</p>
+            <pre><code class="language-java">mockMvc.perform(post("/orders")
+        .contentType(MediaType.APPLICATION_JSON)
+        .content("{\"productId\":\"P1\",\"quantity\":2}"))
+    .andExpect(status().isCreated())
+    .andExpect(jsonPath("$.productId").value("P1"));</code></pre>
+
+            <h5 class="text-warning">7. How do you test exception scenarios?</h5>
+            <p>Arrange the dependency to throw the expected exception, invoke the method, and assert the exception type and message. For controllers, assert the mapped HTTP status and error body.</p>
+            <pre><code class="language-java">when(repository.findById(99L))
+        .thenThrow(new OrderNotFoundException());
+
+assertThrows(OrderNotFoundException.class,
+        () -&gt; service.getOrder(99L));</code></pre>
+            <p>Also test validation failures, downstream timeouts, database failures, duplicate requests, authorization failures, and retry exhaustion.</p>
+
+            <h5 class="text-warning">8. How do you mock an external API?</h5>
+            <p>For a unit test, mock the client interface. For a realistic HTTP integration test, use WireMock or MockWebServer to return controlled responses and verify request headers, URL, body, timeout, and retry behavior.</p>
+            <pre><code class="language-java">when(paymentClient.pay(any()))
+        .thenReturn(new PaymentResponse("SUCCESS"));</code></pre>
+            <p>Use contract tests when the client and provider are owned by different teams.</p>
+
+            <h5 class="text-warning">9. What is code coverage? Is 100% necessary?</h5>
+            <p>Code coverage measures which executable code was exercised by tests. JaCoCo commonly reports line, instruction, branch, method, and class coverage. Coverage shows execution, not correctness.</p>
+            <p>100% coverage is not automatically necessary. Focus on critical business logic, security, payment rules, failure paths, and meaningful branches. High coverage with weak assertions can still provide poor confidence.</p>
+
+            <h5 class="text-warning">10. How do you test Kafka consumers?</h5>
+            <p>Test business processing separately with a unit test. For listener behavior, use Spring Kafka test utilities or an embedded broker. For realistic serialization, offsets, partitions, and consumer-group behavior, use Testcontainers Kafka.</p>
+            <pre><code class="language-java">@KafkaListener(topics = "orders", groupId = "order-test")
+public void consume(OrderCreated event) {
+    orderService.process(event);
+}</code></pre>
+            <p>Assert successful processing, retries, DLT publication, offset behavior, duplicate delivery, deserialization failure, and idempotency.</p>
+
+            <h5 class="text-warning">11. How do you test database operations?</h5>
+            <ul><li>Use <code>@DataJpaTest</code> for focused repository tests.</li><li>Use H2 only when its SQL behavior matches production.</li><li>Prefer Testcontainers for production-like MySQL, PostgreSQL, or another database.</li><li>Test migrations, constraints, indexes, transactions, rollback, locking, and realistic queries.</li></ul>
+            <pre><code class="language-java">@DataJpaTest
+class OrderRepositoryTest {
+    @Autowired OrderRepository repository;
+
+    @Test
+    void findsActiveOrders() {
+        assertFalse(repository.findByStatus("ACTIVE").isEmpty());
+    }
+}</code></pre>
+
+            <h5 class="text-warning">12. What is regression testing?</h5>
+            <p>Regression testing verifies that a code change, bug fix, configuration change, or dependency upgrade has not broken existing behavior. After changing payment validation, for example, rerun payment creation, cancellation, refund, authorization, and failure scenarios.</p>
+
+            <h5 class="text-warning">13. Smoke testing versus sanity testing</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Type</th><th>Meaning</th><th>Example</th></tr></thead><tbody><tr><td>Smoke</td><td>Broad, shallow check that a build or deployment is stable enough for deeper testing</td><td>Application starts, health works, login works, and one critical API succeeds</td></tr><tr><td>Sanity</td><td>Narrow, focused check after a small change or fix</td><td>After fixing refunds, verify refund scenarios and nearby validation</td></tr></tbody></table>
+
+            <h5 class="text-warning">14. Contract testing in microservices</h5>
+            <p>Contract testing verifies that a provider and consumer agree on request, response, status codes, headers, and message schema. It catches breaking changes without requiring a full end-to-end environment.</p>
+            <p>For example, Order Service defines that Payment Service accepts <code>POST /payments</code> with an amount and returns a payment ID and status. A consumer-driven contract is verified by the provider in CI. If Payment Service removes a required field or changes the response shape, the provider build fails before deployment.</p>
+            <p>Tools include Spring Cloud Contract and Pact. For Kafka, contract tests validate event schema, required fields, compatibility, and producer-consumer expectations.</p>
+
+            <h5 class="text-warning">Interview-ready summary</h5>
+            <blockquote class="border-start border-info border-3 ps-3">I use unit tests for fast isolated business logic, component or slice tests for focused Spring components, integration tests for real collaboration with databases or brokers, and contract tests for microservice boundaries. I use @Mock and @InjectMocks in pure Mockito tests, @MockitoBean in Spring test contexts, @WebMvcTest for controller behavior, and @SpringBootTest selectively for full wiring. I test success, validation, exceptions, timeouts, retries, duplicates, security, rollback, and external failures rather than chasing 100% coverage blindly.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="devops">
+        <h2 class="accordion-header" id="resourceGroupingTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#resourceGroupingTopBody">What is Resource Grouping?</button>
+        </h2>
+        <div id="resourceGroupingTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p><strong>Resource grouping</strong> means organizing related cloud resources into a logical group so that they can be managed, secured, monitored, tagged, and removed together.</p>
+
+            <h5 class="text-warning">Azure example</h5>
+            <p>In Microsoft Azure, a <strong>Resource Group</strong> is a logical container for related resources such as:</p>
+            <ul>
+              <li>App Services or virtual machines</li>
+              <li>Azure SQL Database</li>
+              <li>Storage Accounts</li>
+              <li>Virtual Networks and Load Balancers</li>
+              <li>Application Insights and Key Vault references</li>
+            </ul>
+
+            <p>For example, all resources for the production Payment Service could be placed in:</p>
+            <pre><code class="language-text">payment-prod-rg
+  - payment-app-service
+  - payment-sql-database
+  - payment-storage
+  - payment-key-vault
+  - payment-application-insights</code></pre>
+
+            <h5 class="text-warning">Benefits</h5>
+            <ul>
+              <li><strong>Lifecycle management:</strong> Deploy, update, or delete related resources together.</li>
+              <li><strong>Access control:</strong> Apply IAM or RBAC permissions at the group level.</li>
+              <li><strong>Cost tracking:</strong> Use tags and resource-group organization to track spending.</li>
+              <li><strong>Monitoring:</strong> Create dashboards and alerts for related resources.</li>
+              <li><strong>Environment separation:</strong> Use separate groups for development, UAT, and production.</li>
+              <li><strong>Governance:</strong> Apply policies, naming standards, and compliance rules consistently.</li>
+            </ul>
+
+            <h5 class="text-warning">Example environment structure</h5>
+            <pre><code class="language-text">payment-dev-rg
+payment-uat-rg
+payment-prod-rg</code></pre>
+            <p>This prevents accidental changes to production resources while allowing teams to manage each environment independently.</p>
+
+            <h5 class="text-warning">Important distinction</h5>
+            <p>A resource group is a management boundary, not necessarily a network boundary. Networking is controlled using services such as VPCs in AWS or VNets in Azure. Resources in the same group can still belong to different networks, and resources in different groups can share a network.</p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">Resource grouping is the logical organization of related cloud resources so they can be managed, secured, monitored, tagged, and governed together. In Azure, I would create separate resource groups for environments such as development, UAT, and production, and place the related application, database, storage, monitoring, and security resources in the appropriate group. This improves lifecycle management, access control, cost tracking, and environment isolation.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="springboot">
+        <h2 class="accordion-header" id="componentTestingTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#componentTestingTopBody">What is Component Testing?</button>
+        </h2>
+        <div id="componentTestingTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p><strong>Component Testing</strong> is a type of software testing where an individual component or module is tested independently to verify that it works correctly.</p>
+            <p>In simple terms, we test one component in isolation before testing the complete application.</p>
+
+            <h5 class="text-warning">Example in Spring Boot</h5>
+            <p>Suppose an application has an <code>OrderController</code>, <code>OrderService</code>, <code>OrderRepository</code>, and <code>PaymentService</code>. If we test only <code>OrderService</code> by mocking the repository and payment service, that is component-level testing.</p>
+
+            <pre><code class="language-java">@ExtendWith(MockitoExtension.class)
+class OrderServiceTest {
+
+    @Mock
+    private OrderRepository orderRepository;
+
+    @InjectMocks
+    private OrderService orderService;
+
+    @Test
+    void shouldReturnOrder() {
+        Order order = new Order(1L, "Laptop");
+
+        when(orderRepository.findById(1L))
+                .thenReturn(Optional.of(order));
+
+        Order result = orderService.getOrder(1L);
+
+        assertEquals("Laptop", result.getName());
+        verify(orderRepository).findById(1L);
+    }
+}</code></pre>
+
+            <p>Here:</p>
+            <ul>
+              <li>The <code>OrderService</code> is tested independently.</li>
+              <li>The repository dependency is mocked.</li>
+              <li>The test does not connect to the actual database.</li>
+              <li>The expected business logic is verified.</li>
+            </ul>
+
+            <h5 class="text-warning">Component Testing versus other testing</h5>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Testing type</th><th>What it tests</th></tr></thead>
+              <tbody>
+                <tr><td>Unit Testing</td><td>Individual methods or classes</td></tr>
+                <tr><td>Component Testing</td><td>An individual component or module</td></tr>
+                <tr><td>Integration Testing</td><td>Interaction between multiple components</td></tr>
+                <tr><td>System Testing</td><td>The complete application</td></tr>
+                <tr><td>End-to-End Testing</td><td>A complete user or business workflow</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Is Component Testing the same as Unit Testing?</h5>
+            <p>Not exactly. Unit testing focuses on small units such as individual methods or classes. Component testing focuses on a larger functional component, potentially containing multiple classes, tested independently from the rest of the system. The exact boundary depends on the project's testing strategy.</p>
+
+            <p><strong>Interview one-liner:</strong> Component testing verifies an individual application component independently, ensuring its internal functionality works as expected while isolating external dependencies where appropriate.</p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="behavioral">
+        <h2 class="accordion-header" id="changingProductRequirementsTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#changingProductRequirementsTopBody">What would you do if the Product Owner frequently changes requirements and provides limited information?</button>
+        </h2>
+        <div id="changingProductRequirementsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>This is a senior-level behavioural scenario involving ambiguity, changing priorities, communication, and delivery pressure.</p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">I would handle this through proactive communication and clarification rather than making assumptions. First, whenever the Product Owner changes requirements, I would understand the reason behind the change and its business priority. If the information is limited, I would arrange a short discussion and ask specific questions about expected behaviour, business rules, edge cases, and acceptance criteria. If something is still unclear, I would document my understanding and share it with the Product Owner for confirmation before starting development. If the changes affect ongoing work, I would assess the impact on timelines, dependencies, and existing functionality, then communicate the trade-offs to the Product Owner and team. I would also encourage maintaining a prioritised backlog and updating user stories and acceptance criteria so everyone works with the same understanding. My approach is to remain flexible with changing business needs while ensuring changes are clarified, prioritised, and communicated without compromising quality.</blockquote>
+
+            <h5 class="text-warning">Real-time example</h5>
+            <p>In an insurance domain, commission calculation requirements can change based on business rules or policy conditions. I would clarify the calculation scenarios with the Product Owner, identify the impact on existing processing, discuss the changes with the team, and validate the expected results before implementing them.</p>
+
+            <h5 class="text-warning">Key points</h5>
+            <ul>
+              <li>Do not blindly accept unclear requirements.</li>
+              <li>Do not blame the Product Owner.</li>
+              <li>Clarify acceptance criteria.</li>
+              <li>Assess impact before committing to timelines.</li>
+              <li>Document decisions.</li>
+              <li>Communicate risks early.</li>
+            </ul>
+
+            <p><strong>Strong closing line:</strong> I do not consider changing requirements a problem; I consider unclear and uncommunicated changes a risk that needs to be managed.</p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="devops">
+        <h2 class="accordion-header" id="microservicesAutoscalingPatternTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#microservicesAutoscalingPatternTopBody">How does microservices autoscaling happen, and which pattern is used?</button>
+        </h2>
+        <div id="microservicesAutoscalingPatternTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>Microservices usually autoscale using the <strong>Horizontal Scaling pattern</strong>, implemented through an infrastructure orchestrator such as Kubernetes.</p>
+            <ol>
+              <li><strong>Horizontal Pod Autoscaling (HPA):</strong> Increases or decreases application instances.</li>
+              <li><strong>Event-driven Autoscaling (KEDA):</strong> Scales based on Kafka lag, queue length, and other external events.</li>
+              <li><strong>Load balancing:</strong> Distributes incoming requests across available instances.</li>
+            </ol>
+
+            <h5 class="text-warning">1. Horizontal scaling</h5>
+            <p>Suppose an Order Service initially has three instances. When traffic increases, Kubernetes creates additional instances. When traffic decreases, it removes unnecessary instances.</p>
+            <pre><code class="language-text">Normal traffic:    3 pods
+Traffic increases: 8 pods</code></pre>
+
+            <h5 class="text-warning">2. Kubernetes HPA example</h5>
+            <pre><code class="language-yaml">apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: order-service-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: order-service
+  minReplicas: 3
+  maxReplicas: 15
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70</code></pre>
+            <p>The Metrics Server collects CPU and memory metrics. The HPA controller compares actual metrics with the target and updates the Deployment's desired replica count.</p>
+            <p>A simplified calculation is:</p>
+            <pre><code class="language-text">DesiredReplicas = ceil(CurrentReplicas * CurrentMetric / TargetMetric)
+ceil(3 * 90 / 70) = 4</code></pre>
+            <p>Kubernetes may scale from three to four pods, subject to scaling policies and other constraints.</p>
+
+            <h5 class="text-warning">3. Kafka lag and KEDA</h5>
+            <p>If a Kafka consumer has low CPU utilization but consumer lag increases to 50,000 messages, CPU-based HPA may not scale it. KEDA monitors Kafka consumer lag and provides an external metric to Kubernetes HPA, allowing consumer pods to scale from 3 to 10.</p>
+            <p>The number of active Kafka consumers is still limited by the number of partitions assigned to the consumer group.</p>
+
+            <h5 class="text-warning">4. What happens when new pods are created?</h5>
+            <ol>
+              <li>Kubernetes schedules pods on available worker nodes.</li>
+              <li>Spring Boot applications start.</li>
+              <li>Readiness probes check whether they are ready to serve requests.</li>
+              <li>The Kubernetes Service discovers eligible ready pods.</li>
+              <li>The Service or load balancer distributes traffic across healthy instances.</li>
+            </ol>
+
+            <h5 class="text-warning">5. Important scaling patterns</h5>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Pattern</th><th>Purpose</th></tr></thead>
+              <tbody>
+                <tr><td>Horizontal scaling</td><td>Add or remove application instances</td></tr>
+                <tr><td>Vertical scaling</td><td>Increase CPU and memory</td></tr>
+                <tr><td>Reactive autoscaling</td><td>Scale based on observed metrics</td></tr>
+                <tr><td>Event-driven scaling</td><td>Scale based on Kafka lag or queue length</td></tr>
+                <tr><td>Load balancing</td><td>Distribute requests across instances</td></tr>
+                <tr><td>Bulkhead</td><td>Isolate resource consumption</td></tr>
+                <tr><td>Backpressure</td><td>Prevent downstream overload</td></tr>
+              </tbody>
+            </table>
+            <ul>
+              <li>HPA scales pods.</li>
+              <li>Cluster Autoscaler scales worker nodes when there is not enough capacity.</li>
+              <li>VPA recommends or adjusts CPU and memory resource requests.</li>
+              <li>KEDA enables event-driven scaling and can scale workloads to zero in supported configurations.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">We generally use horizontal scaling with Kubernetes. Each microservice is deployed independently as a Kubernetes Deployment. We configure HPA based on CPU, memory, or custom metrics. The HPA controller continuously monitors metrics and adjusts the desired replica count. Kubernetes schedules additional pods, and the Kubernetes Service or load balancer distributes traffic across healthy instances. For event-driven workloads such as Kafka consumers, we use KEDA to monitor consumer lag and trigger autoscaling through HPA, allowing each microservice to scale independently based on its workload.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaInternalsTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaInternalsTopBody">Apache Kafka Internals</button>
+        </h2>
+        <div id="kafkaInternalsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>Kafka is a distributed event-streaming platform. It stores messages in a distributed, replicated, append-only log.</p>
+
+            <h5 class="text-warning">1. Kafka architecture</h5>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Component</th><th>Responsibility</th></tr></thead>
+              <tbody>
+                <tr><td>Producer</td><td>Publishes messages</td></tr>
+                <tr><td>Broker</td><td>Stores and serves messages</td></tr>
+                <tr><td>Topic</td><td>Logical category of messages</td></tr>
+                <tr><td>Partition</td><td>Unit of storage and parallelism</td></tr>
+                <tr><td>Replica</td><td>Copy of a partition</td></tr>
+                <tr><td>Leader</td><td>Handles reads and writes for a partition</td></tr>
+                <tr><td>Follower</td><td>Replicates data from the leader</td></tr>
+                <tr><td>Consumer</td><td>Reads messages</td></tr>
+                <tr><td>Consumer Group Coordinator</td><td>Manages consumer-group membership and assignments</td></tr>
+                <tr><td>Controller</td><td>Manages cluster metadata and leadership</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">2. What happens when a producer sends a message?</h5>
+            <pre><code class="language-text">Producer
+  -> Serialization
+  -> Partition selection
+  -> RecordAccumulator
+  -> Sender thread
+  -> Kafka broker
+  -> Partition leader
+  -> Append message to log
+  -> Replicate to followers
+  -> Send acknowledgement</code></pre>
+
+            <h5 class="text-warning">3. What happens inside a Kafka broker?</h5>
+            <p>A Kafka broker is a server responsible for storing partitions and handling producer and consumer requests.</p>
+            <p>Suppose the <code>commission-reports</code> topic has three partitions, replication factor 3, and three brokers. An illustrative arrangement is:</p>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Broker</th><th>Partition assignments</th></tr></thead>
+              <tbody>
+                <tr><td>Broker 1</td><td>P0 leader, P1 follower, P2 follower</td></tr>
+                <tr><td>Broker 2</td><td>P0 follower, P1 leader, P2 follower</td></tr>
+                <tr><td>Broker 3</td><td>P0 follower, P1 follower, P2 leader</td></tr>
+              </tbody>
+            </table>
+            <p>Each partition has one leader replica and two follower replicas. Producers and consumers normally communicate with the partition leader for writes and reads, while followers replicate the leader's data.</p>
+
+            <h5 class="text-warning">4. How Kafka stores messages</h5>
+            <p>Kafka uses an append-only log. For example:</p>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Offset</th><th>Message</th></tr></thead>
+              <tbody>
+                <tr><td>0</td><td>Commission event 1</td></tr>
+                <tr><td>1</td><td>Commission event 2</td></tr>
+                <tr><td>2</td><td>Commission event 3</td></tr>
+                <tr><td>3</td><td>Commission event 4</td></tr>
+                <tr><td>4</td><td>Commission event 5</td></tr>
+              </tbody>
+            </table>
+            <ul>
+              <li>Messages are appended to the end of the log.</li>
+              <li>Existing records are not normally updated in place.</li>
+              <li>Each partition maintains its own offset sequence.</li>
+              <li>Multiple consumers can independently read the same stored records.</li>
+              <li>Retention policies determine how long records are kept.</li>
+            </ul>
+            <p>Kafka is not like a traditional database where each message is deleted immediately after consumption.</p>
+
+            <h5 class="text-warning">5. Log segments</h5>
+            <p>A Kafka partition is stored as a collection of log segment files:</p>
+            <pre><code class="language-text">commission-reports-0/
+    00000000000000000000.log
+    00000000000000001000.log
+    00000000000000002000.log
+    00000000000000000000.index
+    00000000000000000000.timeindex</code></pre>
+            <ul>
+              <li><code>.log</code> stores message records.</li>
+              <li><code>.index</code> helps locate records by offset.</li>
+              <li><code>.timeindex</code> helps locate records by timestamp.</li>
+            </ul>
+            <p>Kafka rolls over to new segments based on configured size and time conditions. Segments make storage management, retention/deletion, offset lookups, and log maintenance more efficient.</p>
+
+            <h5 class="text-warning">6. What happens when a broker crashes?</h5>
+            <ol>
+              <li>Kafka detects the broker failure.</li>
+              <li>The controller identifies affected partitions.</li>
+              <li>An eligible in-sync replica can become the new leader.</li>
+              <li>Producers and consumers discover the new leader through metadata updates.</li>
+              <li>Processing continues according to the availability and replication configuration.</li>
+            </ol>
+
+            <h5 class="text-warning">7. In-Sync Replicas (ISR)</h5>
+            <p>ISR stands for In-Sync Replicas. These are replicas sufficiently caught up with the leader according to Kafka's replication rules.</p>
+            <p>With replication factor 3, Broker 1 as leader, and Brokers 2 and 3 as followers:</p>
+            <pre><code class="language-text">ISR = [Broker 1, Broker 2, Broker 3]</code></pre>
+            <p>If Broker 3 falls too far behind, it is removed from the ISR:</p>
+            <pre><code class="language-text">ISR = [Broker 1, Broker 2]</code></pre>
+            <p>If Broker 1 then crashes, Broker 2 can become the new leader.</p>
+            <ul>
+              <li><strong>Replication factor:</strong> Number of configured replicas.</li>
+              <li><strong>ISR:</strong> Replicas currently considered in sync.</li>
+              <li><strong>min.insync.replicas:</strong> Minimum ISR count required for a successful write with <code>acks=all</code>.</li>
+            </ul>
+
+            <h5 class="text-warning">8. Relationship between acks and ISR</h5>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Configuration</th><th>Meaning</th></tr></thead>
+              <tbody>
+                <tr><td><code>acks=0</code></td><td>Producer does not wait for broker acknowledgement</td></tr>
+                <tr><td><code>acks=1</code></td><td>Leader acknowledges the write</td></tr>
+                <tr><td><code>acks=all</code></td><td>Waits for the current ISR, subject to broker replication rules</td></tr>
+              </tbody>
+            </table>
+            <p>For example, with <code>acks=all</code>, <code>min.insync.replicas=2</code>, and replication factor 3, if only one replica remains in the ISR, Kafka cannot satisfy the minimum ISR requirement and rejects the write. This helps protect against acknowledged writes being lost during broker failures.</p>
+
+            <h5 class="text-warning">9. Kafka internals study roadmap</h5>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Topic</th><th>Priority</th></tr></thead>
+              <tbody>
+                <tr><td>Broker architecture</td><td>Very high</td></tr>
+                <tr><td>Leader and follower replication</td><td>Very high</td></tr>
+                <tr><td>ISR and leader election</td><td>Very high</td></tr>
+                <tr><td>Log segments and indexes</td><td>High</td></tr>
+                <tr><td>ZooKeeper versus KRaft</td><td>High</td></tr>
+                <tr><td>Controller and cluster metadata</td><td>High</td></tr>
+                <tr><td>Page cache and zero-copy</td><td>High</td></tr>
+                <tr><td>Retention and log compaction</td><td>High</td></tr>
+                <tr><td>Consumer offset storage</td><td>Very high</td></tr>
+                <tr><td>Replication protocol</td><td>Very high</td></tr>
+                <tr><td>Transactions and exactly-once</td><td>Very high</td></tr>
+                <tr><td>Rebalancing protocol</td><td>Very high</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">Kafka is a distributed, replicated, append-only log. Producers write to partition leaders, followers replicate the data, and consumers read records by offset. Brokers store partitions in log segments with log and index files. The controller manages cluster metadata and leader election. If a broker fails, an eligible ISR replica can become leader and clients refresh metadata. I would distinguish replication factor from current ISR and min.insync.replicas, and explain that acks=all waits for the current ISR subject to the minimum ISR requirement.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="serviceToServiceOAuth2FeignTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#serviceToServiceOAuth2FeignTopBody">Service A calls Service B through Feign and a separate Auth Server. How do you attach the token?</button>
+        </h2>
+        <div id="serviceToServiceOAuth2FeignTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>Suppose Service A is the Order Service, Service B is the Payment Service, and a separate Authorization Server such as Microsoft Entra ID, Keycloak, or Okta issues access tokens.</p>
+
+            <h5 class="text-warning">1. Architecture</h5>
+            <ul>
+              <li>Service A needs to call Service B.</li>
+              <li>Service A obtains an access token from the Authorization Server.</li>
+              <li>Service A calls Service B with the token.</li>
+              <li>Service B validates the token before processing the request.</li>
+            </ul>
+
+            <h5 class="text-warning">2. OAuth2 flow: Client Credentials</h5>
+            <p>For machine-to-machine communication, use the OAuth 2.0 <strong>Client Credentials Grant</strong> because Service A calls Service B on behalf of itself, not on behalf of an end user.</p>
+
+            <p><strong>Step 1: Service A requests a token.</strong></p>
+            <pre><code class="language-http">POST /oauth2/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=client_credentials
+&amp;client_id=order-service
+&amp;client_secret=secret
+&amp;scope=payment.read</code></pre>
+
+            <p><strong>Step 2: Authorization Server validates the credentials and returns a token.</strong></p>
+            <pre><code class="language-json">{
+  "access_token": "eyJhbGciOiJIUzI1NiJ9...",
+  "token_type": "Bearer",
+  "expires_in": 3600
+}</code></pre>
+
+            <p><strong>Step 3: Service A calls Service B through Feign.</strong></p>
+            <pre><code class="language-http">GET /api/payments/101
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...</code></pre>
+
+            <p><strong>Step 4: Service B validates the token.</strong> It validates the signature, expiration, issuer, audience, and required scopes or authorities.</p>
+
+            <h5 class="text-warning">3. Configure the OAuth2 client in Service A</h5>
+            <pre><code class="language-yaml">spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          payment-client:
+            provider: auth-server
+            client-id: order-service
+            client-secret: ${CLIENT_SECRET}
+            authorization-grant-type: client_credentials
+            scope: payment.read
+        provider:
+          auth-server:
+            token-uri: https://auth.example.com/oauth2/token</code></pre>
+            <p>In production, store the client secret in a secure secret manager rather than source-controlled configuration.</p>
+
+            <h5 class="text-warning">4. Define the Feign client</h5>
+            <pre><code class="language-java">@FeignClient(
+        name = "payment-service",
+        url = "${payment.service.url}",
+        configuration = FeignConfig.class)
+public interface PaymentClient {
+
+    @GetMapping("/api/payments/{id}")
+    Payment getPayment(@PathVariable Long id);
+}</code></pre>
+
+            <h5 class="text-warning">5. Attach the token with a RequestInterceptor</h5>
+            <pre><code class="language-java">@Configuration
+public class FeignConfig {
+
+    @Bean
+    public RequestInterceptor oauthInterceptor(
+            OAuth2AuthorizedClientManager manager) {
+
+        return template -&gt; {
+            OAuth2AuthorizeRequest request =
+                    OAuth2AuthorizeRequest
+                            .withClientRegistrationId("payment-client")
+                            .principal("order-service")
+                            .build();
+
+            OAuth2AuthorizedClient client =
+                    manager.authorize(request);
+
+            if (client == null) {
+                throw new IllegalStateException(
+                        "Unable to obtain access token");
+            }
+
+            String token = client.getAccessToken()
+                    .getTokenValue();
+
+            template.header(
+                    "Authorization",
+                    "Bearer " + token);
+        };
+    }
+}</code></pre>
+            <p><code>OAuth2AuthorizedClientManager</code> can reuse an authorized client and its token instead of requesting a new token for every API call. Configure it with the client-credentials provider and authorized-client service.</p>
+
+            <h5 class="text-warning">6. Token expiry</h5>
+            <p>Do not request a new token for every API call. Obtain the token, cache the authorized client, reuse it while valid, and obtain a fresh token when it expires. Spring Security's OAuth2 Client infrastructure supports this lifecycle.</p>
+
+            <h5 class="text-warning">7. What if Service A already has a user JWT?</h5>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Scenario</th><th>Authentication approach</th></tr></thead>
+              <tbody>
+                <tr><td>Service A calls Service B using its own identity</td><td>Client Credentials</td></tr>
+                <tr><td>Service A calls Service B on behalf of a logged-in user</td><td>Token propagation or OAuth2 token exchange, depending on the architecture</td></tr>
+              </tbody>
+            </table>
+            <p>Do not automatically forward a user's token when the downstream service expects Service A's identity. The token audience and permissions must match the target service.</p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">Since Service A communicates with Service B and there is a separate Authorization Server, I would use OAuth2 Client Credentials flow for machine-to-machine authentication. Service A authenticates with the Authorization Server using its client ID and client secret and obtains an access token. I would use Spring Security OAuth2 Client to manage the token lifecycle and a Feign RequestInterceptor to attach the token as a Bearer token in the Authorization header. Service B acts as an OAuth2 Resource Server and validates the token's signature, issuer, audience, expiry, and required permissions. I would reuse valid tokens and obtain a fresh token when necessary instead of requesting one for every API call.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="feignClientCompleteGuideTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#feignClientCompleteGuideTopBody">All about Feign Client: configuration, timeouts, headers, interceptors, retries, and resilience</button>
+        </h2>
+        <div id="feignClientCompleteGuideTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p><strong>Spring Cloud OpenFeign</strong> is a declarative HTTP client. We define an interface, annotate its methods, and Spring creates a proxy that sends HTTP requests to another service. It avoids repetitive code for URL construction, serialization, deserialization, and response handling.</p>
+
+            <h5 class="text-warning">1. Dependency and enabling Feign</h5>
+            <pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-cloud-starter-openfeign&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+            <pre><code class="language-java">@SpringBootApplication
+@EnableFeignClients
+public class Application {
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class, args);
+    }
+}</code></pre>
+            <p>Use a compatible Spring Cloud release train for the Spring Boot version. <code>@EnableFeignClients(basePackages = "...")</code> can explicitly identify client packages.</p>
+
+            <h5 class="text-warning">2. Define and use a Feign client</h5>
+            <pre><code class="language-java">@FeignClient(
+        name = "inventory-service",
+        path = "/api/inventory")
+public interface InventoryClient {
+
+    @GetMapping("/{productId}")
+    InventoryResponse getInventory(
+            @PathVariable String productId);
+
+    @PostMapping("/reserve")
+    ReservationResponse reserve(
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody ReserveRequest request);
+}</code></pre>
+            <pre><code class="language-java">@Service
+public class OrderService {
+    private final InventoryClient inventoryClient;
+
+    public OrderService(InventoryClient inventoryClient) {
+        this.inventoryClient = inventoryClient;
+    }
+
+    public InventoryResponse checkInventory(String productId) {
+        return inventoryClient.getInventory(productId);
+    }
+}</code></pre>
+            <p><code>name</code> identifies the client and, when service discovery/load balancing is configured, the service name. A <code>url</code> can be supplied for a fixed endpoint or local testing:</p>
+            <pre><code class="language-java">@FeignClient(
+        name = "inventory-client",
+        url = "${inventory.service.url}")
+public interface InventoryClient { }</code></pre>
+
+            <h5 class="text-warning">3. Request parameters, headers, and body</h5>
+            <pre><code class="language-java">@GetMapping("/search")
+SearchResponse search(
+        @RequestParam String status,
+        @RequestParam(required = false) Integer page,
+        @RequestHeader("X-Correlation-Id") String correlationId);
+
+@PostMapping("/orders/{orderId}/cancel")
+void cancel(
+        @PathVariable Long orderId,
+        @RequestBody CancelRequest request);</code></pre>
+            <p>Use <code>@PathVariable</code> for path values, <code>@RequestParam</code> for query parameters, <code>@RequestHeader</code> for one explicit header, and <code>@RequestBody</code> for JSON payloads.</p>
+
+            <h5 class="text-warning">4. Configuration</h5>
+            <pre><code class="language-yaml">spring:
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            connectTimeout: 2000
+            readTimeout: 5000
+            loggerLevel: basic
+          inventory-service:
+            connectTimeout: 1000
+            readTimeout: 3000
+            loggerLevel: full
+      micrometer:
+        enabled: true</code></pre>
+            <p>Use a client-specific configuration for different downstream service requirements. Do not configure a large timeout by default just because one slow endpoint needs it.</p>
+
+            <h5 class="text-warning">5. Connection timeout versus read timeout</h5>
+            <ul>
+              <li><strong>Connect timeout:</strong> Maximum time to establish a connection to the downstream service.</li>
+              <li><strong>Read timeout:</strong> Maximum time to wait for response data after the request is sent.</li>
+            </ul>
+            <p>If the read timeout is five seconds but the downstream service takes 30 seconds, the Feign caller stops waiting and receives a timeout exception. The downstream service may continue processing the request, so payment or other non-idempotent calls require an idempotency key.</p>
+
+            <h5 class="text-warning">6. Set common request headers with an interceptor</h5>
+            <pre><code class="language-java">@Configuration
+public class FeignHeadersConfig {
+
+    @Bean
+    public RequestInterceptor commonHeaders() {
+        return template -&gt; {
+            template.header("X-Client-Name", "order-service");
+            template.header("X-Correlation-Id", correlationId());
+        };
+    }
+
+    private String correlationId() {
+        return Optional.ofNullable(
+                MDC.get("correlationId"))
+                .orElseGet(() -&gt; UUID.randomUUID().toString());
+    }
+}</code></pre>
+            <p>Attach configuration to one client when the header must be client-specific:</p>
+            <pre><code class="language-java">@FeignClient(
+        name = "inventory-service",
+        configuration = FeignHeadersConfig.class)
+public interface InventoryClient { }</code></pre>
+            <p>For authentication, prefer Spring Security or an approved token provider. Do not log or hardcode access tokens.</p>
+
+            <h5 class="text-warning">7. Propagate a bearer token safely</h5>
+            <pre><code class="language-java">@Bean
+public RequestInterceptor bearerTokenInterceptor(
+        TokenProvider tokenProvider) {
+    return template -&gt; tokenProvider.currentToken()
+            .ifPresent(token -&gt; template.header(
+                    HttpHeaders.AUTHORIZATION,
+                    "Bearer " + token));
+}</code></pre>
+            <p>In distributed tracing, use Micrometer Tracing or OpenTelemetry instrumentation to propagate trace context rather than manually copying only a trace ID.</p>
+
+            <h5 class="text-warning">8. Logging</h5>
+            <pre><code class="language-java">@Configuration
+public class FeignLoggingConfig {
+    @Bean
+    Logger.Level feignLoggerLevel() {
+        return Logger.Level.BASIC;
+    }
+}</code></pre>
+            <pre><code class="language-yaml">logging:
+  level:
+    com.example.client.InventoryClient: DEBUG</code></pre>
+            <p>Common levels are <code>NONE</code>, <code>BASIC</code>, <code>HEADERS</code>, and <code>FULL</code>. Use <code>BASIC</code> or restricted debug logging in production. Never log passwords, tokens, cookies, authorization headers, card data, or sensitive payloads.</p>
+
+            <h5 class="text-warning">9. Error handling with ErrorDecoder</h5>
+            <pre><code class="language-java">public class InventoryErrorDecoder
+        implements ErrorDecoder {
+
+    @Override
+    public Exception decode(
+            String methodKey,
+            Response response) {
+        return switch (response.status()) {
+            case 404 -&gt; new InventoryNotFoundException();
+            case 409 -&gt; new InventoryConflictException();
+            case 429 -&gt; new DownstreamRateLimitException();
+            default -&gt; new DownstreamServiceException(
+                    "Inventory call failed: " + response.status());
+        };
+    }
+}</code></pre>
+            <p>Map downstream errors to domain-specific exceptions and handle them consistently through service or global exception handling. A 4xx business failure should not usually be retried.</p>
+
+            <h5 class="text-warning">10. Retry configuration</h5>
+            <pre><code class="language-java">@Configuration
+public class FeignRetryConfig {
+    @Bean
+    Retryer feignRetryer() {
+        return new Retryer.Default(
+                100L,
+                1000L,
+                2);
+    }
+}</code></pre>
+            <p>Retry only transient failures such as selected connection failures, temporary network errors, or appropriate 5xx responses. Do not blindly retry payment or order-creation requests without an idempotency key. Avoid configuring retries in both Feign and Resilience4j without calculating the total retry attempts and latency.</p>
+
+            <h5 class="text-warning">11. Resilience4j with Feign</h5>
+            <pre><code class="language-java">@FeignClient(name = "payment-service")
+public interface PaymentClient {
+    @PostMapping("/payments")
+    PaymentResponse pay(
+            @RequestHeader("Idempotency-Key") String key,
+            @RequestBody PaymentRequest request);
+}</code></pre>
+            <p>Protect the calling service with a circuit breaker, timeout, bulkhead, and carefully controlled retry policy. A Feign timeout does not cancel server-side work automatically, so use idempotency and status verification for ambiguous outcomes.</p>
+            <pre><code class="language-yaml">resilience4j:
+  circuitbreaker:
+    instances:
+      paymentClient:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+  timelimiter:
+    instances:
+      paymentClient:
+        timeoutDuration: 5s</code></pre>
+
+            <h5 class="text-warning">12. Load balancing and service discovery</h5>
+            <p>When the client uses a service name such as <code>inventory-service</code> and Spring Cloud LoadBalancer/service discovery is configured, the call can be routed to available service instances. When <code>url</code> is specified, the client calls that fixed URL instead.</p>
+
+            <h5 class="text-warning">13. Response handling</h5>
+            <p>For normal responses, return a DTO rather than exposing internal entities. For optional 404 behavior, use an explicit policy and map it in the client or service layer. Validate response bodies and do not assume a successful HTTP status means the business operation succeeded.</p>
+
+            <h5 class="text-warning">14. Testing Feign clients</h5>
+            <ul>
+              <li>Unit-test the service with a mocked Feign interface.</li>
+              <li>Use WireMock or MockWebServer to test real HTTP serialization, headers, timeouts, and error responses.</li>
+              <li>Use Spring Cloud Contract or contract tests when the client and server are owned by different teams.</li>
+              <li>Test timeout, 4xx, 5xx, malformed response, retry, and correlation-header scenarios.</li>
+            </ul>
+
+            <h5 class="text-warning">15. Production checklist</h5>
+            <ul>
+              <li>Configure connect and read timeouts per downstream dependency.</li>
+              <li>Use bounded retries with backoff only for safe transient failures.</li>
+              <li>Use idempotency keys for retryable financial or state-changing requests.</li>
+              <li>Configure circuit breakers, bulkheads, and concurrency limits.</li>
+              <li>Propagate correlation and tracing headers.</li>
+              <li>Use safe logging and mask sensitive data.</li>
+              <li>Monitor latency, status codes, timeout count, retry count, circuit state, and downstream saturation.</li>
+              <li>Do not keep a database transaction open while waiting on an unreliable remote service.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">Feign is Spring Cloud's declarative HTTP client. I define an interface with Feign and Spring MVC annotations, enable it with @EnableFeignClients, and configure service URLs or service discovery. I configure connect and read timeouts per client, use RequestInterceptor for correlation IDs and approved authentication headers, and use ErrorDecoder for domain-specific error handling. I apply limited retries only to safe transient failures, use idempotency keys for state-changing operations, and protect calls with circuit breakers, time limiters, and bulkheads. I use safe logging, tracing, metrics, contract tests, and WireMock tests for headers, serialization, timeouts, and failure scenarios.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaInboxConcurrentInsertTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaInboxConcurrentInsertTopBody">What happens if multiple consumers insert the same event ID into the Inbox table simultaneously?</button>
+        </h2>
+        <div id="kafkaInboxConcurrentInsertTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>Only one insert should succeed. A database primary key or unique constraint on <code>event_id</code> prevents duplicate processing.</p>
+
+            <h5 class="text-warning">1. Example</h5>
+            <p>Suppose three consumer instances receive the same event, <code>EVT101</code>, because of Kafka redelivery or duplicate publishing:</p>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Consumer</th><th>Attempt</th><th>Result</th></tr></thead>
+              <tbody>
+                <tr><td>Consumer 1</td><td>Insert EVT101</td><td>Insert succeeds</td></tr>
+                <tr><td>Consumer 2</td><td>Insert EVT101</td><td>Duplicate key or zero inserted rows</td></tr>
+                <tr><td>Consumer 3</td><td>Insert EVT101</td><td>Duplicate key or zero inserted rows</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">2. Inbox table and atomic insert</h5>
+            <pre><code class="language-sql">CREATE TABLE inbox_events (
+    event_id VARCHAR(100) PRIMARY KEY,
+    processed_at TIMESTAMP
+);</code></pre>
+            <pre><code class="language-sql">INSERT INTO inbox_events(event_id, processed_at)
+VALUES (:eventId, CURRENT_TIMESTAMP)
+ON CONFLICT (event_id) DO NOTHING;</code></pre>
+            <p>The syntax above is PostgreSQL syntax. MySQL and other databases provide equivalent atomic insert-or-ignore operations.</p>
+
+            <pre><code class="language-java">@Transactional
+public void processEvent(Event event) {
+    int inserted = inboxRepository
+            .insertIfAbsent(event.getEventId());
+
+    if (inserted == 0) {
+        return; // Already processed or claimed
+    }
+
+    commissionService.process(event);
+}</code></pre>
+
+            <h5 class="text-warning">3. What happens during simultaneous inserts?</h5>
+            <ol>
+              <li>Consumer 1 attempts to insert <code>EVT101</code>.</li>
+              <li>Consumer 2 attempts the same insert.</li>
+              <li>The database enforces the unique constraint.</li>
+              <li>Consumer 1 succeeds and commits.</li>
+              <li>Consumer 2 receives a duplicate-key conflict or zero inserted rows and skips the business operation.</li>
+            </ol>
+            <p>If Consumer 1 rolls back, Consumer 2 may be able to insert successfully.</p>
+
+            <h5 class="text-warning">4. Keep the Inbox insert and business operation in one transaction</h5>
+            <p>If the Inbox insert succeeds but the business operation fails, both operations must roll back together. Kafka can then redeliver the event and it can be retried safely.</p>
+            <p>After successful database processing, commit the Kafka offset. The database transaction and Kafka offset commit are separate operations, so duplicate delivery is still possible; the Inbox constraint handles it safely.</p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">If multiple consumer instances receive the same event simultaneously, I would enforce a unique constraint on the event ID in the Inbox table. The database provides atomic uniqueness enforcement, so only one consumer can successfully insert that event ID. The others detect the duplicate and skip business processing. I would perform the Inbox insert and business operation in the same database transaction and acknowledge the Kafka message only after successful processing. This provides idempotent processing even with concurrent duplicate deliveries.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaConsumerInternalsTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaConsumerInternalsTopBody">Kafka Consumer Internals</button>
+        </h2>
+        <div id="kafkaConsumerInternalsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>Kafka consumer internals describe what happens from the moment a consumer starts until it receives, processes, and commits a message.</p>
+
+            <h5 class="text-warning">1. Kafka consumer architecture</h5>
+            <ol>
+              <li><strong>Kafka broker:</strong> Stores topics, partitions, and messages.</li>
+              <li><strong>Consumer Group Coordinator:</strong> Manages group membership and partition assignments.</li>
+              <li><strong>Kafka Consumer:</strong> Handles subscription, polling, fetching, and offset management.</li>
+              <li><strong>Application processing:</strong> Executes business logic, database operations, and external-service calls.</li>
+            </ol>
+
+            <h5 class="text-warning">2. What happens when a consumer starts?</h5>
+            <p>Example: topic <code>commission-reports</code> has three partitions and the consumer group is <code>report-consumer-group</code>.</p>
+            <p><strong>Step 1: Consumer initialization.</strong> Spring Kafka creates and manages the listener container and Kafka consumer.</p>
+            <pre><code class="language-java">@KafkaListener(
+        topics = "commission-reports",
+        groupId = "report-consumer-group")
+public void consume(String message) {
+    processReport(message);
+}</code></pre>
+            <p><strong>Step 2: Consumer subscribes to a topic.</strong></p>
+            <pre><code class="language-java">consumer.subscribe(
+        Collections.singletonList("commission-reports"));</code></pre>
+            <p><strong>Step 3: Consumer joins the consumer group.</strong> The group coordinator manages membership and partition assignment.</p>
+            <table class="table table-dark table-bordered"><thead><tr><th>Consumer</th><th>Partition</th></tr></thead><tbody><tr><td>C1</td><td>P0</td></tr><tr><td>C2</td><td>P1</td></tr><tr><td>C3</td><td>P2</td></tr></tbody></table>
+            <p><strong>Step 4: Consumer starts polling.</strong> Kafka consumers fetch records using <code>poll()</code>; the broker does not simply push messages to the consumer.</p>
+            <pre><code class="language-java">while (true) {
+    ConsumerRecords&lt;String, String&gt; records =
+            consumer.poll(Duration.ofMillis(1000));
+
+    for (ConsumerRecord&lt;String, String&gt; record : records) {
+        processReport(record.value());
+    }
+}</code></pre>
+            <p><strong>Step 5: Fetching records.</strong> The consumer sends fetch requests to partition leaders and buffers returned records locally.</p>
+            <p><strong>Step 6: Processing messages.</strong> The application validates the report, calculates details, saves to the database, and may send an email or call another service.</p>
+            <p><strong>Step 7: Offset commit.</strong> After successful processing, the consumer commits its offset. Committed group offsets are stored in <code>__consumer_offsets</code>.</p>
+            <table class="table table-dark table-bordered"><thead><tr><th>Message</th><th>Offset</th><th>Status</th></tr></thead><tbody><tr><td>M1</td><td>0</td><td>Processed</td></tr><tr><td>M2</td><td>1</td><td>Processed</td></tr><tr><td>M3</td><td>2</td><td>Processed</td></tr><tr><td>M4</td><td>3</td><td>Processed</td></tr></tbody></table>
+            <p>If offset 4 is committed, the next record to consume is normally offset 4.</p>
+
+            <h5 class="text-warning">3. What does poll() do?</h5>
+            <p><code>poll()</code> participates in fetching records, consumer-group coordination, detecting group changes, triggering partition assignment or rebalancing, and maintaining consumer liveness. This is why the consumer must call it regularly.</p>
+
+            <h5 class="text-warning">4. What if processing takes too long?</h5>
+            <pre><code class="language-properties">max.poll.interval.ms=300000</code></pre>
+            <p>This allows a maximum interval of five minutes between calls to <code>poll()</code>. If the consumer polls 100 records and processing takes seven minutes, Kafka may consider it unresponsive and initiate a rebalance. This can cause partition reassignment, duplicate processing when offsets were not committed, and temporary interruption in consumption.</p>
+            <table class="table table-dark table-bordered"><thead><tr><th>Property</th><th>Purpose</th></tr></thead><tbody><tr><td><code>max.poll.interval.ms</code></td><td>Maximum delay between poll calls</td></tr><tr><td><code>session.timeout.ms</code></td><td>Time without heartbeats before the coordinator considers the consumer dead</td></tr><tr><td><code>heartbeat.interval.ms</code></td><td>Frequency of heartbeats to the coordinator</td></tr></tbody></table>
+
+            <h5 class="text-warning">5. Consumer offset management</h5>
+            <p><strong>Auto commit:</strong></p>
+            <pre><code class="language-properties">enable.auto.commit=true
+auto.commit.interval.ms=5000</code></pre>
+            <p>Kafka periodically commits offsets automatically. If offsets are committed before processing safely completes, a crash can cause messages to be skipped from the application's perspective.</p>
+            <p><strong>Manual commit:</strong></p>
+            <pre><code class="language-properties">enable.auto.commit=false</code></pre>
+            <p>The application controls when offsets are committed, providing better control over processing and acknowledgement.</p>
+            <pre><code class="language-java">@KafkaListener(
+        topics = "commission-reports",
+        groupId = "report-group")
+public void consume(
+        String message,
+        Acknowledgment acknowledgment) {
+    processReport(message);
+    acknowledgment.acknowledge();
+}</code></pre>
+            <p>This requires an appropriate manual acknowledgement configuration, such as <code>MANUAL</code> or <code>MANUAL_IMMEDIATE</code>.</p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">When a Kafka consumer starts, Spring Kafka creates the listener container and consumer, connects to the broker, subscribes to the topic, joins the consumer group, and receives partition assignments. The consumer repeatedly calls poll() to fetch records, processes them, and commits offsets. poll() also participates in group coordination and liveness. If processing takes longer than max.poll.interval.ms, Kafka can trigger a rebalance. I would choose auto or manual offset commits based on the processing guarantee, and for important processing I prefer committing only after successful business completion with idempotency protection.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaEnableStickyPartitioningTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaEnableStickyPartitioningTopBody">Do we need to enable sticky partitioning in Kafka?</button>
+        </h2>
+        <div id="kafkaEnableStickyPartitioningTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p><strong>No.</strong> You do not need to explicitly enable sticky partitioning. Kafka's default producer partitioner uses sticky partitioning automatically for messages without keys.</p>
+
+            <pre><code class="language-java">// No key: default sticky partitioning
+kafkaTemplate.send("commission-reports", event);
+
+// With key: key-based partitioning
+kafkaTemplate.send("commission-reports", policyId, event);</code></pre>
+
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Scenario</th><th>Partition selection</th></tr></thead>
+              <tbody>
+                <tr><td>Message has a key</td><td>Hash-based partitioning by default</td></tr>
+                <tr><td>Message has no key</td><td>Sticky partitioning by default</td></tr>
+                <tr><td>Explicit partition supplied</td><td>Uses that partition</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">Sticky partitioning is enabled through Kafka's default partitioner behavior for keyless messages. We do not need a separate configuration to enable it. If we provide a message key, Kafka uses key-based partitioning instead.</blockquote>
+
+            <p><strong>Caveat:</strong> The default partitioner can be overridden with a custom partitioner, so this behavior assumes the default configuration.</p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaStickyPartitioningDefaultsTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaStickyPartitioningDefaultsTopBody">What happens if batch.size is not explicitly configured? How does sticky partitioning distribute messages?</button>
+        </h2>
+        <div id="kafkaStickyPartitioningDefaultsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>Even if <code>batch.size</code> is not explicitly configured, Kafka still uses batching and sticky partitioning by default. Not configuring a property does not disable the functionality; Kafka uses its default value.</p>
+
+            <h5 class="text-warning">1. When batch.size is not configured</h5>
+            <p>Kafka clients commonly use a default producer batch size of approximately 16 KB:</p>
+            <pre><code class="language-properties"># Not explicitly configured
+# batch.size defaults to 16384 bytes
+
+linger.ms=10</code></pre>
+            <p>The producer:</p>
+            <ol>
+              <li>Selects a partition.</li>
+              <li>Accumulates keyless messages in that partition's batch.</li>
+              <li>Sends the batch when it becomes full or the linger timer expires.</li>
+              <li>Selects another partition for subsequent messages.</li>
+            </ol>
+
+            <h5 class="text-warning">2. When neither batch.size nor linger.ms is configured</h5>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Property</th><th>Typical default</th></tr></thead>
+              <tbody>
+                <tr><td><code>batch.size</code></td><td>16 KB</td></tr>
+                <tr><td><code>linger.ms</code></td><td>0 ms in older clients; 5 ms in Kafka 4.0+</td></tr>
+                <tr><td><code>buffer.memory</code></td><td>32 MB</td></tr>
+              </tbody>
+            </table>
+            <p>With zero linger, batches can become eligible for sending immediately rather than intentionally waiting for more records. Sticky partitioning still works, but the opportunity to accumulate larger batches may be smaller.</p>
+
+            <h5 class="text-warning">3. Important distinction</h5>
+            <p>Sticky partitioning does not need a configured batch size to select a partition. Batch readiness is influenced by:</p>
+            <ul>
+              <li><code>batch.size</code></li>
+              <li><code>linger.ms</code></li>
+              <li>Available producer buffer capacity</li>
+            </ul>
+            <p>Think of it this way:</p>
+            <ul>
+              <li>Sticky partitioning decides <strong>where</strong> keyless messages temporarily accumulate.</li>
+              <li><code>batch.size</code> determines the target batch capacity.</li>
+              <li><code>linger.ms</code> controls how long the producer is willing to wait for more messages.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">Even if we do not explicitly configure batch.size, Kafka uses its default batch size. Sticky partitioning works independently of whether we configure it explicitly. For keyless messages, the producer temporarily sticks to a partition to accumulate records. When the batch becomes ready because it reaches its capacity or the linger timeout expires, it can switch to another partition.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaStickyPartitioningTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaStickyPartitioningTopBody">What is sticky partitioning in Kafka?</button>
+        </h2>
+        <div id="kafkaStickyPartitioningTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p><strong>Sticky partitioning is a Kafka producer optimization that improves batching when messages are sent without keys.</strong> Instead of distributing every message across partitions immediately, Kafka temporarily sticks to one partition so it can accumulate more messages into a larger batch.</p>
+
+            <h5 class="text-warning">1. Without sticky partitioning</h5>
+            <p>Suppose a topic has three partitions, messages without keys are 2 KB each, and <code>batch.size=16 KB</code>. If messages are spread across partitions too frequently, the producer may create several small batches:</p>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Partition</th><th>Messages</th><th>Batch size</th></tr></thead>
+              <tbody>
+                <tr><td>P0</td><td>M1, M4</td><td>4 KB</td></tr>
+                <tr><td>P1</td><td>M2, M5</td><td>4 KB</td></tr>
+                <tr><td>P2</td><td>M3, M6</td><td>4 KB</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">2. With sticky partitioning</h5>
+            <p>Kafka selects one partition and keeps sending messages there temporarily:</p>
+            <pre><code class="language-text">First sticky period: Partition 0
+M1 -> M2 -> M3 -> M4 -> M5 -> M6 -> M7 -> M8
+16 KB batch ready
+
+Next sticky period: Partition 2
+M9 -> M10 -> M11 -> M12 ...</code></pre>
+            <p>This improves batch utilization and can reduce network request overhead.</p>
+
+            <h5 class="text-warning">3. When does Kafka switch partitions?</h5>
+            <p>For keyless records, the default producer partitioner generally sticks to the selected partition until the current batch becomes full or otherwise ready for sending. It then selects another partition for subsequent records. The exact implementation has evolved across Kafka versions, but the objective remains better batching.</p>
+            <ul>
+              <li>Batch reaches <code>batch.size</code>: It becomes eligible for sending.</li>
+              <li><code>linger.ms</code> expires: A partially filled batch becomes eligible for sending.</li>
+              <li>The producer can then move to another partition for subsequent records.</li>
+            </ul>
+
+            <h5 class="text-warning">4. Sticky partitioning versus key-based partitioning</h5>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Feature</th><th>Key-based partitioning</th><th>Sticky partitioning</th></tr></thead>
+              <tbody>
+                <tr><td>Message key</td><td>Provided</td><td>Usually null</td></tr>
+                <tr><td>Partition selection</td><td>Based on key hash</td><td>Temporarily sticks to a partition</td></tr>
+                <tr><td>Same-key ordering</td><td>Maintained within the partition</td><td>No business-key ordering guarantee</td></tr>
+                <tr><td>Primary purpose</td><td>Ordering and distribution</td><td>Better batching</td></tr>
+                <tr><td>Distribution</td><td>Based on keys</td><td>Based on sticky selection</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">5. Java example</h5>
+            <pre><code class="language-java">// Key-based partitioning
+kafkaTemplate.send(
+        "commission-reports",
+        policyId,
+        event);
+
+// Keyless publishing
+kafkaTemplate.send(
+        "commission-reports",
+        event);</code></pre>
+            <p>The first call uses the key to select a partition. The second allows the default partitioner to use sticky partitioning.</p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">Sticky partitioning is a producer-side optimization used mainly for messages without keys. Instead of distributing every message immediately across partitions, Kafka temporarily selects one partition and accumulates records there. This helps create larger batches, reducing network requests and improving producer throughput. Once the batch becomes ready for sending, the producer can switch to another partition.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaPolicyOrderingKeyTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaPolicyOrderingKeyTopBody">If ordering is required within each policy but not across policies, should the Kafka key be agentId or policyId?</button>
+        </h2>
+        <div id="kafkaPolicyOrderingKeyTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>Use <strong><code>policyId</code></strong> as the message key.</p>
+
+            <pre><code class="language-java">kafkaTemplate.send(
+        "commission-reports",
+        policyId,
+        event);</code></pre>
+
+            <p>Assuming three partitions, Kafka might distribute the policies like this:</p>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Event</th><th>Policy ID</th><th>Partition</th></tr></thead>
+              <tbody>
+                <tr><td>E1</td><td>P1</td><td>Partition 0</td></tr>
+                <tr><td>E2</td><td>P2</td><td>Partition 1</td></tr>
+                <tr><td>E3</td><td>P1</td><td>Partition 0</td></tr>
+                <tr><td>E4</td><td>P3</td><td>Partition 2</td></tr>
+                <tr><td>E5</td><td>P2</td><td>Partition 1</td></tr>
+              </tbody>
+            </table>
+
+            <p>This provides:</p>
+            <ul>
+              <li>Ordering for P1 events.</li>
+              <li>Ordering for P2 events.</li>
+              <li>Ordering for P3 events.</li>
+              <li>Concurrent processing of different policies.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview takeaway</h5>
+            <blockquote class="border-start border-info border-3 ps-3">Choose the Kafka partition key based on the entity for which ordering must be guaranteed, not automatically based on the parent entity. Since ordering is required within each policy but not across policies, policyId is the correct key.</blockquote>
+
+            <p><strong>Caveat:</strong> Changing the topic's partition count can change the default key-to-partition mapping, so plan partition expansion carefully when ordering matters.</p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaSameKeySixPartitionsTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaSameKeySixPartitionsTopBody">Suppose you have 6 partitions and publish 10,000 messages with the same key. How many partitions will normally receive those messages?</button>
+        </h2>
+        <div id="kafkaSameKeySixPartitionsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>If all 10,000 messages have the same key, such as <code>Agent101</code>, they will normally be routed to <strong>one partition</strong>, even though the topic has six partitions.</p>
+
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Partition</th><th>Messages</th></tr></thead>
+              <tbody>
+                <tr><td>P0</td><td>0</td></tr>
+                <tr><td>P1</td><td>10,000</td></tr>
+                <tr><td>P2</td><td>0</td></tr>
+                <tr><td>P3</td><td>0</td></tr>
+                <tr><td>P4</td><td>0</td></tr>
+                <tr><td>P5</td><td>0</td></tr>
+              </tbody>
+            </table>
+
+            <p>The exact partition depends on the key hash and partitioning strategy. This pattern can create a <strong>hot partition</strong>.</p>
+
+            <h5 class="text-warning">Choosing the key</h5>
+            <p>The key does not have to be an event ID. Choose it based on the ordering requirement:</p>
+            <ul>
+              <li><code>agentId</code>: Preserve ordering for each agent.</li>
+              <li><code>policyId</code>: Preserve ordering for each policy.</li>
+              <li><code>eventId</code>: Usually distributes events if IDs vary, but does not preserve ordering for the same business entity.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">If all 10,000 messages use the same key, Kafka's partitioner normally maps them to one partition. The other five partitions may receive no messages, creating a hot partition. I choose the key based on the business ordering requirement, such as agentId for per-agent ordering or policyId for per-policy ordering.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaLingerBatchPartitioningTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaLingerBatchPartitioningTopBody">What happens if Kafka's batch size is not reached but linger.ms expires? How are messages assigned to partitions?</button>
+        </h2>
+        <div id="kafkaLingerBatchPartitioningTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>If <code>batch.size</code> is not reached but <code>linger.ms</code> expires, Kafka sends the partially filled batch to the broker. It does not wait until the batch becomes full.</p>
+
+            <h5 class="text-warning">1. Example</h5>
+            <p>Suppose:</p>
+            <pre><code class="language-properties">batch.size=16384
+linger.ms=10</code></pre>
+            <p>The batch capacity is 16 KB and the producer waits up to approximately 10 milliseconds to accumulate more records.</p>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Time</th><th>Message or event</th><th>Accumulated batch</th></tr></thead>
+              <tbody>
+                <tr><td>0 ms</td><td>M1</td><td>2 KB</td></tr>
+                <tr><td>2 ms</td><td>M2</td><td>4 KB</td></tr>
+                <tr><td>4 ms</td><td>M3</td><td>6 KB</td></tr>
+                <tr><td>6 ms</td><td>M4</td><td>8 KB</td></tr>
+                <tr><td>8 ms</td><td>M5</td><td>10 KB</td></tr>
+                <tr><td>10 ms</td><td>Timer expires</td><td>10 KB sent</td></tr>
+              </tbody>
+            </table>
+            <p>At 10 ms, the 10 KB partially filled batch is sent and the remaining 6 KB capacity is unused.</p>
+
+            <h5 class="text-warning">2. What happens internally?</h5>
+            <ol>
+              <li>The producer receives messages through <code>send()</code>.</li>
+              <li>Messages are serialized and added to the <code>RecordAccumulator</code>.</li>
+              <li>Records are grouped by topic-partition.</li>
+              <li>If a batch reaches <code>batch.size</code>, it becomes eligible for sending.</li>
+              <li>If <code>linger.ms</code> expires first, the partially filled batch becomes eligible.</li>
+              <li>The background Sender thread sends the batch to Kafka.</li>
+              <li>The broker acknowledgement is received according to the <code>acks</code> configuration.</li>
+            </ol>
+            <p>If no messages arrive during <code>linger.ms</code>, Kafka does not send an empty batch. If a batch contains one message when the timer expires, that single-message batch can be sent.</p>
+
+            <h5 class="text-warning">3. Purpose of linger.ms</h5>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Configuration</th><th>Behaviour</th></tr></thead>
+              <tbody>
+                <tr><td><code>linger.ms=0</code></td><td>No intentional batching delay</td></tr>
+                <tr><td><code>linger.ms=5</code></td><td>Wait up to approximately 5 ms for more records</td></tr>
+                <tr><td><code>linger.ms=10</code></td><td>More opportunity to accumulate records</td></tr>
+                <tr><td>Very high linger</td><td>Potentially better batching, but higher latency</td></tr>
+              </tbody>
+            </table>
+            <p><code>linger.ms</code> is not a strict end-to-end delivery deadline. Broker or network delays, retries, and other producer conditions can affect actual delivery time.</p>
+
+            <h5 class="text-warning">4. How partition assignment works with batching</h5>
+            <p>Kafka assigns partitions to individual messages before batching. Batching does not mean that all messages go to one partition. The producer first determines the partition for each message, then maintains separate batches for each topic-partition.</p>
+
+            <p><strong>When a key is provided:</strong> the default partitioner conceptually uses:</p>
+            <pre><code class="language-text">partition = hash(serializedKey) % partitionCount</code></pre>
+            <p>Messages with the same key generally go to the same partition, assuming the partition count and partitioning strategy remain unchanged.</p>
+
+            <p><strong>When no key is provided:</strong> the default partitioner uses sticky partitioning. It tends to send records to the same selected partition temporarily to improve batching efficiency, then switches partitions. It does not calculate a key hash for every keyless message.</p>
+
+            <p><strong>When a partition is explicitly provided:</strong></p>
+            <pre><code class="language-java">ProducerRecord&lt;String, String&gt; record =
+        new ProducerRecord&lt;&gt;(
+                "commission-reports",
+                2,
+                "Agent101",
+                "Commission Report");
+
+kafkaTemplate.send(record);</code></pre>
+            <p>This message goes directly to partition 2.</p>
+
+            <h5 class="text-warning">5. Batches are maintained per partition</h5>
+            <p>With three partitions, messages might be distributed like this:</p>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Partition</th><th>Messages</th><th>Batch</th></tr></thead>
+              <tbody>
+                <tr><td>P0</td><td>M1, M4</td><td>Batch A</td></tr>
+                <tr><td>P1</td><td>M2, M5</td><td>Batch B</td></tr>
+                <tr><td>P2</td><td>M3, M6</td><td>Batch C</td></tr>
+              </tbody>
+            </table>
+            <p>The <code>RecordAccumulator</code> maintains separate batches for each topic-partition, and the Sender thread can send those batches to the appropriate brokers.</p>
+
+            <p>If 1,000 messages use the same key, they generally go to the same partition. This preserves ordering for that key, but can create a hot partition and limit parallelism for that key.</p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">Kafka producer uses both batch.size and linger.ms. If batch.size is reached first, the batch becomes eligible for sending. If linger.ms expires first, Kafka sends whatever records have accumulated, even if the batch is not full. Kafka determines the partition for each message before batching. A keyed message normally uses the key hash, a keyless message uses sticky partitioning, and an explicitly supplied partition is used directly. The producer then maintains separate batches for each topic-partition, so batching does not mean all messages go to one partition.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaConsumerGroupExampleTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaConsumerGroupExampleTopBody">What is a Kafka Consumer Group? Explain with a perfect example.</button>
+        </h2>
+        <div id="kafkaConsumerGroupExampleTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>A Kafka Consumer Group is a group of consumer instances that work together to read messages from the same Kafka topic. Its main purposes are parallel processing, load distribution, and fault tolerance.</p>
+
+            <h5 class="text-warning">1. Commission-report example</h5>
+            <p>Suppose the application publishes commission-report events to the <code>commission-reports</code> topic.</p>
+            <ul>
+              <li>Topic: <code>commission-reports</code></li>
+              <li>Partitions: 6</li>
+              <li>Consumer group: <code>report-consumer-group</code></li>
+              <li>Consumers: 3</li>
+            </ul>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Consumer</th><th>Assigned partitions</th></tr></thead>
+              <tbody>
+                <tr><td>Consumer 1</td><td>P0, P1</td></tr>
+                <tr><td>Consumer 2</td><td>P2, P3</td></tr>
+                <tr><td>Consumer 3</td><td>P4, P5</td></tr>
+              </tbody>
+            </table>
+            <p>All three consumers process messages independently and concurrently. Within one consumer group, a partition is assigned to at most one consumer at a time. The exact assignment depends on the configured partition assignor.</p>
+
+            <h5 class="text-warning">2. Increasing consumers</h5>
+            <p>With 6 partitions and 6 consumers, each consumer can receive one partition and all consumers are active. If the group has 8 consumers but only 6 partitions, 2 consumers remain idle because consumers in the same group cannot share one partition.</p>
+            <p>The partition count limits consumer parallelism within a consumer group.</p>
+
+            <h5 class="text-warning">3. Consumer crash and rebalance</h5>
+            <p>If Consumer 2, which owns P2 and P3, crashes, Kafka detects that it is no longer part of the group and triggers a rebalance. A possible new assignment is:</p>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Consumer</th><th>Assigned partitions</th></tr></thead>
+              <tbody>
+                <tr><td>C1</td><td>P0, P1</td></tr>
+                <tr><td>C3</td><td>P2, P3, P4, P5</td></tr>
+              </tbody>
+            </table>
+            <p>The exact assignment depends on the partition assignor. If Consumer 2 had processed messages but had not committed their offsets, Kafka can deliver those messages again after reassignment. Consumers should therefore be idempotent.</p>
+
+            <h5 class="text-warning">4. Multiple consumer groups</h5>
+            <p>Two different consumer groups can read the same topic independently. For example:</p>
+            <ul>
+              <li><code>report-email-group</code> consumes commission reports for email delivery.</li>
+              <li><code>report-analytics-group</code> consumes the same reports for analytics.</li>
+            </ul>
+            <p>Each group consumes all relevant messages and maintains separate offsets. One group's progress does not affect the other group's progress. This is Kafka's publish-subscribe model.</p>
+
+            <h5 class="text-warning">5. Consumer group versus consumer thread</h5>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Concept</th><th>Meaning</th></tr></thead>
+              <tbody>
+                <tr><td>Consumer group</td><td>Logical group of consumers sharing work</td></tr>
+                <tr><td>Consumer instance</td><td>An actual Kafka consumer</td></tr>
+                <tr><td>Consumer thread</td><td>Thread executing the consumer polling loop</td></tr>
+                <tr><td>Partition</td><td>Unit of parallelism and ordering in Kafka</td></tr>
+              </tbody>
+            </table>
+
+            <p>One application pod can have three concurrent Kafka listeners:</p>
+            <pre><code class="language-java">@KafkaListener(
+        topics = "commission-reports",
+        groupId = "report-consumer-group",
+        concurrency = "3")
+public void consume(String message) {
+    processReport(message);
+}</code></pre>
+            <p>This creates three consumer instances within the same application process. If three pods each have concurrency 3, there are nine consumer instances in the group. With only six partitions, at most six consumers can actively consume.</p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">A Kafka Consumer Group is a logical group of consumers that share the partitions of a topic. For example, with six partitions and three consumers, each consumer may process two partitions concurrently. A partition is assigned to only one consumer in the group at a time. If a consumer crashes, Kafka rebalances its partitions among the remaining consumers, and uncommitted messages may be delivered again. Multiple consumer groups can independently read the same topic for different purposes, such as email delivery and analytics. The maximum active consumer parallelism within one group is limited by the number of partitions.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaTenPartitionsOnePodTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaTenPartitionsOnePodTopBody">You have 10 Kafka partitions and one consumer pod. Can you process messages concurrently?</button>
+        </h2>
+        <div id="kafkaTenPartitionsOnePodTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>Yes. I can configure concurrent Kafka listeners within the same application instance, for example, three listener consumers. They can process messages from different partitions concurrently.</p>
+
+            <p>Alternatively, I can use a bounded worker pool for parallel processing within a listener, but then I must manage acknowledgement, ordering, and offset commits carefully.</p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">Yes. I can configure concurrent Kafka listeners within the same application instance, for example, three listener consumers. They can process messages from different partitions concurrently. Alternatively, I can use a bounded worker pool for parallel processing within a listener, but then I must manage acknowledgement, ordering, and offset commits carefully.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaProducerConsumerMultithreadingTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaProducerConsumerMultithreadingTopBody">Can we use multithreading inside Kafka producers and consumers? What are the purposes?</button>
+        </h2>
+        <div id="kafkaProducerConsumerMultithreadingTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>Yes. Multithreading can be used in both Kafka producers and consumers to improve throughput, handle concurrent workloads, and reduce processing time. Producer-side and consumer-side multithreading serve different purposes.</p>
+
+            <h5 class="text-warning">1. Multithreading in a Kafka producer</h5>
+            <p>Suppose a Java application needs to publish 10,000 commission report events. Multiple application threads can submit independent messages concurrently.</p>
+            <ul>
+              <li>Publish independent events concurrently.</li>
+              <li>Increase application-side throughput.</li>
+              <li>Avoid blocking application workflows while waiting for publishing results.</li>
+              <li>Process independent business records in parallel.</li>
+            </ul>
+            <p><strong>Important:</strong> Kafka's <code>KafkaProducer</code> is thread-safe. Generally create one shared producer instance and reuse it across application threads rather than creating a new producer per thread. <code>KafkaTemplate</code> is also designed for concurrent use.</p>
+            <pre><code class="language-java">ExecutorService executor =
+        Executors.newFixedThreadPool(5);
+
+for (int i = 0; i &lt; 1000; i++) {
+    int id = i;
+    executor.submit(() -&gt; {
+        ProducerRecord&lt;String, String&gt; record =
+                new ProducerRecord&lt;&gt;(
+                        "commission-reports",
+                        String.valueOf(id),
+                        "Report-" + id);
+        kafkaTemplate.send(record);
+    });
+}
+
+executor.shutdown();</code></pre>
+            <p><code>send()</code> is asynchronous and Kafka already has an internal background sender thread for batching and network communication. Adding application threads does not necessarily increase broker throughput.</p>
+
+            <h5 class="text-warning">2. Multithreading in a Kafka consumer</h5>
+            <p>If each message requires database insertion, validation, an external-service call, and a status update, parallel workers can process independent messages concurrently, improve I/O-bound throughput, and reduce consumer lag if downstream systems can handle the additional load.</p>
+            <pre><code class="language-java">@KafkaListener(
+        topics = "commission-reports",
+        groupId = "report-group")
+public void consume(String message) {
+    executor.submit(() -&gt; processReport(message));
+}</code></pre>
+            <p>This is simplified. In production, handle offset acknowledgement only after successful processing, duplicate processing after crashes, bounded pools and queues, partition ordering, and backpressure. Do not acknowledge immediately after submitting work to an executor.</p>
+
+            <h5 class="text-warning">3. Multiple consumer pods versus multiple threads</h5>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Feature</th><th>Multiple pods</th><th>Multiple threads</th></tr></thead>
+              <tbody>
+                <tr><td>Scaling</td><td>Infrastructure-level</td><td>Application-level</td></tr>
+                <tr><td>Parallelism</td><td>Across instances</td><td>Within one instance</td></tr>
+                <tr><td>Failure isolation</td><td>Better</td><td>Shared process</td></tr>
+                <tr><td>Resource usage</td><td>More infrastructure</td><td>Shared JVM resources</td></tr>
+                <tr><td>Kafka partitions</td><td>Assigned across group members</td><td>Depends on consumer design</td></tr>
+                <tr><td>Best use</td><td>Distributed scaling</td><td>Concurrent local processing</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">4. Spring Kafka listener concurrency</h5>
+            <p><code>ConcurrentMessageListenerContainer</code> can create multiple Kafka consumer instances inside one application instance:</p>
+            <pre><code class="language-java">@KafkaListener(
+        topics = "commission-reports",
+        groupId = "report-group",
+        concurrency = "3")
+public void consume(String message) {
+    processReport(message);
+}</code></pre>
+            <p>This creates three listener consumer threads within the application instance. Each participates in the same consumer group. If there are only two partitions, only two consumers can actively receive messages.</p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">Yes, we can use multithreading in both Kafka producers and consumers. On the producer side, multiple application threads can submit independent events concurrently, while one shared thread-safe KafkaProducer is reused. On the consumer side, worker threads can process independent messages in parallel and reduce lag, especially for I/O-bound work. However, I would use bounded pools, apply backpressure, acknowledge offsets only after successful processing, preserve partition ordering where required, and handle duplicates. For scaling across instances I would use more pods or listener concurrency, but active consumers are still limited by the number of partitions.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="devops">
+        <h2 class="accordion-header" id="whatIsKedaTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#whatIsKedaTopBody">What is KEDA?</button>
+        </h2>
+        <div id="whatIsKedaTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p><strong>KEDA stands for Kubernetes Event-driven Autoscaling.</strong> It is an open-source component that automatically scales Kubernetes applications based on external events or metrics.</p>
+
+            <p>For example, KEDA can monitor Kafka consumer lag and automatically increase or decrease the number of consumer pods.</p>
+
+            <h5 class="text-warning">1. Why do we need KEDA?</h5>
+            <p>Normally, Kubernetes HPA scales pods using metrics such as CPU utilization, memory utilization, or custom metrics. However, an application can have low CPU usage while Kafka consumer lag continuously increases. HPA based only on CPU may not scale the application.</p>
+
+            <p>KEDA allows scaling based on event-driven metrics such as Kafka consumer lag, RabbitMQ queue length, or other external metrics.</p>
+
+            <h5 class="text-warning">2. How KEDA works with Kafka</h5>
+            <ol>
+              <li>Kafka consumer lag increases.</li>
+              <li>KEDA monitors the lag against a configured threshold.</li>
+              <li>KEDA provides the event-based metric to Kubernetes HPA.</li>
+              <li>HPA adjusts the desired replica count.</li>
+              <li>Kubernetes starts or terminates consumer pods.</li>
+            </ol>
+
+            <pre><code class="language-text">Kafka: consumer lag increases
+KEDA: monitors lag against threshold
+HPA: adjusts desired replica count
+Kubernetes: scales consumer pods from 3 to 10</code></pre>
+
+            <h5 class="text-warning">3. KEDA versus HPA</h5>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Feature</th><th>HPA</th><th>KEDA</th></tr></thead>
+              <tbody>
+                <tr><td>Full form</td><td>Horizontal Pod Autoscaler</td><td>Kubernetes Event-driven Autoscaling</td></tr>
+                <tr><td>CPU and memory scaling</td><td>Yes</td><td>Can work with HPA</td></tr>
+                <tr><td>Kafka lag scaling</td><td>Requires custom or external metrics integration</td><td>Built-in Kafka scaler</td></tr>
+                <tr><td>External event scaling</td><td>Not directly built in</td><td>Yes</td></tr>
+                <tr><td>Scale to zero</td><td>Not supported by standard HPA alone</td><td>Supported</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">4. Important KEDA components</h5>
+            <ul>
+              <li><strong>ScaledObject:</strong> Defines which Kubernetes Deployment should scale.</li>
+              <li><strong>Scaler:</strong> Connects to an external source such as Kafka, RabbitMQ, or Prometheus.</li>
+              <li><strong>Metrics:</strong> Provides event-based metrics to Kubernetes.</li>
+              <li><strong>HPA:</strong> Handles the replica-count scaling.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">KEDA is an event-driven autoscaling component for Kubernetes. It supports scaling applications based on external event sources such as Kafka consumer lag, RabbitMQ queue length, and other metrics. For Kafka, KEDA monitors consumer-group lag and works with Kubernetes HPA to scale consumer pods according to configured thresholds. This helps us scale based on actual workload rather than relying only on CPU and memory. KEDA decides scaling based on event metrics, while Kubernetes creates and terminates the pods.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaConsumerScaleBottleneckTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaConsumerScaleBottleneckTopBody">Suppose you scale consumers to 100 or 1,000 instances, but still cannot process all Kafka messages within the SLA. What could be blocking you?</button>
+        </h2>
+        <div id="kafkaConsumerScaleBottleneckTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>Adding more consumers does not always increase throughput. The bottleneck may be somewhere other than the consumers themselves.</p>
+
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Bottleneck</th><th>What happens</th></tr></thead>
+              <tbody>
+                <tr><td><strong>Partition limit</strong></td><td>A consumer group cannot actively use more consumers than there are partitions. Extra consumers remain idle.</td></tr>
+                <tr><td><strong>Database bottleneck</strong></td><td>Consumers wait for slow queries, inserts, locks, or connection pool availability.</td></tr>
+                <tr><td><strong>External API latency</strong></td><td>Consumers spend time waiting for downstream services.</td></tr>
+                <tr><td><strong>Connection pool exhaustion</strong></td><td>1,000 consumers compete for a limited number of database connections.</td></tr>
+                <tr><td><strong>Uneven partition distribution</strong></td><td>Some partitions receive significantly more messages than others.</td></tr>
+                <tr><td><strong>Slow message processing</strong></td><td>Complex business logic, CPU-intensive processing, serialization, and similar work consume time.</td></tr>
+                <tr><td><strong>Frequent rebalancing</strong></td><td>Consumers repeatedly lose and regain partition assignments, interrupting processing.</td></tr>
+                <tr><td><strong>Kafka broker bottleneck</strong></td><td>Broker disk I/O, network throughput, or request capacity becomes saturated.</td></tr>
+                <tr><td><strong>Lock contention</strong></td><td>Multiple consumers compete for the same database rows or resources.</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Real-time example</h5>
+            <p>Suppose you have 100 Kafka partitions and 100 consumer instances. Each consumer can process 100 messages per second, giving a theoretical capacity of 10,000 messages per second. However, every message requires a database operation and the database can handle only 2,000 operations per second.</p>
+            <p>The database is the bottleneck. Adding another 900 consumers will not solve the problem and may increase database contention.</p>
+
+            <h5 class="text-warning">Troubleshooting approach</h5>
+            <ol>
+              <li>Check consumer lag and identify the partitions with the highest lag.</li>
+              <li>Measure consumer message-processing time.</li>
+              <li>Check database query latency, CPU, locks, connection pool utilization, and throughput.</li>
+              <li>Check downstream API response time, timeouts, and error rates.</li>
+              <li>Check Kafka broker network, disk I/O, and request latency.</li>
+              <li>Check partition distribution and whether some partitions are overloaded.</li>
+              <li>Check whether frequent consumer-group rebalances interrupt processing.</li>
+            </ol>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">Simply increasing consumer instances does not guarantee higher throughput. I would first identify the actual bottleneck. It could be the partition count, database connection pool, slow database queries, downstream API latency, uneven partition distribution, or Kafka broker capacity. If consumers are waiting for database operations, adding more consumers will increase database contention rather than improve throughput. I would monitor consumer lag, processing latency, database connection pool utilization, query performance, and downstream response times, then scale or optimize the component actually limiting throughput.</blockquote>
+
+            <p>If CPU and memory utilization are normal but consumer lag keeps increasing, I would investigate I/O-bound bottlenecks first: database latency, connection pool saturation, downstream API response times, partition skew, and consumer processing latency.</p>
+            <p><strong>Interview principle:</strong> Scale the bottleneck, not blindly the consumers.</p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaLagAutoscalingTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaLagAutoscalingTopBody">How does Kafka consumer lag increase application pods when Kafka and consumers run on different infrastructure?</button>
+        </h2>
+        <div id="kafkaLagAutoscalingTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p><strong>Kafka does not directly increase application pods.</strong> An autoscaling component monitors Kafka consumer lag and tells the infrastructure orchestrator to scale the consumer application.</p>
+
+            <h5 class="text-warning">1. Components involved</h5>
+            <ol>
+              <li><strong>Kafka:</strong> Stores messages and exposes consumer-group lag metrics.</li>
+              <li><strong>Monitoring:</strong> Collects Kafka lag metrics, commonly through Prometheus or another metrics system.</li>
+              <li><strong>Autoscaler:</strong> Evaluates lag against a configured threshold, for example KEDA.</li>
+              <li><strong>Kubernetes:</strong> Increases or decreases the consumer application's desired pod count.</li>
+            </ol>
+
+            <h5 class="text-warning">2. What happens behind the scenes?</h5>
+            <p>Suppose the consumer application initially has 3 pods, Kafka has 12 partitions, and the consumer group lag increases to 50,000 messages.</p>
+            <ol>
+              <li>KEDA's Kafka scaler reads the consumer-group lag.</li>
+              <li>KEDA calculates that more consumers are needed based on the configured threshold.</li>
+              <li>KEDA works with Kubernetes HPA or the Kubernetes scaling API to increase the desired replica count.</li>
+              <li>Kubernetes schedules additional consumer pods.</li>
+              <li>The new consumers join the same Kafka consumer group.</li>
+              <li>Kafka triggers a rebalance and assigns available partitions to the consumers.</li>
+            </ol>
+
+            <pre><code class="language-text">Kafka lag: 50,000 messages
+KEDA/HPA: updates desired replicas
+Kubernetes: scales 3 pods to 10 pods
+Kafka: rebalances partitions among the group members</code></pre>
+
+            <p>Kafka does not tell Kubernetes to create pods. KEDA or another autoscaling integration handles that communication.</p>
+
+            <h5 class="text-warning">3. What if Kafka and Kubernetes are on different on-premise servers?</h5>
+            <p>That is supported. The Kafka cluster and Kubernetes cluster can run on separate on-premise infrastructure. KEDA runs inside Kubernetes and connects to Kafka using its bootstrap servers, credentials, and network connectivity. It reads consumer-group lag and requests scaling through the Kubernetes API.</p>
+
+            <p>The physical infrastructure can be separate. What matters is network connectivity, authentication, and access to Kafka metrics.</p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">Kafka does not directly increase my application pods. Consumer lag is exposed as a metric, and an autoscaler such as KEDA monitors it. When lag crosses the configured threshold, KEDA updates the Kubernetes desired replica count through HPA or the Kubernetes API. Kubernetes starts new consumer pods, those pods join the same consumer group, and Kafka rebalances the partitions among the available consumers. Kafka and Kubernetes can run on separate on-premise infrastructure as long as KEDA has network connectivity, authentication, and access to Kafka lag metrics.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="springboot">
+        <h2 class="accordion-header" id="springBatchCurrentChunkRollbackTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#springBatchCurrentChunkRollbackTopBody">Suppose you have 1,000 records and the batch fails around the 350th record. Will Spring Batch roll back those 50 records in the current chunk?</button>
+        </h2>
+        <div id="springBatchCurrentChunkRollbackTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p><strong>Yes. Spring Batch rolls back the entire current chunk, not just the records processed before the failure.</strong></p>
+
+            <p>Assume:</p>
+            <ul>
+              <li>Total records: <code>1,000</code></li>
+              <li>Chunk size: <code>100</code></li>
+              <li>Failure occurs while processing record <code>350</code></li>
+            </ul>
+
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Chunk</th><th>Records</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td>1</td><td>1-100</td><td>Committed</td></tr>
+                <tr><td>2</td><td>101-200</td><td>Committed</td></tr>
+                <tr><td>3</td><td>201-300</td><td>Committed</td></tr>
+                <tr><td>4</td><td>301-400</td><td>Rolled back</td></tr>
+                <tr><td>5 onward</td><td>401-1,000</td><td>Not processed yet</td></tr>
+              </tbody>
+            </table>
+
+            <p>Spring Batch uses a transaction boundary around each chunk. If record 350 causes an exception and the exception triggers rollback, all database changes made in the current chunk, including records <code>301-350</code> or whatever was processed before failure, are rolled back. The previous three chunks remain committed.</p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">Spring Batch commits data chunk by chunk. If an exception occurs while processing the fourth chunk, the current chunk transaction is rolled back, but previously committed chunks remain intact. On restart, Spring Batch uses the saved ExecutionContext to resume from the last committed checkpoint, assuming the reader is restartable.</blockquote>
+
+            <p><strong>Important:</strong> This rollback applies to operations participating in the same transaction. External API calls, emails, or Kafka messages are not automatically rolled back with the database transaction.</p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="dailyKafkaEventsTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#dailyKafkaEventsTopBody">How many Kafka events do you handle daily?</button>
+        </h2>
+        <div id="dailyKafkaEventsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p><strong>First rule: Never invent a daily event count.</strong> If the exact number is not known, explain the workflow confidently and say that you would verify the metric from producer dashboards or monitoring rather than quote an unsupported figure.</p>
+
+            <p>For the Farm Bureau PIC project, the Kafka workflow was described as follows:</p>
+            <ul>
+              <li>Commission calculation happens through Spring Batch.</li>
+              <li>Report-related data is picked up from the database.</li>
+              <li>Events are published to Kafka.</li>
+              <li>Consumers process those events and deliver commission reports to producers or agents.</li>
+            </ul>
+
+            <h5 class="text-warning">Interview answer when the exact count is not known</h5>
+            <blockquote class="border-start border-info border-3 ps-3">I don't want to give you an inaccurate number. In our PIC project, Kafka was primarily used for the commission report-delivery workflow. Once commission processing was completed, report-related events were published to Kafka and consumers handled the email delivery. The event volume was relatively lower compared with the policy-processing volume because the events were associated with producer reports. I was more involved in the application integration and event-processing workflow than in tracking the overall Kafka infrastructure metrics.</blockquote>
+
+            <h5 class="text-warning">If the interviewer asks for an approximate number</h5>
+            <blockquote class="border-start border-info border-3 ps-3">I don't have the exact daily count available. I would prefer to verify it from producer metrics or monitoring dashboards rather than quote an unsupported number.</blockquote>
+
+            <h5 class="text-warning">Metrics to prepare</h5>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Metric</th><th>What it tells you</th></tr></thead>
+              <tbody>
+                <tr><td>Events per day</td><td>Daily volume</td></tr>
+                <tr><td>Average events per second</td><td>Average throughput</td></tr>
+                <tr><td>Peak events per second</td><td>Maximum traffic</td></tr>
+                <tr><td>Average message size</td><td>Payload size</td></tr>
+                <tr><td>Number of partitions</td><td>Parallelism</td></tr>
+                <tr><td>Consumer count</td><td>Processing capacity</td></tr>
+                <tr><td>Consumer lag</td><td>Backlog</td></tr>
+                <tr><td>Processing latency</td><td>Time to process an event</td></tr>
+              </tbody>
+            </table>
+
+            <p>Since the project had lower report-event volume than policy volume, do not claim millions of Kafka messages per day without evidence. Explain the actual workflow and be transparent about metrics you did not personally monitor.</p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaProducerInternalsTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaProducerInternalsTopBody">Kafka Producer Internals</button>
+        </h2>
+        <div id="kafkaProducerInternalsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>Kafka producer does not send every message immediately to the broker. It serializes, partitions, batches, buffers, and sends messages asynchronously.</p>
+
+            <h5 class="text-warning">1. Producer architecture</h5>
+            <ol>
+              <li>Application thread</li>
+              <li>Serializer</li>
+              <li>Partitioner</li>
+              <li>RecordAccumulator</li>
+              <li>Sender thread</li>
+              <li>Kafka broker</li>
+              <li>Acknowledgement handler and callback</li>
+            </ol>
+
+            <h5 class="text-warning">2. Complete message lifecycle</h5>
+            <p>Suppose a Spring Boot application publishes this event:</p>
+            <pre><code class="language-java">kafkaTemplate.send(
+    "commission-topic",
+    "agent-101",
+    "Commission calculated"
+);</code></pre>
+
+            <p><strong>Step 1: Application thread.</strong> The application calls <code>send()</code>. Spring Kafka's <code>KafkaTemplate</code> uses Kafka's <code>KafkaProducer</code>. The producer accepts the record for asynchronous sending and returns a future.</p>
+
+            <p><strong>Step 2: Serialization.</strong> Kafka converts the key and value into bytes. Depending on configuration, it can use <code>StringSerializer</code>, <code>JsonSerializer</code>, an Avro serializer, or <code>ByteArraySerializer</code>.</p>
+
+            <p><strong>Step 3: Partition selection.</strong> The producer determines the destination partition. For keyed messages, Kafka's default partitioner uses a hash of the serialized key. Messages with the same key normally go to the same partition, assuming the partition count and strategy remain unchanged. Records without a key use the configured partitioning strategy.</p>
+
+            <p><strong>Step 4: RecordAccumulator.</strong> Kafka places records into an in-memory <code>RecordAccumulator</code>, typically building batches per topic-partition rather than sending every record immediately.</p>
+            <pre><code class="language-text">Partition 0: Message 1, Message 2, Message 3
+Partition 1: Message 4, Message 5</code></pre>
+            <p>Batches are influenced by <code>batch.size</code> and <code>linger.ms</code>.</p>
+
+            <p><strong>Step 5: Sender thread.</strong> A background I/O sender thread checks available batches, sends them to the appropriate brokers, and handles responses and configured retries.</p>
+
+            <p><strong>Step 6: Broker processing.</strong> The broker receives the record batch and appends the records to the partition log. The response depends on the acknowledgement configuration.</p>
+
+            <p><strong>Step 7: Callback or future completion.</strong> The producer completes the future with successful metadata, including topic, partition, and offset, or with an exception if publishing failed.</p>
+
+            <h5 class="text-warning">3. Important producer configurations</h5>
+            <p><strong><code>batch.size</code>:</strong> Maximum size of a record batch in bytes.</p>
+            <pre><code class="language-properties">spring.kafka.producer.properties.batch.size=32768</code></pre>
+            <p><strong><code>linger.ms</code>:</strong> How long the producer waits for more records before sending a batch that is not full.</p>
+            <pre><code class="language-properties">spring.kafka.producer.properties.linger.ms=10</code></pre>
+            <p>Batching can reduce requests and improve throughput, at the cost of some waiting latency.</p>
+            <p><strong><code>buffer.memory</code>:</strong> Total memory available to buffer records.</p>
+            <pre><code class="language-properties">spring.kafka.producer.buffer-memory=33554432</code></pre>
+            <p>If the buffer becomes full, the producer waits for space. If it cannot obtain space before <code>max.block.ms</code>, <code>send()</code> can throw a <code>TimeoutException</code>.</p>
+
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Configuration</th><th>Purpose</th></tr></thead>
+              <tbody>
+                <tr><td><code>batch.size</code></td><td>Maximum batch size</td></tr>
+                <tr><td><code>linger.ms</code></td><td>Wait time to accumulate records</td></tr>
+                <tr><td><code>buffer.memory</code></td><td>Total producer buffering capacity</td></tr>
+                <tr><td><code>max.block.ms</code></td><td>Maximum wait for buffer allocation or metadata</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">4. Producer acknowledgements</h5>
+            <p>The <code>acks</code> setting determines when the producer considers a send successful.</p>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Setting</th><th>Behaviour</th><th>Reliability</th></tr></thead>
+              <tbody>
+                <tr><td><code>acks=0</code></td><td>Does not wait for broker acknowledgement</td><td>Lowest</td></tr>
+                <tr><td><code>acks=1</code></td><td>Waits for leader acknowledgement</td><td>Medium</td></tr>
+                <tr><td><code>acks=all</code></td><td>Waits for the required ISR acknowledgements</td><td>Highest</td></tr>
+              </tbody>
+            </table>
+            <p><code>acks=all</code> does not necessarily mean all configured replicas acknowledge. It waits for all replicas currently in the ISR, subject to <code>min.insync.replicas</code>.</p>
+
+            <h5 class="text-warning">5. Idempotent producer</h5>
+            <p>If an acknowledgement is lost because of a network issue, the producer may retry. Without idempotence, the broker might append a duplicate record. With idempotence enabled, Kafka uses producer IDs and sequence numbers to prevent duplicate writes caused by producer retries.</p>
+            <pre><code class="language-properties">spring.kafka.producer.properties.enable.idempotence=true
+spring.kafka.producer.acks=all</code></pre>
+            <ul>
+              <li>Producer idempotence protects against duplicate writes caused by producer retries.</li>
+              <li>It does not prevent the application from intentionally sending the same business event twice.</li>
+              <li>It does not guarantee exactly-once database processing by consumers.</li>
+            </ul>
+
+            <h5 class="text-warning">6. Other important producer configurations</h5>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Configuration</th><th>Purpose</th></tr></thead>
+              <tbody>
+                <tr><td><code>compression.type</code></td><td>Compress record batches</td></tr>
+                <tr><td><code>retries</code></td><td>Retry transient send failures</td></tr>
+                <tr><td><code>delivery.timeout.ms</code></td><td>Overall delivery time limit</td></tr>
+                <tr><td><code>request.timeout.ms</code></td><td>Broker request timeout</td></tr>
+                <tr><td><code>max.in.flight.requests.per.connection</code></td><td>Outstanding requests per connection</td></tr>
+                <tr><td><code>max.block.ms</code></td><td>Blocking time for buffer allocation and metadata</td></tr>
+              </tbody>
+            </table>
+            <p>Compression options include <code>gzip</code>, <code>snappy</code>, <code>lz4</code>, and <code>zstd</code>.</p>
+
+            <h5 class="text-warning">7. Practical Spring Boot configuration</h5>
+            <pre><code class="language-properties">spring.kafka.producer.bootstrap-servers=localhost:9092
+spring.kafka.producer.key-serializer=org.apache.kafka.common.serialization.StringSerializer
+spring.kafka.producer.value-serializer=org.springframework.kafka.support.serializer.JsonSerializer
+spring.kafka.producer.acks=all
+spring.kafka.producer.properties.enable.idempotence=true
+spring.kafka.producer.properties.batch.size=32768
+spring.kafka.producer.properties.linger.ms=10
+spring.kafka.producer.buffer-memory=33554432
+spring.kafka.producer.properties.compression.type=lz4</code></pre>
+            <p>These are illustrative settings, not universal production defaults. Tune them against throughput, latency, and reliability requirements.</p>
+
+            <h5 class="text-warning">8. How to improve producer performance</h5>
+            <p>If Kafka publishing is slow, investigate in this order:</p>
+            <ol>
+              <li>Check producer send latency and broker request latency.</li>
+              <li>Check whether batching is effective.</li>
+              <li>Tune <code>batch.size</code> and <code>linger.ms</code>.</li>
+              <li>Evaluate compression.</li>
+              <li>Check producer buffer exhaustion and blocking.</li>
+              <li>Check broker health, network latency, and broker throughput.</li>
+              <li>Check serialization overhead.</li>
+              <li>Check partition distribution and whether a hot partition is limiting throughput.</li>
+            </ol>
+            <p>Increasing partitions is not automatically the solution to slow producer publishing. First identify the actual bottleneck.</p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">When a Spring Boot application publishes to Kafka, KafkaTemplate delegates to KafkaProducer. The producer serializes the key and value, selects a partition, stores the record in the RecordAccumulator, builds batches, and sends them asynchronously through a background sender thread. The broker appends the batch and acknowledges it according to the acks setting. I would tune batch.size, linger.ms, buffer.memory, compression, retries, and delivery timeouts according to the latency and throughput requirements. For reliability, I would use acks=all and enable.idempotence=true, while remembering that consumer-side business idempotency is still required.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="outboxFiveMillionPendingTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#outboxFiveMillionPendingTopBody">Suppose 5 million records are pending in the Outbox. How would you handle it?</button>
+        </h2>
+        <div id="outboxFiveMillionPendingTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>If 5 million records are pending in the Outbox table, I would not process them in one batch or load them into memory. I would use a batch-based, scalable Outbox Publisher.</p>
+
+            <h5 class="text-warning">1. High-level architecture</h5>
+            <p>The Outbox table contains the pending events. Multiple publisher workers fetch 500-1,000 records per batch, claim separate records, and publish them to Kafka.</p>
+
+            <h5 class="text-warning">2. Fetch records in batches</h5>
+            <p>Never fetch all 5 million records. Use an indexed status and claiming strategy:</p>
+            <pre><code class="language-sql">SELECT *
+FROM outbox
+WHERE status = 'PENDING'
+ORDER BY id
+LIMIT 1000;</code></pre>
+
+            <h5 class="text-warning">3. Process in parallel</h5>
+            <p>Run multiple publisher workers. For example, Worker 1 processes batch A, Worker 2 processes batch B, and Worker 3 processes batch C. Use <code>SELECT ... FOR UPDATE SKIP LOCKED</code> where supported, or an atomic claim/update mechanism, so two workers cannot claim the same records.</p>
+
+            <h5 class="text-warning">4. Publish to Kafka</h5>
+            <pre><code class="language-java">kafkaTemplate.send(topic, event.getEventId(), event.getPayload())
+        .whenComplete((result, exception) -&gt; {
+            if (exception == null) {
+                // Mark event as PUBLISHED
+            } else {
+                // Keep pending and retry
+            }
+        });</code></pre>
+            <p>Only mark an event as published after receiving the broker acknowledgement.</p>
+
+            <h5 class="text-warning">5. Handle failures</h5>
+            <ul>
+              <li><strong>Kafka unavailable:</strong> Retry with exponential backoff.</li>
+              <li><strong>Temporary network failure:</strong> Retry.</li>
+              <li><strong>Invalid event payload:</strong> Move to <code>FAILED</code> for investigation.</li>
+              <li><strong>Publisher crashes:</strong> Recover expired claims and retry.</li>
+              <li><strong>Duplicate publishing:</strong> Use consumer-side idempotency.</li>
+            </ul>
+
+            <h5 class="text-warning">6. Monitor the backlog</h5>
+            <p>Monitor the pending record count, oldest pending event age, publishing throughput, retry count, failed events, and Kafka producer latency. If the backlog keeps growing, scale publisher workers and investigate database or Kafka bottlenecks.</p>
+
+            <h5 class="text-warning">7. Repeatedly failing records</h5>
+            <p>Isolate a record that repeatedly fails instead of blocking the entire batch. Apply bounded retries with exponential backoff, move permanently failing events to a failed state, continue processing other eligible records, and alert when the oldest pending event approaches the SLA.</p>
+
+            <p>Outbox publisher failures happen before Kafka successfully receives the event. A consumer DLQ handles messages that reached Kafka but repeatedly fail during consumption.</p>
+
+            <h5 class="text-warning">8. Duplicate event trap</h5>
+            <p>If the publisher sends an event, Kafka acknowledges it, and the publisher crashes before updating the Outbox status to <code>PUBLISHED</code>, the event can be published again after restart. The Outbox pattern therefore generally provides at-least-once delivery, not automatic exactly-once business processing.</p>
+
+            <p>Use a unique <code>event_id</code> and consumer-side idempotency to prevent duplicate business operations.</p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">If we have 5 million pending Outbox records, I would implement a scalable publisher using batch fetching and parallel workers instead of loading all records into memory. I would fetch records in controlled batches, use database-level claiming or locking to prevent multiple workers from processing the same event, and publish asynchronously to Kafka. After receiving broker acknowledgement, I would mark the event as published. For transient failures, I would use exponential backoff and retries. Permanently failing events would be isolated for investigation so they do not block the remaining backlog. I would monitor backlog size, oldest event age, publishing throughput, and failure rate, scale publisher workers based on those metrics, and implement consumer-side idempotency because a publisher crash after Kafka acknowledgement can cause duplicate events.</blockquote>
+
+            <p><strong>Key takeaway:</strong> Batch processing + parallel workers + safe claiming + retries + monitoring + idempotency.</p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="springboot">
+        <h2 class="accordion-header" id="springBatchChunkRollbackRestartTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#springBatchChunkRollbackRestartTopBody">How does Spring Batch handle chunk rollback and restart?</button>
+        </h2>
+        <div id="springBatchChunkRollbackRestartTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>Spring Batch normally creates one database transaction per chunk. If the chunk size is <code>1,000</code> and the first three chunks are committed, records <code>1-3,000</code> remain committed.</p>
+
+            <p>If an exception occurs while processing record <code>3,501</code>, the current fourth chunk, records <code>3,001-4,000</code>, is rolled back by default. Spring Batch does not roll back only the <code>501</code> records after the failing record.</p>
+
+            <h5 class="text-warning">Example</h5>
+            <ul>
+              <li>Chunk 1: records <code>1-1,000</code> committed.</li>
+              <li>Chunk 2: records <code>1,001-2,000</code> committed.</li>
+              <li>Chunk 3: records <code>2,001-3,000</code> committed.</li>
+              <li>Chunk 4: records <code>3,001-4,000</code> fails and rolls back.</li>
+            </ul>
+
+            <h5 class="text-warning">How restart works</h5>
+            <p>Spring Batch stores job and step metadata in the <code>JobRepository</code>. A restartable reader stores its checkpoint in the <code>ExecutionContext</code>. On restart, the reader resumes from the last successful checkpoint, normally record <code>3,001</code>, rather than exactly at record <code>3,501</code>.</p>
+
+            <pre><code class="language-java">@Bean
+@StepScope
+public FlatFileItemReader&lt;Employee&gt; reader(
+        @Value("#{jobParameters['file']}") String file) {
+    return new FlatFileItemReaderBuilder&lt;Employee&gt;()
+            .name("employeeReader")
+            .resource(new FileSystemResource(file))
+            .saveState(true)
+            .build();
+}</code></pre>
+
+            <p>Therefore, records in the failed chunk may be processed again. The reader should have a stable name and <code>saveState(true)</code>, and the item processing should be idempotent to safely handle replay.</p>
+
+            <p>If fault tolerance with retry or skip is configured, Spring Batch can handle a bad record differently. Without that configuration, the complete current chunk transaction is rolled back.</p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">With a chunk size of 1,000, Spring Batch commits each chunk in its own transaction. If the first three chunks are committed and record 3,501 fails in the fourth chunk, the first 3,000 records remain committed, while the entire fourth chunk is rolled back. On restart, the JobRepository and ExecutionContext restore the reader from the last successful checkpoint, so the failed chunk is normally read again. I use a restartable reader and idempotent processing to handle that replay safely.</blockquote>
+          </div>
+        </div>
+      </div>
       <div class="accordion-item" data-category="java">
         <h2 class="accordion-header" id="java17FeaturesTop">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#java17FeaturesTopBody">Java 17 features with examples</button>
@@ -30476,267 +32665,6 @@ circuit breaker = stop calls after repeated failures</code></pre>
         </div>
       </div>
 
-      <div class="accordion-item" data-manual-category="springboot">
-       <h2 class="accordion-header" id="feignRetryTop">
-          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
-            data-bs-target="#feignRetryTopBody">
-            Can we retry a failed request with a Feign Client?
-          </button>
-        </h2>
-        <div id="feignRetryTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
-          <div class="accordion-body bg-dark text-light">
-            <p>
-              <strong>Yes, but do not retry every failure.</strong> A Feign retry should be limited to transient failures
-              such as a connection reset, temporary network problem, selected gateway errors, or a 503 response. A retry
-              cannot fix a validation error, authentication failure, a missing resource, or a permanently slow service.
-            </p>
-
-            <h5 class="text-warning">Configure a Feign Retryer</h5>
-            <pre><code class="language-java">@Configuration
-class FeignRetryConfig {
-    @Bean
-    Retryer feignRetryer() {
-        // period, maxPeriod, maxAttempts
-        return new Retryer.Default(200, 1000, 2);
-    }
-}
-
-@FeignClient(
-    name = "inventory-service",
-    configuration = FeignRetryConfig.class)
-interface InventoryClient {
-    @GetMapping("/inventory/{sku}")
-    InventoryResponse find(@PathVariable String sku);
-}</code></pre>
-            <p>
-              The exact retry behavior depends on the Feign and Spring Cloud version and exception mapping. In Spring
-              Cloud OpenFeign, the default configuration commonly uses a no-retry policy, so an explicit
-              <code>Retryer</code> is needed when retries are desired. Feign retries exceptions that its retry mechanism
-              recognizes, such as retryable I/O failures or <code>RetryableException</code>; configure error decoding
-              carefully if selected HTTP responses should become retryable.
-            </p>
-
-            <h5 class="text-warning">Which failures should be retried?</h5>
-            <table class="table table-dark table-bordered table-sm">
-              <thead>
-                <tr>
-                  <th>Failure</th>
-                  <th>Retry?</th>
-                  <th>Reason</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Connection reset, temporary network failure</td>
-                  <td>Usually yes, with a small limit</td>
-                  <td>The request may succeed on another attempt.</td>
-                </tr>
-                <tr>
-                  <td>HTTP 503 or 429</td>
-                  <td>Sometimes</td>
-                  <td>Respect Retry-After and use backoff; the dependency may be overloaded.</td>
-                </tr>
-                <tr>
-                  <td>HTTP 400, 401, 403, 404</td>
-                  <td>No</td>
-                  <td>Usually a request, credential, permission, or resource problem.</td>
-                </tr>
-                <tr>
-                  <td>POST payment or order creation</td>
-                  <td>Only with idempotency protection</td>
-                  <td>The first attempt may have succeeded even if the response was lost.</td>
-                </tr>
-                <tr>
-                  <td>Read-only GET</td>
-                  <td>Usually safer</td>
-                  <td>Still needs a timeout, retry limit, and downstream capacity protection.</td>
-                </tr>
-              </tbody>
-            </table>
-
-            <h5 class="text-warning">Use exponential backoff and jitter</h5>
-            <p>
-              Immediate retries from many service instances can create a retry storm. Wait for an increasing delay and
-              add random jitter so clients do not retry together. Keep total retry time inside the caller's deadline.
-            </p>
-            <pre><code class="language-text">Attempt 1: initial request
-Attempt 2: wait about 200 ms + jitter
-Attempt 3: wait about 400 ms + jitter
-Then fail or use a fallback</code></pre>
-
-            <h5 class="text-warning">Combine retries with Resilience4j</h5>
-            <pre><code class="language-java">@Retry(name = "inventory")
-@CircuitBreaker(name = "inventory", fallbackMethod = "fallback")
-public InventoryResponse getInventory(String sku) {
-    return inventoryClient.find(sku);
-}
-
-private InventoryResponse fallback(String sku, Throwable error) {
-    return InventoryResponse.unavailable(sku);
-}</code></pre>
-            <p>
-              Avoid accidentally configuring retries in both Feign and Resilience4j without calculating the total
-              attempts. One logical call can otherwise become many network calls. A common design uses one retry layer,
-              a short timeout, a circuit breaker, and a bulkhead.
-            </p>
-
-            <h5 class="text-warning">Important idempotency rule</h5>
-            <p>
-              A timeout does not prove that the downstream operation failed. The server may have committed the request
-              before the client lost the response. For order, payment, or inventory writes, send an idempotency key and
-              let the downstream service return the original result for a duplicate key.
-            </p>
-            <pre><code class="language-http">POST /payments
-Idempotency-Key: payment-ORD-100-v1</code></pre>
-
-            <h5 class="text-warning">Best practices</h5>
-            <ul>
-              <li>Retry only transient and explicitly retryable failures.</li>
-              <li>Use a small maximum attempt count, exponential backoff, and jitter.</li>
-              <li>Respect the overall request deadline and the downstream Retry-After header.</li>
-              <li>Never retry authentication, validation, or authorization failures.</li>
-              <li>Protect non-idempotent operations with idempotency keys or use an idempotent API design.</li>
-              <li>Use circuit breakers and bulkheads to stop retries from overwhelming an unhealthy dependency.</li>
-              <li>Record retry count, final error, latency, and downstream response status in metrics and traces.</li>
-            </ul>
-
-            <h5 class="text-warning">Interview-ready answer</h5>
-            <p>
-              "Yes, Feign can retry, but I configure a small, dependency-specific retry policy rather than retrying every
-              exception. I retry transient network failures and selected 503 or 429 responses with exponential backoff,
-              jitter, and a total deadline. I do not retry 4xx errors or non-idempotent writes unless an idempotency key
-              protects the operation. I combine one retry layer with timeouts, circuit breakers, bulkheads, and metrics."
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div class="accordion-item" data-manual-category="springboot">
-       <h2 class="accordion-header" id="feignReadTimeoutResilienceTop">
-          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
-            data-bs-target="#feignReadTimeoutResilienceTopBody">
-            What should we do when a Feign downstream call normally takes 5 seconds but sometimes takes 6 seconds?
-          </button>
-        </h2>
-        <div id="feignReadTimeoutResilienceTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
-          <div class="accordion-body bg-dark text-light">
-            <p>
-              A 5-second configured read timeout means the client will stop waiting before a 6-second response arrives.
-              The request will usually fail with a read-timeout exception. Do not immediately increase every timeout;
-              first decide whether 6 seconds is an acceptable business latency and identify why the downstream service is
-              slower on that day.
-            </p>
-
-            <h5 class="text-warning">First diagnose the latency</h5>
-            <ul>
-              <li>Compare client timing with downstream server timing using trace IDs and distributed tracing.</li>
-              <li>Check whether the delay is in DNS, connection establishment, TLS, server queueing, database queries, or response transfer.</li>
-              <li>Check downstream CPU, memory, garbage collection, thread pools, connection pools, slow queries, locks, and dependency latency.</li>
-              <li>Look for traffic spikes, Tuesday batch jobs, deployments, backups, cache misses, or a hot database shard.</li>
-              <li>Measure percentiles such as p50, p95, and p99 rather than relying only on the average.</li>
-            </ul>
-
-            <h5 class="text-warning">Use a timeout budget</h5>
-            <p>
-              If the incoming API must respond within 8 seconds, it cannot safely spend 5 seconds on several sequential
-              downstream calls and retry each one. Set a deadline for the whole request and allocate smaller budgets to
-              each dependency.
-            </p>
-            <pre><code class="language-text">Client deadline: 8 seconds
-  Gateway: 0.5 seconds
-  Order Service: 7 seconds
-  Inventory call: 2 seconds
-  Payment call: 3 seconds
-  Remaining time: response processing and safety margin</code></pre>
-            <p>
-              Propagate a deadline or remaining-time header where supported, so downstream services fail fast instead of
-              continuing work after the caller has already timed out.
-            </p>
-
-            <h5 class="text-warning">Feign timeout configuration</h5>
-            <pre><code class="language-yaml">spring:
-  cloud:
-    openfeign:
-      client:
-        config:
-          inventory-service:
-            connectTimeout: 1000
-            readTimeout: 6000</code></pre>
-            <p>
-              Set timeouts per dependency based on its contract and measured latency. A small margin above the agreed
-              service-level objective may be appropriate, but an unlimited or very large timeout can exhaust request
-              threads and connection pools.
-            </p>
-
-            <h5 class="text-warning">Add Resilience4j protection</h5>
-            <pre><code class="language-java">@CircuitBreaker(name = "inventory", fallbackMethod = "inventoryFallback")
-@TimeLimiter(name = "inventory")
-public InventoryResponse getInventory(String sku) {
-    return inventoryClient.getInventory(sku);
-}
-
-private InventoryResponse inventoryFallback(String sku, Throwable error) {
-    return InventoryResponse.unknown(sku);
-}</code></pre>
-            <p>
-              Use a circuit breaker to stop sending requests when the dependency is repeatedly failing, a bulkhead to
-              limit how many threads or concurrent calls can wait, and a fallback only when the business behavior is safe.
-              For example, a product page may show inventory as temporarily unavailable, but an order should not be
-              confirmed using an unsafe fallback.
-            </p>
-
-            <h5 class="text-warning">Should we retry?</h5>
-            <p>
-              Retry only transient failures such as connection resets or selected 5xx responses, with a small limit,
-              exponential backoff, and jitter. A read-only query may be retried more safely than a payment or order
-              creation. Even reads can overload a slow downstream service if every caller retries at once.
-            </p>
-            <pre><code class="language-yaml">resilience4j:
-  retry:
-    instances:
-      inventory:
-        maxAttempts: 2
-        waitDuration: 200ms
-        enableExponentialBackoff: true
-        exponentialBackoffMultiplier: 2
-  circuitbreaker:
-    instances:
-      inventory:
-        slidingWindowSize: 20
-        failureRateThreshold: 50
-        waitDurationInOpenState: 10s</code></pre>
-
-            <h5 class="text-warning">Best ways to handle the read issue</h5>
-            <ul>
-              <li>If the data can be slightly stale, read from a local cache or read model with a short TTL.</li>
-              <li>If the read is not required to complete the request, publish an event and process it asynchronously.</li>
-              <li>For expensive repeated reads, use request coalescing so concurrent callers share one in-flight request.</li>
-              <li>Use pagination, field selection, compression, and server-side filtering to reduce response size.</li>
-              <li>Fix slow downstream queries and indexes rather than hiding the issue by increasing the timeout.</li>
-              <li>Return a clear degraded response such as 503 or a documented partial result; do not return false business data.</li>
-            </ul>
-
-            <h5 class="text-warning">A practical decision</h5>
-            <p>
-              If the downstream contract genuinely changed from a p99 of 5 seconds to 6 seconds and the business can
-              tolerate it, update the dependency-specific timeout with a safety margin, update the latency objective, and
-              capacity-test the system. If 6 seconds is abnormal, keep the timeout budget, fail fast, protect the caller
-              with a circuit breaker, and fix the downstream bottleneck.
-            </p>
-
-            <h5 class="text-warning">Interview-ready answer</h5>
-            <p>
-              "A 5-second Feign read timeout will fail a 6-second response. I would first use tracing and downstream
-              metrics to identify whether the delay is query, pool, GC, network, batch, or load related. I would use a
-              deadline budget, dependency-specific connect/read timeouts, a circuit breaker, bulkhead, and limited jittered
-              retries only for safe transient operations. For reads, a cache or read model may provide a safe fallback.
-              I would increase the timeout only if the new latency is an accepted, tested service contract; otherwise I
-              would fix the bottleneck and fail fast with a clear response."
-            </p>
-          </div>
-        </div>
-      </div>
-
       <div class="accordion-item" data-manual-category="microservices">
        <h2 class="accordion-header" id="httpPostIdempotencyTop">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
@@ -42634,164 +44562,6 @@ stage("Quality Gate") {
       </div>
 
       <!-- OpenFeign Client -->
-      <div class="accordion-item" data-manual-category="microservices">
-        <h2 class="accordion-header" id="openFeignClient">
-          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
-            data-bs-target="#openFeignClientBody">
-            What is a Feign Client, why do we use it, and how do we configure it in Spring Boot?
-          </button>
-        </h2>
-        <div id="openFeignClientBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
-          <div class="accordion-body bg-dark text-light">
-            <p>
-              Spring Cloud OpenFeign is a <strong>declarative HTTP client</strong>. Instead of manually building HTTP
-              requests with URLs, headers, JSON mapping, and response parsing, we declare a Java interface. Spring
-              creates a proxy for it; calling an interface method makes the remote HTTP call.
-            </p>
-
-            <h5 class="text-warning">Why use Feign?</h5>
-            <p>
-              In an order service, we may need the inventory service before accepting an order. With a low-level HTTP
-              client, every service repeats boilerplate. Feign keeps the remote contract close to a Spring MVC
-              controller signature, integrates with service discovery and load balancing, and centralizes timeouts,
-              authentication headers, error decoding, logging, and resilience configuration. It improves readability,
-              but the call is still a slow, fallible network call, not a local Java method call.
-            </p>
-
-            <h5 class="text-warning">How to enable it</h5>
-            <pre><code class="language-xml">&lt;dependency&gt;
-  &lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;
-  &lt;artifactId&gt;spring-cloud-starter-openfeign&lt;/artifactId&gt;
-&lt;/dependency&gt;</code></pre>
-            <pre><code class="language-java">@SpringBootApplication
-@EnableFeignClients
-class OrderApplication {}</code></pre>
-            <p>
-              Keep the Spring Cloud BOM compatible with the application's Spring Boot version. In a multi-module
-              project, <code>@EnableFeignClients(basePackages = "...")</code> can explicitly point to client packages.
-            </p>
-
-            <h5 class="text-warning">Real-world client example</h5>
-            <pre><code class="language-java">@FeignClient(name = "inventory-service", path = "/api/inventory")
-interface InventoryClient {
-  @PostMapping("/reservations")
-  ReservationResponse reserve(@RequestBody ReserveStockRequest request);
-
-  @GetMapping("/{productId}")
-  InventoryResponse get(@PathVariable Long productId);
-}
-
-@Service
-class OrderService {
-  private final InventoryClient inventoryClient;
-
-  OrderService(InventoryClient inventoryClient) {
-    this.inventoryClient = inventoryClient;
-  }
-
-  @Transactional
-  OrderResponse create(CreateOrderRequest request) {
-    inventoryClient.reserve(new ReserveStockRequest(request.productId(), request.quantity()));
-    return OrderResponse.from(orderRepository.save(Order.from(request)));
-  }
-}</code></pre>
-            <p>
-              If <code>inventory-service</code> is registered in Eureka, Consul, or another discovery source, the
-              <code>name</code> is resolved to its available instances. Spring Cloud LoadBalancer chooses one instance
-              for the request. For a fixed external API instead, configure <code>url = "https://partner.example.com"</code>
-              on <code>@FeignClient</code>; then service discovery is not used.
-            </p>
-
-            <h5 class="text-warning">How it works internally</h5>
-            <pre><code>OrderService calls inventoryClient.reserve(...)
-  -&gt; Spring-created Feign dynamic proxy intercepts the interface call
-  -&gt; Spring MVC annotations become HTTP method, path, headers, and body
-  -&gt; LoadBalancer resolves inventory-service to one instance (if discovery is used)
-  -&gt; Underlying HTTP client sends the request
-  -&gt; Response decoder/Jackson converts JSON to ReservationResponse
-  -&gt; Method returns the Java response object or throws an error</code></pre>
-
-            <h5 class="text-warning">Does Feign do load balancing?</h5>
-            <p>
-              Yes, when you use a service name such as <code>@FeignClient(name = "inventory-service")</code> with
-              Spring Cloud discovery and LoadBalancer on the classpath, Spring resolves the service name to one of the
-              available instances and chooses a target instance for the call. If you use a fixed
-              <code>url = "https://partner.example.com"</code>, then discovery-based load balancing is not involved.
-            </p>
-
-            <h5 class="text-warning">Can we customize Feign?</h5>
-            <p>
-              Yes. We can customize request headers, timeouts, retries, logging, encoding, decoding, and error
-              handling. We can also switch the underlying HTTP client depending on what the project needs.
-            </p>
-            <pre><code class="language-java">@Configuration
-class InventoryFeignConfig {
-
-  @Bean
-  RequestInterceptor requestInterceptor() {
-    return template -&gt; template.header("X-Client-Id", "order-service");
-  }
-
-  @Bean
-  ErrorDecoder errorDecoder() {
-    return new InventoryErrorDecoder();
-  }
-
-  @Bean
-  Logger.Level feignLoggerLevel() {
-    return Logger.Level.FULL;
-  }
-}</code></pre>
-            <p>
-              Common customizations include <code>RequestInterceptor</code> for auth/correlation headers,
-              <code>ErrorDecoder</code> for mapping HTTP errors to domain exceptions, <code>Retryer</code> for retry
-              policy, custom <code>Encoder</code>/<code>Decoder</code> for payload conversion, and per-client config
-              for timeouts.
-            </p>
-
-            <h5 class="text-warning">Timeouts, headers, and errors</h5>
-            <pre><code class="language-yaml">spring:
-  cloud:
-    openfeign:
-      client:
-        config:
-          inventory-service:
-            connectTimeout: 1000
-            readTimeout: 2000
-            loggerLevel: basic</code></pre>
-            <p>
-              Always set short, business-appropriate connect and read timeouts. Use a <code>RequestInterceptor</code>
-              to add headers such as a correlation ID or service token. Non-2xx responses normally become
-              <code>FeignException</code>; use a custom <code>ErrorDecoder</code> to convert a <code>404</code> or
-              <code>409</code> into a meaningful domain exception.
-            </p>
-            <pre><code class="language-java">@Bean
-RequestInterceptor correlationId() {
-  return template -&gt; template.header("X-Trace-Id", MDC.get("traceId"));
-}</code></pre>
-
-            <h5 class="text-warning">Production cautions</h5>
-            <p>
-              Do not make long chains of synchronous Feign calls; one slow downstream service can exhaust request
-              threads across the system. Use timeouts, bulkheads/circuit breakers where appropriate, and fallback only
-              when a safe degraded response exists. Retry only idempotent operations or requests protected by an
-              idempotency key. For important order/payment events, asynchronous messaging may be safer than a
-              synchronous Feign call. Never keep a database transaction open while waiting on an unreliable remote
-              service unless the trade-off is explicitly understood.
-            </p>
-
-            <h5 class="text-warning">Interview-ready answer</h5>
-            <p>
-              "Feign is Spring Cloud's declarative HTTP client. We define an interface with Spring MVC annotations,
-              and Spring creates a proxy that converts method calls into HTTP requests. We use it for readable
-              service-to-service communication with discovery, load balancing, headers, timeouts, and error handling,
-              while still treating every call as a remote failure point."
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Avoiding NullPointerException -->
       <div class="accordion-item" data-manual-category="java">
         <h2 class="accordion-header" id="avoidNullPointerException">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse"
@@ -71067,21 +72837,6 @@ public DefaultErrorHandler errorHandler(KafkaTemplate&lt;String, Object&gt; kafk
         </div>
 
         <!-- Q36 -->
-        <div class="accordion-item">
-          <h2 class="accordion-header" id="q36">
-            <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c36">3️⃣6️⃣
-              What is Feign Client? How does it work internally?</button>
-          </h2>
-          <div id="c36" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
-            <div class="accordion-body bg-dark text-light">
-              Feign is a declarative REST client.
-              Uses dynamic proxies + Ribbon (EOL) / LoadBalancer + Jackson.
-              Converts interface calls → HTTP calls.
-            </div>
-          </div>
-        </div>
-
-        <!-- Q37 -->
         <div class="accordion-item">
           <h2 class="accordion-header" id="q37">
             <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#c37">3️⃣7️⃣
