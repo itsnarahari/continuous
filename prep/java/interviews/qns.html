@@ -222,6 +222,596 @@
         onkeyup="searchQuestions()" />
     </div>
     <div class="accordion" id="accordionSeniorJava">
+      <div class="accordion-item" data-category="behavioral">
+        <h2 class="accordion-header" id="seniorProblemSolvingDesignQuestionsTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#seniorProblemSolvingDesignQuestionsTopBody">Senior problem-solving and design questions</button>
+        </h2>
+        <div id="seniorProblemSolvingDesignQuestionsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <h5 class="text-warning">5. How do you isolate incompatible payloads so they do not fail the entire pipeline?</h5>
+            <p>I would prevent a malformed or incompatible payload from blocking valid messages by isolating it at the boundary where it is detected.</p>
+            <ol>
+              <li>Validate the payload schema and required fields as early as possible.</li>
+              <li>Classify the failure as transient, permanent, or incompatible.</li>
+              <li>Retry transient failures with bounded backoff.</li>
+              <li>Send invalid or incompatible messages to a versioned DLQ or quarantine topic with the original payload, schema version, error reason, topic, partition, offset, and timestamp.</li>
+              <li>Commit or acknowledge the original message only after the DLQ publication succeeds, according to the consumer error-handling design.</li>
+              <li>Alert on DLQ count and oldest message age, and provide controlled replay after correction.</li>
+            </ol>
+            <p>I would use schema evolution rules, backward-compatible fields, content-type or schema-version headers, and consumer idempotency. I would not blindly replay a poison message into the main pipeline because it can repeatedly block processing.</p>
+
+            <h5 class="text-warning">6. What is your process when you are completely stuck on a task or do not understand the codebase?</h5>
+            <p>I use a structured process rather than spending an unlimited amount of time guessing:</p>
+            <ol>
+              <li>Restate the expected outcome and identify exactly what is unclear.</li>
+              <li>Read the relevant entry point, tests, configuration, interfaces, and recent commits.</li>
+              <li>Run the application or a focused test and trace one real execution path.</li>
+              <li>Search for similar implementations, callers, database queries, events, and error handling.</li>
+              <li>Write down hypotheses and test them with a small experiment or debugger session.</li>
+              <li>Ask a focused question to a teammate with what I tried, evidence collected, and the decision needed.</li>
+              <li>Document the understanding so the next developer does not repeat the investigation.</li>
+            </ol>
+            <p>I do not hide that I am blocked, but I also do not immediately escalate without first gathering useful context.</p>
+
+            <h5 class="text-warning">7. What would you do during the first two hours, between hours two and four, and if still stuck the next day?</h5>
+            <p><strong>First two hours:</strong> Clarify the requirement, reproduce the problem, inspect logs and tests, map the code path, identify dependencies, and create a small hypothesis or minimal reproduction.</p>
+            <p><strong>Between hours two and four:</strong> Run focused experiments, inspect recent changes, compare a working path with the failing path, check configuration and data assumptions, and discuss a specific blocker with the appropriate teammate or subject-matter expert. I would also communicate the risk if the timeline is affected.</p>
+            <p><strong>If still stuck the next day:</strong> Escalate with a concise summary of the requirement, attempted approaches, evidence, logs, reproduction steps, current hypothesis, and the decision or access needed. I would propose options rather than only reporting a problem, update the ticket, and agree on the next action.</p>
+            <p>The goal is not to prove that I can work alone indefinitely; it is to make progress visible and resolve the blocker efficiently.</p>
+
+            <h5 class="text-warning">8. How do you guide a whiteboarding discussion toward a simple, elegant solution when engineers have conflicting ideas?</h5>
+            <ol>
+              <li>Start by writing the problem statement, users, constraints, non-functional requirements, and success criteria.</li>
+              <li>Separate facts and requirements from proposed implementation choices.</li>
+              <li>Ask each person to explain the trade-off their proposal addresses.</li>
+              <li>Compare options against agreed criteria such as correctness, operational complexity, security, scalability, delivery time, and maintainability.</li>
+              <li>Draw the smallest design that satisfies the current requirements.</li>
+              <li>Explicitly record deferred capabilities instead of building speculative abstractions.</li>
+              <li>Run a small proof of concept when a technical assumption is uncertain.</li>
+              <li>Summarize the decision, trade-offs, risks, and follow-up actions.</li>
+            </ol>
+            <p>I would facilitate the discussion rather than try to win it. A simple solution is one that satisfies the requirements and can be operated safely, not merely one with the fewest boxes.</p>
+
+            <h5 class="text-warning">9. How do you handle disagreements and bring the team to a common design decision?</h5>
+            <p>I first make sure the disagreement is about the problem or trade-offs, not personalities. I ask both sides to state their assumptions and the risk they are trying to avoid. Then I bring the discussion back to requirements, evidence, and agreed decision criteria.</p>
+            <ul>
+              <li>Use data, prototypes, benchmarks, security guidance, and production experience where available.</li>
+              <li>Compare alternatives objectively and make the consequences explicit.</li>
+              <li>Seek a decision from the responsible owner when consensus is not possible.</li>
+              <li>Document the decision and revisit date in an ADR.</li>
+              <li>Once decided, support the team decision even if my proposal was not selected.</li>
+            </ul>
+            <p>If the decision has significant risk, I would propose a reversible experiment, a feature flag, or a phased rollout rather than forcing an irreversible choice.</p>
+
+            <h5 class="text-warning">10. How do you avoid over-engineering while designing complex features?</h5>
+            <p>I begin with the smallest design that solves the confirmed current requirements and leaves a clear extension point only where change is likely.</p>
+            <ul>
+              <li>Clarify current scope, expected scale, compliance requirements, and known future needs.</li>
+              <li>Separate must-have requirements from hypothetical possibilities.</li>
+              <li>Prefer existing platform capabilities and established team patterns.</li>
+              <li>Avoid adding a framework, service, abstraction, cache, or asynchronous workflow without a measured need.</li>
+              <li>Define operational costs: deployment, monitoring, support, failure modes, and data migration.</li>
+              <li>Use a simple version first and capture future ideas as explicit backlog items.</li>
+              <li>Load-test or prototype only the high-risk assumptions.</li>
+            </ul>
+            <p>For example, I would not introduce Kafka, Redis, and a workflow engine merely because a feature might grow later. I would first verify the throughput, latency, reliability, and coupling requirements, then add complexity when the requirements justify it.</p>
+
+            <h5 class="text-warning">Interview-ready summary</h5>
+            <blockquote class="border-start border-info border-3 ps-3">I isolate bad payloads through validation, classification, bounded retries, and a monitored DLQ so valid work continues. When blocked, I clarify the outcome, trace the code path, reproduce the issue, document hypotheses, and escalate with evidence and focused questions. In design discussions, I align the team on requirements and decision criteria, compare trade-offs objectively, document the decision, and choose the simplest solution that satisfies the current need. I avoid over-engineering by separating confirmed requirements from speculation and adding complexity only when scale, reliability, security, or business needs justify it.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="devops">
+      <div class="accordion-item" data-category="devops">
+        <h2 class="accordion-header" id="loadTestingTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#loadTestingTopBody">What is Load Testing?</button>
+        </h2>
+        <div id="loadTestingTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p><strong>Load testing</strong> is performance testing used to verify how an application behaves under expected and peak user traffic.</p>
+            <p>For a Spring Boot application processing Kafka events, load testing can simulate thousands of customer events arriving continuously and measure whether Java consumers process them within the required SLA.</p>
+
+            <h5 class="text-warning">Types of performance testing</h5>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Type</th><th>Purpose</th></tr></thead>
+              <tbody>
+                <tr><td>Load testing</td><td>Test expected and peak traffic</td></tr>
+                <tr><td>Stress testing</td><td>Find the breaking point of the application</td></tr>
+                <tr><td>Spike testing</td><td>Test sudden traffic increases</td></tr>
+                <tr><td>Soak testing</td><td>Test stability over a long duration</td></tr>
+                <tr><td>Volume testing</td><td>Test large volumes of data</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">How to perform load testing</h5>
+            <ol>
+              <li>Identify expected throughput, concurrent users, and response-time SLA.</li>
+              <li>Generate traffic using JMeter, Gatling, or k6.</li>
+              <li>Monitor CPU, memory, JVM garbage collection, and thread pools.</li>
+              <li>Monitor database connection pools and slow queries.</li>
+              <li>For Kafka, monitor consumer lag, throughput, and partition utilization.</li>
+              <li>Identify bottlenecks and optimize them.</li>
+              <li>Repeat the test to validate improvements.</li>
+            </ol>
+
+            <h5 class="text-warning">Example</h5>
+            <p>Suppose the service must process 10,000 Kafka events per second. Gradually increase the event rate:</p>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Event rate</th><th>What to check</th></tr></thead>
+              <tbody>
+                <tr><td>1,000/sec</td><td>Baseline performance</td></tr>
+                <tr><td>3,000/sec</td><td>Resource utilization</td></tr>
+                <tr><td>5,000/sec</td><td>Consumer lag</td></tr>
+                <tr><td>10,000/sec</td><td>Expected peak capacity</td></tr>
+                <tr><td>15,000/sec</td><td>Behavior above expected peak</td></tr>
+              </tbody>
+            </table>
+            <p>These are illustrative test levels, not actual production figures.</p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">I perform load testing using tools such as JMeter, Gatling, or k6 to simulate expected and peak traffic. For Spring Boot applications, I monitor response time, throughput, CPU, memory, JVM garbage collection, thread pools, and database connection pools. For Kafka-based applications, I additionally monitor consumer lag, message throughput, and partition utilization. If I identify bottlenecks, I optimize database queries, tune thread pools, adjust Kafka consumer configuration, or scale ECS tasks horizontally. Finally, I repeat the test to confirm the application meets its performance and reliability requirements.</blockquote>
+
+            <p><strong>Remember:</strong> Load testing checks whether the system can handle expected traffic; stress testing checks where it breaks.</p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="behavioral">
+      <div class="accordion-item" data-category="behavioral">
+        <h2 class="accordion-header" id="balancingRapidDevelopmentTestingTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#balancingRapidDevelopmentTestingTopBody">How do you balance rapid coding development with automated testing?</button>
+        </h2>
+        <div id="balancingRapidDevelopmentTestingTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>I balance rapid development and automated testing by making testing part of development rather than leaving it until the end. I use fast feedback early in the CI/CD pipeline and run broader tests at later stages.</p>
+
+            <h5 class="text-warning">1. Unit testing</h5>
+            <p>I write unit tests for business logic and edge cases using JUnit 5 and Mockito. These tests run on every commit or pull request because they are fast and provide immediate feedback.</p>
+
+            <h5 class="text-warning">2. Integration testing</h5>
+            <p>For Spring Boot services, I use Spring Boot Test and Testcontainers to validate database interactions, Kafka messaging, API integrations, and serialization behavior.</p>
+
+            <h5 class="text-warning">3. API and end-to-end testing</h5>
+            <p>I cover critical business flows with automated API and end-to-end tests using tools such as REST Assured or Postman collections executed in CI.</p>
+
+            <h5 class="text-warning">4. CI/CD pipeline</h5>
+            <pre><code class="language-text">Compile and static analysis
+        -> Unit tests
+        -> Integration tests
+        -> Build and package
+        -> Deploy to test environment
+        -> Smoke tests
+        -> Promote to production</code></pre>
+            <p>If any critical test fails, the pipeline blocks deployment.</p>
+
+            <h5 class="text-warning">5. Kafka workflow testing</h5>
+            <p>For Kafka-based workflows, I specifically test successful message delivery, retries, duplicate processing, consumer failures, idempotency, and Dead Letter Queue handling.</p>
+
+            <h5 class="text-warning">6. Safe production deployment</h5>
+            <p>I prefer backward-compatible changes, feature flags, and canary or blue-green deployments. With a canary deployment, I initially route around 5% of traffic to the new version, monitor errors and latency, and gradually increase traffic if everything is healthy.</p>
+
+            <h5 class="text-warning">7. Production issue handling</h5>
+            <p>If something goes wrong, I first contain the impact by rolling back or disabling the feature. Then I analyze logs, metrics, and traces to identify the root cause and add regression tests to prevent recurrence.</p>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">I balance rapid development and quality by integrating automated testing into the development and CI/CD process. I use fast JUnit and Mockito unit tests for every commit, Spring Boot integration tests and Testcontainers for real dependencies, and API or end-to-end tests for critical workflows. The pipeline compiles, analyzes, tests, packages, deploys to a test environment, runs smoke tests, and promotes only when critical checks pass. For Kafka I test retries, duplicates, failures, idempotency, and DLQs. I use feature flags and canary or blue-green deployment to reduce release risk. If a production issue occurs, I roll back or disable the feature, investigate it, and add a regression test.</blockquote>
+
+            <p><strong>Quick flow:</strong> Unit tests → Integration tests → API/E2E tests → CI/CD → Kafka failure testing → Canary or Blue-Green deployment → Rollback and regression testing.</p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="seniorDistributedScenariosTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#seniorDistributedScenariosTopBody">Senior scenario questions: Spring Batch, Kafka, Outbox, idempotency, and resilience</button>
+        </h2>
+        <div id="seniorDistributedScenariosTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <h5 class="text-warning">Q1. You are processing 10 million records. The application crashes after 6 million. How do you resume?</h5>
+            <p>I would use Spring Batch restartability with <code>JobRepository</code> and <code>ExecutionContext</code>.</p>
+            <ul><li><code>JobRepository</code> stores <code>JobExecution</code> and <code>StepExecution</code> metadata.</li><li><code>ExecutionContext</code> maintains checkpoint information.</li><li>Chunk processing commits records periodically.</li><li>Restart the same <code>JobInstance</code> using the same identifying <code>JobParameters</code>.</li><li>Spring Batch creates a new <code>JobExecution</code> and resumes from the last committed checkpoint if the reader supports restartability.</li></ul>
+            <pre><code class="language-java">@Bean
+public Step processStep(
+        JobRepository jobRepository,
+        PlatformTransactionManager transactionManager) {
+    return new StepBuilder("processStep", jobRepository)
+            .&lt;Input, Output&gt;chunk(1000, transactionManager)
+            .reader(reader())
+            .processor(processor())
+            .writer(writer())
+            .build();
+}</code></pre>
+            <p>Previously committed chunks are not rolled back. The failed chunk is rolled back if its database operations participate in the same transaction.</p>
+
+            <h5 class="text-warning">Q2. Chunk size is 1,000 and the application fails while processing record 501. What happens?</h5>
+            <p>Assuming the current chunk transaction has not committed, records 1-500 of the current chunk are rolled back and the remaining records in that chunk are not committed. Previously committed chunks remain safe. On restart, Spring Batch resumes from the last committed checkpoint.</p>
+            <table class="table table-dark table-bordered"><thead><tr><th>Chunk</th><th>Status</th></tr></thead><tbody><tr><td>1-1000</td><td>Committed</td></tr><tr><td>1001-2000</td><td>Committed</td></tr><tr><td>2001-3000</td><td>Committed</td></tr><tr><td>3001-4000</td><td>Failed during processing</td></tr></tbody></table>
+            <p>The first 3,000 records remain committed and the failed chunk is retried on restart.</p>
+
+            <h5 class="text-warning">Q3. What if ItemProcessor calls an external REST API and the database transaction rolls back?</h5>
+            <p>This is a distributed transaction problem. A database transaction cannot automatically roll back an external REST API operation.</p>
+            <ol><li>Make the external operation idempotent using a unique request ID.</li><li>Persist business state and an Outbox event in the same database transaction.</li><li>Publish the event asynchronously.</li><li>Use retries with exponential backoff.</li><li>Use compensation if the external operation must be reversed.</li></ol>
+            <p>Avoid non-idempotent external side effects directly inside a chunk processor without a recovery strategy.</p>
+
+            <h5 class="text-warning">Q4. How would you process 100 million records using Spring Batch?</h5>
+            <p>I would consider partitioning and controlled parallel execution:</p>
+            <ul><li>Divide the dataset into independent partitions.</li><li>Assign each partition a separate <code>StepExecution</code>.</li><li>Execute partitions using a <code>TaskExecutor</code> or remote workers.</li><li>Use database pagination or key-range partitioning.</li><li>Tune chunk size and database batch inserts.</li><li>Monitor throughput, memory, database connections, and partition failures.</li></ul>
+            <pre><code class="language-text">Master Step
+  |-- Partition 1: Records 1-1M
+  |-- Partition 2: Records 1M-2M
+  |-- Partition 3: Records 2M-3M
+  |-- Partition 4: Records 3M-4M</code></pre>
+            <p>More partitions do not always mean better performance. Database capacity, connection pools, and uneven partition sizes can become bottlenecks.</p>
+
+            <h5 class="text-warning">Q5. What happens if the same Spring Batch Job is triggered twice simultaneously?</h5>
+            <p>Spring Batch uses <code>JobInstance</code> identity based on the job name and identifying <code>JobParameters</code>. If both executions use the same identifying parameters, the <code>JobRepository</code> prevents another execution of an already running <code>JobInstance</code>. Different identifying parameters can create different instances and may run concurrently.</p>
+            <p>For business-level duplicate prevention, also use unique business keys, database constraints, idempotent writers, and distributed locking where appropriate.</p>
+
+            <h5 class="text-warning">Q6. How do you handle a poison record that continuously fails?</h5>
+            <p>Configure retry and skip policies based on the failure type:</p>
+            <ul><li>Transient failures: retry with backoff.</li><li>Invalid business data: skip if permitted and record the failure.</li><li>Repeated failures: isolate the record for investigation.</li><li>Ensure the batch continues without silently losing data.</li></ul>
+            <pre><code class="language-java">@Bean
+public Step processingStep(
+        JobRepository jobRepository,
+        PlatformTransactionManager transactionManager) {
+    return new StepBuilder("processingStep", jobRepository)
+            .&lt;Input, Output&gt;chunk(500, transactionManager)
+            .reader(reader())
+            .processor(processor())
+            .writer(writer())
+            .faultTolerant()
+            .retry(TransientDataAccessException.class)
+            .retryLimit(3)
+            .skip(InvalidRecordException.class)
+            .skipLimit(100)
+            .build();
+}</code></pre>
+            <p>The skip policy should be restricted to explicitly acceptable business exceptions.</p>
+
+            <h5 class="text-warning">Q7. Two microservices update the same business transaction. How do you maintain consistency?</h5>
+            <p>I would consider the Saga pattern. Each service executes its own local transaction. If a later transaction fails, compensating transactions reverse earlier business effects.</p>
+            <pre><code class="language-text">Order Created
+    -> Payment Completed
+    -> Inventory Reservation Failed
+    -> Refund Payment
+    -> Cancel Order</code></pre>
+            <p>This provides eventual consistency rather than global ACID atomicity.</p>
+
+            <h5 class="text-warning">Q8. Kafka is down for 30 minutes while requests continue. How do you avoid losing events?</h5>
+            <p>Use the Transactional Outbox pattern:</p>
+            <ol><li>Save business data and the Outbox event in the same database transaction.</li><li>A separate publisher fetches pending Outbox records.</li><li>Publish events to Kafka.</li><li>Mark records as published after broker acknowledgement.</li><li>Retry failures with exponential backoff.</li><li>Monitor pending event count and oldest event age.</li></ol>
+            <p>If Kafka acknowledges but the application crashes before marking the record published, duplicate publishing is possible. Use a unique event ID and consumer-side idempotency through an Inbox pattern.</p>
+
+            <h5 class="text-warning">Q9. The Outbox table contains 5 million pending records. How do you recover?</h5>
+            <ul><li>Do not fetch all records into memory.</li><li>Fetch bounded batches.</li><li>Use multiple publisher workers.</li><li>Claim records safely with database locking or atomic status updates.</li><li>Publish asynchronously with bounded concurrency.</li><li>Apply backoff for transient failures.</li><li>Isolate poison events.</li><li>Monitor publishing throughput and backlog age.</li><li>Scale publisher capacity according to Kafka and database capacity.</li></ul>
+            <pre><code class="language-sql">SELECT *
+FROM outbox
+WHERE status = 'PENDING'
+ORDER BY created_at
+LIMIT 1000
+FOR UPDATE SKIP LOCKED;</code></pre>
+            <p>The locking and claiming strategy must run within an appropriate transaction so multiple workers do not claim the same records.</p>
+
+            <h5 class="text-warning">Q10. A Kafka consumer processes a message but crashes before committing the offset. What happens?</h5>
+            <p>Kafka can deliver the message again because its offset was not committed. To prevent duplicate business processing:</p>
+            <ol><li>Generate a unique event ID at the producer.</li><li>Maintain a processed-events or Inbox table.</li><li>Add a unique constraint on the event ID.</li><li>Perform Inbox insertion and business updates in the same database transaction.</li><li>Commit the Kafka offset only after successful database processing.</li></ol>
+            <pre><code class="language-sql">CREATE TABLE processed_events (
+    event_id VARCHAR(100) PRIMARY KEY,
+    processed_at TIMESTAMP
+);</code></pre>
+            <p>This provides idempotent business processing despite at-least-once delivery.</p>
+
+            <h5 class="text-warning">Q11. Kafka consumer lag keeps increasing after scaling to 100 consumers. What do you investigate?</h5>
+            <ol><li>Number of topic partitions.</li><li>Active consumers versus idle consumers.</li><li>Consumer processing time.</li><li>Database connection-pool saturation.</li><li>Slow external APIs.</li><li>Hot partitions and uneven key distribution.</li><li>Consumer rebalance frequency.</li><li>CPU, memory, and network utilization.</li></ol>
+            <p>Within one consumer group, a partition can be assigned to only one consumer at a time. Therefore, 10 partitions cannot support more than 10 active consumers in that group.</p>
+
+            <h5 class="text-warning">Q12. The payment service receives the same payment request twice. How do you prevent duplicate payment?</h5>
+            <p>Implement an idempotency key:</p>
+            <ul><li>The client sends a unique <code>Idempotency-Key</code>.</li><li>The payment service stores the key with the transaction result.</li><li>A database unique constraint prevents concurrent duplicate requests.</li><li>If the same key arrives again, return the previously stored result.</li><li>For external gateways, pass their supported idempotency key too.</li></ul>
+            <pre><code class="language-sql">CREATE TABLE payment_requests (
+    idempotency_key VARCHAR(100) PRIMARY KEY,
+    payment_status VARCHAR(30),
+    response_payload TEXT
+);</code></pre>
+            <p>Do not rely only on checking whether a payment exists before inserting; two concurrent requests could both pass that check.</p>
+
+            <h5 class="text-warning">Q13. One microservice is unavailable. How do you prevent cascading failure?</h5>
+            <ul><li>Connection and response timeouts.</li><li>Resilience4j Circuit Breaker.</li><li>Bulkhead to isolate resources.</li><li>Bounded retries with exponential backoff and jitter.</li><li>Fallback responses where business-appropriate.</li><li>Kafka or SQS for asynchronous processing.</li></ul>
+            <p>The objective is to prevent one unhealthy dependency from exhausting resources throughout the application.</p>
+
+            <h5 class="text-warning">Q14. How do you guarantee message ordering in Kafka?</h5>
+            <p>Kafka guarantees ordering within a partition, not across all partitions. To maintain ordering for a business entity:</p>
+            <ul><li>Use a business key such as <code>customerId</code> or <code>orderId</code>.</li><li>Ensure messages for that entity go to the same partition.</li><li>Process that partition in order.</li><li>Avoid uncontrolled asynchronous processing that changes completion order.</li></ul>
+            <pre><code class="language-java">new ProducerRecord&lt;&gt;(
+        "orders",
+        order.getOrderId(),
+        order);</code></pre>
+            <p>If strict ordering is needed per order, use <code>orderId</code> as the key.</p>
+
+            <h5 class="text-warning">Q15. How do you handle database failure during distributed event processing?</h5>
+            <ol><li>Do not acknowledge the Kafka message before successful database processing.</li><li>Retry transient database failures with bounded backoff.</li><li>Configure appropriate consumer pause and backpressure behavior.</li><li>Keep consumer processing idempotent.</li><li>Monitor consumer lag and database connection-pool usage.</li><li>Use a DLQ only for messages that cannot be processed after appropriate retries, not as a substitute for recovering from a temporary database outage.</li></ol>
+
+            <h5 class="text-warning">Interview-ready summary</h5>
+            <blockquote class="border-start border-info border-3 ps-3">For large batch and distributed-system failures, I rely on restartable checkpoints, chunk transactions, idempotency, Outbox and Inbox patterns, safe event claiming, bounded retries, partition-aware Kafka consumers, and resilience patterns. The key is to preserve committed progress, avoid duplicate business effects, and recover failed work without overloading dependent systems.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="springboot">
+      <div class="accordion-item" data-category="springboot">
+        <h2 class="accordion-header" id="shedLockFollowupQuestionsTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#shedLockFollowupQuestionsTopBody">ShedLock follow-up questions: crash, expiry, exactly-once, Redis, synchronized, and lock names</button>
+        </h2>
+        <div id="shedLockFollowupQuestionsTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <h5 class="text-warning">1. What happens if the instance holding the lock crashes?</h5>
+            <p>ShedLock stores the lock with an expiration time, represented by <code>lock_until</code>. If the instance that owns the lock crashes, it cannot release the lock normally. Other instances cannot acquire it while the lock is still valid.</p>
+            <p>When <code>lock_until</code> is reached, another instance can acquire the lock during a later scheduled execution. This prevents the job from being blocked forever by a dead instance.</p>
+            <p>For example:</p>
+            <pre><code class="language-text">10:00  Instance A acquires the lock
+10:01  Instance A crashes
+10:00-10:10  Other instances skip the job
+10:10  Lock expires if lockAtMostFor was 10 minutes
+Next trigger  Instance B can acquire the lock</code></pre>
+            <p><strong>Important:</strong> Choose <code>lockAtMostFor</code> longer than the expected maximum job duration, but not so long that recovery from a crash is unnecessarily delayed. The job should also be idempotent because a crash can leave the business outcome uncertain.</p>
+
+            <h5 class="text-warning">2. What happens if the job takes longer than lockAtMostFor?</h5>
+            <p>If the job continues running after <code>lockAtMostFor</code> expires, ShedLock's safety lease has ended. Another application instance may acquire the same lock and start the job while the first instance is still running.</p>
+            <pre><code class="language-text">10:00  Instance A starts the job
+10:10  lockAtMostFor expires
+10:11  Instance B acquires the lock
+10:11  Instance A and B may run concurrently</code></pre>
+            <p>This can cause duplicate reports, duplicate notifications, or repeated business updates. To reduce the risk:</p>
+            <ul>
+              <li>Set <code>lockAtMostFor</code> longer than the normal worst-case execution time.</li>
+              <li>Investigate why the job is slow and optimize or split it.</li>
+              <li>Use smaller chunks or checkpointed processing.</li>
+              <li>Make the job idempotent.</li>
+              <li>Do not assume the lock is a lease that automatically extends forever.</li>
+            </ul>
+            <p>If a job has unpredictable or very long execution, consider a design with explicit work claiming, heartbeats/leases, or a scheduler designed for that workload instead of relying only on a fixed maximum lock duration.</p>
+
+            <h5 class="text-warning">3. Can ShedLock guarantee exactly-once execution?</h5>
+            <p><strong>No.</strong> ShedLock prevents concurrent execution in the normal case, but it cannot provide an absolute exactly-once guarantee.</p>
+            <p>For example, an instance may update the database, send an email, and then crash before the lock state or job completion is observed consistently. After the lock expires, another instance may run the job again. Also, if the job runs beyond <code>lockAtMostFor</code>, two instances may overlap.</p>
+            <p>For reliable processing:</p>
+            <ul>
+              <li>Use idempotency keys or unique business constraints.</li>
+              <li>Record job progress and processed item IDs.</li>
+              <li>Use database transactions for database changes.</li>
+              <li>Use an Outbox pattern for reliable event publication.</li>
+              <li>Make email, payment, and external calls deduplication-safe.</li>
+            </ul>
+            <p>ShedLock provides distributed mutual exclusion for scheduled execution, not exactly-once side effects across multiple systems.</p>
+
+            <h5 class="text-warning">4. Can Redis be used instead of a database?</h5>
+            <p><strong>Yes.</strong> ShedLock supports different lock providers, including JDBC and Redis, depending on the library version and provider dependency.</p>
+            <p>A Redis provider stores the lock state in Redis and uses atomic Redis operations to ensure that only one instance acquires a lock. A conceptual configuration is:</p>
+            <pre><code class="language-java">@Bean
+public LockProvider lockProvider(RedisConnectionFactory factory) {
+    return new RedisLockProvider(factory);
+}</code></pre>
+            <p>The exact class and configuration depend on the ShedLock provider artifact and version used by the project, so verify the compatible provider documentation.</p>
+            <p>Redis is useful when Redis is already highly available and operationally managed. Consider failover behavior, persistence, network partitions, clock handling, and whether a Redis outage should prevent or delay scheduled work. For database-centric jobs, JDBC may be simpler because the application already depends on the database.</p>
+
+            <h5 class="text-warning">5. ShedLock versus synchronized</h5>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Feature</th><th>ShedLock</th><th><code>synchronized</code></th></tr></thead>
+              <tbody>
+                <tr><td>Scope</td><td>Across application instances</td><td>Within one JVM</td></tr>
+                <tr><td>Coordination</td><td>Shared database, Redis, or supported store</td><td>JVM monitor/intrinsic lock</td></tr>
+                <tr><td>Useful for Kubernetes replicas</td><td>Yes</td><td>No</td></tr>
+                <tr><td>Crash recovery</td><td>Lock expiration can release the lock</td><td>JVM lock disappears when the process exits</td></tr>
+                <tr><td>Primary use</td><td>Prevent duplicate scheduled jobs across nodes</td><td>Protect shared memory inside one process</td></tr>
+              </tbody>
+            </table>
+            <p><code>synchronized</code> cannot coordinate two separate JVMs. If three pods each have their own Spring Boot process, each pod has its own monitor and all may enter the synchronized method. ShedLock is appropriate when coordination must work across instances.</p>
+
+            <h5 class="text-warning">6. What if two different jobs use the same lock name?</h5>
+            <p>They share the same distributed lock. If both jobs are triggered at the same time, only one can acquire the lock; the other skips execution. This unintentionally serializes unrelated jobs and can cause missed runs or unexpected delays.</p>
+            <pre><code class="language-java">@SchedulerLock(name = "dailyJob")
+public void generateReport() { }
+
+@SchedulerLock(name = "dailyJob")
+public void sendNotifications() { }</code></pre>
+            <p>These jobs compete for one lock even though they are different. Use unique, descriptive names:</p>
+            <pre><code class="language-java">@SchedulerLock(name = "generateDailyReport")
+public void generateReport() { }
+
+@SchedulerLock(name = "sendDailyNotifications")
+public void sendNotifications() { }</code></pre>
+            <p>Lock names should be stable across deployments, unique for the logical job, and short enough for the configured database column.</p>
+
+            <h5 class="text-warning">Interview-ready summary</h5>
+            <blockquote class="border-start border-info border-3 ps-3">If the lock owner crashes, the lock remains until lockAtMostFor expires, after which another instance can acquire it. If the job runs longer than lockAtMostFor, another instance may start the same job, so the duration must cover the worst case and the job must be idempotent. ShedLock prevents normal concurrent execution but does not guarantee exactly-once side effects. Redis can be used with a compatible ShedLock provider instead of JDBC. synchronized works only inside one JVM, while ShedLock coordinates multiple instances. Finally, different jobs must use different lock names, otherwise they unintentionally block one another.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="springboot">
+      <div class="accordion-item" data-category="springboot">
+        <h2 class="accordion-header" id="howShedLockWorksTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#howShedLockWorksTopBody">How does ShedLock work?</button>
+        </h2>
+        <div id="howShedLockWorksTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p><strong>ShedLock</strong> is a distributed locking mechanism for Spring Boot scheduled jobs. It ensures that the same scheduled task is not executed simultaneously by multiple application instances.</p>
+
+            <h5 class="text-warning">1. Why do we need ShedLock?</h5>
+            <p>Suppose a Spring Boot application runs with three Kubernetes replicas and all replicas contain this scheduled job:</p>
+            <pre><code class="language-java">@Scheduled(cron = "0 */5 * * * *")
+public void processPayments() {
+    // Process pending payments
+}</code></pre>
+            <p>At 10:05 AM, all three instances may execute the method, causing duplicate payments, emails, or database updates. ShedLock prevents this duplicate execution.</p>
+
+            <h5 class="text-warning">2. How ShedLock works</h5>
+            <ol>
+              <li>Spring's scheduler wakes up the job on every application instance.</li>
+              <li>Each instance tries to acquire the same distributed lock name.</li>
+              <li>ShedLock creates or updates the lock record in a shared database or other supported store.</li>
+              <li>Only one instance successfully acquires the lock.</li>
+              <li>That instance executes the job; other instances skip that execution.</li>
+              <li>The lock is released after completion, subject to the configured lock duration.</li>
+            </ol>
+            <p>ShedLock does not schedule jobs itself. Spring triggers the schedule, while ShedLock coordinates which instance is allowed to execute it.</p>
+
+            <h5 class="text-warning">3. Spring Boot JDBC configuration</h5>
+            <pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;net.javacrumbs.shedlock&lt;/groupId&gt;
+    &lt;artifactId&gt;shedlock-spring&lt;/artifactId&gt;
+    &lt;version&gt;${shedlock.version}&lt;/version&gt;
+&lt;/dependency&gt;
+
+&lt;dependency&gt;
+    &lt;groupId&gt;net.javacrumbs.shedlock&lt;/groupId&gt;
+    &lt;artifactId&gt;shedlock-provider-jdbc-template&lt;/artifactId&gt;
+    &lt;version&gt;${shedlock.version}&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+
+            <pre><code class="language-sql">CREATE TABLE shedlock (
+    name VARCHAR(64) NOT NULL,
+    lock_until TIMESTAMP(3) NOT NULL,
+    locked_at TIMESTAMP(3) NOT NULL,
+    locked_by VARCHAR(255) NOT NULL,
+    PRIMARY KEY (name)
+);</code></pre>
+
+            <pre><code class="language-java">@Configuration
+@EnableScheduling
+@EnableSchedulerLock(defaultLockAtMostFor = "10m")
+public class SchedulerConfig {
+
+    @Bean
+    public LockProvider lockProvider(DataSource dataSource) {
+        return new JdbcTemplateLockProvider(
+                JdbcTemplateLockProvider.Configuration.builder()
+                        .withJdbcTemplate(new JdbcTemplate(dataSource))
+                        .usingDbTime()
+                        .build());
+    }
+}</code></pre>
+
+            <h5 class="text-warning">4. Apply the lock</h5>
+            <pre><code class="language-java">@Component
+public class PaymentScheduler {
+
+    @Scheduled(cron = "0 */5 * * * *")
+    @SchedulerLock(
+            name = "processPayments",
+            lockAtMostFor = "10m",
+            lockAtLeastFor = "30s")
+    public void processPayments() {
+        System.out.println("Processing payments...");
+    }
+}</code></pre>
+
+            <h5 class="text-warning">5. Important configuration</h5>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Property</th><th>Meaning</th></tr></thead>
+              <tbody>
+                <tr><td><code>name</code></td><td>Unique name identifying the scheduled task</td></tr>
+                <tr><td><code>lockAtMostFor</code></td><td>Maximum duration the lock is held</td></tr>
+                <tr><td><code>lockAtLeastFor</code></td><td>Minimum duration the lock is held</td></tr>
+              </tbody>
+            </table>
+            <p>If the job completes in 20 seconds and <code>lockAtLeastFor</code> is one minute, the lock remains for at least one minute. If the job runs longer than expected, the lock can expire after <code>lockAtMostFor</code>.</p>
+            <p>Set <code>lockAtMostFor</code> longer than the expected maximum execution time. If it expires while the original job is still running, another instance could acquire the lock and execute concurrently. ShedLock is not a substitute for idempotent job processing.</p>
+
+            <h5 class="text-warning">6. ShedLock versus Quartz</h5>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Feature</th><th>ShedLock</th><th>Quartz</th></tr></thead>
+              <tbody>
+                <tr><td>Primary purpose</td><td>Prevent concurrent scheduled execution</td><td>Full-featured job scheduling</td></tr>
+                <tr><td>Distributed locking</td><td>Yes</td><td>Clustered scheduling</td></tr>
+                <tr><td>Job persistence</td><td>Lock metadata</td><td>Job and trigger metadata</td></tr>
+                <tr><td>Misfire handling</td><td>No full misfire management</td><td>Yes</td></tr>
+                <tr><td>Scheduling</td><td>Spring <code>@Scheduled</code></td><td>Quartz scheduler</td></tr>
+                <tr><td>Complexity</td><td>Lightweight</td><td>More comprehensive</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">ShedLock is used in distributed Spring Boot applications to prevent the same scheduled task from executing simultaneously on multiple instances. If three Kubernetes replicas trigger the same job, ShedLock uses a shared database table to coordinate a distributed lock. Only one instance acquires the lock and executes the job; the others skip that execution. We configure lockAtMostFor and lockAtLeastFor to control the maximum and minimum lock duration. I would use ShedLock for singleton-style jobs such as payment processing, report generation, cleanup, reconciliation, and notifications where duplicate execution must be avoided.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="kafkaProducerBeyondPartitionTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#kafkaProducerBeyondPartitionTopBody">Does a Kafka producer only calculate the partition?</button>
+        </h2>
+        <div id="kafkaProducerBeyondPartitionTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p><strong>No.</strong> The Kafka producer does more than calculate the partition. It serializes the record, selects or uses a partition, buffers records, creates batches, sends them through a background thread, and handles broker acknowledgements and retries.</p>
+
+            <h5 class="text-warning">1. Producer workflow</h5>
+            <ol>
+              <li><strong>Application calls <code>send()</code>:</strong> Creates a <code>ProducerRecord</code> with topic, key, and value.</li>
+              <li><strong>Serialization:</strong> Converts the key and value into byte arrays.</li>
+              <li><strong>Partitioner:</strong> Determines which partition receives the record.</li>
+              <li><strong>RecordAccumulator:</strong> Buffers records and creates batches per topic-partition.</li>
+              <li><strong>Sender thread:</strong> Sends batches to the appropriate Kafka brokers.</li>
+              <li><strong>Broker:</strong> Appends records to the partition log and acknowledges them according to <code>acks</code>.</li>
+            </ol>
+
+            <h5 class="text-warning">2. How partition selection works</h5>
+            <p><strong>Message with a key:</strong></p>
+            <pre><code class="language-java">ProducerRecord&lt;String, String&gt; record =
+        new ProducerRecord&lt;&gt;(
+                "orders",
+                "CUSTOMER_101",
+                "Order Created");</code></pre>
+            <p>The default partitioner uses the key hash to select a partition. Conceptually:</p>
+            <pre><code class="language-text">partition = positive(hash(key)) % numberOfPartitions</code></pre>
+            <p>The same key generally goes to the same partition, assuming the partition count and partitioning strategy remain unchanged.</p>
+
+            <p><strong>Message without a key:</strong></p>
+            <pre><code class="language-java">ProducerRecord&lt;String, String&gt; record =
+        new ProducerRecord&lt;&gt;(
+                "orders",
+                "Order Created");</code></pre>
+            <p>The default partitioner uses sticky partitioning to improve batching. It temporarily selects a partition, sends batches, and then moves to another partition.</p>
+
+            <p><strong>Explicit partition:</strong></p>
+            <pre><code class="language-java">ProducerRecord&lt;String, String&gt; record =
+        new ProducerRecord&lt;&gt;(
+                "orders",
+                2,
+                "CUSTOMER_101",
+                "Order Created");</code></pre>
+            <p>Here partition 2 is explicitly specified, so the producer does not need to choose a partition.</p>
+
+            <h5 class="text-warning">3. What happens after partition selection?</h5>
+            <p>The producer does not immediately send every record individually. It uses the <code>RecordAccumulator</code>:</p>
+            <ul>
+              <li>Records are grouped by topic-partition.</li>
+              <li>Records are buffered in memory.</li>
+              <li>Batches are created.</li>
+              <li><code>batch.size</code> controls the target batch size.</li>
+              <li><code>linger.ms</code> controls how long the producer waits for additional records before a batch becomes eligible.</li>
+              <li>The background Sender thread sends batches to brokers.</li>
+            </ul>
+
+            <h5 class="text-warning">4. Important producer configurations</h5>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Configuration</th><th>Purpose</th></tr></thead>
+              <tbody>
+                <tr><td><code>batch.size</code></td><td>Target batch size in bytes</td></tr>
+                <tr><td><code>linger.ms</code></td><td>Wait time to accumulate records</td></tr>
+                <tr><td><code>buffer.memory</code></td><td>Total producer buffer memory</td></tr>
+                <tr><td><code>acks</code></td><td>Broker acknowledgement level</td></tr>
+                <tr><td><code>retries</code></td><td>Retry failed sends</td></tr>
+                <tr><td><code>enable.idempotence</code></td><td>Prevent duplicate log entries caused by producer retries</td></tr>
+                <tr><td><code>compression.type</code></td><td>Compress batches</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">No. After the producer serializes the key and value and selects a partition, the record is added to the RecordAccumulator. Records are grouped and batched by topic-partition. The Sender background thread sends those batches to the appropriate brokers. The broker appends the records to the partition log and sends acknowledgements according to the configured acks setting.</blockquote>
+
+            <p><strong>Remember:</strong> Serialize → Partition → Buffer → Batch → Sender Thread → Broker.</p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
       <div class="accordion-item" data-category="microservices">
         <h2 class="accordion-header" id="cascadingFailureHandlingTop">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#cascadingFailureHandlingTopBody">How do you handle cascading failures in microservices?</button>
