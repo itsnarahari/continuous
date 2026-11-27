@@ -178,6 +178,14 @@ public class StreamsOctober2026Test {
 
 //        How do you get the top three highest-paid employees?
         List<Employee> list3 = employees.stream().sorted(Comparator.comparing(Employee::getSalary).reversed()).limit(3).toList();
+        // How do you get the top three highest-paid employees from each department
+        Map<String, List<Employee>> collect28 = employees.stream()
+                .sorted(Comparator.comparing(Employee::getSalary).reversed())
+                .collect(Collectors.groupingBy(Employee::getDepartment, Collectors.collectingAndThen(Collectors.toList(), employees2 ->
+                        employees2.stream()
+                                .limit(3)
+                                .toList())));
+
 //                How do you count employees in each department?
 //        How do you find the total transaction amount per category?
 //        How do you find the average salary in each department?

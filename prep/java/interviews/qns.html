@@ -222,6 +222,224 @@
         onkeyup="searchQuestions()" />
     </div>
     <div class="accordion" id="accordionSeniorJava">
+      <div class="accordion-item" data-category="sql">
+        <h2 class="accordion-header" id="databaseArchitectureQuestionTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#databaseArchitectureQuestionTopBody">What kind of database architecture are you using?</button>
+        </h2>
+        <div id="databaseArchitectureQuestionTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>This question is about how the database is designed, deployed, and handles failures or increased traffic, not only which database engine is used.</p>
+
+            <h5 class="text-warning">1. Common database architectures</h5>
+            <p><strong>Single database architecture:</strong> One database handles reads and writes. It is simple, but a database failure can affect the application and there are no read replicas.</p>
+            <pre><code class="language-text">Spring Boot APIs and Spring Batch
+              |
+          Single DB2 database
+              |
+          Reads and writes</code></pre>
+
+            <p><strong>Primary-replica architecture:</strong> The primary handles writes and replicas handle read traffic. Replication keeps replicas synchronized and reduces read load on the primary, but requires replication and failover management.</p>
+            <pre><code class="language-text">Applications -> Primary database -> Writes
+                     |
+                     +-> Replica 1 -> Reads
+                     +-> Replica 2 -> Reads</code></pre>
+
+            <p><strong>Database clustering:</strong> Multiple database nodes work together to provide availability and potentially distribute workload.</p>
+
+            <p><strong>Database sharding:</strong> Data is divided across database instances using a shard key. For example, customer ranges or hash buckets can route records to different database instances. Sharding distributes large datasets and workloads but adds routing and operational complexity.</p>
+
+            <h5 class="text-warning">2. Farm Bureau PIC project answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">In our Farm Bureau PIC application, we were using IBM DB2 with a single database architecture. Both Spring Batch and Spring Boot APIs accessed the same database. We did not have separate read replicas because the workload was manageable. We controlled batch execution to avoid multiple heavy jobs running simultaneously and used chunk-based processing to manage database writes efficiently.</blockquote>
+            <p>If the workload increased, I would evaluate read replicas for read-heavy operations, connection-pool sizing, query optimization, and appropriate indexing. For high availability, I would evaluate DB2's supported high-availability and disaster-recovery options.</p>
+
+            <h5 class="text-warning">3. Important distinction</h5>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Interviewer asks</th><th>What they want to know</th></tr></thead>
+              <tbody>
+                <tr><td>Which database?</td><td>DB2, Oracle, MySQL, PostgreSQL, and so on</td></tr>
+                <tr><td>Database architecture?</td><td>Single instance, primary-replica, cluster, or sharded</td></tr>
+                <tr><td>Database scalability?</td><td>How increasing reads and writes are handled</td></tr>
+                <tr><td>Database availability?</td><td>Failover, replication, and recovery</td></tr>
+                <tr><td>Database performance?</td><td>Indexes, query plans, transactions, and connection pools</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">When asked about database architecture, I first explain the topology: single instance, primary-replica, cluster, or sharded. In my Farm Bureau PIC project, we used IBM DB2 with a single database because the workload was manageable and both Spring Batch and Spring Boot APIs accessed it. We controlled batch concurrency and used chunk processing for efficient writes. If the workload increased, I would evaluate read replicas, query and index optimization, connection-pool tuning, and DB2 high-availability or disaster-recovery capabilities. I would not claim replicas or sharding unless they were actually implemented.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="jpmcOutboxKafkaRelayFailureTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#jpmcOutboxKafkaRelayFailureTopBody">Kafka is unavailable, the Outbox has 10 million records, and the relay may also fail. How do you recover?</button>
+        </h2>
+        <div id="jpmcOutboxKafkaRelayFailureTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>These are two separate failure scenarios. The Outbox pattern must preserve events, recover large backlogs, and handle relay failure without duplicate business effects.</p>
+
+            <h5 class="text-warning">1. Kafka is unavailable and the Outbox accumulates 10 million records</h5>
+            <p>I would not delete or discard pending Outbox records. They are durable events waiting to be published.</p>
+            <ol>
+              <li>Restore Kafka availability and verify brokers, topic availability, replication health, and producer connectivity.</li>
+              <li>Start or resume the Outbox relay.</li>
+              <li>Fetch pending records in controlled batches, for example 500-1,000 records at a time.</li>
+              <li>Publish them to Kafka and wait for broker acknowledgements.</li>
+              <li>Mark records as published only after successful acknowledgement.</li>
+              <li>Continue until the backlog is drained.</li>
+            </ol>
+            <pre><code class="language-sql">SELECT *
+FROM outbox
+WHERE status = 'PENDING'
+ORDER BY created_at, id
+LIMIT 1000;</code></pre>
+            <p>In production, use indexed pagination or a reliable claiming mechanism rather than repeatedly scanning the entire table.</p>
+
+            <h5 class="text-warning">2. Drain the backlog without overwhelming the system</h5>
+            <ul>
+              <li>Start with a controlled batch size.</li>
+              <li>Increase publishing throughput gradually.</li>
+              <li>Monitor Kafka broker capacity, database CPU and I/O, and consumer lag.</li>
+              <li>Apply backpressure if downstream consumers cannot keep up.</li>
+              <li>Prioritize older records while preserving required ordering.</li>
+              <li>Keep normal new-event processing healthy while draining historical events.</li>
+            </ul>
+            <p><strong>Important:</strong> Never load all 10 million records into application memory.</p>
+
+            <h5 class="text-warning">3. Duplicate publishing risk</h5>
+            <p>Consider this sequence:</p>
+            <ol>
+              <li>The relay reads an Outbox event.</li>
+              <li>The relay publishes it to Kafka.</li>
+              <li>Kafka acknowledges it.</li>
+              <li>The relay crashes before updating the Outbox status to <code>PUBLISHED</code>.</li>
+              <li>The relay restarts and publishes the same event again.</li>
+            </ol>
+            <p>The Outbox pattern cannot guarantee exactly-once delivery across the database and Kafka by itself. I would:</p>
+            <ul>
+              <li>Assign every Outbox event a unique <code>event_id</code>.</li>
+              <li>Make consumers idempotent with an Inbox table or processed-event tracking.</li>
+              <li>Enforce a unique constraint on <code>event_id</code>.</li>
+              <li>Commit the consumer's business update and Inbox record in the same database transaction.</li>
+            </ul>
+
+            <h5 class="text-warning">4. What if the Outbox relay service itself fails?</h5>
+            <p>If Kafka is healthy but the relay crashes, I would run multiple relay instances for high availability.</p>
+            <pre><code class="language-text">Outbox Table
+    |------------------|
+    |                  |
+ Relay 1           Relay 2
+    |                  |
+    |------ Kafka -----|</code></pre>
+
+            <p><strong>Prevent duplicate claiming:</strong> Use database-level record claiming or locking. For databases supporting this syntax:</p>
+            <pre><code class="language-sql">SELECT *
+FROM outbox
+WHERE status = 'PENDING'
+ORDER BY created_at, id
+LIMIT 1000
+FOR UPDATE SKIP LOCKED;</code></pre>
+            <p>In a real implementation, claim records in a short transaction, persist a lease or claim state, publish outside that transaction, and update the status after acknowledgement. Do not hold database locks while waiting for Kafka.</p>
+
+            <h5 class="text-warning">5. Automatic recovery and monitoring</h5>
+            <ul>
+              <li>Kubernetes restarts crashed relay containers.</li>
+              <li>Liveness and readiness probes detect unhealthy instances.</li>
+              <li>Multiple replicas reduce single-instance failure risk.</li>
+              <li>Pending-record count and oldest-record age trigger alerts.</li>
+              <li>Transient failures use exponential backoff.</li>
+              <li>Poison records move to a separately tracked failure state for investigation and controlled replay.</li>
+            </ul>
+
+            <h5 class="text-warning">6. What if all relay instances fail?</h5>
+            <p>The Outbox records remain safely stored in the database. When relay instances recover, they resume processing pending records. The business service can continue writing business data and Outbox records as long as the database has sufficient capacity.</p>
+
+            <h5 class="text-warning">JPMC interview-ready answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">I would handle these as two separate failure scenarios. If Kafka is unavailable, the Outbox table acts as durable storage, so events are not lost. Once Kafka recovers, I would restart the relay and process pending records in controlled batches using pagination or safe record claiming. I would gradually increase throughput while monitoring database load, Kafka capacity, and consumer lag. If the relay itself fails, I would run multiple relay instances with database-level locking or claiming to prevent concurrent processing of the same records. Kubernetes can restart failed instances, and monitoring would alert us if the backlog increases. Because Kafka may acknowledge an event before the relay marks it published, I would use unique event IDs and idempotent consumers with an Inbox table to handle duplicate publishing safely.</blockquote>
+
+            <h5 class="text-warning">Key concepts</h5>
+            <table class="table table-dark table-bordered"><thead><tr><th>Concept</th><th>Why it matters</th></tr></thead><tbody><tr><td>Batch processing</td><td>Drain 10 million records safely</td></tr><tr><td>Backpressure</td><td>Do not overwhelm Kafka or consumers</td></tr><tr><td>High availability</td><td>Relay failure should not stop recovery</td></tr><tr><td>Record claiming</td><td>Prevent multiple relays processing the same record</td></tr><tr><td>Idempotency</td><td>Handle duplicate publishing safely</td></tr></tbody></table>
+
+            <p><strong>Additional senior-level option:</strong> For a very large backlog, consider CDC-based publishing using Debezium and Kafka Connect. It can capture committed Outbox inserts from the database transaction log, but it still requires monitoring, offset recovery, duplicate handling, and capacity management.</p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
+      <div class="accordion-item" data-category="microservices">
+        <h2 class="accordion-header" id="redisKafkaHotKeysTop">
+          <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#redisKafkaHotKeysTopBody">How do you handle hot keys in Redis or Kafka for millions of accesses?</button>
+        </h2>
+        <div id="redisKafkaHotKeysTopBody" class="accordion-collapse collapse" data-bs-parent="#accordionSeniorJava">
+          <div class="accordion-body bg-dark text-light">
+            <p>The key idea is to avoid allowing millions of requests to hit one Redis key or one Kafka partition. I would distribute the load, cache intelligently, reduce repeated work, and first determine whether the workload is read-heavy or write-heavy.</p>
+
+            <h5 class="text-warning">1. Hot keys in Redis</h5>
+            <p>Suppose a viral product is accessed by millions of users through one key:</p>
+            <pre><code class="language-text">product:iphone:stock</code></pre>
+            <p>One Redis shard can become overloaded because all requests target the same key.</p>
+
+            <p><strong>Local in-memory caching:</strong> Use Caffeine inside each application instance for frequently accessed and relatively static data, so most reads do not reach Redis.</p>
+            <pre><code class="language-text">Application instances
+  -> Caffeine cache in each instance
+  -> Redis only on local-cache miss</code></pre>
+
+            <p><strong>Replicate the hot key:</strong> Create multiple read copies:</p>
+            <pre><code class="language-text">product:iphone:stock:1
+product:iphone:stock:2
+product:iphone:stock:3
+product:iphone:stock:4</code></pre>
+            <p>Distribute reads across replicas. For example, one million requests across ten replicas could result in approximately 100,000 reads per replica, depending on the load-balancing strategy.</p>
+
+            <p><strong>TTL and refresh-ahead:</strong> Use TTLs, refresh popular keys before expiry, and use request coalescing or a distributed lock to prevent a cache stampede when a hot key expires.</p>
+
+            <p><strong>CDN caching:</strong> If the data is public and relatively static, cache it at the CDN edge instead of sending every request to Redis.</p>
+
+            <p>For frequently updated counters or inventory, be careful: splitting a key can introduce consistency and atomicity problems. Use atomic Redis operations, batching, or sharded counters only when the consistency requirements allow it.</p>
+
+            <h5 class="text-warning">2. Hot keys or partitions in Kafka</h5>
+            <p>Suppose events use <code>customerId</code> as the partition key and one customer produces 50% of all traffic:</p>
+            <pre><code class="language-text">Partition 0 -> 100K messages
+Partition 1 -> 100K messages
+Partition 2 -> 5M messages  HOT
+Partition 3 -> 100K messages</code></pre>
+            <p>Adding consumers alone does not solve this because one partition can be assigned to only one consumer within a consumer group at a time.</p>
+
+            <p><strong>Change the partitioning strategy:</strong> Use a composite key or controlled bucket:</p>
+            <pre><code class="language-java">String key = customerId + "-" + (orderId % 10);</code></pre>
+            <p>This can distribute one customer's traffic across multiple partitions, but events for that customer may now be processed concurrently and out of order.</p>
+
+            <p><strong>Increase partition count:</strong> For example, increase a topic from 4 to 12 partitions. This increases potential parallelism only if the partitioning strategy distributes traffic. Increasing partitions alone may not fix a hot key.</p>
+
+            <p><strong>Optimize consumers:</strong></p>
+            <ul>
+              <li>Batch message processing.</li>
+              <li>Tune <code>max.poll.records</code>.</li>
+              <li>Optimize database writes.</li>
+              <li>Use asynchronous downstream calls where ordering permits.</li>
+              <li>Monitor partition-level consumer lag.</li>
+              <li>Scale consumers up to the number of available partitions.</li>
+            </ul>
+
+            <p><strong>Separate high-volume customers:</strong> Route an unusually high-volume customer to a dedicated topic or processing pipeline so that one noisy tenant does not affect normal tenants.</p>
+
+            <h5 class="text-warning">3. Redis versus Kafka</h5>
+            <table class="table table-dark table-bordered">
+              <thead><tr><th>Problem</th><th>Redis solution</th><th>Kafka solution</th></tr></thead>
+              <tbody>
+                <tr><td>Hot key</td><td>Replicate or read-shard the key</td><td>Distribute partition keys</td></tr>
+                <tr><td>Read-heavy traffic</td><td>Local cache or CDN</td><td>Consumer-side caching</td></tr>
+                <tr><td>Traffic spike</td><td>Rate limiting</td><td>Producer throttling</td></tr>
+                <tr><td>Uneven load</td><td>Redis Cluster sharding</td><td>Partition rebalancing or key redesign</td></tr>
+                <tr><td>Repeated work</td><td>Cache/request coalescing</td><td>Deduplication and idempotency</td></tr>
+              </tbody>
+            </table>
+
+            <h5 class="text-warning">Senior-level interview answer</h5>
+            <blockquote class="border-start border-info border-3 ps-3">I would first identify whether the hot key is read-heavy or write-heavy. For Redis, I would use local caching, read replicas or key replication, request coalescing, refresh-ahead, and CDN caching for suitable data. For write-heavy counters, I would consider atomic operations, batching, or sharded counters based on consistency requirements. For Kafka, I would inspect partition-level traffic and consumer lag. If one key creates a hot partition, I would consider composite keys, bucketing, increased partitions, or a dedicated topic for high-volume customers. Before changing the key, I would explicitly evaluate ordering, consistency, and idempotency requirements.</blockquote>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item" data-category="microservices">
       <div class="accordion-item" data-category="behavioral">
         <h2 class="accordion-header" id="seniorProblemSolvingDesignQuestionsTop">
           <button class="accordion-button collapsed text-info" data-bs-toggle="collapse" data-bs-target="#seniorProblemSolvingDesignQuestionsTopBody">Senior problem-solving and design questions</button>

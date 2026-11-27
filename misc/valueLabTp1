@@ -41,3 +41,57 @@ Given: A list of transactions containing:
 20. Is there any specific reason you are looking for a job change?
 
 21. Do you have any questions for me?
+
+Value Lab
+
+Value lab today 3 PM and this is the code
+
+You are given a list of transactions. Each transaction contains:
+Transaction ID
+Customer ID
+Amount
+Status
+Write Java code to:
+Filter only transactions with SUCCESS status.
+Group successful transactions by customer ID.
+Calculate the total transaction amount for each customer.
+Print the customer ID and total successful transaction amount.
+
+Sample input
+class Transaction {
+   private int transactionId;
+   private int customerId;
+   private double amount;
+   private String status;
+
+   // Constructor and getters
+}
+
+List<Transaction> transactions = Arrays.asList(
+   new Transaction(101, 1, 500, "SUCCESS"),
+   new Transaction(102, 2, 700, "FAILED"),
+   new Transaction(103, 1, 300, "SUCCESS"),
+   new Transaction(104, 2, 200, "SUCCESS"),
+   new Transaction(105, 3, 400, "SUCCESS"),
+   new Transaction(106, 1, 100, "FAILED")
+);
+
+Expected output
+Customer ID: 1, Total: 800
+Customer ID: 2, Total: 200
+Customer ID: 3, Total: 400
+
+Filter only transactions with SUCCESS status.
+
+transactions.stream().filter(t-> t.getStatus().equals("STATUS")).toList();
+Group successful transactions by customer ID.
+transactions.stream().collect(Collectors.groupingBy(Transaction::getCustomerId, Colletions.filteringBy(t->t.getStatus().equals("SUCCESS"), Collectors.toList())));
+transactions.stream().filter(t->t.getStatus().equals("SUCCESS")).collect(Collectors.groupingBy(Transaction::getCustomerId, Collectors.toList()));
+
+Calculate the total transaction amount for each customer.
+transactions.stream().collect(Collectors.groupingBy(Transaction::getCustomerId, Collectors.summingDouble(Transaction::getAmount())));
+
+Print the customer ID and total successful transaction amount.
+
+transactions.stream().filter(t->t.getStatus().equals("SUCCESS")).collect(Collectors.groupingBy(Transaction::getCustomerId, Collectors.summingDouble(Transaction::getAmount())))
+.entrySet().stream().forEach(map-> System.out.println(map.getKey()+" : "+ map.getValue()));
